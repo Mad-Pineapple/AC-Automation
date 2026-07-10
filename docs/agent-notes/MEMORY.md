@@ -1,0 +1,31 @@
+- [orval codegen drift](orval-codegen-drift.md) — committed client can drift from openapi.yaml; regen drops anything not in the spec, breaking frontend typecheck.
+- [api-client type resolution](api-client-type-resolution.md) — composite lib; consumers read built dist/*.d.ts, so rebuild (tsc --build) after codegen or hit phantom missing-field errors.
+- [db lib project references](db-project-references.md) — api-server resolves @workspace/db types via built dist/*.d.ts; missing-column/export errors are usually stale dist, fixed by tsc --build.
+- [object-storage-web composite tsconfig](object-storage-web-composite.md) — TS project-referenced libs need composite:true + built dist/*.d.ts, or artifact typecheck fails TS6306/TS6305.
+- [pdfjs server-side extraction](pdfjs-node-extraction.md) — extract PDF text in Node via pdfjs-dist legacy build (worker-less); externalize it in esbuild; 422 on image-only PDFs.
+- [pdfjs v6 operator-list shape](pdfjs-v6-operatorlist.md) — constructPath embeds paint intent in args[0], bbox in args[2] (typed array, Array.isArray fails); fills are hex strings.
+- [Templates feature](templates-feature.md) — custom creative formats resolve dims/layout from a live reactive registry (no per-asset snapshot); key=tpl_<id>; delete returns 409 if referenced.
+- [Knowledge feature](knowledge-feature.md) — learned creative = freeform template category:"knowledge"; must bypass brand supportedTemplateSizes gating in briefs (knowledgeKeys whitelist).
+- [Brand Studio architecture](brand-studio-arch.md) — key decisions for the api-server + brand-studio platform (routing, ports, structure).
+- [Brand guidelines ingestion](brand-guidelines-ingestion.md) — brands.guidelines is the single AI brand-voice field; inject into ALL gen paths in lockstep; analyze=requireAuth, persist=admin.
+- [brand-studio asset export](brand-studio-asset-export.md) — asset image export is client-side DOM capture (html-to-image); server can't render templates, so the browser must generate the bytes.
+- [Clerk auth setup](clerk-auth-setup.md) — Brand Studio role model: first authenticated user → admin, others → user; no role-change UI yet.
+- [Auth auto-provision vs removal](auth-auto-provision-removal.md) — deleting a users row doesn't revoke access (auth re-provisions); durable removal needs a clerkId blocklist.
+- [Brand asset upload auth](brand-asset-auth.md) — uploads gated requireAuth (any signed-in user) by design; only DELETE is admin-only. Don't revert to requireAdmin.
+- [Dev iframe Clerk cookie 401](dev-iframe-clerk-cookie.md) — requireAuth 401s in the embedded preview iframe (third-party cookie); use a real tab, don't re-diff Clerk wiring.
+- [Brand Studio image uploads](brand-studio-image-uploads.md) — upload via useUpload()→object storage, store `/api/storage/<objectPath>`; never inline base64 (express.json 1mb cap → 413).
+- [Embedded-iframe file picker](iframe-file-picker.md) — hidden input + programmatic .click() won't open the file dialog in the canvas iframe; wrap input in a <label> (buttonVariants) instead.
+- [Server-side image upload](server-side-image-upload.md) — ObjectStorageService.uploadDataUrl/uploadBytes persist AI base64 images to a short public URL; never inject base64 into prompts.
+- [Review progress server sync](review-progress-sync.md) — reviewed-asset progress persisted per (brief,user) on server; localStorage is offline cache/fallback, server is source of truth.
+- [Asset rejection metadata](asset-rejection-metadata.md) — assets store rejectedBy/rejectedAt/rejectionReason; reject endpoint accepts optional reason; approve+regenerate must clear all three.
+- [Freeform templates](freeform-templates.md) — freeform layouts live in templates.config (kind/elements); overrideConfig must carry kind+elements; editor must mirror FreeformCanvas.
+- [Freeform image fit](freeform-image-fit.md) — image objectFit decided only in defaultImageFit(role) (logo→contain else cover); explicit fit wins; no re-inline (avoids editor/renderer drift).
+- [Running one-off TS scripts](running-oneoff-scripts.md) — run tsx cli.mjs directly; long live tests must run foreground in one ≤120s bash call (backgrounded procs get reaped).
+- [RQ uncontrolled-editor staleness](rq-editor-staleness.md) — editor seeded from a query cache shows stale data after save+reload; key the section by updatedAt + refetchOnMount:always.
+- [Server-context one-off jobs](code-execution-env-quirks.md) — code_execution sandbox lacks secret env; bare imports resolve from repo root (createRequire); object-storage upload + serve recipe.
+- [AI asset image pipeline](ai-asset-image-pipeline.md) — images use brand+template refs sized per orientation; shared via lib/assetImages.ts across briefs + regenerate.
+- [Brand compliance feature](brand-compliance-feature.md) — off-brand art blocked from approval/dispatch; gate = complianceStatus 'failed' (null=allowed); client dispatch export is the real deliverable gate.
+- [sharp version pin](sharp-types-export-pin.md) — pin sharp 0.34.x; 0.35.0 exports map omits the types condition and breaks tsc bundler resolution of `import sharp`.
+- [toast-undo duration](toast-undo-duration.md) — deferred/undo toasts need explicit duration matching the commit timer; shadcn toast otherwise persists ~16min so Undo outlives the grace window.
+- [Wide-banner strip layout](strip-banner-layout.md) — flatten to one flex row; only the headline flexes/ellipsizes (wordmark+CTA rigid), else brand name truncates mid-word.
+- [Out-of-band brief generation](oob-brief-generation.md) — recover a killed in-flight gen by esbuild-bundling a one-off that reuses lib/openai+assetImages and writes the asset via bash.

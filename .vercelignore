@@ -1,0 +1,13 @@
+# Local object storage (83 MB of brand assets) — production uses Vercel Blob.
+artifacts/api-server/data
+
+# Local build outputs — Vercel rebuilds everything itself.
+artifacts/api-server/dist
+artifacts/brand-studio/dist
+lib/db/dist
+
+# Not needed to build or run the app.
+exports
+compliance-demo
+docs
+*.zip

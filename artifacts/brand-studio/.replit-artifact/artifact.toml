@@ -1,0 +1,31 @@
+kind = "web"
+previewPath = "/"
+title = "Brand Creative Studio"
+version = "1.0.0"
+id = "artifacts/brand-studio"
+router = "path"
+
+[[integratedSkills]]
+name = "react-vite"
+version = "1.0.0"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 25611
+
+[services.development]
+run = "pnpm --filter @workspace/brand-studio run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/brand-studio", "run", "build" ]
+publicDir = "artifacts/brand-studio/dist/public"
+serve = "static"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "25611"
+BASE_PATH = "/"

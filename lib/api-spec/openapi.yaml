@@ -1,0 +1,2330 @@
+openapi: 3.1.0
+info:
+  # Do not change the title, if the title changes, the import paths will be broken
+  title: Api
+  version: 0.1.0
+  description: Brand Creative Automation Platform API
+servers:
+  - url: /api
+    description: Base API path
+tags:
+  - name: health
+    description: Health operations
+  - name: brands
+    description: Brand profile management
+  - name: briefs
+    description: Campaign brief management
+  - name: assets
+    description: Generated asset management
+  - name: dispatch
+    description: Asset dispatch operations
+  - name: stats
+    description: Dashboard statistics
+  - name: storage
+    description: Object storage upload operations
+
+paths:
+  /healthz:
+    get:
+      operationId: healthCheck
+      tags: [health]
+      summary: Health check
+      description: Returns server health status
+      responses:
+        "200":
+          description: Healthy
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthStatus"
+
+  /brands:
+    get:
+      operationId: listBrands
+      tags: [brands]
+      summary: List all brand profiles
+      responses:
+        "200":
+          description: List of brands
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Brand"
+    post:
+      operationId: createBrand
+      tags: [brands]
+      summary: Create a new brand profile
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BrandInput"
+      responses:
+        "201":
+          description: Created brand
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Brand"
+
+  /brands/{id}:
+    get:
+      operationId: getBrand
+      tags: [brands]
+      summary: Get a brand profile by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Brand profile
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Brand"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    patch:
+      operationId: updateBrand
+      tags: [brands]
+      summary: Update a brand profile
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BrandUpdate"
+      responses:
+        "200":
+          description: Updated brand
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Brand"
+    delete:
+      operationId: deleteBrand
+      tags: [brands]
+      summary: Delete a brand profile
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+
+  /brands/{id}/analyze-guideline:
+    post:
+      operationId: analyzeBrandGuideline
+      tags: [brands]
+      summary: Analyze an uploaded brand guideline PDF and suggest brand fields
+      description: >
+        Reads an uploaded brand guideline PDF from object storage, extracts its
+        text, and returns suggested brand field values (colors, font family,
+        tone of voice, industry) for the user to review. Non-destructive: it does
+        not modify the brand.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AnalyzeGuidelineRequest"
+      responses:
+        "200":
+          description: Suggested brand fields
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AnalyzeGuidelineResponse"
+        "400":
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "422":
+          description: The PDF has no extractable text
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /templates:
+    get:
+      operationId: listTemplates
+      tags: [templates]
+      summary: List all custom templates
+      responses:
+        "200":
+          description: List of templates
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Template"
+    post:
+      operationId: createTemplate
+      tags: [templates]
+      summary: Create a new custom template
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TemplateInput"
+      responses:
+        "201":
+          description: Created template
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Template"
+
+  /templates/{id}:
+    get:
+      operationId: getTemplate
+      tags: [templates]
+      summary: Get a template by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Template
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Template"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    patch:
+      operationId: updateTemplate
+      tags: [templates]
+      summary: Update a template
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TemplateUpdate"
+      responses:
+        "200":
+          description: Updated template
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Template"
+    delete:
+      operationId: deleteTemplate
+      tags: [templates]
+      summary: Delete a template
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+
+  /templates/dissect-pdf:
+    post:
+      operationId: dissectPdf
+      tags: [templates]
+      summary: Dissect an uploaded PDF into a draft freeform template
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DissectPdfRequest"
+      responses:
+        "200":
+          description: Draft freeform template extracted from the PDF
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DissectPdfResult"
+        "400":
+          description: Missing or invalid required fields
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "422":
+          description: PDF could not be parsed into a template
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /templates/dissect-image:
+    post:
+      operationId: dissectImage
+      tags: [templates]
+      summary: Learn the layout of an uploaded creative image into a draft freeform template
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DissectImageRequest"
+      responses:
+        "200":
+          description: Draft freeform template learned from the image
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DissectPdfResult"
+        "400":
+          description: Missing or invalid required fields
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "422":
+          description: Image could not be learned into a template
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /briefs/suggest-sizes:
+    post:
+      operationId: suggestBriefSizes
+      tags: [briefs]
+      summary: Recommend template sizes/formats for a brief from its text
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SuggestBriefSizesRequest"
+      responses:
+        "200":
+          description: Suggested format keys with a short rationale
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuggestBriefSizesResult"
+        "400":
+          description: Not enough brief text
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /briefs/parse-document:
+    post:
+      operationId: parseBriefDocument
+      tags: [briefs]
+      summary: Extract draft brief fields from an uploaded Word (.docx) or PDF brief document
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ParseBriefDocumentRequest"
+      responses:
+        "200":
+          description: Draft brief fields extracted from the document
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ParseBriefDocumentResult"
+        "400":
+          description: Missing or unsupported file
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "422":
+          description: Document could not be read
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /storage/uploads/request-url:
+    post:
+      operationId: requestUploadUrl
+      tags: [storage]
+      summary: Request a presigned URL for file upload
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UploadUrlRequest"
+      responses:
+        "200":
+          description: Presigned upload URL generated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UploadUrlResponse"
+        "400":
+          description: Missing or invalid required fields
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /brands/{brandId}/assets:
+    get:
+      operationId: listBrandAssets
+      tags: [brands]
+      summary: List library assets for a brand
+      parameters:
+        - name: brandId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Brand library assets
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/BrandAsset"
+    post:
+      operationId: createBrandAsset
+      tags: [brands]
+      summary: Add an uploaded asset to a brand library
+      parameters:
+        - name: brandId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BrandAssetInput"
+      responses:
+        "201":
+          description: Created brand asset
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BrandAsset"
+
+  /brand-assets/{id}:
+    delete:
+      operationId: deleteBrandAsset
+      tags: [brands]
+      summary: Delete a brand library asset
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+
+  /comparison-notes:
+    get:
+      operationId: listComparisonNotes
+      tags: [assets]
+      summary: List notes attached to a comparison of two assets
+      parameters:
+        - name: assetA
+          in: query
+          required: true
+          schema:
+            type: integer
+        - name: assetB
+          in: query
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Comparison notes
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ComparisonNote"
+    post:
+      operationId: createComparisonNote
+      tags: [assets]
+      summary: Add a note to a comparison of two assets
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ComparisonNoteInput"
+      responses:
+        "201":
+          description: Created comparison note
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ComparisonNote"
+
+  /brands/{brandId}/styles:
+    get:
+      operationId: listBrandStyles
+      tags: [brands]
+      summary: List style snippets for a brand
+      parameters:
+        - name: brandId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Brand styles
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/BrandStyle"
+    post:
+      operationId: createBrandStyle
+      tags: [brands]
+      summary: Create a brand style snippet
+      parameters:
+        - name: brandId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BrandStyleInput"
+      responses:
+        "201":
+          description: Created brand style
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BrandStyle"
+
+  /brands/{brandId}/styles/{styleId}:
+    delete:
+      operationId: deleteBrandStyle
+      tags: [brands]
+      summary: Delete a brand style snippet
+      parameters:
+        - name: brandId
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: styleId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+
+  /briefs:
+    get:
+      operationId: listBriefs
+      tags: [briefs]
+      summary: List all campaign briefs
+      parameters:
+        - name: status
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: brandId
+          in: query
+          required: false
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: List of briefs
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Brief"
+    post:
+      operationId: createBrief
+      tags: [briefs]
+      summary: Create a new campaign brief
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BriefInput"
+      responses:
+        "201":
+          description: Created brief
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Brief"
+
+  /briefs/bulk:
+    post:
+      operationId: createBriefsBulk
+      tags: [briefs]
+      summary: Create multiple briefs from CSV data
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BulkBriefInput"
+      responses:
+        "201":
+          description: Created briefs
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Brief"
+
+  /briefs/{id}:
+    get:
+      operationId: getBrief
+      tags: [briefs]
+      summary: Get a brief by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Brief
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Brief"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    patch:
+      operationId: updateBrief
+      tags: [briefs]
+      summary: Update a brief
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BriefUpdate"
+      responses:
+        "200":
+          description: Updated brief
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Brief"
+    delete:
+      operationId: deleteBrief
+      tags: [briefs]
+      summary: Delete a brief
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+
+  /briefs/{id}/generate:
+    post:
+      operationId: generateBriefAssets
+      tags: [briefs]
+      summary: Trigger AI generation for a brief
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Generation started, returns updated brief
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Brief"
+
+  /briefs/{id}/approve:
+    post:
+      operationId: approveBrief
+      tags: [briefs]
+      summary: Approve all assets for a brief
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Approved brief
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Brief"
+
+  /briefs/{id}/duplicate:
+    post:
+      operationId: duplicateBrief
+      tags: [briefs]
+      summary: Duplicate a brief (reopen for a new campaign)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "201":
+          description: Duplicated brief
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Brief"
+
+  /briefs/{id}/dispatch:
+    post:
+      operationId: dispatchBrief
+      tags: [dispatch]
+      summary: Dispatch approved assets for a brief
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DispatchInput"
+      responses:
+        "200":
+          description: Dispatch result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DispatchResult"
+
+  /briefs/{id}/review-progress:
+    get:
+      operationId: getReviewProgress
+      tags: [briefs]
+      summary: Get the current user's review progress for a brief
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Review progress for the current user
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ReviewProgress"
+    put:
+      operationId: saveReviewProgress
+      tags: [briefs]
+      summary: Save the current user's review progress for a brief
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ReviewProgressInput"
+      responses:
+        "200":
+          description: Saved review progress
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ReviewProgress"
+
+  /assets:
+    get:
+      operationId: listAssets
+      tags: [assets]
+      summary: List assets for a brief
+      parameters:
+        - name: briefId
+          in: query
+          required: false
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: List of assets
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Asset"
+
+  /assets/{id}:
+    get:
+      operationId: getAsset
+      tags: [assets]
+      summary: Get an asset by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Asset
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Asset"
+    patch:
+      operationId: updateAsset
+      tags: [assets]
+      summary: Update asset content (inline editing)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AssetUpdate"
+      responses:
+        "200":
+          description: Updated asset
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Asset"
+    delete:
+      operationId: deleteAsset
+      tags: [assets]
+      summary: Delete an asset
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+
+  /assets/{id}/regenerate:
+    post:
+      operationId: regenerateAsset
+      tags: [assets]
+      summary: Regenerate a single asset
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Regenerated asset
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Asset"
+
+  /assets/{id}/approve:
+    post:
+      operationId: approveAsset
+      tags: [assets]
+      summary: Approve a single asset
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Approved asset
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Asset"
+
+  /assets/{id}/reject:
+    post:
+      operationId: rejectAsset
+      tags: [assets]
+      summary: Reject a single asset
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AssetRejectInput"
+      responses:
+        "200":
+          description: Rejected asset
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Asset"
+
+  /stats/dashboard:
+    get:
+      operationId: getDashboardStats
+      tags: [stats]
+      summary: Get dashboard summary statistics
+      responses:
+        "200":
+          description: Dashboard statistics
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DashboardStats"
+
+  /stats/recent-activity:
+    get:
+      operationId: getRecentActivity
+      tags: [stats]
+      summary: Get recent brief activity feed
+      parameters:
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Recent activity
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ActivityEntry"
+
+  /campaigns:
+    get:
+      operationId: listCampaigns
+      tags: [campaigns]
+      summary: List campaigns
+      responses:
+        "200":
+          description: List of campaigns
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Campaign"
+    post:
+      operationId: createCampaign
+      tags: [campaigns]
+      summary: Create a campaign
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CampaignInput"
+      responses:
+        "201":
+          description: Created campaign
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Campaign"
+
+  /campaigns/{id}:
+    get:
+      operationId: getCampaign
+      tags: [campaigns]
+      summary: Get a campaign by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Campaign
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Campaign"
+    patch:
+      operationId: updateCampaign
+      tags: [campaigns]
+      summary: Update a campaign
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CampaignUpdate"
+      responses:
+        "200":
+          description: Updated campaign
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Campaign"
+    delete:
+      operationId: deleteCampaign
+      tags: [campaigns]
+      summary: Delete a campaign
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+
+  /assets/{id}/ad-tag:
+    get:
+      operationId: getAdTag
+      tags: [assets]
+      summary: Get the ad tag for an asset
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Ad tag
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdTag"
+        "404":
+          description: No ad tag yet
+    post:
+      operationId: createAdTag
+      tags: [assets]
+      summary: Create or recreate the ad tag for an asset
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AdTagInput"
+      responses:
+        "201":
+          description: Created ad tag
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdTag"
+
+  /briefs/{id}/ad-tags:
+    post:
+      operationId: createBriefAdTags
+      tags: [briefs]
+      summary: Create ad tags for every asset in a brief (bulk)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AdTagInput"
+      responses:
+        "200":
+          description: Bulk ad tag result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BulkAdTagResult"
+
+  /stats/performance:
+    get:
+      operationId: getPerformanceStats
+      tags: [stats]
+      summary: Get ad tracking performance statistics
+      responses:
+        "200":
+          description: Performance statistics
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PerformanceStats"
+
+components:
+  schemas:
+    HealthStatus:
+      type: object
+      properties:
+        status:
+          type: string
+      required:
+        - status
+
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+      required:
+        - error
+
+    AnalyzeGuidelineRequest:
+      type: object
+      properties:
+        objectPath:
+          type: string
+      required:
+        - objectPath
+
+    GuidelineSuggestions:
+      type: object
+      properties:
+        primaryColor:
+          type: string
+        secondaryColor:
+          type: string
+        accentColor:
+          type: string
+        backgroundColor:
+          type: string
+        textColor:
+          type: string
+        fontFamily:
+          type: string
+        toneOfVoice:
+          type: string
+        industry:
+          type: string
+
+    ExtractedImage:
+      type: object
+      properties:
+        url:
+          type: string
+        objectPath:
+          type: string
+        width:
+          type: integer
+        height:
+          type: integer
+      required:
+        - url
+        - objectPath
+        - width
+        - height
+
+    AnalyzeGuidelineResponse:
+      type: object
+      properties:
+        suggestions:
+          $ref: "#/components/schemas/GuidelineSuggestions"
+        guidelines:
+          type: string
+        notes:
+          type: array
+          items:
+            type: string
+        images:
+          type: array
+          items:
+            $ref: "#/components/schemas/ExtractedImage"
+        fonts:
+          type: array
+          items:
+            type: string
+      required:
+        - suggestions
+        - guidelines
+        - notes
+
+    Brand:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        logoUrl:
+          type: ["string", "null"]
+        primaryColor:
+          type: string
+        secondaryColor:
+          type: string
+        accentColor:
+          type: string
+        backgroundColor:
+          type: string
+        textColor:
+          type: string
+        fontFamily:
+          type: string
+        toneOfVoice:
+          type: string
+        guidelines:
+          type: ["string", "null"]
+        industry:
+          type: ["string", "null"]
+        supportedTemplateSizes:
+          type: array
+          items:
+            type: string
+        createdAt:
+          type: string
+        updatedAt:
+          type: string
+      required:
+        - id
+        - name
+        - primaryColor
+        - secondaryColor
+        - accentColor
+        - backgroundColor
+        - textColor
+        - fontFamily
+        - toneOfVoice
+        - supportedTemplateSizes
+        - createdAt
+        - updatedAt
+
+    BrandInput:
+      type: object
+      properties:
+        name:
+          type: string
+        logoUrl:
+          type: ["string", "null"]
+        primaryColor:
+          type: string
+        secondaryColor:
+          type: string
+        accentColor:
+          type: string
+        backgroundColor:
+          type: string
+        textColor:
+          type: string
+        fontFamily:
+          type: string
+        toneOfVoice:
+          type: string
+        guidelines:
+          type: ["string", "null"]
+        industry:
+          type: ["string", "null"]
+        supportedTemplateSizes:
+          type: array
+          items:
+            type: string
+      required:
+        - name
+        - primaryColor
+        - secondaryColor
+        - accentColor
+        - backgroundColor
+        - textColor
+        - fontFamily
+        - toneOfVoice
+
+    BrandUpdate:
+      type: object
+      properties:
+        name:
+          type: string
+        logoUrl:
+          type: ["string", "null"]
+        primaryColor:
+          type: string
+        secondaryColor:
+          type: string
+        accentColor:
+          type: string
+        backgroundColor:
+          type: string
+        textColor:
+          type: string
+        fontFamily:
+          type: string
+        toneOfVoice:
+          type: string
+        guidelines:
+          type: ["string", "null"]
+        industry:
+          type: ["string", "null"]
+        supportedTemplateSizes:
+          type: array
+          items:
+            type: string
+
+    FreeformElement:
+      type: object
+      description: A single positioned element in a freeform template layout.
+      properties:
+        type:
+          type: string
+          description: "text | image | rect"
+        id:
+          type: string
+        x:
+          type: number
+        y:
+          type: number
+        w:
+          type: number
+        h:
+          type: number
+        role:
+          type: string
+        text:
+          type: string
+        fontSize:
+          type: number
+        fontWeight:
+          type: integer
+        color:
+          type: string
+        align:
+          type: string
+        lineHeight:
+          type: number
+        fontFamily:
+          type: string
+        fontStyle:
+          type: string
+          description: "normal | italic"
+        letterSpacing:
+          type: number
+        opacity:
+          type: number
+          description: "0..1"
+        src:
+          type: ["string", "null"]
+        fit:
+          type: string
+          description: "cover | contain (image objectFit; default depends on role)"
+        fill:
+          type: string
+        radius:
+          type: number
+        borderColor:
+          type: string
+        borderWidth:
+          type: number
+      required:
+        - type
+
+    TemplateConfig:
+      type: object
+      properties:
+        contentAlignment:
+          type: string
+        textAlign:
+          type: string
+        showAccentBar:
+          type: boolean
+        showLogoBar:
+          type: boolean
+        imageStyle:
+          type: string
+        kind:
+          type: string
+          description: "preset | freeform (absent means preset)"
+        elements:
+          type: array
+          items:
+            $ref: "#/components/schemas/FreeformElement"
+
+    Template:
+      type: object
+      properties:
+        id:
+          type: integer
+        key:
+          type: string
+        name:
+          type: string
+        description:
+          type: ["string", "null"]
+        category:
+          type: string
+        width:
+          type: integer
+        height:
+          type: integer
+        dims:
+          type: string
+        config:
+          $ref: "#/components/schemas/TemplateConfig"
+        sourceImageUrl:
+          type: ["string", "null"]
+        createdBy:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+        updatedAt:
+          type: string
+      required:
+        - id
+        - key
+        - name
+        - category
+        - width
+        - height
+        - dims
+        - config
+        - createdAt
+        - updatedAt
+
+    TemplateInput:
+      type: object
+      properties:
+        name:
+          type: string
+        description:
+          type: ["string", "null"]
+        category:
+          type: string
+        width:
+          type: integer
+        height:
+          type: integer
+        config:
+          $ref: "#/components/schemas/TemplateConfig"
+        sourceImageUrl:
+          type: ["string", "null"]
+      required:
+        - name
+        - width
+        - height
+
+    TemplateUpdate:
+      type: object
+      properties:
+        name:
+          type: string
+        description:
+          type: ["string", "null"]
+        category:
+          type: string
+        width:
+          type: integer
+        height:
+          type: integer
+        config:
+          $ref: "#/components/schemas/TemplateConfig"
+        sourceImageUrl:
+          type: ["string", "null"]
+
+    DissectPdfRequest:
+      type: object
+      properties:
+        objectPath:
+          type: string
+          minLength: 1
+        page:
+          type: integer
+          minimum: 1
+      required:
+        - objectPath
+
+    DissectImageRequest:
+      type: object
+      properties:
+        objectPath:
+          type: string
+          minLength: 1
+      required:
+        - objectPath
+
+    SuggestBriefSizesRequest:
+      type: object
+      properties:
+        text:
+          type: string
+          description: The brief text typed or extracted so far
+      required:
+        - text
+
+    SuggestBriefSizesResult:
+      type: object
+      properties:
+        sizes:
+          type: array
+          items:
+            type: string
+          description: Recommended template size keys
+        reason:
+          type: string
+          description: One-sentence rationale for the picks
+      required:
+        - sizes
+        - reason
+
+    ParseBriefDocumentRequest:
+      type: object
+      properties:
+        objectPath:
+          type: string
+          minLength: 1
+        fileName:
+          type: string
+      required:
+        - objectPath
+
+    ParseBriefDocumentResult:
+      type: object
+      properties:
+        campaignName:
+          type: string
+        headline:
+          type: string
+        bodyText:
+          type: string
+        callToAction:
+          type: string
+        notes:
+          type: string
+        warnings:
+          type: array
+          items:
+            type: string
+      required:
+        - campaignName
+        - headline
+        - bodyText
+        - callToAction
+        - notes
+        - warnings
+
+    DissectPdfResult:
+      type: object
+      properties:
+        name:
+          type: string
+        width:
+          type: integer
+        height:
+          type: integer
+        config:
+          $ref: "#/components/schemas/TemplateConfig"
+        warnings:
+          type: array
+          items:
+            type: string
+      required:
+        - name
+        - width
+        - height
+        - config
+        - warnings
+
+    UploadUrlRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+        size:
+          type: integer
+          minimum: 1
+        contentType:
+          type: string
+          minLength: 1
+      required:
+        - name
+        - size
+        - contentType
+
+    UploadUrlResponse:
+      type: object
+      properties:
+        uploadURL:
+          type: string
+          format: uri
+        objectPath:
+          type: string
+        metadata:
+          $ref: "#/components/schemas/UploadUrlRequest"
+        clientUpload:
+          $ref: "#/components/schemas/ClientUploadInfo"
+      required:
+        - uploadURL
+        - objectPath
+
+    ClientUploadInfo:
+      type: object
+      description: >
+        Present when file storage is Vercel Blob. The client should upload via
+        @vercel/blob/client upload() with these parameters instead of PUTting
+        to uploadURL — direct-to-store uploads bypass the serverless
+        request-body size limit.
+      properties:
+        handleUploadUrl:
+          type: string
+        pathname:
+          type: string
+      required:
+        - handleUploadUrl
+        - pathname
+
+    BrandAsset:
+      type: object
+      properties:
+        id:
+          type: integer
+        brandId:
+          type: integer
+        name:
+          type: string
+        kind:
+          type: string
+        folder:
+          type: ["string", "null"]
+        objectPath:
+          type: string
+        url:
+          type: string
+        contentType:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+      required:
+        - id
+        - brandId
+        - name
+        - kind
+        - objectPath
+        - url
+        - createdAt
+
+    BrandAssetInput:
+      type: object
+      properties:
+        name:
+          type: string
+        kind:
+          type: string
+          enum: [logo, image, file]
+        folder:
+          type: ["string", "null"]
+        objectPath:
+          type: string
+        contentType:
+          type: ["string", "null"]
+      required:
+        - name
+        - objectPath
+
+    ComparisonNote:
+      type: object
+      properties:
+        id:
+          type: integer
+        assetIdLow:
+          type: integer
+        assetIdHigh:
+          type: integer
+        authorId:
+          type: ["integer", "null"]
+        authorName:
+          type: ["string", "null"]
+        body:
+          type: string
+        createdAt:
+          type: string
+      required:
+        - id
+        - assetIdLow
+        - assetIdHigh
+        - body
+        - createdAt
+
+    ComparisonNoteInput:
+      type: object
+      properties:
+        assetA:
+          type: integer
+        assetB:
+          type: integer
+        body:
+          type: string
+      required:
+        - assetA
+        - assetB
+        - body
+
+    ReviewProgress:
+      type: object
+      properties:
+        briefId:
+          type: integer
+        reviewedAssetIds:
+          type: array
+          items:
+            type: integer
+      required:
+        - briefId
+        - reviewedAssetIds
+
+    ReviewProgressInput:
+      type: object
+      properties:
+        reviewedAssetIds:
+          type: array
+          items:
+            type: integer
+      required:
+        - reviewedAssetIds
+
+    Brief:
+      type: object
+      properties:
+        id:
+          type: integer
+        campaignName:
+          type: string
+        headline:
+          type: ["string", "null"]
+        bodyText:
+          type: ["string", "null"]
+        callToAction:
+          type: ["string", "null"]
+        notes:
+          type: ["string", "null"]
+        productImageUrl:
+          type: ["string", "null"]
+        templateSizes:
+          type: array
+          items:
+            type: string
+        useAiCopy:
+          type: boolean
+        brandId:
+          type: integer
+        campaignId:
+          type: ["integer", "null"]
+        brand:
+          $ref: "#/components/schemas/Brand"
+        status:
+          type: string
+        assetCount:
+          type: integer
+        dispatchLog:
+          type: ["string", "null"]
+        scheduledAt:
+          type: ["string", "null"]
+        scheduledMethods:
+          type: ["array", "null"]
+          items:
+            type: string
+        createdByName:
+          type: ["string", "null"]
+        createdBy:
+          type: ["string", "null"]
+        approvedByName:
+          type: ["string", "null"]
+        approvedBy:
+          type: ["string", "null"]
+        approvedAt:
+          type: ["string", "null"]
+        dispatchedByName:
+          type: ["string", "null"]
+        dispatchedBy:
+          type: ["string", "null"]
+        dispatchedAt:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+        updatedAt:
+          type: string
+      required:
+        - id
+        - campaignName
+        - templateSizes
+        - useAiCopy
+        - brandId
+        - brand
+        - status
+        - assetCount
+        - createdAt
+        - updatedAt
+
+    BriefInput:
+      type: object
+      properties:
+        campaignName:
+          type: string
+        headline:
+          type: ["string", "null"]
+        bodyText:
+          type: ["string", "null"]
+        callToAction:
+          type: ["string", "null"]
+        notes:
+          type: ["string", "null"]
+        productImageUrl:
+          type: ["string", "null"]
+        templateSizes:
+          type: array
+          items:
+            type: string
+        useAiCopy:
+          type: boolean
+        brandId:
+          type: integer
+        campaignId:
+          type: ["integer", "null"]
+      required:
+        - campaignName
+        - templateSizes
+        - useAiCopy
+        - brandId
+
+    BriefUpdate:
+      type: object
+      properties:
+        campaignName:
+          type: string
+        headline:
+          type: ["string", "null"]
+        bodyText:
+          type: ["string", "null"]
+        callToAction:
+          type: ["string", "null"]
+        notes:
+          type: ["string", "null"]
+        productImageUrl:
+          type: ["string", "null"]
+        templateSizes:
+          type: array
+          items:
+            type: string
+        useAiCopy:
+          type: boolean
+        brandId:
+          type: integer
+        campaignId:
+          type: ["integer", "null"]
+        status:
+          type: string
+
+    BulkBriefInput:
+      type: object
+      properties:
+        brandId:
+          type: integer
+        rows:
+          type: array
+          items:
+            $ref: "#/components/schemas/BriefInput"
+      required:
+        - brandId
+        - rows
+
+    Asset:
+      type: object
+      properties:
+        id:
+          type: integer
+        briefId:
+          type: integer
+        templateSize:
+          type: string
+        headline:
+          type: ["string", "null"]
+        bodyText:
+          type: ["string", "null"]
+        callToAction:
+          type: ["string", "null"]
+        imageUrl:
+          type: ["string", "null"]
+        htmlContent:
+          type: ["string", "null"]
+        isAnimated:
+          type: boolean
+        status:
+          type: string
+        rejectedBy:
+          type: ["string", "null"]
+        rejectedByName:
+          type: ["string", "null"]
+        rejectedAt:
+          type: ["string", "null"]
+        rejectionReason:
+          type: ["string", "null"]
+        complianceStatus:
+          type: ["string", "null"]
+          description: Brand-compliance verdict for the generated artwork; one of "passed", "failed", "skipped", or null for legacy assets.
+        complianceScore:
+          type: ["integer", "null"]
+          description: Compliance score 0-100 (null when skipped or not checked).
+        complianceIssues:
+          type: ["string", "null"]
+          description: JSON-encoded array of specific brand-compliance violation strings.
+        complianceCheckedAt:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+        updatedAt:
+          type: string
+      required:
+        - id
+        - briefId
+        - templateSize
+        - isAnimated
+        - status
+        - createdAt
+        - updatedAt
+
+    AssetRejectInput:
+      type: object
+      properties:
+        reason:
+          type: ["string", "null"]
+
+    AssetUpdate:
+      type: object
+      properties:
+        headline:
+          type: ["string", "null"]
+        bodyText:
+          type: ["string", "null"]
+        callToAction:
+          type: ["string", "null"]
+        imageUrl:
+          type: ["string", "null"]
+        htmlContent:
+          type: ["string", "null"]
+
+    BrandStyle:
+      type: object
+      properties:
+        id:
+          type: integer
+        brandId:
+          type: integer
+        name:
+          type: string
+        description:
+          type: ["string", "null"]
+        cssSnippet:
+          type: string
+        sampleHtml:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+        updatedAt:
+          type: string
+      required:
+        - id
+        - brandId
+        - name
+        - cssSnippet
+        - createdAt
+        - updatedAt
+
+    BrandStyleInput:
+      type: object
+      properties:
+        name:
+          type: string
+        description:
+          type: ["string", "null"]
+        cssSnippet:
+          type: string
+        html:
+          type: ["string", "null"]
+        brandName:
+          type: ["string", "null"]
+        campaignName:
+          type: ["string", "null"]
+
+    DispatchInput:
+      type: object
+      properties:
+        methods:
+          type: array
+          items:
+            type: string
+        emailRecipients:
+          type: ["string", "null"]
+        emailSubject:
+          type: ["string", "null"]
+        emailMessage:
+          type: ["string", "null"]
+        socialPlatforms:
+          type: array
+          items:
+            type: string
+        scheduledAt:
+          type: ["string", "null"]
+      required:
+        - methods
+
+    DispatchResult:
+      type: object
+      properties:
+        success:
+          type: boolean
+        methods:
+          type: array
+          items:
+            type: string
+        message:
+          type: string
+        briefId:
+          type: integer
+        scheduled:
+          type: boolean
+        scheduledAt:
+          type: ["string", "null"]
+      required:
+        - success
+        - methods
+        - message
+        - briefId
+
+    DashboardStats:
+      type: object
+      properties:
+        totalBriefs:
+          type: integer
+        pendingApproval:
+          type: integer
+        dispatched:
+          type: integer
+        totalAssets:
+          type: integer
+        totalBrands:
+          type: integer
+        briefsByStatus:
+          type: array
+          items:
+            type: object
+            properties:
+              status:
+                type: string
+              count:
+                type: integer
+            required:
+              - status
+              - count
+      required:
+        - totalBriefs
+        - pendingApproval
+        - dispatched
+        - totalAssets
+        - totalBrands
+        - briefsByStatus
+
+    ActivityEntry:
+      type: object
+      properties:
+        id:
+          type: integer
+        type:
+          type: string
+        briefId:
+          type: integer
+        briefName:
+          type: string
+        brandName:
+          type: string
+        timestamp:
+          type: string
+      required:
+        - id
+        - type
+        - briefId
+        - briefName
+        - brandName
+        - timestamp
+
+    Campaign:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        description:
+          type: ["string", "null"]
+        brandId:
+          type: ["integer", "null"]
+        startDate:
+          type: ["string", "null"]
+        endDate:
+          type: ["string", "null"]
+        status:
+          type: string
+        briefCount:
+          type: integer
+        createdBy:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+        updatedAt:
+          type: string
+      required:
+        - id
+        - name
+        - status
+        - createdAt
+        - updatedAt
+
+    CampaignInput:
+      type: object
+      properties:
+        name:
+          type: string
+        description:
+          type: ["string", "null"]
+        brandId:
+          type: ["integer", "null"]
+        startDate:
+          type: ["string", "null"]
+        endDate:
+          type: ["string", "null"]
+        status:
+          type: string
+      required:
+        - name
+
+    CampaignUpdate:
+      type: object
+      properties:
+        name:
+          type: string
+        description:
+          type: ["string", "null"]
+        brandId:
+          type: ["integer", "null"]
+        startDate:
+          type: ["string", "null"]
+        endDate:
+          type: ["string", "null"]
+        status:
+          type: string
+
+    AdTag:
+      type: object
+      properties:
+        id:
+          type: integer
+        assetId:
+          type: integer
+        token:
+          type: string
+        clickUrl:
+          type: ["string", "null"]
+        snippet:
+          type: string
+        serveUrl:
+          type: string
+        impressions:
+          type: integer
+        clicks:
+          type: integer
+        createdAt:
+          type: string
+      required:
+        - id
+        - assetId
+        - token
+        - snippet
+        - serveUrl
+
+    AdTagInput:
+      type: object
+      properties:
+        clickUrl:
+          type: ["string", "null"]
+
+    BulkAdTagResult:
+      type: object
+      properties:
+        total:
+          type: integer
+        created:
+          type: integer
+        updated:
+          type: integer
+        tags:
+          type: array
+          items:
+            $ref: "#/components/schemas/AdTag"
+      required:
+        - total
+        - created
+        - updated
+        - tags
+
+    PerformanceStats:
+      type: object
+      properties:
+        totalTags:
+          type: integer
+        impressions:
+          type: integer
+        clicks:
+          type: integer
+        ctr:
+          type: number
+        topAssets:
+          type: array
+          items:
+            type: object
+            properties:
+              assetId:
+                type: integer
+              templateSize:
+                type: ["string", "null"]
+              campaignName:
+                type: ["string", "null"]
+              impressions:
+                type: integer
+              clicks:
+                type: integer
+              ctr:
+                type: number
+            required:
+              - assetId
+              - impressions
+              - clicks
+        timeseries:
+          type: array
+          items:
+            type: object
+            properties:
+              day:
+                type: string
+              impressions:
+                type: integer
+              clicks:
+                type: integer
+            required:
+              - day
+              - impressions
+              - clicks
+      required:
+        - totalTags
+        - impressions
+        - clicks
+        - ctr
+        - topAssets
+        - timeseries
