@@ -99,11 +99,35 @@ export function composeKeyVisualAdaptation(
     locked: true,
   });
 
-  // 2. Strapline re-set whole on the bottom margin (never cropped).
+  // ---- Assess the original design ------------------------------------------
+  // The master is the design authority: measure its type scale, copy position
+  // and alignment, then reproduce those proportions on every format, bounded
+  // by the guideline grid. No arbitrary constants.
+  const kvText = bg.kvText ?? [];
+  const headline = pickBlock(kvText, "headline") ?? kvText.slice().sort((a, b) => b.fontSize - a.fontSize)[0];
+  const subhead = pickBlock(kvText, "subhead");
+  const srcShort = Math.min(srcW, srcH);
+
+  // Type scale as designed: headline px relative to the master's short axis.
+  const headlineRatio = headline ? headline.fontSize / srcShort : 0.05;
+  const subheadRatio = subhead ? subhead.fontSize / srcShort : headlineRatio * 0.5;
+  // Where the designer put the copy (fraction of canvas height), and how wide.
+  const headlineCentreYFrac = headline ? (headline.y + headline.h / 2) / srcH : 0.72;
+  const headlineWidthFrac = headline ? Math.min(1, headline.w / srcW) : 0.86;
+  // Alignment as designed: a block whose centre sits mid-canvas is centred.
+  const headlineCentred = headline
+    ? Math.abs((headline.x + headline.w / 2) / srcW - 0.5) < 0.08
+    : true;
+
+  const longestLineChars = (text: string) =>
+    Math.max(...text.split("\n").map((l) => l.trim().length), 1);
+
+  // 2. Strapline re-set whole on the bottom margin (never cropped). Sized by
+  //    the master's own subhead scale when it carried one.
   let straplineTopY = dstH;
   if (showStrapline) {
     const lines = (brand.strapline as string).split("\n").filter(Boolean).slice(0, 2);
-    const fontSize = Math.max(10, Math.round(tile / 7));
+    const fontSize = Math.max(10, Math.round(subheadRatio * short));
     const estH = Math.round(lines.length * fontSize * 1.3);
     straplineTopY = dstH - margin - estH;
     elements.push({
@@ -117,42 +141,62 @@ export function composeKeyVisualAdaptation(
       h: estH,
       fontSize,
       fontWeight: 700,
-      color: "#ffffff",
+      color: subhead?.color ?? "#ffffff",
       align: "left",
       lineHeight: 1.3,
       locked: true,
     } as FreeformElement);
   }
 
-  // 3. Headline: the master's own words, re-set on this format's grid.
-  const kvText = bg.kvText ?? [];
-  const headline = pickBlock(kvText, "headline") ?? kvText.slice().sort((a, b) => b.fontSize - a.fontSize)[0];
+  // 3. Headline: the master's own words at the master's own scale, placed at
+  //    the master's own height fraction — clamped to the format's grid.
   if (headline) {
-    const fontSize = Math.max(MIN_HEADLINE_PX, Math.round(short * (isStrip || isWide ? 0.16 : 0.055)));
     const text = isStrip ? headline.text.replace(/\n+/g, " ") : headline.text;
     const lines = text.split("\n").length;
-    const estH = Math.round(lines * fontSize * 1.25);
     const wAvail = dstW - margin * 2 - (isStrip || isWide ? tile + margin : 0);
+
+    // Target scale = the design's own ratio. Bounds = what physically fits:
+    // the longest line across the available width, and the line count within
+    // the format's height band. Wide/strip formats are display media, so when
+    // the design ratio comes out unreadably small they size up to fit instead.
+    const fitToWidth = wAvail / (longestLineChars(text) * 0.58);
+    const fitToHeight = (dstH - margin * 2) / (lines * 1.3);
+    const fitCap = Math.min(fitToWidth, fitToHeight);
+    const designSize = headlineRatio * short;
+    const fontSize = Math.round(
+      Math.max(
+        MIN_HEADLINE_PX,
+        Math.min(fitCap, isStrip || isWide ? Math.max(designSize, fitCap * 0.8) : designSize),
+      ),
+    );
+
+    const estH = Math.round(lines * fontSize * 1.25);
     let y: number;
     if (isStrip || isWide) {
-      y = Math.max(margin, Math.round((dstH - estH) / 2)); // vertically centred beside the tile
+      y = Math.max(margin, Math.round((dstH - estH) / 2)); // centred beside the tile
     } else {
+      // The designer's height fraction, clamped inside margins and above the
+      // strapline/logo furniture.
       const bottomLimit = showStrapline ? straplineTopY - margin : dstH - (showLogo ? tile : margin) - margin;
-      y = Math.max(margin, bottomLimit - estH); // lower third, above the furniture
+      const target = Math.round(headlineCentreYFrac * dstH - estH / 2);
+      y = Math.min(Math.max(margin, target), Math.max(margin, bottomLimit - estH));
     }
+
+    const w = Math.max(40, Math.min(wAvail, Math.round(headlineWidthFrac * dstW)));
+    const x = headlineCentred && !isStrip && !isWide ? Math.round((dstW - w) / 2) : margin;
     elements.push({
       id: "kv_headline",
       type: "text",
       role: "headline",
       text,
-      x: margin,
+      x,
       y,
-      w: Math.max(40, wAvail),
+      w,
       h: estH,
       fontSize,
       fontWeight: 700,
       color: headline.color ?? "#ffffff",
-      align: isStrip || isWide ? "left" : "center",
+      align: headlineCentred && !isStrip && !isWide ? "center" : "left",
       lineHeight: 1.25,
     } as FreeformElement);
   }
