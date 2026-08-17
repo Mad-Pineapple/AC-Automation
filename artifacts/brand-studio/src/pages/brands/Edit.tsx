@@ -307,6 +307,7 @@ const GUIDELINE_FIELD_LABELS: Record<keyof GuidelineSuggestions, string> = {
   textColor: "Text Color",
   fontFamily: "Font Family",
   toneOfVoice: "Tone of Voice",
+  strapline: "Strapline",
   industry: "Industry",
 };
 
@@ -573,8 +574,8 @@ function BrandDetailsTab({
                         <img
                           src={img.url}
                           alt={`Extracted graphic ${i + 1}`}
-                          className="max-h-full max-w-full object-contain"
-                          loading="lazy"
+                          className="h-full w-full object-contain"
+                          loading={i < 12 ? "eager" : "lazy"}
                         />
                       </div>
                       <div className="absolute inset-x-0 bottom-0 flex divide-x divide-border/60 border-t border-border/60 bg-background/95 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity">

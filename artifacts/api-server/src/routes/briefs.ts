@@ -12,6 +12,7 @@ import { logger } from "../lib/logger";
 import { runInBackground } from "../lib/background";
 import { ObjectStorageService } from "../lib/objectStorage";
 import { imageSizeForDims, dimsForSize, collectBrandReferences, pickLibraryImage } from "../lib/assetImages";
+import { fetchLogoDataUri } from "../lib/htmlBanner";
 import { checkAssetCompliance, serializeIssues, type ComplianceVerdict } from "../lib/brandCompliance";
 
 const router = Router();
@@ -23,6 +24,47 @@ function baseUrl(req: any): string {
   return `${proto}://${host}`;
 }
 
+// Feed-driven batch variants: one row = one asset per size, sharing the
+// size's artwork but carrying row-specific copy.
+export interface VariantRow {
+  label: string | null;
+  headline: string | null;
+  bodyText: string | null;
+  callToAction: string | null;
+}
+
+const MAX_VARIANT_ROWS = 20;
+const MAX_VARIANT_FIELD = 500;
+
+/** Validate client-supplied variant rows; null when there are none. */
+function normalizeVariantsInput(raw: unknown): VariantRow[] | null {
+  if (!Array.isArray(raw)) return null;
+  const rows: VariantRow[] = [];
+  for (const item of raw.slice(0, MAX_VARIANT_ROWS)) {
+    if (typeof item !== "object" || item === null) continue;
+    const r = item as Record<string, unknown>;
+    const field = (v: unknown) =>
+      typeof v === "string" && v.trim() ? v.trim().slice(0, MAX_VARIANT_FIELD) : null;
+    const row: VariantRow = {
+      label: field(r.label),
+      headline: field(r.headline),
+      bodyText: field(r.bodyText),
+      callToAction: field(r.callToAction),
+    };
+    if (row.label || row.headline || row.bodyText || row.callToAction) rows.push(row);
+  }
+  return rows.length > 0 ? rows : null;
+}
+
+export function parseVariants(stored: string | null): VariantRow[] {
+  if (!stored) return [];
+  try {
+    return normalizeVariantsInput(JSON.parse(stored)) ?? [];
+  } catch {
+    return [];
+  }
+}
+
 function formatBrief(
   brief: typeof briefsTable.$inferSelect,
   brand: typeof brandsTable.$inferSelect,
@@ -32,6 +74,7 @@ function formatBrief(
   return {
     ...brief,
     templateSizes: JSON.parse(brief.templateSizes || "[]"),
+    variants: brief.variants ? parseVariants(brief.variants) : null,
     scheduledAt: brief.scheduledAt ? brief.scheduledAt.toISOString() : null,
     scheduledMethods: brief.scheduledMethods ? JSON.parse(brief.scheduledMethods) : null,
     approvedAt: brief.approvedAt ? brief.approvedAt.toISOString() : null,
@@ -160,6 +203,10 @@ router.post("/briefs", requireAuth, async (req, res): Promise<void> => {
       bodyText: body.bodyText ?? null,
       callToAction: body.callToAction ?? null,
       notes: body.notes ?? null,
+      variants: (() => {
+        const rows = normalizeVariantsInput(body.variants);
+        return rows ? JSON.stringify(rows) : null;
+      })(),
       productImageUrl: body.productImageUrl ?? null,
       templateSizes: JSON.stringify(body.templateSizes ?? []),
       useAiCopy: body.useAiCopy ?? true,
@@ -336,6 +383,10 @@ router.patch("/briefs/:id", requireAuth, async (req, res): Promise<void> => {
   if (body.bodyText !== undefined) updateData.bodyText = body.bodyText;
   if (body.callToAction !== undefined) updateData.callToAction = body.callToAction;
   if (body.notes !== undefined) updateData.notes = body.notes;
+  if (body.variants !== undefined) {
+    const rows = normalizeVariantsInput(body.variants);
+    updateData.variants = rows ? JSON.stringify(rows) : null;
+  }
   if (body.productImageUrl !== undefined) updateData.productImageUrl = body.productImageUrl;
   if (body.templateSizes !== undefined) updateData.templateSizes = JSON.stringify(body.templateSizes);
   if (body.useAiCopy !== undefined) updateData.useAiCopy = body.useAiCopy;
@@ -526,6 +577,10 @@ router.post("/briefs/:id/generate", requireAuth, async (req, res): Promise<void>
         ? brandStyles.map(s => `/* ${s.name} */\n${s.cssSnippet}`).join("\n\n")
         : undefined;
 
+      // Master logo tile for HTML banners, embedded as a data URI (ad servers
+      // reject external requests). Fetched once per generation run.
+      const logoDataUri = await fetchLogoDataUri(brand.logoUrl, baseUrl(req));
+
       const skippedVerdict: ComplianceVerdict = { status: "skipped", score: 0, issues: [] };
       const brandForCompliance = {
         name: brand.name,
@@ -608,88 +663,105 @@ router.post("/briefs/:id/generate", requireAuth, async (req, res): Promise<void>
         }
       }
 
+      // Feed-driven variants: artwork is rendered once per size (above); each
+      // variant row yields its own asset with row-specific copy. Missing row
+      // fields fall back to the size's base copy. No rows = one base take.
+      const variantRows = parseVariants(brief.variants);
+      const takes: (VariantRow | null)[] = variantRows.length > 0 ? variantRows : [null];
+
       for (let i = 0; i < sizes.length; i++) {
         const size = sizes[i];
         const copy = copies[i];
         const sizeImageUrl = imageForSize(size);
-        const headline = brief.useAiCopy ? copy.headline : (brief.headline ?? null);
-        const bodyText = brief.useAiCopy ? copy.bodyText : (brief.bodyText ?? null);
-        const callToAction = (brief.useAiCopy ? copy.callToAction : brief.callToAction) ?? "Find out more";
+        const baseHeadline = brief.useAiCopy ? copy.headline : (brief.headline ?? null);
+        const baseBodyText = brief.useAiCopy ? copy.bodyText : (brief.bodyText ?? null);
+        const baseCallToAction = (brief.useAiCopy ? copy.callToAction : brief.callToAction) ?? "Find out more";
 
-        // Both the static HTML banner and the animated social size are produced
-        // as self-contained HTML; the animated size renders larger (1080×1080)
-        // and requires prominent looping motion.
-        if (size === "html_banner" || size === "animated_social") {
-          const isAnimatedSize = size === "animated_social";
-          const htmlParams = {
-            campaignName: brief.campaignName,
-            brandName: brand.name,
-            toneOfVoice: brand.toneOfVoice,
-            industry: brand.industry,
-            guidelines: brand.guidelines,
-            briefContext,
-            primaryColor: brand.primaryColor,
-            secondaryColor: brand.secondaryColor,
-            accentColor: brand.accentColor,
-            backgroundColor: brand.backgroundColor,
-            textColor: brand.textColor,
-            fontFamily: brand.fontFamily,
-            headline,
-            bodyText,
-            callToAction,
-            imageUrl: sizeImageUrl ?? null,
-            styleHints,
-            // Always pass the real canvas dims so the generated document and its
-            // ad.size meta match the size being dispatched.
-            dimensions: dimsForSize(size, tplById),
-            animated: isAnimatedSize,
-          };
-          let htmlContent = await generateHtmlBanner(htmlParams);
-          // AFTER-generation compliance gate (deterministic color/font parse);
-          // retry once with the failure fed back into the prompt.
-          let verdict = await checkAssetCompliance({ templateSize: size, htmlContent }, brandForCompliance);
-          if (verdict.status === "failed") {
-            try {
-              const retryHtml = await generateHtmlBanner({ ...htmlParams, complianceFeedback: verdict.issues.join("; ") });
-              const retryVerdict = await checkAssetCompliance({ templateSize: size, htmlContent: retryHtml }, brandForCompliance);
-              if (retryVerdict.status === "passed" || retryVerdict.score > verdict.score) {
-                htmlContent = retryHtml;
-                verdict = retryVerdict;
+        for (const take of takes) {
+          const headline = take?.headline ?? baseHeadline;
+          const bodyText = take?.bodyText ?? baseBodyText;
+          const callToAction = take?.callToAction ?? baseCallToAction;
+          const variantLabel = take?.label ?? null;
+
+          // Both the static HTML banner and the animated social size are produced
+          // as self-contained HTML; the animated size renders larger (1080×1080)
+          // and requires prominent looping motion. Each variant needs its own
+          // document (the copy is baked into the markup).
+          if (size === "html_banner" || size === "animated_social") {
+            const isAnimatedSize = size === "animated_social";
+            const htmlParams = {
+              campaignName: brief.campaignName,
+              brandName: brand.name,
+              toneOfVoice: brand.toneOfVoice,
+              industry: brand.industry,
+              guidelines: brand.guidelines,
+              briefContext,
+              primaryColor: brand.primaryColor,
+              secondaryColor: brand.secondaryColor,
+              accentColor: brand.accentColor,
+              backgroundColor: brand.backgroundColor,
+              textColor: brand.textColor,
+              fontFamily: brand.fontFamily,
+              headline,
+              bodyText,
+              callToAction,
+              imageUrl: sizeImageUrl ?? null,
+              styleHints,
+              // Always pass the real canvas dims so the generated document and its
+              // ad.size meta match the size being dispatched.
+              dimensions: dimsForSize(size, tplById),
+              animated: isAnimatedSize,
+              logoDataUri,
+            };
+            let htmlContent = await generateHtmlBanner(htmlParams);
+            // AFTER-generation compliance gate (deterministic color/font parse);
+            // retry once with the failure fed back into the prompt.
+            let verdict = await checkAssetCompliance({ templateSize: size, htmlContent }, brandForCompliance);
+            if (verdict.status === "failed") {
+              try {
+                const retryHtml = await generateHtmlBanner({ ...htmlParams, complianceFeedback: verdict.issues.join("; ") });
+                const retryVerdict = await checkAssetCompliance({ templateSize: size, htmlContent: retryHtml }, brandForCompliance);
+                if (retryVerdict.status === "passed" || retryVerdict.score > verdict.score) {
+                  htmlContent = retryHtml;
+                  verdict = retryVerdict;
+                }
+              } catch (err) {
+                logger.warn({ err, briefId: id }, "HTML compliance retry failed");
               }
-            } catch (err) {
-              logger.warn({ err, briefId: id }, "HTML compliance retry failed");
             }
+            await db.insert(assetsTable).values({
+              briefId: id,
+              templateSize: size,
+              variantLabel,
+              headline,
+              bodyText,
+              callToAction,
+              imageUrl: sizeImageUrl ?? null,
+              isAnimated: isAnimatedSize,
+              htmlContent,
+              status: "ready",
+              ...complianceFields(verdict),
+            });
+            continue;
           }
+
+          const imgSizeForAsset = sizeToImageSize.get(size) ?? "1024x1024";
+          const imageVerdict = brief.productImageUrl
+            ? skippedVerdict
+            : (imageVerdicts.get(imgSizeForAsset) ?? skippedVerdict);
           await db.insert(assetsTable).values({
             briefId: id,
             templateSize: size,
+            variantLabel,
             headline,
             bodyText,
             callToAction,
             imageUrl: sizeImageUrl ?? null,
-            isAnimated: isAnimatedSize,
-            htmlContent,
+            isAnimated: false,
             status: "ready",
-            ...complianceFields(verdict),
+            ...complianceFields(imageVerdict),
           });
-          continue;
         }
-
-        const imgSizeForAsset = sizeToImageSize.get(size) ?? "1024x1024";
-        const imageVerdict = brief.productImageUrl
-          ? skippedVerdict
-          : (imageVerdicts.get(imgSizeForAsset) ?? skippedVerdict);
-        await db.insert(assetsTable).values({
-          briefId: id,
-          templateSize: size,
-          headline,
-          bodyText,
-          callToAction,
-          imageUrl: sizeImageUrl ?? null,
-          isAnimated: false,
-          status: "ready",
-          ...complianceFields(imageVerdict),
-        });
       }
 
       await db.update(briefsTable).set({ status: "pending_approval", updatedAt: new Date() }).where(eq(briefsTable.id, id));

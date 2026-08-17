@@ -1,9 +1,10 @@
 import { Router } from "express";
 import { db } from "@workspace/db";
-import { templatesTable, assetsTable } from "@workspace/db";
+import { templatesTable, assetsTable, brandsTable } from "@workspace/db";
 import { eq } from "drizzle-orm";
 import { optionalAuth, requireAdmin } from "../middlewares/requireAuth";
-import { normalizeFreeformConfig } from "../lib/freeform";
+import { normalizeFreeformConfig, adaptFreeformConfig, isFreeformConfig, type FreeformConfig } from "../lib/freeform";
+import { collectBrandPaletteHexes } from "../lib/colorAdapter";
 import { dissectPdfToTemplate } from "../lib/pdfDissect";
 import { dissectImageToTemplate } from "../lib/imageDissect";
 
@@ -90,12 +91,91 @@ router.post("/templates", requireAdmin, async (req, res): Promise<void> => {
   res.status(201).json(formatTemplate(template));
 });
 
+/**
+ * POST /templates/:id/adapt  { targets: [{ width, height, name? }, …] }
+ *
+ * Master-template adaptation: derive new freeform templates for other
+ * formats from one designed master (deterministic reflow — see
+ * adaptFreeformConfig). Each adaptation is a normal template the designer
+ * can fine-tune afterwards.
+ */
+router.post("/templates/:id/adapt", requireAdmin, async (req, res): Promise<void> => {
+  const id = Number(req.params.id);
+  const [master] = await db.select().from(templatesTable).where(eq(templatesTable.id, id));
+  if (!master) { res.status(404).json({ error: "Template not found" }); return; }
+
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(master.config || "{}");
+  } catch {
+    parsed = {};
+  }
+  if (!isFreeformConfig(parsed)) {
+    res.status(400).json({ error: "Only freeform templates can be adapted" });
+    return;
+  }
+  const masterConfig = normalizeFreeformConfig(parsed);
+
+  const rawTargets: unknown[] = Array.isArray(req.body?.targets) ? req.body.targets.slice(0, 8) : [];
+  const created: (typeof templatesTable.$inferSelect)[] = [];
+  for (const raw of rawTargets) {
+    if (typeof raw !== "object" || raw === null) continue;
+    const t = raw as Record<string, unknown>;
+    const width = Number(t.width);
+    const height = Number(t.height);
+    if (!Number.isInteger(width) || !Number.isInteger(height) || width < 16 || height < 16 || width > 8000 || height > 8000) {
+      continue;
+    }
+    const adapted: FreeformConfig = normalizeFreeformConfig(
+      adaptFreeformConfig(masterConfig, master.width, master.height, width, height),
+    );
+    const name =
+      typeof t.name === "string" && t.name.trim()
+        ? t.name.trim().slice(0, 120)
+        : `${master.name} ${width}×${height}`;
+    const [template] = await db
+      .insert(templatesTable)
+      .values({
+        name,
+        description: `Adapted from "${master.name}" (${master.width}×${master.height})`,
+        category: master.category,
+        width,
+        height,
+        config: JSON.stringify(adapted),
+        createdBy: (req as any).clerkUserId ?? null,
+      })
+      .returning();
+    created.push(template);
+  }
+
+  if (created.length === 0) {
+    res.status(400).json({ error: "No valid adaptation targets supplied" });
+    return;
+  }
+  res.status(201).json(created.map(formatTemplate));
+});
+
+/** Palette for CMYK->RGB snapping during dissection: the requested brand, or
+ * the first brand (the import page previews against brands[0]). */
+async function dissectPaletteHexes(rawBrandId: unknown): Promise<string[]> {
+  try {
+    const brandId = Number(rawBrandId);
+    const [brand] = Number.isInteger(brandId) && brandId > 0
+      ? await db.select().from(brandsTable).where(eq(brandsTable.id, brandId))
+      : await db.select().from(brandsTable).orderBy(brandsTable.id).limit(1);
+    return brand ? collectBrandPaletteHexes(brand) : [];
+  } catch {
+    return []; // palette snapping is an enhancement, never a reason to fail import
+  }
+}
+
 router.post("/templates/dissect-pdf", requireAdmin, async (req, res): Promise<void> => {
   const objectPath = typeof req.body?.objectPath === "string" ? req.body.objectPath.trim() : "";
   if (!objectPath) { res.status(400).json({ error: "objectPath is required" }); return; }
   const page = Number.isInteger(req.body?.page) && req.body.page >= 1 ? req.body.page : 1;
   try {
-    const result = await dissectPdfToTemplate(objectPath, page);
+    const paletteHexes = await dissectPaletteHexes(req.body?.brandId);
+    const result = await dissectPdfToTemplate(objectPath, page, paletteHexes);
     res.json(result);
   } catch (err) {
     (req as any).log?.error({ err }, "PDF dissection failed");

@@ -240,7 +240,10 @@ export function BrandLibrary({
     }
   };
 
-  const renderAssetCard = (asset: NonNullable<typeof assets>[number]) => {
+  // Used directly as a map callback, so the render index arrives as the
+  // second argument: the first screenful of each section loads eagerly,
+  // deeper tiles lazy-load on scroll.
+  const renderAssetCard = (asset: NonNullable<typeof assets>[number], index = Infinity) => {
     const isCurrentLogo = brand.logoUrl === asset.url;
     // Non-image files (PDFs, video project files, …) can't render in an <img>;
     // show a document tile that opens the file instead.
@@ -267,8 +270,8 @@ export function BrandLibrary({
             <img
               src={asset.url}
               alt={asset.name}
-              loading="lazy"
-              className="max-h-full max-w-full object-contain"
+              loading={index < 12 ? "eager" : "lazy"}
+              className="h-full w-full object-contain"
             />
           </div>
         )}

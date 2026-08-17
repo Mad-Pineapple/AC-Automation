@@ -6,11 +6,13 @@ import { Switch, Route, useLocation, Router as WouterRouter } from "wouter";
 import { QueryClient, QueryClientProvider, useQueryClient } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { ThemeProvider } from "@/lib/theme";
 import { Layout } from "@/components/Layout";
 import NotFound from "@/pages/not-found";
 
 import Dashboard from "@/pages/Dashboard";
 import BrandList from "@/pages/brands/List";
+import LibraryPage from "@/pages/Library";
 import NewBrand from "@/pages/brands/New";
 import EditBrand from "@/pages/brands/Edit";
 import BriefList from "@/pages/briefs/List";
@@ -167,6 +169,7 @@ function AppRoutes() {
         <Route path="/knowledge" component={KnowledgeList} />
         <Route path="/knowledge/learn" component={LearnArtwork} />
         <Route path="/knowledge/guidelines" component={KnowledgeGuidelines} />
+        <Route path="/library" component={LibraryPage} />
         <Route path="/brands" component={BrandList} />
         <Route path="/brands/new" component={NewBrand} />
         <Route path="/brands/:id" component={EditBrand} />
@@ -201,13 +204,13 @@ function ClerkProviderWithRoutes() {
         signIn: {
           start: {
             title: "Welcome back",
-            subtitle: "Sign in to Auckland Council Brand Studio",
+            subtitle: "Sign in to Brand Studio",
           },
         },
         signUp: {
           start: {
             title: "Create your account",
-            subtitle: "Get started with Auckland Council Brand Studio",
+            subtitle: "Get started with Brand Studio",
           },
         },
       }}
@@ -215,15 +218,17 @@ function ClerkProviderWithRoutes() {
       routerReplace={(to) => setLocation(stripBase(to), { replace: true })}
     >
       <QueryClientProvider client={queryClient}>
-        <TooltipProvider>
-          <ClerkQueryClientCacheInvalidator />
-          <Switch>
-            <Route path="/sign-in/*?" component={SignInPage} />
-            <Route path="/sign-up/*?" component={SignUpPage} />
-            <Route component={AppRoutes} />
-          </Switch>
-          <Toaster />
-        </TooltipProvider>
+        <ThemeProvider>
+          <TooltipProvider>
+            <ClerkQueryClientCacheInvalidator />
+            <Switch>
+              <Route path="/sign-in/*?" component={SignInPage} />
+              <Route path="/sign-up/*?" component={SignUpPage} />
+              <Route component={AppRoutes} />
+            </Switch>
+            <Toaster />
+          </TooltipProvider>
+        </ThemeProvider>
       </QueryClientProvider>
     </ClerkProvider>
   );

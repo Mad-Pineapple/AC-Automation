@@ -42,6 +42,8 @@ async function buildAll() {
       "pdfjs-dist",
       "mammoth",
       "sharp",
+      "playwright",
+      "playwright-core",
       "better-sqlite3",
       "sqlite3",
       "canvas",

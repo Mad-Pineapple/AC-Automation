@@ -6,6 +6,7 @@
  * OpenAPI spec version: 0.1.0
  */
 import type { Brand } from './brand';
+import type { VariantRow } from './variantRow';
 
 export interface Brief {
   id: number;
@@ -18,6 +19,8 @@ export interface Brief {
   callToAction?: string | null;
   /** @nullable */
   notes?: string | null;
+  /** @nullable */
+  variants?: VariantRow[] | null;
   /** @nullable */
   productImageUrl?: string | null;
   templateSizes: string[];

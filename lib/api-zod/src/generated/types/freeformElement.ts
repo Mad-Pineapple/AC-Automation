@@ -38,4 +38,7 @@ export interface FreeformElement {
   radius?: number;
   borderColor?: string;
   borderWidth?: number;
+  /** Locked elements are pinned brand furniture: brief copy/imagery is never poured into them (their captured content always renders), and editors treat them as read-only.
+   */
+  locked?: boolean;
 }

@@ -17,6 +17,7 @@
 import { PNG } from "pngjs";
 import { ObjectStorageService } from "./objectStorage";
 import { normalizeFreeformConfig, type FreeformConfig } from "./freeform";
+import { cmykToHex, createPaletteSnapper } from "./colorAdapter";
 
 const objectStorageService = new ObjectStorageService();
 
@@ -76,7 +77,7 @@ function colorFromArgs(op: string, args: unknown[]): string | null {
   }
   if (op === "setFillCMYKColor" && nums.length >= 4) {
     const [c, m, y, k] = nums;
-    return rgbToHex(255 * (1 - c) * (1 - k), 255 * (1 - m) * (1 - k), 255 * (1 - y) * (1 - k));
+    return cmykToHex(c, m, y, k);
   }
   return null;
 }
@@ -438,9 +439,36 @@ function extractTextBlocks(
   return blocks.slice(0, MAX_TEXT_BLOCKS);
 }
 
+/**
+ * Snap element colours (text fill, rect fill/border) onto the exact brand
+ * palette. Print PDFs carry CMYK builds whose naive RGB conversion lands
+ * near — but not on — the official digital hexes; snapping closes that gap.
+ * Returns how many colours were adjusted.
+ */
+function snapConfigToPalette(config: FreeformConfig, paletteHexes: string[]): number {
+  if (paletteHexes.length === 0) return 0;
+  const snapper = createPaletteSnapper(paletteHexes);
+  let snapped = 0;
+  for (const el of config.elements) {
+    if (el.type === "text") {
+      const r = snapper.snap(el.color);
+      if (r.snapped) { el.color = r.hex; snapped++; }
+    } else if (el.type === "rect") {
+      const fill = snapper.snap(el.fill);
+      if (fill.snapped) { el.fill = fill.hex; snapped++; }
+      if (el.borderColor) {
+        const border = snapper.snap(el.borderColor);
+        if (border.snapped) { el.borderColor = border.hex; snapped++; }
+      }
+    }
+  }
+  return snapped;
+}
+
 export async function dissectPdfToTemplate(
   objectPath: string,
   page: number,
+  paletteHexes: string[] = [],
 ): Promise<DissectResult> {
   const file = await objectStorageService.getObjectEntityFile(objectPath);
   const response = await objectStorageService.downloadObject(file);
@@ -578,6 +606,13 @@ export async function dissectPdfToTemplate(
       kind: "freeform",
       elements: [...rectElements, ...imageElements, ...textElements],
     });
+
+    const snappedCount = snapConfigToPalette(config, paletteHexes);
+    if (snappedCount > 0) {
+      warnings.push(
+        `${snappedCount} colour(s) were close to the brand palette (print CMYK builds convert inexactly) and were snapped to the exact brand values.`,
+      );
+    }
 
     return { name: "Imported template", width, height, config, warnings };
   } finally {

@@ -90,29 +90,38 @@ export function LibraryImagePicker({
                 ))}
               </div>
             )}
+            {/* Tile buttons carry an explicit height: buttons don't reliably
+                grow around aspect-ratio-sized children inside the dialog's
+                grid, which collapsed every tile to a 2px sliver. */}
             <div className="grid grid-cols-3 sm:grid-cols-4 gap-3 max-h-[60vh] overflow-y-auto">
-              {shown.map((asset) => (
+              {shown.map((asset, i) => (
                 <button
                   key={asset.id}
                   type="button"
-                  className="group border border-border rounded-lg overflow-hidden hover:border-primary transition-colors"
+                  className="group relative h-40 w-full border border-border rounded-lg overflow-hidden hover:border-primary transition-colors"
                   onClick={() => {
                     onSelect(asset.url);
                     setOpen(false);
                   }}
                 >
                   <div
-                    className="aspect-square flex items-center justify-center p-2"
+                    className="absolute inset-x-0 top-0 bottom-6 flex items-center justify-center p-2"
                     style={checkerboard}
                   >
+                    {/* h-full/w-full (not max-*): a lazy <img> with no intrinsic
+                        size collapses to 0x0 and Chromium never loads it. The
+                        first screenful loads eagerly; the rest lazy on scroll. */}
                     <img
                       src={asset.url}
                       alt={asset.name}
-                      loading="lazy"
-                      className="max-h-full max-w-full object-contain"
+                      loading={i < 24 ? "eager" : "lazy"}
+                      className="h-full w-full object-contain"
                     />
                   </div>
-                  <p className="text-[11px] truncate px-1.5 py-1" title={asset.name}>
+                  <p
+                    className="absolute inset-x-0 bottom-0 h-6 truncate px-1.5 py-1 text-[11px] bg-card"
+                    title={asset.name}
+                  >
                     {asset.name}
                   </p>
                 </button>

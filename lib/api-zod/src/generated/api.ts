@@ -31,6 +31,7 @@ export const ListBrandsResponseItem = zod.object({
   "textColor": zod.string(),
   "fontFamily": zod.string(),
   "toneOfVoice": zod.string(),
+  "strapline": zod.string().nullish(),
   "guidelines": zod.string().nullish(),
   "industry": zod.string().nullish(),
   "supportedTemplateSizes": zod.array(zod.string()),
@@ -53,6 +54,7 @@ export const CreateBrandBody = zod.object({
   "textColor": zod.string(),
   "fontFamily": zod.string(),
   "toneOfVoice": zod.string(),
+  "strapline": zod.string().nullish(),
   "guidelines": zod.string().nullish(),
   "industry": zod.string().nullish(),
   "supportedTemplateSizes": zod.array(zod.string()).optional()
@@ -77,6 +79,7 @@ export const GetBrandResponse = zod.object({
   "textColor": zod.string(),
   "fontFamily": zod.string(),
   "toneOfVoice": zod.string(),
+  "strapline": zod.string().nullish(),
   "guidelines": zod.string().nullish(),
   "industry": zod.string().nullish(),
   "supportedTemplateSizes": zod.array(zod.string()),
@@ -102,6 +105,7 @@ export const UpdateBrandBody = zod.object({
   "textColor": zod.string().optional(),
   "fontFamily": zod.string().optional(),
   "toneOfVoice": zod.string().optional(),
+  "strapline": zod.string().nullish(),
   "guidelines": zod.string().nullish(),
   "industry": zod.string().nullish(),
   "supportedTemplateSizes": zod.array(zod.string()).optional()
@@ -118,6 +122,7 @@ export const UpdateBrandResponse = zod.object({
   "textColor": zod.string(),
   "fontFamily": zod.string(),
   "toneOfVoice": zod.string(),
+  "strapline": zod.string().nullish(),
   "guidelines": zod.string().nullish(),
   "industry": zod.string().nullish(),
   "supportedTemplateSizes": zod.array(zod.string()),
@@ -156,6 +161,7 @@ export const AnalyzeBrandGuidelineResponse = zod.object({
   "textColor": zod.string().optional(),
   "fontFamily": zod.string().optional(),
   "toneOfVoice": zod.string().optional(),
+  "strapline": zod.string().nullish(),
   "industry": zod.string().optional()
 }),
   "guidelines": zod.string(),
@@ -212,7 +218,8 @@ export const ListTemplatesResponseItem = zod.object({
   "fill": zod.string().optional(),
   "radius": zod.number().optional(),
   "borderColor": zod.string().optional(),
-  "borderWidth": zod.number().optional()
+  "borderWidth": zod.number().optional(),
+  "locked": zod.boolean().optional().describe('Locked elements are pinned brand furniture: brief copy\/imagery is never poured into them (their captured content always renders), and editors treat them as read-only.\n')
 }).describe('A single positioned element in a freeform template layout.')).optional()
 }),
   "sourceImageUrl": zod.string().nullish(),
@@ -262,7 +269,8 @@ export const CreateTemplateBody = zod.object({
   "fill": zod.string().optional(),
   "radius": zod.number().optional(),
   "borderColor": zod.string().optional(),
-  "borderWidth": zod.number().optional()
+  "borderWidth": zod.number().optional(),
+  "locked": zod.boolean().optional().describe('Locked elements are pinned brand furniture: brief copy\/imagery is never poured into them (their captured content always renders), and editors treat them as read-only.\n')
 }).describe('A single positioned element in a freeform template layout.')).optional()
 }).optional(),
   "sourceImageUrl": zod.string().nullish()
@@ -315,7 +323,8 @@ export const GetTemplateResponse = zod.object({
   "fill": zod.string().optional(),
   "radius": zod.number().optional(),
   "borderColor": zod.string().optional(),
-  "borderWidth": zod.number().optional()
+  "borderWidth": zod.number().optional(),
+  "locked": zod.boolean().optional().describe('Locked elements are pinned brand furniture: brief copy\/imagery is never poured into them (their captured content always renders), and editors treat them as read-only.\n')
 }).describe('A single positioned element in a freeform template layout.')).optional()
 }),
   "sourceImageUrl": zod.string().nullish(),
@@ -368,7 +377,8 @@ export const UpdateTemplateBody = zod.object({
   "fill": zod.string().optional(),
   "radius": zod.number().optional(),
   "borderColor": zod.string().optional(),
-  "borderWidth": zod.number().optional()
+  "borderWidth": zod.number().optional(),
+  "locked": zod.boolean().optional().describe('Locked elements are pinned brand furniture: brief copy\/imagery is never poured into them (their captured content always renders), and editors treat them as read-only.\n')
 }).describe('A single positioned element in a freeform template layout.')).optional()
 }).optional(),
   "sourceImageUrl": zod.string().nullish()
@@ -413,7 +423,8 @@ export const UpdateTemplateResponse = zod.object({
   "fill": zod.string().optional(),
   "radius": zod.number().optional(),
   "borderColor": zod.string().optional(),
-  "borderWidth": zod.number().optional()
+  "borderWidth": zod.number().optional(),
+  "locked": zod.boolean().optional().describe('Locked elements are pinned brand furniture: brief copy\/imagery is never poured into them (their captured content always renders), and editors treat them as read-only.\n')
 }).describe('A single positioned element in a freeform template layout.')).optional()
 }),
   "sourceImageUrl": zod.string().nullish(),
@@ -428,6 +439,22 @@ export const UpdateTemplateResponse = zod.object({
  */
 export const DeleteTemplateParams = zod.object({
   "id": zod.coerce.number()
+})
+
+
+/**
+ * @summary Derive adapted freeform templates for other formats from a master
+ */
+export const AdaptTemplateParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const AdaptTemplateBody = zod.object({
+  "targets": zod.array(zod.object({
+  "width": zod.number(),
+  "height": zod.number(),
+  "name": zod.string().optional()
+}))
 })
 
 
@@ -477,7 +504,8 @@ export const DissectPdfResponse = zod.object({
   "fill": zod.string().optional(),
   "radius": zod.number().optional(),
   "borderColor": zod.string().optional(),
-  "borderWidth": zod.number().optional()
+  "borderWidth": zod.number().optional(),
+  "locked": zod.boolean().optional().describe('Locked elements are pinned brand furniture: brief copy\/imagery is never poured into them (their captured content always renders), and editors treat them as read-only.\n')
 }).describe('A single positioned element in a freeform template layout.')).optional()
 }),
   "warnings": zod.array(zod.string())
@@ -528,7 +556,8 @@ export const DissectImageResponse = zod.object({
   "fill": zod.string().optional(),
   "radius": zod.number().optional(),
   "borderColor": zod.string().optional(),
-  "borderWidth": zod.number().optional()
+  "borderWidth": zod.number().optional(),
+  "locked": zod.boolean().optional().describe('Locked elements are pinned brand furniture: brief copy\/imagery is never poured into them (their captured content always renders), and editors treat them as read-only.\n')
 }).describe('A single positioned element in a freeform template layout.')).optional()
 }),
   "warnings": zod.array(zod.string())
@@ -739,6 +768,12 @@ export const ListBriefsResponseItem = zod.object({
   "bodyText": zod.string().nullish(),
   "callToAction": zod.string().nullish(),
   "notes": zod.string().nullish(),
+  "variants": zod.array(zod.object({
+  "label": zod.string().nullish(),
+  "headline": zod.string().nullish(),
+  "bodyText": zod.string().nullish(),
+  "callToAction": zod.string().nullish()
+}).describe('One feed row for batch-variant generation. Artwork is rendered once per size; each row yields its own asset with this copy (missing fields fall back to the brief\/AI copy for that size).\n')).nullish(),
   "productImageUrl": zod.string().nullish(),
   "templateSizes": zod.array(zod.string()),
   "useAiCopy": zod.boolean(),
@@ -755,6 +790,7 @@ export const ListBriefsResponseItem = zod.object({
   "textColor": zod.string(),
   "fontFamily": zod.string(),
   "toneOfVoice": zod.string(),
+  "strapline": zod.string().nullish(),
   "guidelines": zod.string().nullish(),
   "industry": zod.string().nullish(),
   "supportedTemplateSizes": zod.array(zod.string()),
@@ -789,6 +825,12 @@ export const CreateBriefBody = zod.object({
   "bodyText": zod.string().nullish(),
   "callToAction": zod.string().nullish(),
   "notes": zod.string().nullish(),
+  "variants": zod.array(zod.object({
+  "label": zod.string().nullish(),
+  "headline": zod.string().nullish(),
+  "bodyText": zod.string().nullish(),
+  "callToAction": zod.string().nullish()
+}).describe('One feed row for batch-variant generation. Artwork is rendered once per size; each row yields its own asset with this copy (missing fields fall back to the brief\/AI copy for that size).\n')).nullish(),
   "productImageUrl": zod.string().nullish(),
   "templateSizes": zod.array(zod.string()),
   "useAiCopy": zod.boolean(),
@@ -808,6 +850,12 @@ export const CreateBriefsBulkBody = zod.object({
   "bodyText": zod.string().nullish(),
   "callToAction": zod.string().nullish(),
   "notes": zod.string().nullish(),
+  "variants": zod.array(zod.object({
+  "label": zod.string().nullish(),
+  "headline": zod.string().nullish(),
+  "bodyText": zod.string().nullish(),
+  "callToAction": zod.string().nullish()
+}).describe('One feed row for batch-variant generation. Artwork is rendered once per size; each row yields its own asset with this copy (missing fields fall back to the brief\/AI copy for that size).\n')).nullish(),
   "productImageUrl": zod.string().nullish(),
   "templateSizes": zod.array(zod.string()),
   "useAiCopy": zod.boolean(),
@@ -831,6 +879,12 @@ export const GetBriefResponse = zod.object({
   "bodyText": zod.string().nullish(),
   "callToAction": zod.string().nullish(),
   "notes": zod.string().nullish(),
+  "variants": zod.array(zod.object({
+  "label": zod.string().nullish(),
+  "headline": zod.string().nullish(),
+  "bodyText": zod.string().nullish(),
+  "callToAction": zod.string().nullish()
+}).describe('One feed row for batch-variant generation. Artwork is rendered once per size; each row yields its own asset with this copy (missing fields fall back to the brief\/AI copy for that size).\n')).nullish(),
   "productImageUrl": zod.string().nullish(),
   "templateSizes": zod.array(zod.string()),
   "useAiCopy": zod.boolean(),
@@ -847,6 +901,7 @@ export const GetBriefResponse = zod.object({
   "textColor": zod.string(),
   "fontFamily": zod.string(),
   "toneOfVoice": zod.string(),
+  "strapline": zod.string().nullish(),
   "guidelines": zod.string().nullish(),
   "industry": zod.string().nullish(),
   "supportedTemplateSizes": zod.array(zod.string()),
@@ -884,6 +939,12 @@ export const UpdateBriefBody = zod.object({
   "bodyText": zod.string().nullish(),
   "callToAction": zod.string().nullish(),
   "notes": zod.string().nullish(),
+  "variants": zod.array(zod.object({
+  "label": zod.string().nullish(),
+  "headline": zod.string().nullish(),
+  "bodyText": zod.string().nullish(),
+  "callToAction": zod.string().nullish()
+}).describe('One feed row for batch-variant generation. Artwork is rendered once per size; each row yields its own asset with this copy (missing fields fall back to the brief\/AI copy for that size).\n')).nullish(),
   "productImageUrl": zod.string().nullish(),
   "templateSizes": zod.array(zod.string()).optional(),
   "useAiCopy": zod.boolean().optional(),
@@ -899,6 +960,12 @@ export const UpdateBriefResponse = zod.object({
   "bodyText": zod.string().nullish(),
   "callToAction": zod.string().nullish(),
   "notes": zod.string().nullish(),
+  "variants": zod.array(zod.object({
+  "label": zod.string().nullish(),
+  "headline": zod.string().nullish(),
+  "bodyText": zod.string().nullish(),
+  "callToAction": zod.string().nullish()
+}).describe('One feed row for batch-variant generation. Artwork is rendered once per size; each row yields its own asset with this copy (missing fields fall back to the brief\/AI copy for that size).\n')).nullish(),
   "productImageUrl": zod.string().nullish(),
   "templateSizes": zod.array(zod.string()),
   "useAiCopy": zod.boolean(),
@@ -915,6 +982,7 @@ export const UpdateBriefResponse = zod.object({
   "textColor": zod.string(),
   "fontFamily": zod.string(),
   "toneOfVoice": zod.string(),
+  "strapline": zod.string().nullish(),
   "guidelines": zod.string().nullish(),
   "industry": zod.string().nullish(),
   "supportedTemplateSizes": zod.array(zod.string()),
@@ -961,6 +1029,12 @@ export const GenerateBriefAssetsResponse = zod.object({
   "bodyText": zod.string().nullish(),
   "callToAction": zod.string().nullish(),
   "notes": zod.string().nullish(),
+  "variants": zod.array(zod.object({
+  "label": zod.string().nullish(),
+  "headline": zod.string().nullish(),
+  "bodyText": zod.string().nullish(),
+  "callToAction": zod.string().nullish()
+}).describe('One feed row for batch-variant generation. Artwork is rendered once per size; each row yields its own asset with this copy (missing fields fall back to the brief\/AI copy for that size).\n')).nullish(),
   "productImageUrl": zod.string().nullish(),
   "templateSizes": zod.array(zod.string()),
   "useAiCopy": zod.boolean(),
@@ -977,6 +1051,7 @@ export const GenerateBriefAssetsResponse = zod.object({
   "textColor": zod.string(),
   "fontFamily": zod.string(),
   "toneOfVoice": zod.string(),
+  "strapline": zod.string().nullish(),
   "guidelines": zod.string().nullish(),
   "industry": zod.string().nullish(),
   "supportedTemplateSizes": zod.array(zod.string()),
@@ -1015,6 +1090,12 @@ export const ApproveBriefResponse = zod.object({
   "bodyText": zod.string().nullish(),
   "callToAction": zod.string().nullish(),
   "notes": zod.string().nullish(),
+  "variants": zod.array(zod.object({
+  "label": zod.string().nullish(),
+  "headline": zod.string().nullish(),
+  "bodyText": zod.string().nullish(),
+  "callToAction": zod.string().nullish()
+}).describe('One feed row for batch-variant generation. Artwork is rendered once per size; each row yields its own asset with this copy (missing fields fall back to the brief\/AI copy for that size).\n')).nullish(),
   "productImageUrl": zod.string().nullish(),
   "templateSizes": zod.array(zod.string()),
   "useAiCopy": zod.boolean(),
@@ -1031,6 +1112,7 @@ export const ApproveBriefResponse = zod.object({
   "textColor": zod.string(),
   "fontFamily": zod.string(),
   "toneOfVoice": zod.string(),
+  "strapline": zod.string().nullish(),
   "guidelines": zod.string().nullish(),
   "industry": zod.string().nullish(),
   "supportedTemplateSizes": zod.array(zod.string()),
@@ -1130,6 +1212,7 @@ export const ListAssetsResponseItem = zod.object({
   "id": zod.number(),
   "briefId": zod.number(),
   "templateSize": zod.string(),
+  "variantLabel": zod.string().nullish(),
   "headline": zod.string().nullish(),
   "bodyText": zod.string().nullish(),
   "callToAction": zod.string().nullish(),
@@ -1162,6 +1245,7 @@ export const GetAssetResponse = zod.object({
   "id": zod.number(),
   "briefId": zod.number(),
   "templateSize": zod.string(),
+  "variantLabel": zod.string().nullish(),
   "headline": zod.string().nullish(),
   "bodyText": zod.string().nullish(),
   "callToAction": zod.string().nullish(),
@@ -1201,6 +1285,7 @@ export const UpdateAssetResponse = zod.object({
   "id": zod.number(),
   "briefId": zod.number(),
   "templateSize": zod.string(),
+  "variantLabel": zod.string().nullish(),
   "headline": zod.string().nullish(),
   "bodyText": zod.string().nullish(),
   "callToAction": zod.string().nullish(),
@@ -1240,6 +1325,7 @@ export const RegenerateAssetResponse = zod.object({
   "id": zod.number(),
   "briefId": zod.number(),
   "templateSize": zod.string(),
+  "variantLabel": zod.string().nullish(),
   "headline": zod.string().nullish(),
   "bodyText": zod.string().nullish(),
   "callToAction": zod.string().nullish(),
@@ -1261,6 +1347,26 @@ export const RegenerateAssetResponse = zod.object({
 
 
 /**
+ * @summary Render an animated HTML asset to video (MP4 or GIF)
+ */
+export const ExportAssetVideoParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const ExportAssetVideoBody = zod.object({
+  "format": zod.string().optional().describe('mp4 (default) | gif')
+})
+
+export const ExportAssetVideoResponse = zod.object({
+  "objectPath": zod.string(),
+  "url": zod.string(),
+  "format": zod.string().describe('mp4 | webm | gif (webm when the host has no ffmpeg)'),
+  "contentType": zod.string(),
+  "bytes": zod.number().optional()
+})
+
+
+/**
  * @summary Approve a single asset
  */
 export const ApproveAssetParams = zod.object({
@@ -1271,6 +1377,7 @@ export const ApproveAssetResponse = zod.object({
   "id": zod.number(),
   "briefId": zod.number(),
   "templateSize": zod.string(),
+  "variantLabel": zod.string().nullish(),
   "headline": zod.string().nullish(),
   "bodyText": zod.string().nullish(),
   "callToAction": zod.string().nullish(),
@@ -1306,6 +1413,7 @@ export const RejectAssetResponse = zod.object({
   "id": zod.number(),
   "briefId": zod.number(),
   "templateSize": zod.string(),
+  "variantLabel": zod.string().nullish(),
   "headline": zod.string().nullish(),
   "bodyText": zod.string().nullish(),
   "callToAction": zod.string().nullish(),
@@ -1466,6 +1574,13 @@ export const GetAdTagResponse = zod.object({
   "token": zod.string(),
   "clickUrl": zod.string().nullish(),
   "snippet": zod.string(),
+  "executions": zod.array(zod.object({
+  "key": zod.string(),
+  "label": zod.string(),
+  "adServer": zod.string().nullish(),
+  "snippet": zod.string(),
+  "notes": zod.string().nullish()
+}).describe('One trafficking execution of an ad tag: a copy-paste snippet (or tag URL for VAST) plus which ad server\'s macros it carries, if any.\n')),
   "serveUrl": zod.string(),
   "impressions": zod.number().optional(),
   "clicks": zod.number().optional(),
@@ -1506,6 +1621,13 @@ export const CreateBriefAdTagsResponse = zod.object({
   "token": zod.string(),
   "clickUrl": zod.string().nullish(),
   "snippet": zod.string(),
+  "executions": zod.array(zod.object({
+  "key": zod.string(),
+  "label": zod.string(),
+  "adServer": zod.string().nullish(),
+  "snippet": zod.string(),
+  "notes": zod.string().nullish()
+}).describe('One trafficking execution of an ad tag: a copy-paste snippet (or tag URL for VAST) plus which ad server\'s macros it carries, if any.\n')),
   "serveUrl": zod.string(),
   "impressions": zod.number().optional(),
   "clicks": zod.number().optional(),

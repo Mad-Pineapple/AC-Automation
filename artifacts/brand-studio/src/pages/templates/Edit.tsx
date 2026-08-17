@@ -4,6 +4,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import {
   useGetTemplate,
   useUpdateTemplate,
+  useAdaptTemplate,
   useListBrands,
   getListTemplatesQueryKey,
   getGetTemplateQueryKey,
@@ -14,7 +15,8 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { useMe } from "@/hooks/use-me";
 import { Link as WLink } from "wouter";
-import { ChevronLeft, Undo2 } from "lucide-react";
+import { ChevronLeft, Undo2, Layers } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -109,10 +111,11 @@ export default function EditTemplate() {
         <Link href="/templates" className="p-2 hover:bg-muted rounded-full transition-colors">
           <ChevronLeft className="w-5 h-5" />
         </Link>
-        <div>
+        <div className="flex-1">
           <h1 className="text-3xl font-bold tracking-tight">Edit Template</h1>
           <p className="text-muted-foreground text-sm font-mono mt-1 uppercase tracking-widest">{template.dims}</p>
         </div>
+        {isFreeform && <AdaptDialog templateId={id} templateName={template.name} />}
       </div>
 
       {isFreeform ? (
@@ -137,6 +140,98 @@ export default function EditTemplate() {
         />
       )}
     </div>
+  );
+}
+
+// Formats a master template can be adapted into (Storyteq's Adaptation
+// Studio pattern): one designed master → per-format layouts to fine-tune.
+const ADAPT_PRESETS = [
+  { key: "social_square", label: "Social Square", width: 1080, height: 1080 },
+  { key: "story", label: "Story", width: 1080, height: 1920 },
+  { key: "mrec", label: "MREC Display", width: 300, height: 250 },
+  { key: "banner", label: "Leaderboard", width: 728, height: 90 },
+  { key: "print_a4", label: "Print A4", width: 2480, height: 3508 },
+] as const;
+
+function AdaptDialog({ templateId, templateName }: { templateId: number; templateName: string }) {
+  const [open, setOpen] = useState(false);
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [, setLocation] = useLocation();
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+  const adaptTemplate = useAdaptTemplate();
+
+  const toggle = (key: string) =>
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      return next;
+    });
+
+  const submit = () => {
+    const targets = ADAPT_PRESETS.filter((p) => selected.has(p.key)).map((p) => ({
+      width: p.width,
+      height: p.height,
+      name: `${templateName} — ${p.label}`,
+    }));
+    adaptTemplate.mutate(
+      { id: templateId, data: { targets } },
+      {
+        onSuccess: (created) => {
+          setOpen(false);
+          toast({
+            title: `Created ${created.length} adapted template${created.length === 1 ? "" : "s"}`,
+            description: "Each adaptation is a normal template — fine-tune it in the editor.",
+          });
+          queryClient.invalidateQueries({ queryKey: getListTemplatesQueryKey() });
+          setLocation("/templates");
+        },
+        onError: () => toast({ title: "Adaptation failed", variant: "destructive" }),
+      },
+    );
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>
+        <Button variant="outline" className="gap-2" data-testid="button-adapt-template">
+          <Layers className="w-4 h-4" />
+          Adapt to other sizes
+        </Button>
+      </DialogTrigger>
+      <DialogContent className="max-w-md">
+        <DialogHeader>
+          <DialogTitle>Adapt “{templateName}”</DialogTitle>
+        </DialogHeader>
+        <p className="text-sm text-muted-foreground">
+          Creates a new template per format from this master: backgrounds re-stretch,
+          everything else keeps its size ratio and edge anchoring (a bottom-right logo
+          stays bottom-right). Locked elements stay locked.
+        </p>
+        <div className="flex flex-wrap gap-2">
+          {ADAPT_PRESETS.map((p) => (
+            <Button
+              key={p.key}
+              type="button"
+              size="sm"
+              variant={selected.has(p.key) ? "default" : "outline"}
+              onClick={() => toggle(p.key)}
+              data-testid={`adapt-target-${p.key}`}
+            >
+              {p.label} · {p.width}×{p.height}
+            </Button>
+          ))}
+        </div>
+        <Button
+          onClick={submit}
+          disabled={selected.size === 0 || adaptTemplate.isPending}
+          data-testid="button-adapt-submit"
+        >
+          {adaptTemplate.isPending ? "Adapting…" : `Create ${selected.size || ""} adaptation${selected.size === 1 ? "" : "s"}`}
+        </Button>
+      </DialogContent>
+    </Dialog>
   );
 }
 

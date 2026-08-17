@@ -11,6 +11,8 @@ export interface Asset {
   briefId: number;
   templateSize: string;
   /** @nullable */
+  variantLabel?: string | null;
+  /** @nullable */
   headline?: string | null;
   /** @nullable */
   bodyText?: string | null;

@@ -13,6 +13,10 @@ export const brandsTable = pgTable("brands", {
   textColor: text("text_color").notNull().default("#111827"),
   fontFamily: text("font_family").notNull().default("Plus Jakarta Sans"),
   toneOfVoice: text("tone_of_voice").notNull().default("professional"),
+  // Brand sign-off line(s), newline-separated (e.g. AC's te reo-first
+  // "Tāmaki Turuki.\nAltogether Auckland."). Drives the app shell strapline
+  // and the print/OOH artwork treatment; optional for other brands.
+  strapline: text("strapline"),
   guidelines: text("guidelines"),
   industry: text("industry"),
   supportedTemplateSizes: text("supported_template_sizes").notNull().default('["social_square","story","banner","print_a4","animated_social"]'),

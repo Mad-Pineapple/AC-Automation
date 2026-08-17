@@ -26,13 +26,18 @@ pnpm monorepo, Node.js 24, TypeScript.
 | `OPENAI_BASE_URL` | no | Override OpenAI endpoint (proxy/gateway); defaults to api.openai.com |
 | `CLERK_PUBLISHABLE_KEY` | for auth | Clerk publishable key |
 | `CLERK_SECRET_KEY` | for auth | Clerk secret key |
+| `SEED_DEMO_BRAND` | no | `0` = skip the Auckland Council demo-brand seed (white-label install: the app starts with a neutral skin and takes on the first brand you create) |
 | `DEV_AUTH_BYPASS` | no | `1` = treat every request as a local admin, ONLY honoured when Clerk keys are absent. Local dev/preview only — never set in production |
 | `PORT` | no | Defaults to 8080 |
 | `OBJECT_STORAGE_DIR` | no | Uploaded/generated file storage dir (fs driver), defaults to `./data/objects` — must be a persistent volume in production |
 | `BLOB_READ_WRITE_TOKEN` | on Vercel | Vercel Blob store token; its presence switches file storage to the Blob driver |
 | `STORAGE_DRIVER` | no | Force the storage backend: `fs` or `vercel-blob` (default: auto by token presence) |
 | `BLOB_STORE_BASE_URL` | no | Blob store public base URL; only needed if it can't be derived from the token |
-| `CRON_SECRET` | no | If set, `/api/cron/dispatch` requires `Authorization: Bearer <secret>` (Vercel Cron sends it automatically) |
+| `CRON_SECRET` | no | If set, `/api/cron/*` routes require `Authorization: Bearer <secret>` (Vercel Cron sends it automatically) |
+| `FRONTIFY_PORTAL_URL` | no | Public Frontify portal to sync the library from (defaults to the AC portal) |
+| `FRONTIFY_SYNC_MAX_NEW` | no | Max new assets fetched per `/api/cron/frontify-sync` run (default 40) |
+| `FRONTIFY_SYNC_SOURCES` | no | Comma-separated folder allowlist for the sync (e.g. `Logos,Illustrations`); default all |
+| `FRONTIFY_BRAND_NAME` | no | Brand whose library the sync targets (default `Auckland Council`) |
 | `STATIC_DIR` | no | Frontend build dir; defaults to `../brand-studio/dist/public` relative to the server bundle |
 | `LOG_LEVEL` | no | pino log level |
 

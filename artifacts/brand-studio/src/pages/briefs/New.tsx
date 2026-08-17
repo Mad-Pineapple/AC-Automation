@@ -22,6 +22,7 @@ import { Link } from "wouter";
 import { TEMPLATE_SIZE_LABELS, ALL_TEMPLATE_SIZES } from "@/components/TemplateRenderer";
 import { BrandIdentityPreview } from "@/components/BrandIdentityPreview";
 import { LibraryImagePicker } from "@/components/LibraryImagePicker";
+import { parseVariantsText } from "@/lib/variants";
 import { useUpload } from "@workspace/object-storage-web";
 
 const NO_CAMPAIGN = "__none__";
@@ -35,6 +36,7 @@ const briefSchema = z.object({
   bodyText: z.string().optional(),
   callToAction: z.string().optional(),
   notes: z.string().optional(),
+  variantsText: z.string().optional(),
   productImageUrl: z.string().optional(),
   templateSizes: z.array(z.string()).min(1, "Select at least one template size"),
 });
@@ -115,6 +117,7 @@ export default function NewBrief() {
       bodyText: "",
       callToAction: "",
       notes: "",
+      variantsText: "",
       productImageUrl: "",
       templateSizes: ["social_square"],
     },
@@ -205,6 +208,7 @@ export default function NewBrief() {
         bodyText: values.bodyText || null,
         callToAction: values.callToAction || null,
         notes: values.notes || null,
+        variants: parseVariantsText(values.variantsText ?? ""),
         productImageUrl: values.productImageUrl || null,
         templateSizes: values.templateSizes,
       }
@@ -397,6 +401,22 @@ export default function NewBrief() {
                       placeholder="Objective, audience, key messages, mandatories — auto-filled when you import a brief document. The AI grounds all copy and artwork in this."
                       rows={4}
                       data-testid="input-notes"
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )} />
+
+              <FormField control={form.control} name="variantsText" render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Variants (optional)</FormLabel>
+                  <FormControl>
+                    <Textarea
+                      {...field}
+                      placeholder={"One variant per line: Label | Headline | Body | CTA\ne.g. West Auckland | Keep our west beaches safe | … | Search beach safety\nArtwork is created once per size; each line becomes its own asset."}
+                      rows={3}
+                      className="font-mono text-xs"
+                      data-testid="input-variants"
                     />
                   </FormControl>
                   <FormMessage />

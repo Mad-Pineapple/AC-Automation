@@ -18,6 +18,8 @@ export interface BrandInput {
   fontFamily: string;
   toneOfVoice: string;
   /** @nullable */
+  strapline?: string | null;
+  /** @nullable */
   guidelines?: string | null;
   /** @nullable */
   industry?: string | null;

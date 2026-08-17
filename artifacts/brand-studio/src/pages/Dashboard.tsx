@@ -6,6 +6,7 @@ import { Clock, Briefcase, FileImage, Send, ArrowUpRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useListBrands } from "@workspace/api-client-react";
 import { cn } from "@/lib/utils";
+import { useTheme } from "@/lib/theme";
 
 type DashboardStats = {
   totalBriefs: number;
@@ -56,35 +57,38 @@ function useRecentActivity(mine: boolean) {
 export default function Dashboard() {
   const [viewMine, setViewMine] = useState(false);
 
+  const theme = useTheme();
   const { data: stats, isLoading: statsLoading } = useDashboardStats(viewMine);
   const { data: activity, isLoading: activityLoading } = useRecentActivity(viewMine);
   const { data: brands } = useListBrands();
 
+  // Tile accents derive from the active brand's palette (white-label) with a
+  // neutral success green for "dispatched" (status colour, not brand colour).
   const metrics = [
     {
       title: "Total Briefs",
       value: stats?.totalBriefs,
       icon: Briefcase,
-      tile: "bg-[#0073bd]/10 text-[#0073bd]",
+      tint: theme.secondaryHex,
     },
     {
       title: "Pending Approval",
       value: stats?.pendingApproval,
       icon: Clock,
-      tile: "bg-amber-100 text-amber-600",
+      tint: theme.accentHex,
       alert: !!stats?.pendingApproval && stats.pendingApproval > 0,
     },
     {
       title: "Dispatched",
       value: stats?.dispatched,
       icon: Send,
-      tile: "bg-[#5b9c33]/15 text-[#5b9c33]",
+      tint: "#5b9c33",
     },
     {
       title: "Total Assets",
       value: stats?.totalAssets,
       icon: FileImage,
-      tile: "bg-[#11263d]/10 text-[#11263d]",
+      tint: theme.primaryHex,
     },
   ];
 
@@ -132,7 +136,7 @@ export default function Dashboard() {
           <div
             key={m.title}
             className={cn(
-              "bg-card rounded-3xl p-6 border shadow-sm hover:shadow-md transition-shadow",
+              "bg-card rounded-3xl p-6 border shadow-sm hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200",
               m.alert ? "border-destructive/40" : "border-border/60",
             )}
             data-testid={`stat-${m.title.toLowerCase().replace(/\s+/g, "-")}`}
@@ -140,8 +144,13 @@ export default function Dashboard() {
             <div
               className={cn(
                 "w-12 h-12 rounded-2xl flex items-center justify-center mb-4",
-                m.alert ? "bg-destructive/10 text-destructive" : m.tile,
+                m.alert && "bg-destructive/10 text-destructive",
               )}
+              style={
+                m.alert
+                  ? undefined
+                  : { backgroundColor: `color-mix(in srgb, ${m.tint} 12%, white)`, color: m.tint }
+              }
             >
               <m.icon className="w-6 h-6" />
             </div>

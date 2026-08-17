@@ -17,6 +17,7 @@ import {
   pickLibraryImage,
 } from "../lib/assetImages";
 import { checkAssetCompliance, checkHtmlCompliance, isHtmlAsset, serializeIssues, type ComplianceVerdict } from "../lib/brandCompliance";
+import { fetchLogoDataUri } from "../lib/htmlBanner";
 
 const router = Router();
 const objectStorageService = new ObjectStorageService();
@@ -43,16 +44,125 @@ function baseUrl(req: any): string {
   return `${proto}://${host}`;
 }
 
-function buildSnippet(
-  serveUrl: string,
-  pixelUrl: string,
-  dims: { width: number; height: number },
-): string {
-  return [
-    `<!-- Brand Creative Studio ad tag (${dims.width}x${dims.height}) -->`,
-    `<iframe src="${serveUrl}" width="${dims.width}" height="${dims.height}" frameborder="0" scrolling="no" sandbox="allow-scripts allow-top-navigation-by-user-activation" style="border:0;overflow:hidden" allowtransparency="true"></iframe>`,
-    `<noscript><img src="${pixelUrl}" width="1" height="1" style="display:none" alt="" /></noscript>`,
-  ].join("\n");
+interface TagExecution {
+  key: string;
+  label: string;
+  adServer: string | null;
+  snippet: string;
+  notes: string | null;
+}
+
+function iframeTag(src: string, w: number, h: number): string {
+  return `<iframe src="${src}" width="${w}" height="${h}" frameborder="0" scrolling="no" sandbox="allow-scripts allow-top-navigation-by-user-activation" style="border:0;overflow:hidden" allowtransparency="true"></iframe>`;
+}
+
+/**
+ * Every standard online-trafficking execution for one tag. Direct embeds,
+ * a JS tag, ad-server variants carrying each server's click + cachebuster
+ * macros (expanded by the server; /track/serve chains its click prefix in
+ * front of ours so both systems count), an email-safe static tag, a bare
+ * impression pixel, and a VAST tag when a video rendition exists.
+ */
+function buildExecutions(params: {
+  base: string;
+  token: string;
+  dims: { width: number; height: number };
+  hasImage: boolean;
+  hasVideo: boolean;
+}): TagExecution[] {
+  const { base, token, dims } = params;
+  const { width: w, height: h } = dims;
+  const serveUrl = `${base}/track/serve/${token}`;
+  const pixelUrl = `${base}/track/pixel/${token}.gif`;
+  const header = `<!-- Brand Creative Studio ad tag (${w}x${h}) -->`;
+
+  const executions: TagExecution[] = [
+    {
+      key: "iframe",
+      label: "Iframe tag",
+      adServer: null,
+      snippet: [
+        header,
+        iframeTag(serveUrl, w, h),
+        `<noscript><img src="${pixelUrl}" width="1" height="1" style="display:none" alt="" /></noscript>`,
+      ].join("\n"),
+      notes: "Direct placement on any site or CMS. Serves the live creative and counts impressions + clicks.",
+    },
+    {
+      key: "javascript",
+      label: "JavaScript tag",
+      adServer: null,
+      snippet: [
+        header,
+        `<script>(function(){var cb=Date.now();document.write('<iframe src="${serveUrl}?cb='+cb+'" width="${w}" height="${h}" frameborder="0" scrolling="no" style="border:0;overflow:hidden" allowtransparency="true"></iframe>');})();</script>`,
+        `<noscript>${iframeTag(serveUrl, w, h)}</noscript>`,
+      ].join("\n"),
+      notes: "For publishers/ad slots that require a script tag. Adds an automatic cache-buster per load.",
+    },
+    {
+      key: "iframe_gam",
+      label: "Iframe tag — click & cachebuster macros",
+      adServer: "Google Ad Manager",
+      snippet: [
+        header,
+        iframeTag(`${serveUrl}?cb=%%CACHEBUSTER%%&click=%%CLICK_URL_ESC%%`, w, h),
+      ].join("\n"),
+      notes: "Traffic as a third-party creative in GAM. GAM expands %%CLICK_URL_ESC%% and %%CACHEBUSTER%% — clicks are counted by GAM and this app (double-tracking chain).",
+    },
+    {
+      key: "iframe_cm360",
+      label: "Iframe tag — click & cachebuster macros",
+      adServer: "Campaign Manager 360 / DV360",
+      snippet: [
+        header,
+        iframeTag(`${serveUrl}?cb=\${CACHEBUSTER}&click=\${CLICK_URL_ENC}`, w, h),
+      ].join("\n"),
+      notes: "Traffic as third-party HTML in CM360/DV360. The server expands ${CLICK_URL_ENC} and ${CACHEBUSTER}; both systems count clicks.",
+    },
+    {
+      key: "iframe_xandr",
+      label: "Iframe tag — click & cachebuster macros",
+      adServer: "Xandr / Microsoft Advertising",
+      snippet: [
+        header,
+        iframeTag(`${serveUrl}?cb=\${CACHEBUSTER}&click=\${CLICK_URL_ENC}`, w, h),
+      ].join("\n"),
+      notes: "Xandr expands ${CLICK_URL_ENC} and ${CACHEBUSTER} at serve time.",
+    },
+  ];
+
+  if (params.hasImage) {
+    executions.push({
+      key: "image",
+      label: "Static image tag (email-safe)",
+      adServer: null,
+      snippet: [
+        header,
+        `<a href="${base}/track/click/${token}" target="_blank" rel="noopener"><img src="${base}/track/image/${token}" width="${w}" alt="" style="display:block;border:0;max-width:100%;height:auto" /></a>`,
+      ].join("\n"),
+      notes: "No scripts or iframes — safe for email and restrictive placements. The image request itself counts the impression.",
+    });
+  }
+
+  executions.push({
+    key: "pixel",
+    label: "Impression pixel (1×1)",
+    adServer: null,
+    snippet: `<img src="${pixelUrl}" width="1" height="1" style="display:none" alt="" />`,
+    notes: "Count impressions for a creative served elsewhere (e.g. a ZIP dispatched to a publisher).",
+  });
+
+  if (params.hasVideo) {
+    executions.push({
+      key: "vast",
+      label: "VAST 4.0 video tag",
+      adServer: null,
+      snippet: `${base}/track/vast/${token}?w=${w}&h=${h}`,
+      notes: "Paste this tag URL into any VAST-compatible video ad server or player. Uses the creative's MP4 export; impressions and clicks tracked.",
+    });
+  }
+
+  return executions;
 }
 
 async function formatAdTag(tag: typeof adTagsTable.$inferSelect, req: any) {
@@ -61,12 +171,23 @@ async function formatAdTag(tag: typeof adTagsTable.$inferSelect, req: any) {
   const pixelUrl = `${base}/track/pixel/${tag.token}.gif`;
   // Size the embed to the actual creative so the iframe matches the ad slot.
   const [tagAsset] = await db
-    .select({ templateSize: assetsTable.templateSize })
+    .select({
+      templateSize: assetsTable.templateSize,
+      imageUrl: assetsTable.imageUrl,
+      videoObjectPath: assetsTable.videoObjectPath,
+    })
     .from(assetsTable)
     .where(eq(assetsTable.id, tag.assetId));
   const dims = tagAsset
     ? dimsForSize(tagAsset.templateSize, await loadTemplateMap())
     : { width: 300, height: 250 };
+  const executions = buildExecutions({
+    base,
+    token: tag.token,
+    dims,
+    hasImage: !!tagAsset?.imageUrl,
+    hasVideo: !!tagAsset?.videoObjectPath,
+  });
   const [counts] = await db
     .select({
       impressions: sql<number>`cast(count(*) filter (where ${adEventsTable.type} = 'impression') as int)`,
@@ -77,7 +198,9 @@ async function formatAdTag(tag: typeof adTagsTable.$inferSelect, req: any) {
   return {
     ...tag,
     serveUrl,
-    snippet: buildSnippet(serveUrl, pixelUrl, dims),
+    // Legacy single-snippet field = the plain iframe execution.
+    snippet: executions[0].snippet,
+    executions,
     impressions: counts?.impressions ?? 0,
     clicks: counts?.clicks ?? 0,
     createdAt: tag.createdAt.toISOString(),
@@ -347,6 +470,7 @@ router.post("/assets/:id/regenerate", requireAuth, async (req, res): Promise<voi
           styleHints,
           dimensions: dimsForSize(asset.templateSize, tplByIdForDims),
           animated: isAnimatedSize,
+          logoDataUri: await fetchLogoDataUri(brand.logoUrl, baseUrl(req)),
         });
       }
 
@@ -378,6 +502,60 @@ router.post("/assets/:id/regenerate", requireAuth, async (req, res): Promise<voi
       await db.update(assetsTable).set({ status: "ready", updatedAt: new Date() }).where(eq(assetsTable.id, id));
     }
   });
+});
+
+/**
+ * POST /assets/:id/export-video  { format: "gif" | "mp4" }
+ *
+ * Render an animated HTML asset to video via headless Chromium (see
+ * lib/videoExport.ts) and store the file in object storage. Long-lived-server
+ * feature: serverless hosts without Playwright/Chromium get a 501.
+ */
+router.post("/assets/:id/export-video", requireAuth, async (req, res): Promise<void> => {
+  const id = Number(req.params.id);
+  if (!await canMutateAsset(id, req)) {
+    res.status(403).json({ error: "Forbidden: you do not own this asset's brief" });
+    return;
+  }
+  const [asset] = await db.select().from(assetsTable).where(eq(assetsTable.id, id));
+  if (!asset) { res.status(404).json({ error: "Asset not found" }); return; }
+  if (!asset.htmlContent) {
+    res.status(400).json({ error: "Only HTML creatives can be exported to video" });
+    return;
+  }
+  const format = req.body?.format === "gif" ? "gif" : "mp4";
+
+  try {
+    const { width, height } = dimsForSize(asset.templateSize, await loadTemplateMap());
+
+    const { renderHtmlToVideo } = await import("../lib/videoExport");
+    const result = await renderHtmlToVideo(asset.htmlContent, width, height, format);
+    const objectPath = await objectStorageService.uploadBytes(result.buffer, result.contentType);
+    // Remember the latest video rendition so the VAST tag execution can use it.
+    if (result.ext === "mp4" || result.ext === "webm") {
+      await db
+        .update(assetsTable)
+        .set({ videoObjectPath: objectPath, updatedAt: new Date() })
+        .where(eq(assetsTable.id, id));
+    }
+    res.json({
+      objectPath,
+      url: `/api/storage${objectPath}`,
+      format: result.ext,
+      contentType: result.contentType,
+      bytes: result.buffer.length,
+    });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    if (/Cannot find (module|package)|browserType\.launch|Executable doesn't exist/i.test(message)) {
+      res.status(501).json({
+        error: "Video export needs Playwright + Chromium on the server (long-lived host only).",
+      });
+      return;
+    }
+    req.log.error({ err: error }, "Video export failed");
+    res.status(500).json({ error: "Video export failed" });
+  }
 });
 
 router.post("/assets/:id/approve", requireAuth, async (req, res): Promise<void> => {

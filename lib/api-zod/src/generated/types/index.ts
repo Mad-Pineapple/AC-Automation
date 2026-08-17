@@ -7,6 +7,8 @@
  */
 
 export * from './activityEntry';
+export * from './adaptTarget';
+export * from './adaptTemplateRequest';
 export * from './adTag';
 export * from './adTagInput';
 export * from './analyzeGuidelineRequest';
@@ -58,9 +60,13 @@ export * from './reviewProgress';
 export * from './reviewProgressInput';
 export * from './suggestBriefSizesRequest';
 export * from './suggestBriefSizesResult';
+export * from './tagExecution';
 export * from './template';
 export * from './templateConfig';
 export * from './templateInput';
 export * from './templateUpdate';
 export * from './uploadUrlRequest';
 export * from './uploadUrlResponse';
+export * from './variantRow';
+export * from './videoExportRequest';
+export * from './videoExportResult';

@@ -26,5 +26,8 @@
       "headers": [{ "key": "Cache-Control", "value": "no-store" }]
     }
   ],
-  "crons": [{ "path": "/api/cron/dispatch", "schedule": "0 2 * * *" }]
+  "crons": [
+    { "path": "/api/cron/dispatch", "schedule": "0 2 * * *" },
+    { "path": "/api/cron/frontify-sync", "schedule": "0 3 * * 1" }
+  ]
 }

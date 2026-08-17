@@ -25,6 +25,8 @@ export interface GuidelineSuggestions {
   textColor?: string;
   fontFamily?: string;
   toneOfVoice?: string;
+  /** @nullable */
+  strapline?: string | null;
   industry?: string;
 }
 
@@ -56,6 +58,8 @@ export interface Brand {
   fontFamily: string;
   toneOfVoice: string;
   /** @nullable */
+  strapline?: string | null;
+  /** @nullable */
   guidelines?: string | null;
   /** @nullable */
   industry?: string | null;
@@ -76,6 +80,8 @@ export interface BrandInput {
   fontFamily: string;
   toneOfVoice: string;
   /** @nullable */
+  strapline?: string | null;
+  /** @nullable */
   guidelines?: string | null;
   /** @nullable */
   industry?: string | null;
@@ -93,6 +99,8 @@ export interface BrandUpdate {
   textColor?: string;
   fontFamily?: string;
   toneOfVoice?: string;
+  /** @nullable */
+  strapline?: string | null;
   /** @nullable */
   guidelines?: string | null;
   /** @nullable */
@@ -132,6 +140,9 @@ export interface FreeformElement {
   radius?: number;
   borderColor?: string;
   borderWidth?: number;
+  /** Locked elements are pinned brand furniture: brief copy/imagery is never poured into them (their captured content always renders), and editors treat them as read-only.
+   */
+  locked?: boolean;
 }
 
 export interface TemplateConfig {
@@ -260,6 +271,30 @@ export interface UploadUrlResponse {
   clientUpload?: ClientUploadInfo;
 }
 
+export interface VideoExportRequest {
+  /** mp4 (default) | gif */
+  format?: string;
+}
+
+export interface AdaptTarget {
+  width: number;
+  height: number;
+  name?: string;
+}
+
+export interface AdaptTemplateRequest {
+  targets: AdaptTarget[];
+}
+
+export interface VideoExportResult {
+  objectPath: string;
+  url: string;
+  /** mp4 | webm | gif (webm when the host has no ffmpeg) */
+  format: string;
+  contentType: string;
+  bytes?: number;
+}
+
 export interface BrandAsset {
   id: number;
   brandId: number;
@@ -320,6 +355,21 @@ export interface ReviewProgressInput {
   reviewedAssetIds: number[];
 }
 
+/**
+ * One feed row for batch-variant generation. Artwork is rendered once per size; each row yields its own asset with this copy (missing fields fall back to the brief/AI copy for that size).
+
+ */
+export interface VariantRow {
+  /** @nullable */
+  label?: string | null;
+  /** @nullable */
+  headline?: string | null;
+  /** @nullable */
+  bodyText?: string | null;
+  /** @nullable */
+  callToAction?: string | null;
+}
+
 export interface Brief {
   id: number;
   campaignName: string;
@@ -331,6 +381,8 @@ export interface Brief {
   callToAction?: string | null;
   /** @nullable */
   notes?: string | null;
+  /** @nullable */
+  variants?: VariantRow[] | null;
   /** @nullable */
   productImageUrl?: string | null;
   templateSizes: string[];
@@ -378,6 +430,8 @@ export interface BriefInput {
   /** @nullable */
   notes?: string | null;
   /** @nullable */
+  variants?: VariantRow[] | null;
+  /** @nullable */
   productImageUrl?: string | null;
   templateSizes: string[];
   useAiCopy: boolean;
@@ -397,6 +451,8 @@ export interface BriefUpdate {
   /** @nullable */
   notes?: string | null;
   /** @nullable */
+  variants?: VariantRow[] | null;
+  /** @nullable */
   productImageUrl?: string | null;
   templateSizes?: string[];
   useAiCopy?: boolean;
@@ -415,6 +471,8 @@ export interface Asset {
   id: number;
   briefId: number;
   templateSize: string;
+  /** @nullable */
+  variantLabel?: string | null;
   /** @nullable */
   headline?: string | null;
   /** @nullable */
@@ -591,6 +649,20 @@ export interface CampaignUpdate {
   status?: string;
 }
 
+/**
+ * One trafficking execution of an ad tag: a copy-paste snippet (or tag URL for VAST) plus which ad server's macros it carries, if any.
+
+ */
+export interface TagExecution {
+  key: string;
+  label: string;
+  /** @nullable */
+  adServer?: string | null;
+  snippet: string;
+  /** @nullable */
+  notes?: string | null;
+}
+
 export interface AdTag {
   id: number;
   assetId: number;
@@ -598,6 +670,7 @@ export interface AdTag {
   /** @nullable */
   clickUrl?: string | null;
   snippet: string;
+  executions: TagExecution[];
   serveUrl: string;
   impressions?: number;
   clicks?: number;

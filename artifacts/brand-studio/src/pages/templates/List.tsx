@@ -101,7 +101,7 @@ function BrandTemplateFiles() {
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
             {templateAssets
               .filter((a) => a.folder === folder)
-              .map((asset) => {
+              .map((asset, assetIndex) => {
                 const isImage = (asset.contentType ?? "").startsWith("image/");
                 const ext = asset.name.split(".").pop()?.toUpperCase();
                 return (
@@ -118,8 +118,8 @@ function BrandTemplateFiles() {
                           <img
                             src={asset.url}
                             alt={asset.name}
-                            loading="lazy"
-                            className="max-h-full max-w-full object-contain"
+                            loading={assetIndex < 12 ? "eager" : "lazy"}
+                            className="h-full w-full object-contain"
                           />
                         ) : (
                           <>

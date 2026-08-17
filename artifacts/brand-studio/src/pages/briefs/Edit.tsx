@@ -20,6 +20,7 @@ import { ChevronLeft, Upload, X } from "lucide-react";
 import { TEMPLATE_SIZE_LABELS, ALL_TEMPLATE_SIZES } from "@/components/TemplateRenderer";
 import { BrandIdentityPreview } from "@/components/BrandIdentityPreview";
 import { LibraryImagePicker } from "@/components/LibraryImagePicker";
+import { parseVariantsText, variantsToText } from "@/lib/variants";
 import { useUpload } from "@workspace/object-storage-web";
 
 const NO_CAMPAIGN = "__none__";
@@ -33,6 +34,7 @@ const briefSchema = z.object({
   bodyText: z.string().optional(),
   callToAction: z.string().optional(),
   notes: z.string().optional(),
+  variantsText: z.string().optional(),
   productImageUrl: z.string().optional(),
   templateSizes: z.array(z.string()).min(1, "Select at least one template size"),
 });
@@ -72,6 +74,7 @@ export default function EditBrief() {
       bodyText: "",
       callToAction: "",
       notes: "",
+      variantsText: "",
       productImageUrl: "",
       templateSizes: ["social_square"],
     },
@@ -91,6 +94,7 @@ export default function EditBrief() {
         bodyText: brief.bodyText ?? "",
         callToAction: brief.callToAction ?? "",
         notes: brief.notes ?? "",
+        variantsText: variantsToText(brief.variants),
         productImageUrl: brief.productImageUrl ?? "",
         templateSizes: brief.templateSizes.length > 0 ? brief.templateSizes : ["social_square"],
       });
@@ -130,6 +134,7 @@ export default function EditBrief() {
         bodyText: values.bodyText || null,
         callToAction: values.callToAction || null,
         notes: values.notes || null,
+        variants: parseVariantsText(values.variantsText ?? ""),
         productImageUrl: values.productImageUrl || null,
         templateSizes: values.templateSizes,
       }
@@ -165,7 +170,6 @@ export default function EditBrief() {
         </Link>
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Edit Brief</h1>
-          <span data-testid="debug-brandid" className="hidden">{JSON.stringify({ selectedBrandId, briefBrandId: brief?.brandId, briefLoaded: !!brief, brandsLoaded: !!brands })}</span>
           <p className="text-muted-foreground text-sm font-mono mt-1 uppercase tracking-widest">Update Your Campaign</p>
         </div>
       </div>
@@ -194,6 +198,22 @@ export default function EditBrief() {
                       placeholder="Objective, audience, key messages, mandatories. The AI grounds all copy and artwork in this."
                       rows={4}
                       data-testid="input-notes"
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )} />
+
+              <FormField control={form.control} name="variantsText" render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Variants (optional)</FormLabel>
+                  <FormControl>
+                    <Textarea
+                      {...field}
+                      placeholder={"One variant per line: Label | Headline | Body | CTA\nArtwork is created once per size; each line becomes its own asset."}
+                      rows={3}
+                      className="font-mono text-xs"
+                      data-testid="input-variants"
                     />
                   </FormControl>
                   <FormMessage />

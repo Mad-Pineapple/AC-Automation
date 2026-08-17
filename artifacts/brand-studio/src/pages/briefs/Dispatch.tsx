@@ -300,7 +300,7 @@ export default function DispatchScreen() {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         {shippableAssets?.map(asset => brief.brand && (
           <div key={asset.id} className="rounded-lg overflow-hidden border border-border/50 bg-card p-3">
-            <p className="text-xs text-muted-foreground mb-2 font-mono">{getTemplateLabel(asset.templateSize)}</p>
+            <p className="text-xs text-muted-foreground mb-2 font-mono">{getTemplateLabel(asset.templateSize)}{asset.variantLabel ? ` — ${asset.variantLabel}` : ""}</p>
             <div className="flex items-center justify-center bg-muted/30 rounded overflow-hidden" style={{ height: 120 }}>
               {asset.isAnimated && asset.htmlContent ? (
                 <div style={{ width: 120, height: 120, overflow: "hidden" }} className="relative pointer-events-none">

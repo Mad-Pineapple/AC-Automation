@@ -1,5 +1,6 @@
 import { openai, editImageBuffers } from "@workspace/integrations-openai-ai-server";
 import { finalizeHtmlBanner } from "./htmlBanner";
+import { getBrandRules } from "./brandRules";
 
 /** gpt-image-1 output sizes, chosen to match a target canvas orientation. */
 export type ProductImageSize = "1024x1024" | "1536x1024" | "1024x1536";
@@ -39,6 +40,7 @@ Writing rules:
 - Use New Zealand English spelling (organise, programme, colour).
 - Headlines: no full stop at the end, sentence case unless the brand guidelines say otherwise.
 - Speak directly to the reader (you/your/we/us); plain words over formal ones.
+${getBrandRules(params.brandName).copyRules(params.templateSize).map((r) => `- ${r}`).join("\n")}
 
 Return ONLY a JSON object with these exact fields:
 - headline: punchy headline (max 8 words for banner, max 12 words otherwise)
@@ -259,6 +261,8 @@ export async function generateHtmlBanner(params: {
   briefContext?: string | null;
   /** Extra directives fed back after a failed compliance check (retry). */
   complianceFeedback?: string | null;
+  /** Master logo tile as a data URI; injected bottom-right by the finalizer. */
+  logoDataUri?: string;
 }): Promise<string> {
   const { width = 970, height = 250 } = params.dimensions ?? {};
 
@@ -317,12 +321,14 @@ Requirements:
 ${animationRequirement}
 - Animation timing (ad-server rules): entrance animation completes within 6-8 seconds; anything that keeps moving after that must be subtle. Use CSS keyframes only.
 - BRAND COMPLIANCE (mandatory): every non-neutral color you use MUST be one of the brand palette hex values above. Neutral white/black/grey are allowed for text and spacing. Do NOT introduce off-brand accent colors.
+- COMPOSITION (mandatory): the design must fill the ENTIRE ${width}×${height} canvas — no large empty areas. Use the product image full-bleed as a background (object-fit:cover with a dark scrim under light text) or as a half/two-thirds panel, with every remaining area a solid brand-colour panel. Copy block aligned to a clear grid (margins ≈ 1/18 of the shortest side).
 - Typography: use font-family: "${params.fontFamily}", "Helvetica Neue", Helvetica, Arial, sans-serif. Do NOT load any webfont (no @import, no <link> to font CDNs) — ad servers reject external requests. Emulate the brand's condensed bold headline style with font-weight:700/800, tight letter-spacing and uppercase where the guidelines call for it.
 - ABSOLUTELY NO external network requests: no external scripts, stylesheets, fonts, or analytics.${isHttpUrl ? " The ONLY allowed external resource is the provided product image URL." : ""}
 - Structure for editability: give the key elements stable ids — id="headline", id="body-copy", id="cta" — so a human can tweak them later.
 - Include a styled CTA button (id="cta").
 - Do NOT add clickTag wiring or <a> tags around the ad — click handling is injected downstream.
 - Professional, production-ready design matching the brand palette.
+${getBrandRules(params.brandName).bannerRules(params.animated ? "animated_social" : "html_banner").map((r) => `- ${r}`).join("\n")}
 Output ONLY the raw HTML, no markdown code fences.`;
 
   const response = await openai.chat.completions.create({
@@ -334,7 +340,14 @@ Output ONLY the raw HTML, no markdown code fences.`;
   const html = response.choices[0]?.message?.content ?? "";
   // Deterministic pass: guarantees ad.size meta + clickTag wiring and strips
   // external font loads, regardless of what the model produced.
-  return finalizeHtmlBanner(html, { width, height });
+  // Animated social is a 1080x1080 social feed tile: per the brand guidelines
+  // social tiles carry NO pohutukawa logo (the channel profile picture brands
+  // the post), so skip the logo-tile injection for it.
+  return finalizeHtmlBanner(html, {
+    width,
+    height,
+    logoDataUri: params.animated ? undefined : params.logoDataUri,
+  });
 }
 
 export async function extractBrandStyle(params: {

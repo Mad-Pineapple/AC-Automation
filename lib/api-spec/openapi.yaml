@@ -266,6 +266,39 @@ paths:
         "204":
           description: Deleted
 
+  /templates/{id}/adapt:
+    post:
+      operationId: adaptTemplate
+      tags: [templates]
+      summary: Derive adapted freeform templates for other formats from a master
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AdaptTemplateRequest"
+      responses:
+        "201":
+          description: Created adapted templates
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Template"
+        "400":
+          description: Master is not a freeform template / no valid targets
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
   /templates/dissect-pdf:
     post:
       operationId: dissectPdf
@@ -919,6 +952,37 @@ paths:
               schema:
                 $ref: "#/components/schemas/Asset"
 
+  /assets/{id}/export-video:
+    post:
+      operationId: exportAssetVideo
+      tags: [assets]
+      summary: Render an animated HTML asset to video (MP4 or GIF)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/VideoExportRequest"
+      responses:
+        "200":
+          description: Rendered video stored in object storage
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/VideoExportResult"
+        "501":
+          description: Server lacks Playwright/Chromium (serverless host)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
   /assets/{id}/approve:
     post:
       operationId: approveAsset
@@ -1209,6 +1273,8 @@ components:
           type: string
         toneOfVoice:
           type: string
+        strapline:
+          type: ["string", "null"]
         industry:
           type: string
 
@@ -1276,6 +1342,8 @@ components:
           type: string
         toneOfVoice:
           type: string
+        strapline:
+          type: ["string", "null"]
         guidelines:
           type: ["string", "null"]
         industry:
@@ -1323,6 +1391,8 @@ components:
           type: string
         toneOfVoice:
           type: string
+        strapline:
+          type: ["string", "null"]
         guidelines:
           type: ["string", "null"]
         industry:
@@ -1362,6 +1432,8 @@ components:
           type: string
         toneOfVoice:
           type: string
+        strapline:
+          type: ["string", "null"]
         guidelines:
           type: ["string", "null"]
         industry:
@@ -1425,6 +1497,12 @@ components:
           type: string
         borderWidth:
           type: number
+        locked:
+          type: boolean
+          description: >
+            Locked elements are pinned brand furniture: brief copy/imagery is
+            never poured into them (their captured content always renders),
+            and editors treat them as read-only.
       required:
         - type
 
@@ -1666,6 +1744,56 @@ components:
         - uploadURL
         - objectPath
 
+    VideoExportRequest:
+      type: object
+      properties:
+        format:
+          type: string
+          description: "mp4 (default) | gif"
+
+    AdaptTemplateRequest:
+      type: object
+      properties:
+        targets:
+          type: array
+          items:
+            $ref: "#/components/schemas/AdaptTarget"
+      required:
+        - targets
+
+    AdaptTarget:
+      type: object
+      properties:
+        width:
+          type: integer
+        height:
+          type: integer
+        name:
+          type: string
+      required:
+        - width
+        - height
+
+    VideoExportResult:
+      type: object
+      properties:
+        objectPath:
+          type: string
+        url:
+          type: string
+        format:
+          type: string
+          description: "mp4 | webm | gif (webm when the host has no ffmpeg)"
+        contentType:
+          type: string
+        bytes:
+          type: integer
+      required:
+        - objectPath
+        - url
+        - format
+        - contentType
+
     ClientUploadInfo:
       type: object
       description: >
@@ -1791,6 +1919,22 @@ components:
       required:
         - reviewedAssetIds
 
+    VariantRow:
+      type: object
+      description: >
+        One feed row for batch-variant generation. Artwork is rendered once
+        per size; each row yields its own asset with this copy (missing
+        fields fall back to the brief/AI copy for that size).
+      properties:
+        label:
+          type: ["string", "null"]
+        headline:
+          type: ["string", "null"]
+        bodyText:
+          type: ["string", "null"]
+        callToAction:
+          type: ["string", "null"]
+
     Brief:
       type: object
       properties:
@@ -1806,6 +1950,10 @@ components:
           type: ["string", "null"]
         notes:
           type: ["string", "null"]
+        variants:
+          type: ["array", "null"]
+          items:
+            $ref: "#/components/schemas/VariantRow"
         productImageUrl:
           type: ["string", "null"]
         templateSizes:
@@ -1877,6 +2025,10 @@ components:
           type: ["string", "null"]
         notes:
           type: ["string", "null"]
+        variants:
+          type: ["array", "null"]
+          items:
+            $ref: "#/components/schemas/VariantRow"
         productImageUrl:
           type: ["string", "null"]
         templateSizes:
@@ -1908,6 +2060,10 @@ components:
           type: ["string", "null"]
         notes:
           type: ["string", "null"]
+        variants:
+          type: ["array", "null"]
+          items:
+            $ref: "#/components/schemas/VariantRow"
         productImageUrl:
           type: ["string", "null"]
         templateSizes:
@@ -1945,6 +2101,8 @@ components:
           type: integer
         templateSize:
           type: string
+        variantLabel:
+          type: ["string", "null"]
         headline:
           type: ["string", "null"]
         bodyText:
@@ -2221,6 +2379,27 @@ components:
         status:
           type: string
 
+    TagExecution:
+      type: object
+      description: >
+        One trafficking execution of an ad tag: a copy-paste snippet (or tag
+        URL for VAST) plus which ad server's macros it carries, if any.
+      properties:
+        key:
+          type: string
+        label:
+          type: string
+        adServer:
+          type: ["string", "null"]
+        snippet:
+          type: string
+        notes:
+          type: ["string", "null"]
+      required:
+        - key
+        - label
+        - snippet
+
     AdTag:
       type: object
       properties:
@@ -2234,6 +2413,10 @@ components:
           type: ["string", "null"]
         snippet:
           type: string
+        executions:
+          type: array
+          items:
+            $ref: "#/components/schemas/TagExecution"
         serveUrl:
           type: string
         impressions:
@@ -2247,6 +2430,7 @@ components:
         - assetId
         - token
         - snippet
+        - executions
         - serveUrl
 
     AdTagInput:

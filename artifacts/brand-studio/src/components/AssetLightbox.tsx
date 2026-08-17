@@ -396,25 +396,36 @@ export default function AssetLightbox({ assets, initialIndex, brand, onClose, on
             )}
 
             {adTag && (
-              <div className="space-y-3 pt-1">
-                <div className="space-y-1.5">
-                  <div className="flex items-center justify-between">
-                    <Label className="text-xs">Embed snippet</Label>
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      className="h-7 gap-1.5 text-xs"
-                      onClick={() => handleCopy(adTag.snippet, "snippet")}
-                      data-testid="button-copy-snippet"
-                    >
-                      {copied === "snippet" ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
-                      {copied === "snippet" ? "Copied" : "Copy"}
-                    </Button>
+              <div className="space-y-3 pt-1 max-h-[50vh] overflow-y-auto pr-1">
+                <Label className="text-xs">Tag executions — every standard online trafficking format</Label>
+                {(adTag.executions ?? []).map((ex) => (
+                  <div key={ex.key} className="space-y-1.5 rounded-lg border border-border/60 p-3" data-testid={`execution-${ex.key}`}>
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="min-w-0">
+                        <span className="text-xs font-semibold">{ex.label}</span>
+                        {ex.adServer && (
+                          <span className="ml-2 text-[10px] font-mono uppercase tracking-wide rounded-full bg-primary/10 text-primary px-2 py-0.5">
+                            {ex.adServer}
+                          </span>
+                        )}
+                      </div>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="h-7 gap-1.5 text-xs shrink-0"
+                        onClick={() => handleCopy(ex.snippet, ex.key)}
+                        data-testid={`button-copy-${ex.key}`}
+                      >
+                        {copied === ex.key ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
+                        {copied === ex.key ? "Copied" : "Copy"}
+                      </Button>
+                    </div>
+                    <pre className="text-[10px] bg-muted rounded-md p-2.5 overflow-x-auto whitespace-pre-wrap break-all font-mono max-h-28 overflow-y-auto">
+                      {ex.snippet}
+                    </pre>
+                    {ex.notes && <p className="text-[11px] text-muted-foreground">{ex.notes}</p>}
                   </div>
-                  <pre className="text-[11px] bg-muted rounded-md p-3 overflow-x-auto whitespace-pre-wrap break-all font-mono" data-testid="text-snippet">
-                    {adTag.snippet}
-                  </pre>
-                </div>
+                ))}
 
                 <div className="space-y-1.5">
                   <div className="flex items-center justify-between">

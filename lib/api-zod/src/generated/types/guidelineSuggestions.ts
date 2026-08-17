@@ -14,5 +14,7 @@ export interface GuidelineSuggestions {
   textColor?: string;
   fontFamily?: string;
   toneOfVoice?: string;
+  /** @nullable */
+  strapline?: string | null;
   industry?: string;
 }

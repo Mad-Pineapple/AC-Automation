@@ -91,6 +91,15 @@
   --button-outline: rgba(0,0,0, .10);
   --badge-outline: rgba(0,0,0, .05);
 
+  /* White-label shell vars — overwritten at runtime by ThemeProvider from the
+     platform brand's colours. Defaults = the neutral "naked" skin shown
+     before any brand exists. */
+  --rail-from: #1e293b;
+  --rail-to: #0f172a;
+  --rail-accent: #38bdf8;
+  --cta-from: #0284c7;
+  --cta-to: #38bdf8;
+
   /* Automatic computation of border around primary / danger buttons */
   --opaque-button-border-intensity: -8; /* In terms of percentages */
 

@@ -35,6 +35,7 @@ router.post("/brands", requireAdmin, async (req, res): Promise<void> => {
       textColor: body.textColor,
       fontFamily: body.fontFamily,
       toneOfVoice: body.toneOfVoice,
+      strapline: body.strapline ?? null,
       guidelines: body.guidelines ?? null,
       industry: body.industry ?? null,
       supportedTemplateSizes: JSON.stringify(sizes),
@@ -63,6 +64,7 @@ router.patch("/brands/:id", requireAdmin, async (req, res): Promise<void> => {
   if (body.textColor !== undefined) updateData.textColor = body.textColor;
   if (body.fontFamily !== undefined) updateData.fontFamily = body.fontFamily;
   if (body.toneOfVoice !== undefined) updateData.toneOfVoice = body.toneOfVoice;
+  if (body.strapline !== undefined) updateData.strapline = body.strapline;
   if (body.guidelines !== undefined) updateData.guidelines = body.guidelines;
   if (body.industry !== undefined) updateData.industry = body.industry;
   if (body.supportedTemplateSizes !== undefined) updateData.supportedTemplateSizes = JSON.stringify(body.supportedTemplateSizes);

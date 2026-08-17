@@ -19,12 +19,17 @@ export const assetsTable = pgTable("assets", {
   id: serial("id").primaryKey(),
   briefId: integer("brief_id").notNull().references(() => briefsTable.id, { onDelete: "cascade" }),
   templateSize: text("template_size").notNull(),
+  // Which brief variant row this asset was rendered for (null = the base take).
+  variantLabel: text("variant_label"),
   headline: text("headline"),
   bodyText: text("body_text"),
   callToAction: text("call_to_action"),
   imageUrl: text("image_url"),
   isAnimated: boolean("is_animated").notNull().default(false),
   htmlContent: text("html_content"),
+  // Object path of the most recent MP4/WebM export of this creative — makes
+  // the VAST tag execution available for it.
+  videoObjectPath: text("video_object_path"),
   status: text("status").notNull().default("generating"),
   // Brand-compliance gate: null = unchecked (legacy), else passed|failed|skipped.
   complianceStatus: text("compliance_status"),

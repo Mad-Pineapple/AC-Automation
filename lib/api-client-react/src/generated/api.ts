@@ -23,6 +23,7 @@ import type {
   ActivityEntry,
   AdTag,
   AdTagInput,
+  AdaptTemplateRequest,
   AnalyzeGuidelineRequest,
   AnalyzeGuidelineResponse,
   Asset,
@@ -68,7 +69,9 @@ import type {
   TemplateInput,
   TemplateUpdate,
   UploadUrlRequest,
-  UploadUrlResponse
+  UploadUrlResponse,
+  VideoExportRequest,
+  VideoExportResult
 } from './api.schemas';
 
 import { customFetch } from '../custom-fetch';
@@ -967,6 +970,78 @@ export const useDeleteTemplate = <TError = ErrorType<unknown>,
         TContext
       > => {
       return useMutation(getDeleteTemplateMutationOptions(options));
+    }
+
+export const getAdaptTemplateUrl = (id: number,) => {
+
+
+
+
+  return `/api/templates/${id}/adapt`
+}
+
+/**
+ * @summary Derive adapted freeform templates for other formats from a master
+ */
+export const adaptTemplate = async (id: number,
+    adaptTemplateRequest: AdaptTemplateRequest, options?: RequestInit): Promise<Template[]> => {
+
+  return customFetch<Template[]>(getAdaptTemplateUrl(id),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      adaptTemplateRequest,)
+  }
+);}
+
+
+
+
+export const getAdaptTemplateMutationOptions = <TError = ErrorType<ErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof adaptTemplate>>, TError,{id: number;data: BodyType<AdaptTemplateRequest>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof adaptTemplate>>, TError,{id: number;data: BodyType<AdaptTemplateRequest>}, TContext> => {
+
+const mutationKey = ['adaptTemplate'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof adaptTemplate>>, {id: number;data: BodyType<AdaptTemplateRequest>}> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  adaptTemplate(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type AdaptTemplateMutationResult = NonNullable<Awaited<ReturnType<typeof adaptTemplate>>>
+    export type AdaptTemplateMutationBody = BodyType<AdaptTemplateRequest>
+    export type AdaptTemplateMutationError = ErrorType<ErrorResponse>
+
+    /**
+ * @summary Derive adapted freeform templates for other formats from a master
+ */
+export const useAdaptTemplate = <TError = ErrorType<ErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof adaptTemplate>>, TError,{id: number;data: BodyType<AdaptTemplateRequest>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof adaptTemplate>>,
+        TError,
+        {id: number;data: BodyType<AdaptTemplateRequest>},
+        TContext
+      > => {
+      return useMutation(getAdaptTemplateMutationOptions(options));
     }
 
 export const getDissectPdfUrl = () => {
@@ -3166,6 +3241,78 @@ export const useRegenerateAsset = <TError = ErrorType<unknown>,
         TContext
       > => {
       return useMutation(getRegenerateAssetMutationOptions(options));
+    }
+
+export const getExportAssetVideoUrl = (id: number,) => {
+
+
+
+
+  return `/api/assets/${id}/export-video`
+}
+
+/**
+ * @summary Render an animated HTML asset to video (MP4 or GIF)
+ */
+export const exportAssetVideo = async (id: number,
+    videoExportRequest?: VideoExportRequest, options?: RequestInit): Promise<VideoExportResult> => {
+
+  return customFetch<VideoExportResult>(getExportAssetVideoUrl(id),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      videoExportRequest,)
+  }
+);}
+
+
+
+
+export const getExportAssetVideoMutationOptions = <TError = ErrorType<ErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof exportAssetVideo>>, TError,{id: number;data?: BodyType<VideoExportRequest>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof exportAssetVideo>>, TError,{id: number;data?: BodyType<VideoExportRequest>}, TContext> => {
+
+const mutationKey = ['exportAssetVideo'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof exportAssetVideo>>, {id: number;data?: BodyType<VideoExportRequest>}> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  exportAssetVideo(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type ExportAssetVideoMutationResult = NonNullable<Awaited<ReturnType<typeof exportAssetVideo>>>
+    export type ExportAssetVideoMutationBody = BodyType<VideoExportRequest> | undefined
+    export type ExportAssetVideoMutationError = ErrorType<ErrorResponse>
+
+    /**
+ * @summary Render an animated HTML asset to video (MP4 or GIF)
+ */
+export const useExportAssetVideo = <TError = ErrorType<ErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof exportAssetVideo>>, TError,{id: number;data?: BodyType<VideoExportRequest>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof exportAssetVideo>>,
+        TError,
+        {id: number;data?: BodyType<VideoExportRequest>},
+        TContext
+      > => {
+      return useMutation(getExportAssetVideoMutationOptions(options));
     }
 
 export const getApproveAssetUrl = (id: number,) => {

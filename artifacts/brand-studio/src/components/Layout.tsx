@@ -14,6 +14,7 @@ import {
   Plus,
   UploadCloud,
   ImageIcon,
+  Images,
   AlertTriangle,
   ExternalLink,
 } from "lucide-react";
@@ -37,7 +38,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { useMe } from "@/hooks/use-me";
-import acLogo from "@assets/pohutukawa-mark.png";
+import { useTheme } from "@/lib/theme";
 
 interface LayoutProps {
   children: ReactNode;
@@ -48,6 +49,7 @@ export function Layout({ children }: LayoutProps) {
   const { signOut } = useClerk();
   const { user, isSignedIn, isLoaded: clerkLoaded } = useUser();
   const { data: meData, isFetched: meFetched } = useMe();
+  const theme = useTheme();
   const isAdmin = meData?.role === "admin";
 
   // Clerk's client confirms a signed-in user, but the server's /api/me came back
@@ -68,6 +70,7 @@ export function Layout({ children }: LayoutProps) {
     { name: "Campaigns", href: "/campaigns", icon: Megaphone, show: true },
     { name: "Briefs", href: "/briefs", icon: Briefcase, show: true },
     { name: "Brands", href: "/brands", icon: Palette, show: true },
+    { name: "Library", href: "/library", icon: Images, show: true },
     { name: "Templates", href: "/templates", icon: LayoutTemplate, show: true },
     { name: "Knowledge", href: "/knowledge", icon: Sparkles, show: true },
     { name: "Performance", href: "/performance", icon: BarChart3, show: true },
@@ -90,22 +93,110 @@ export function Layout({ children }: LayoutProps) {
     setLocation(`/brands/${brandId}?tab=library`);
   };
 
+  const activeName = navigation.find((n) => isActive(n.href))?.name ?? "Dashboard";
+
   return (
-    <div className="h-screen flex flex-col bg-background text-foreground overflow-hidden">
-      {/* Always-visible top bar */}
-      <header className="h-16 md:h-20 shrink-0 sticky top-0 z-20 bg-card/80 backdrop-blur-md border-b border-border flex items-center justify-between gap-4 px-4 md:px-8">
+    <div className="h-screen flex bg-background text-foreground overflow-hidden">
+      {/* Desktop rail — the platform's spine, skinned by the active brand
+          (white-label: colours/logo/name come from ThemeProvider). */}
+      <aside
+        className="hidden md:flex w-64 shrink-0 flex-col overflow-y-auto text-white"
+        style={{ background: "linear-gradient(180deg, var(--rail-from) 0%, var(--rail-to) 100%)" }}
+      >
         <Link href="/">
-          <div className="flex items-center gap-3 cursor-pointer">
-            {/* Pōhutukawa mark in its white square tile (brand guidelines) */}
-            <div className="w-9 h-9 md:w-10 md:h-10 rounded-md bg-white border border-border flex items-center justify-center shadow-sm p-1.5">
-              <img src={acLogo} alt="Auckland Council" className="w-full h-full object-contain" />
+          <div className="flex items-center gap-3 cursor-pointer px-5 pt-6 pb-7">
+            {/* Brand mark in its white tile; letter tile until a brand exists */}
+            <div className="w-10 h-10 rounded-lg bg-white flex items-center justify-center shadow-md p-1.5 shrink-0">
+              {theme.logoUrl ? (
+                <img src={theme.logoUrl} alt={theme.name} className="w-full h-full object-contain" />
+              ) : (
+                <span className="text-lg font-extrabold" style={{ color: "var(--rail-from)" }}>
+                  {theme.name.charAt(0).toUpperCase()}
+                </span>
+              )}
             </div>
-            <span className="hidden sm:flex flex-col leading-tight">
-              <span className="text-lg md:text-xl font-extrabold tracking-tight">Auckland Council</span>
-              <span className="text-[0.65rem] font-bold tracking-[0.18em] text-muted-foreground uppercase">Brand Studio</span>
+            <span className="flex flex-col leading-tight min-w-0">
+              <span className="text-[15px] font-extrabold tracking-tight text-white truncate">{theme.name}</span>
+              <span
+                className="text-[0.6rem] font-bold tracking-[0.22em] uppercase"
+                style={{ color: "var(--rail-accent)" }}
+              >
+                Brand Studio
+              </span>
             </span>
           </div>
         </Link>
+
+        <nav className="flex flex-col gap-1 px-3 flex-1">
+          {navigation.map((item) => {
+            const active = isActive(item.href);
+            return (
+              <Link key={item.name} href={item.href}>
+                <div
+                  className={cn(
+                    "relative flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-medium transition-all cursor-pointer group",
+                    active
+                      ? "bg-white/10 text-white ring-1 ring-white/10 shadow-sm"
+                      : "text-white/55 hover:text-white hover:bg-white/5",
+                  )}
+                  data-testid={`nav-${item.name.toLowerCase()}`}
+                >
+                  {active && (
+                    <span
+                      className="absolute left-0 top-1/2 -translate-y-1/2 h-5 w-1 rounded-r-full"
+                      style={{ backgroundColor: "var(--rail-accent)" }}
+                    />
+                  )}
+                  <item.icon
+                    className={cn(
+                      "w-[18px] h-[18px] transition-colors",
+                      active ? "" : "text-white/45 group-hover:text-white/90",
+                    )}
+                    style={active ? { color: "var(--rail-accent)" } : undefined}
+                  />
+                  {item.name}
+                </div>
+              </Link>
+            );
+          })}
+        </nav>
+
+        {/* Brand strapline — from the brand record (AC: te reo first, always) */}
+        {theme.straplineLines.length > 0 && (
+          <div className="px-7 py-6 border-t border-white/10 mt-6">
+            <p className="text-xs font-bold leading-relaxed text-white/60">
+              {theme.straplineLines.map((line, i) => (
+                <span key={i}>
+                  {i > 0 && <br />}
+                  {line}
+                </span>
+              ))}
+            </p>
+          </div>
+        )}
+      </aside>
+
+      {/* Content column */}
+      <div className="flex-1 flex flex-col overflow-hidden">
+      {/* Slim toolbar: page context left, global actions right */}
+      <header className="h-16 shrink-0 sticky top-0 z-20 bg-card/80 backdrop-blur-md border-b border-border flex items-center justify-between gap-4 px-4 md:px-8">
+        <Link href="/" className="md:hidden">
+          <div className="flex items-center gap-2.5 cursor-pointer">
+            <div className="w-9 h-9 rounded-md bg-white border border-border flex items-center justify-center shadow-sm p-1.5">
+              {theme.logoUrl ? (
+                <img src={theme.logoUrl} alt={theme.name} className="w-full h-full object-contain" />
+              ) : (
+                <span className="text-sm font-extrabold" style={{ color: "var(--rail-from)" }}>
+                  {theme.name.charAt(0).toUpperCase()}
+                </span>
+              )}
+            </div>
+            <span className="text-base font-extrabold tracking-tight">Brand Studio</span>
+          </div>
+        </Link>
+        <span className="hidden md:block text-xs font-mono font-semibold uppercase tracking-[0.2em] text-muted-foreground">
+          {activeName}
+        </span>
 
         <div className="flex items-center gap-2 md:gap-3">
           {isSignedIn ? (
@@ -121,7 +212,8 @@ export function Layout({ children }: LayoutProps) {
               </Button>
               <Link href="/briefs/new">
                 <Button
-                  className="rounded-full gap-2 h-10 md:h-11 px-4 md:px-6 shadow-sm"
+                  className="rounded-full gap-2 h-10 px-4 md:px-6 shadow-md border-0 text-white hover:opacity-90 transition-all"
+                  style={{ background: "linear-gradient(90deg, var(--cta-from), var(--cta-to))" }}
                   data-testid="button-new-brief"
                 >
                   <Plus className="w-4 h-4" />
@@ -233,49 +325,10 @@ export function Layout({ children }: LayoutProps) {
         </div>
       </nav>
 
-      <div className="flex flex-1 overflow-hidden">
-        {/* Sidebar */}
-        <aside className="hidden md:flex w-64 shrink-0 flex-col py-8 px-5 overflow-y-auto">
-          <nav className="flex flex-col gap-1.5">
-            {navigation.map((item) => {
-              const active = isActive(item.href);
-              return (
-                <Link key={item.name} href={item.href}>
-                  <div
-                    className={cn(
-                      "flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-medium transition-all cursor-pointer group",
-                      active
-                        ? "bg-card text-foreground shadow-sm"
-                        : "text-muted-foreground hover:text-foreground hover:bg-card/60",
-                    )}
-                    data-testid={`nav-${item.name.toLowerCase()}`}
-                  >
-                    <item.icon
-                      className={cn(
-                        "w-5 h-5",
-                        active ? "text-primary" : "text-muted-foreground group-hover:text-foreground",
-                      )}
-                    />
-                    {item.name}
-                  </div>
-                </Link>
-              );
-            })}
-          </nav>
-          {/* Brand strapline — te reo first, always */}
-          <div className="mt-auto pt-8 px-4">
-            <p className="text-xs font-bold leading-relaxed text-foreground/80">
-              Tāmaki Turuki.
-              <br />
-              Altogether Auckland.
-            </p>
-          </div>
-        </aside>
-
-        {/* Main content */}
-        <main className="flex-1 overflow-y-auto">
-          <div className="p-4 md:p-8">{children}</div>
-        </main>
+      {/* Main content */}
+      <main className="flex-1 overflow-y-auto">
+        <div className="p-4 md:p-8 max-w-[1440px] mx-auto w-full">{children}</div>
+      </main>
       </div>
 
       {/* Add-asset brand picker */}

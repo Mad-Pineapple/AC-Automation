@@ -7,6 +7,9 @@ export type LayoutOptions = {
   showAccentBar?: boolean;
   showLogoBar?: boolean;
   imageStyle?: "side" | "background";
+  /** Render the brand strapline bottom-left (print/OOH treatment — shipped AC
+   *  posters pair it with the logo tile bottom-right; social statics skip it). */
+  showStrapline?: boolean;
 };
 
 export interface ResolvedConfig {
@@ -66,6 +69,29 @@ function readableOn(bgHex?: string | null): string {
   return contrastBlack >= contrastWhite ? "#1a1a1a" : "#ffffff";
 }
 
+/** Guidelines search-bar CTA treatment: "Search" in Regular (tracking −10)
+ *  + the phrase in Bold (tracking +10), sentence case, with a magnifier glyph
+ *  — matching shipped AC pills ("Search bin tags", "Search dog rego").
+ *  Non-search CTAs render as plain bold sentence case. */
+function CtaLabel({ text }: { text: string }) {
+  const m = /^search\s+(.+)$/i.exec(text.trim());
+  if (!m) return <>{text}</>;
+  return (
+    <>
+      <span style={{ fontWeight: 400, letterSpacing: "-0.01em" }}>Search&nbsp;</span>
+      <span style={{ fontWeight: 700, letterSpacing: "0.01em" }}>{m[1]}</span>
+      <svg
+        viewBox="0 0 24 24"
+        aria-hidden
+        style={{ width: "0.9em", height: "0.9em", marginLeft: "0.55em", flexShrink: 0 }}
+      >
+        <circle cx="10.5" cy="10.5" r="6.5" fill="none" stroke="currentColor" strokeWidth="2.6" />
+        <line x1="15.5" y1="15.5" x2="21" y2="21" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" />
+      </svg>
+    </>
+  );
+}
+
 function BrandCanvas({
   brand,
   headline,
@@ -113,6 +139,20 @@ function BrandCanvas({
     flexDirection: "column",
   };
 
+  // ---- AC grid system (brand guidelines + shipped creative) -------------
+  // The pōhutukawa tile is the building block; page margin = 1/3 tile; the
+  // master logo (colour mark in its white square tile — never recoloured)
+  // sits bottom-right of campaign artwork. Shipped AC creative (Food Scraps
+  // FY26 OOH/HTML5 dispatch) uses a ~6-division tile, so that's the ratio
+  // here. Every format derives its margins from this grid so imagery, copy
+  // and logo placement stay consistent across sizes.
+  const tile = Math.max(24, Math.round(Math.min(width, height) / 6));
+  const stripTile = Math.round(height * 0.64);
+  const margin = isStrip
+    ? Math.round((height - stripTile) / 2)
+    : Math.max(8, Math.round(tile / 3));
+  const showLogoTile = showLogoBar && !!brand.logoUrl;
+
   const accentBar: React.CSSProperties = {
     position: "absolute",
     top: 0,
@@ -123,31 +163,52 @@ function BrandCanvas({
     zIndex: 3,
   };
 
-  const logoBar: React.CSSProperties = {
+  // The logoUrl asset IS the master logo tile (colour mark on white square),
+  // so it renders verbatim — no tint/invert filters, per the guidelines.
+  // The tile sits FLUSH to the bottom-right corner: it occupies the corner
+  // grid cell (grid cells run edge to edge), and the mark's clearspace comes
+  // from the 1/8 padding inside the white box. The 1/3-tile page margin
+  // applies to copy and patterns, not the tile — see shipped AC creative.
+  const logoTileStyle: React.CSSProperties = {
     position: "absolute",
-    bottom: 0,
-    left: 0,
     right: 0,
-    height: Math.max(24, height * 0.08),
-    backgroundColor: brand.primaryColor,
-    display: "flex",
-    alignItems: "center",
-    paddingLeft: Math.max(8, width * 0.05),
+    bottom: 0,
+    width: tile,
+    height: tile,
+    objectFit: "cover",
     zIndex: 3,
   };
 
-  const logoStyle: React.CSSProperties = {
-    height: Math.max(12, height * 0.04),
-    objectFit: "contain",
-    filter: onPrimary === "#ffffff" ? "brightness(0) invert(1)" : "brightness(0)",
+  // Reserve the logo tile's column so copy never collides with it.
+  const contentRight = showLogoTile ? tile + margin : margin;
+
+  // Print/OOH treatment (matches shipped AC posters): the strapline sits
+  // bottom-left, paired with the tile bottom-right. Social statics leave it
+  // off ("less is more"). The lines come from the brand record — no brand
+  // strapline, no treatment (white-label safe).
+  const straplineLines = (brand.strapline ?? "")
+    .split("\n")
+    .map((l) => l.trim())
+    .filter(Boolean);
+  const showStrapline = layout?.showStrapline === true && straplineLines.length > 0;
+  const straplineStyle: React.CSSProperties = {
+    position: "absolute",
+    left: margin,
+    bottom: margin,
+    zIndex: 3,
+    color: useBgImage ? "#ffffff" : brand.textColor,
+    fontWeight: 700,
+    fontSize: Math.max(10, Math.round(tile * 0.17)),
+    lineHeight: 1.35,
+    textShadow: useBgImage ? "0 1px 3px rgba(0,0,0,0.4)" : "none",
   };
 
   const contentArea: React.CSSProperties = {
     position: "absolute",
-    top: Math.max(8, height * 0.05),
-    left: Math.max(10, width * 0.05),
-    right: useSideImage ? Math.max(10, width * 0.5) : Math.max(10, width * 0.05),
-    bottom: showLogoBar ? Math.max(24, height * 0.1) : Math.max(10, height * 0.04),
+    top: margin,
+    left: margin,
+    right: useSideImage ? Math.max(contentRight, width * 0.5) : contentRight,
+    bottom: showStrapline ? margin + Math.round(tile * 0.55) : margin,
     display: "flex",
     flexDirection: "column",
     justifyContent,
@@ -180,18 +241,21 @@ function BrandCanvas({
     overflow: "hidden",
   };
 
+  // Sized to shipped AC posters: the search pill is discreet — text at body
+  // size, total pill height ≈ 4% of the canvas, snug horizontal padding so
+  // the pill text sits close to the copy block's left edge above it.
   const ctaStyle: React.CSSProperties = {
     display: "inline-flex",
     alignItems: "center",
     backgroundColor: brand.primaryColor,
     color: onPrimary,
-    fontSize: Math.max(11, width * 0.028),
+    fontSize: Math.max(11, width * 0.022),
     fontWeight: 700,
-    padding: `${Math.max(6, height * 0.022)}px ${Math.max(14, width * 0.06)}px`,
+    padding: `${Math.max(5, height * 0.011)}px ${Math.max(12, width * 0.028)}px`,
     borderRadius: 9999,
-    letterSpacing: "0.05em",
+    // Guidelines: CTAs are sentence case (search-bar treatment supplies its
+    // own per-word weights/tracking via CtaLabel) — never uppercase.
     alignSelf: textAlign === "center" ? "center" : textAlign === "right" ? "flex-end" : "flex-start",
-    textTransform: "uppercase",
     marginTop: Math.max(4, height * 0.01),
   };
 
@@ -261,14 +325,17 @@ function BrandCanvas({
     alignItems: "center",
     gap: Math.max(8, width * 0.02),
     paddingLeft: stripPad,
-    paddingRight: stripPad,
+    // No right padding when the tile shows: the tile sits flush against the
+    // right edge (corner grid cell), like shipped AC banner creative.
+    paddingRight: showLogoBar && brand.logoUrl ? 0 : stripPad,
   };
+  // Strip logo = the same master tile, full height, flush to the right edge
+  // (guidelines: the tile occupies the corner grid cell). Never filtered.
   const stripLogoStyle: React.CSSProperties = {
-    height: Math.max(16, height * 0.46),
-    width: "auto",
-    objectFit: "contain",
+    height,
+    width: height,
+    objectFit: "cover",
     flexShrink: 0,
-    filter: useBgImage ? "brightness(0) invert(1)" : "none",
   };
   const stripWordmarkStyle: React.CSSProperties = {
     color: textOnStrip,
@@ -307,8 +374,7 @@ function BrandCanvas({
     fontWeight: 700,
     padding: `${Math.max(5, height * 0.15)}px ${Math.max(12, width * 0.022)}px`,
     borderRadius: 9999,
-    letterSpacing: "0.04em",
-    textTransform: "uppercase",
+    // Sentence case per guidelines; CtaLabel supplies search-bar weights.
     whiteSpace: "nowrap",
     maxWidth: "40%",
     overflow: "hidden",
@@ -353,11 +419,6 @@ function BrandCanvas({
 
       {isStrip ? (
         <div style={stripContentStyle}>
-          {brand.logoUrl ? (
-            <img src={brand.logoUrl} alt={brand.name} style={stripLogoStyle} />
-          ) : (
-            <span style={stripWordmarkStyle}>{brand.name.toUpperCase()}</span>
-          )}
           {headline && (
             <div style={stripHeadlineStyle} data-animate="headline">
               {headline}
@@ -365,8 +426,13 @@ function BrandCanvas({
           )}
           {callToAction && (
             <div style={stripCtaStyle} data-animate="cta">
-              {callToAction}
+              <CtaLabel text={callToAction} />
             </div>
+          )}
+          {showLogoTile ? (
+            <img src={brand.logoUrl!} alt={brand.name} style={stripLogoStyle} />
+          ) : (
+            <span style={stripWordmarkStyle}>{brand.name.toUpperCase()}</span>
           )}
         </div>
       ) : (
@@ -384,21 +450,24 @@ function BrandCanvas({
             )}
             {callToAction && (
               <div style={ctaStyle} data-animate="cta">
-                {callToAction}
+                <CtaLabel text={callToAction} />
               </div>
             )}
           </div>
 
-          {showLogoBar && (
-            <div style={logoBar}>
-              {brand.logoUrl ? (
-                <img src={brand.logoUrl} alt={brand.name} style={logoStyle} />
-              ) : (
-                <span style={{ color: onPrimary, fontWeight: 700, fontSize: Math.max(8, height * 0.025), letterSpacing: "0.08em" }}>
-                  {brand.name.toUpperCase()}
+          {showStrapline && (
+            <div style={straplineStyle}>
+              {straplineLines.map((line, i) => (
+                <span key={i}>
+                  {i > 0 && <br />}
+                  {line}
                 </span>
-              )}
+              ))}
             </div>
+          )}
+
+          {showLogoTile && (
+            <img src={brand.logoUrl!} alt={brand.name} style={logoTileStyle} />
           )}
         </>
       )}
@@ -407,11 +476,13 @@ function BrandCanvas({
 }
 
 /** Pour brief content into a freeform element by its role; otherwise keep the
- *  element's own captured value. */
+ *  element's own captured value. Locked elements are pinned brand furniture —
+ *  their captured content always renders, regardless of role. */
 function fillRoleText(
   el: FreeformElement,
   props: { headline?: string | null; bodyText?: string | null; callToAction?: string | null },
 ): string {
+  if (el.locked) return el.text ?? "";
   if (el.role === "headline") return props.headline ?? el.text ?? "";
   if (el.role === "body" || el.role === "subhead") return props.bodyText ?? el.text ?? "";
   if (el.role === "cta") return props.callToAction ?? el.text ?? "";
@@ -419,6 +490,7 @@ function fillRoleText(
 }
 
 function fillRoleSrc(el: FreeformElement, imageUrl?: string | null): string | null {
+  if (el.locked) return el.src ?? null;
   if (el.role === "product") return imageUrl ?? el.src ?? null;
   return el.src ?? null;
 }
@@ -552,7 +624,7 @@ const SIZE_CONFIGS = {
   social_square: { width: 1080, height: 1080, label: "Social Square", dims: "1080×1080" },
   story: { width: 1080, height: 1920, label: "Story", dims: "1080×1920" },
   banner: { width: 728, height: 90, label: "Banner", dims: "728×90" },
-  print_a4: { width: 2480, height: 3508, label: "Print A4", dims: "2480×3508" },
+  print_a4: { width: 2480, height: 3508, label: "Print A4", dims: "2480×3508", layout: { showStrapline: true } },
   animated_social: { width: 1080, height: 1080, label: "Animated Social", dims: "1080×1080" },
 };
 
@@ -630,6 +702,16 @@ export function getTemplateLabel(key: string): string {
   return BUILTIN_LABELS[key] ?? CUSTOM_CONFIGS[key]?.label ?? key;
 }
 
+/** 1080×1080 organic/paid social tiles carry no pōhutukawa logo — the channel
+ *  profile picture provides the branding (AC brand guidelines, social rules).
+ *  An explicit layout.showLogoBar still overrides either way. */
+const SOCIAL_NO_LOGO_SIZES = new Set(["social_square", "animated_social"]);
+function applySocialLogoRule(templateSize: string, layout?: LayoutOptions): LayoutOptions | undefined {
+  if (!SOCIAL_NO_LOGO_SIZES.has(templateSize)) return layout;
+  if (layout?.showLogoBar !== undefined) return layout;
+  return { ...layout, showLogoBar: false };
+}
+
 export function TemplateRenderer({ templateSize, brand, headline, bodyText, callToAction, imageUrl, isAnimated, scale, overrideConfig }: WrapperProps) {
   const custom = useCustomConfigs();
   const resolved: ResolvedConfig = overrideConfig
@@ -663,7 +745,7 @@ export function TemplateRenderer({ templateSize, brand, headline, bodyText, call
           isAnimated={animated}
           width={width}
           height={height}
-          layout={layout}
+          layout={applySocialLogoRule(templateSize, layout)}
         />
       )}
     </div>
@@ -706,7 +788,7 @@ export function TemplateThumbnail({ templateSize, brand, headline, bodyText, cal
             isAnimated={animated}
             width={width}
             height={height}
-            layout={layout}
+            layout={applySocialLogoRule(templateSize, layout)}
           />
         )}
       </div>

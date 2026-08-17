@@ -20,6 +20,13 @@ export interface FreeformBase {
   y: number;
   w: number;
   h: number;
+  /**
+   * Locked elements are pinned brand furniture (logo, strapline, margins):
+   * role-based copy/imagery substitution skips them and editors treat them
+   * as read-only. Only admins edit templates, so setting the flag is
+   * implicitly admin-gated.
+   */
+  locked?: boolean;
 }
 
 export interface FreeformText extends FreeformBase {
@@ -120,6 +127,78 @@ export function isFreeformConfig(v: unknown): boolean {
 }
 
 /**
+ * Adapt a freeform master layout to a new canvas size (the "Adaptation
+ * Studio" pattern): one designed master yields per-format layouts a designer
+ * then fine-tunes, instead of rebuilding each size from scratch.
+ *
+ * Deterministic heuristics, no AI:
+ * - Backgrounds (elements covering ~the whole master) stretch to the new
+ *   full bleed.
+ * - Everything else keeps its size relative to the canvas (min-ratio scale)
+ *   and re-anchors per axis: elements near an edge keep their scaled margin
+ *   to that edge, centred elements stay proportionally centred. This is what
+ *   keeps a bottom-right logo bottom-right in every format.
+ * - Elements fully inside the master stay fully inside the target; elements
+ *   that deliberately bled off-canvas keep bleeding.
+ * - `locked` flags survive, so pinned brand furniture stays pinned.
+ */
+export function adaptFreeformConfig(
+  master: FreeformConfig,
+  srcW: number,
+  srcH: number,
+  dstW: number,
+  dstH: number,
+): FreeformConfig {
+  const scale = Math.min(dstW / srcW, dstH / srcH);
+
+  const adaptAxis = (
+    pos: number,
+    size: number,
+    srcLen: number,
+    dstLen: number,
+    newSize: number,
+  ): number => {
+    const centre = pos + size / 2;
+    if (centre < srcLen / 3) {
+      return Math.round(pos * scale); // near the leading edge: keep scaled margin
+    }
+    if (centre > (2 * srcLen) / 3) {
+      return Math.round(dstLen - (srcLen - pos - size) * scale - newSize); // trailing edge
+    }
+    return Math.round((centre / srcLen) * dstLen - newSize / 2); // centred band
+  };
+
+  const elements = master.elements.map((el) => {
+    // Full-bleed backgrounds restretch rather than scale-and-anchor.
+    if (el.w >= srcW * 0.9 && el.h >= srcH * 0.9) {
+      return { ...el, x: 0, y: 0, w: dstW, h: dstH };
+    }
+
+    const w = Math.max(1, Math.round(el.w * scale));
+    const h = Math.max(1, Math.round(el.h * scale));
+    let x = adaptAxis(el.x, el.w, srcW, dstW, w);
+    let y = adaptAxis(el.y, el.h, srcH, dstH, h);
+
+    // Preserve containment, but only where the master was contained — bleed
+    // is a design choice.
+    if (el.x >= 0 && el.x + el.w <= srcW) x = Math.min(Math.max(x, 0), Math.max(0, dstW - w));
+    if (el.y >= 0 && el.y + el.h <= srcH) y = Math.min(Math.max(y, 0), Math.max(0, dstH - h));
+
+    if (el.type === "text") {
+      return {
+        ...el,
+        x, y, w, h,
+        fontSize: Math.max(6, Math.round(el.fontSize * scale)),
+        ...(el.letterSpacing !== undefined ? { letterSpacing: el.letterSpacing * scale } : {}),
+      };
+    }
+    return { ...el, x, y, w, h };
+  });
+
+  return { kind: "freeform", elements };
+}
+
+/**
  * Coerce arbitrary input into a safe FreeformConfig. Invalid elements are
  * dropped rather than throwing, so a partially-bad payload still yields a
  * usable template.
@@ -137,6 +216,7 @@ export function normalizeFreeformConfig(raw: unknown): FreeformConfig {
       y: num(el.y),
       w: Math.max(0, num(el.w)),
       h: Math.max(0, num(el.h)),
+      ...(el.locked === true ? { locked: true } : {}),
     };
 
     if (el.type === "text") {

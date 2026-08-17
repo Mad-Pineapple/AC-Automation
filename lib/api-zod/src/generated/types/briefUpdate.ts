@@ -5,6 +5,7 @@
  * Brand Creative Automation Platform API
  * OpenAPI spec version: 0.1.0
  */
+import type { VariantRow } from './variantRow';
 
 export interface BriefUpdate {
   campaignName?: string;
@@ -16,6 +17,8 @@ export interface BriefUpdate {
   callToAction?: string | null;
   /** @nullable */
   notes?: string | null;
+  /** @nullable */
+  variants?: VariantRow[] | null;
   /** @nullable */
   productImageUrl?: string | null;
   templateSizes?: string[];

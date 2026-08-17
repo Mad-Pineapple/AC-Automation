@@ -35,6 +35,7 @@ const GUIDELINE_FIELD_LABELS: Record<keyof GuidelineSuggestions, string> = {
   textColor: "Text Color",
   fontFamily: "Font Family",
   toneOfVoice: "Tone of Voice",
+  strapline: "Strapline",
   industry: "Industry",
 };
 

@@ -38,12 +38,19 @@ const DEMO_BRANDS: Array<typeof brandsTable.$inferInsert> = [
     fontFamily: "National 2",
     toneOfVoice:
       "Warm, inclusive and conversational - talk like an Aucklander, not a bureaucrat",
+    strapline: "Tāmaki Turuki.\nAltogether Auckland.",
     industry: "Local government",
     guidelines: AUCKLAND_COUNCIL_GUIDELINES,
   },
 ];
 
 export async function seedDemoData() {
+  // White-label installs start "naked": no pre-seeded brand, neutral app
+  // skin. The platform takes on a brand's identity the moment one is created.
+  if (process.env.SEED_DEMO_BRAND === "0") {
+    logger.info("SEED_DEMO_BRAND=0 — skipping demo brand seed (white-label install)");
+    return;
+  }
   try {
     for (const brand of DEMO_BRANDS) {
       const existing = await db

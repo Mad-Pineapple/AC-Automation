@@ -41,6 +41,7 @@ const brandSchema = z.object({
   textColor: z.string().min(1, "Required"),
   fontFamily: z.string().min(1, "Required"),
   toneOfVoice: z.string().min(1, "Required"),
+  strapline: z.string().optional().or(z.literal("")),
   guidelines: z.string().optional().or(z.literal("")),
   industry: z.string().optional().or(z.literal("")),
 });
@@ -73,6 +74,7 @@ export function BrandForm({ initialData, appliedSuggestions, appliedGuidelines, 
       textColor: initialData?.textColor || "#000000",
       fontFamily: initialData?.fontFamily || "Inter",
       toneOfVoice: initialData?.toneOfVoice || "Professional",
+      strapline: initialData?.strapline || "",
       guidelines: initialData?.guidelines || "",
       industry: initialData?.industry || "",
     },
@@ -80,7 +82,13 @@ export function BrandForm({ initialData, appliedSuggestions, appliedGuidelines, 
 
   useEffect(() => {
     if (appliedSuggestions) {
-      form.reset({ ...form.getValues(), ...appliedSuggestions });
+      // API suggestions use null for "no value"; the form wants undefined.
+      const { strapline, ...rest } = appliedSuggestions;
+      form.reset({
+        ...form.getValues(),
+        ...rest,
+        ...(typeof strapline === "string" ? { strapline } : {}),
+      });
     }
   }, [appliedSuggestions]);
 
@@ -258,6 +266,20 @@ export function BrandForm({ initialData, appliedSuggestions, appliedGuidelines, 
                 <FormItem>
                   <FormLabel>Tone of Voice</FormLabel>
                   <FormControl><Input {...field} placeholder="e.g. Bold and authoritative" /></FormControl>
+                  <FormMessage />
+                </FormItem>
+              )} />
+              <FormField control={form.control} name="strapline" render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Strapline (optional)</FormLabel>
+                  <FormControl>
+                    <Textarea
+                      {...field}
+                      rows={2}
+                      placeholder={"Brand sign-off, one line per row — shown in the app shell and on print artwork.\ne.g. Tāmaki Turuki. Altogether Auckland."}
+                      data-testid="input-brand-strapline"
+                    />
+                  </FormControl>
                   <FormMessage />
                 </FormItem>
               )} />

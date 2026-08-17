@@ -5,6 +5,7 @@
  * Brand Creative Automation Platform API
  * OpenAPI spec version: 0.1.0
  */
+import type { TagExecution } from './tagExecution';
 
 export interface AdTag {
   id: number;
@@ -13,6 +14,7 @@ export interface AdTag {
   /** @nullable */
   clickUrl?: string | null;
   snippet: string;
+  executions: TagExecution[];
   serveUrl: string;
   impressions?: number;
   clicks?: number;

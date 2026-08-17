@@ -16,6 +16,10 @@ export const briefsTable = pgTable("briefs", {
   // (objective, audience, key messages, mandatories). Threaded into every AI
   // generation prompt so copy/artwork reflect the actual brief, not just its name.
   notes: text("notes"),
+  // JSON array of variant rows ({label, headline, bodyText, callToAction});
+  // generation renders artwork once per size, then one asset per row with
+  // row-specific copy (feed-driven batch variants).
+  variants: text("variants"),
   productImageUrl: text("product_image_url"),
   templateSizes: text("template_sizes").notNull().default("[]"),
   useAiCopy: boolean("use_ai_copy").notNull().default(false),

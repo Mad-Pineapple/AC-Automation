@@ -1,7 +1,7 @@
 import { useState, useCallback, useEffect, useMemo, useRef } from "react";
 import {
   useGetBrief, useListAssets, useUpdateAsset, useRegenerateAsset, useDeleteAsset, useApproveBrief,
-  useGetReviewProgress, useSaveReviewProgress, useCreateBriefAdTags,
+  useGetReviewProgress, useSaveReviewProgress, useCreateBriefAdTags, useExportAssetVideo,
   getGetBriefQueryKey, getListAssetsQueryKey, getListBriefsQueryKey, getGetReviewProgressQueryKey,
   getGetAdTagQueryKey,
 } from "@workspace/api-client-react";
@@ -419,6 +419,26 @@ export default function ApproveScreen() {
     });
   };
 
+  // ---- Video export (animated HTML creatives → MP4/GIF) ---------------------
+  const exportVideo = useExportAssetVideo();
+  const [exportingAssetId, setExportingAssetId] = useState<number | null>(null);
+  const handleExportVideo = (assetId: number, format: "mp4" | "gif") => {
+    setExportingAssetId(assetId);
+    toast({ title: `Rendering ${format.toUpperCase()}…`, description: "Headless browser plays the creative in real time (~15s)." });
+    exportVideo.mutate({ id: assetId, data: { format } }, {
+      onSuccess: (result) => {
+        setExportingAssetId(null);
+        toast({ title: `${result.format.toUpperCase()} ready (${Math.round((result.bytes ?? 0) / 1024)} KB)` });
+        window.open(result.url, "_blank");
+      },
+      onError: (error) => {
+        setExportingAssetId(null);
+        const detail = (error as { response?: { data?: { error?: string } } })?.response?.data?.error;
+        toast({ title: "Video export failed", description: detail, variant: "destructive" });
+      },
+    });
+  };
+
   // ---- Delete with deferred undo --------------------------------------------
   const deleteAsset = useDeleteAsset();
   const deleteMutateRef = useRef(deleteAsset.mutate);
@@ -722,7 +742,7 @@ export default function ApproveScreen() {
                   data-testid={`rejected-item-${asset.id}`}
                 >
                   <div className="min-w-0">
-                    <div className="text-sm font-medium">{getTemplateLabel(asset.templateSize)}</div>
+                    <div className="text-sm font-medium">{getTemplateLabel(asset.templateSize)}{asset.variantLabel ? ` — ${asset.variantLabel}` : ""}</div>
                     {asset.headline && (
                       <div className="text-xs text-muted-foreground truncate">{asset.headline}</div>
                     )}
@@ -768,7 +788,7 @@ export default function ApproveScreen() {
                   data-testid={`compliance-item-${asset.id}`}
                 >
                   <div className="min-w-0">
-                    <div className="text-sm font-medium">{getTemplateLabel(asset.templateSize)}</div>
+                    <div className="text-sm font-medium">{getTemplateLabel(asset.templateSize)}{asset.variantLabel ? ` — ${asset.variantLabel}` : ""}</div>
                     {issues.length > 0 && (
                       <ul className="text-xs text-muted-foreground mt-1 list-disc pl-4 space-y-0.5">
                         {issues.slice(0, 3).map((issue, i) => <li key={i}>{issue}</li>)}
@@ -891,7 +911,7 @@ export default function ApproveScreen() {
                           </span>
                         )}
                         <div className="min-w-0">
-                          <CardTitle className="text-sm">{getTemplateLabel(asset.templateSize)}</CardTitle>
+                          <CardTitle className="text-sm">{getTemplateLabel(asset.templateSize)}{asset.variantLabel ? ` — ${asset.variantLabel}` : ""}</CardTitle>
                           <div className="flex flex-wrap items-center gap-1.5 mt-1">
                             <AssetStatusBadge status={asset.status} assetId={asset.id} />
                             <ComplianceBadge status={asset.complianceStatus} score={asset.complianceScore} assetId={asset.id} />
@@ -922,6 +942,30 @@ export default function ApproveScreen() {
                           >
                             <RefreshCw className={`w-3.5 h-3.5 ${asset.status === "generating" ? "animate-spin" : ""}`} />
                           </Button>
+                          {asset.htmlContent && (
+                            <>
+                              <Button
+                                variant="ghost" size="sm"
+                                onClick={e => { e.stopPropagation(); handleExportVideo(asset.id, "mp4"); }}
+                                disabled={exportingAssetId !== null}
+                                title="Export as MP4 video"
+                                data-testid={`button-export-mp4-${asset.id}`}
+                                className="h-7 px-2 text-xs font-mono"
+                              >
+                                {exportingAssetId === asset.id ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : "MP4"}
+                              </Button>
+                              <Button
+                                variant="ghost" size="sm"
+                                onClick={e => { e.stopPropagation(); handleExportVideo(asset.id, "gif"); }}
+                                disabled={exportingAssetId !== null}
+                                title="Export as animated GIF"
+                                data-testid={`button-export-gif-${asset.id}`}
+                                className="h-7 px-2 text-xs font-mono"
+                              >
+                                GIF
+                              </Button>
+                            </>
+                          )}
                           {!asset.htmlContent && (isEditing ? (
                             <>
                               <Button variant="ghost" size="sm" onClick={e => { e.stopPropagation(); setEditingAsset(null); }} className="h-7 px-2">
@@ -1081,7 +1125,7 @@ export default function ApproveScreen() {
                         )}
                         <div className="min-w-0">
                           <div className="flex flex-wrap items-center gap-1.5">
-                            <CardTitle className="text-sm">{getTemplateLabel(asset.templateSize)}</CardTitle>
+                            <CardTitle className="text-sm">{getTemplateLabel(asset.templateSize)}{asset.variantLabel ? ` — ${asset.variantLabel}` : ""}</CardTitle>
                             <AssetStatusBadge status={asset.status} assetId={asset.id} />
                             <ComplianceBadge status={asset.complianceStatus} score={asset.complianceScore} assetId={asset.id} />
                           </div>

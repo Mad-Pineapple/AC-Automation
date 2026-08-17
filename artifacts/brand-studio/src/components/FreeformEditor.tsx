@@ -183,8 +183,11 @@ export function FreeformEditor({ width, height, brand, initialElements, onChange
   const beginDrag = (e: React.PointerEvent, el: FreeformElement, mode: "move" | "resize", handle?: Handle) => {
     if (e.button !== 0 || !el.id) return;
     e.stopPropagation();
-    (e.currentTarget as Element).setPointerCapture(e.pointerId);
     setSelectedId(el.id);
+    // Locked elements stay selectable (so the panel can unlock them) but
+    // never drag or resize — that's the point of the lock.
+    if (el.locked) return;
+    (e.currentTarget as Element).setPointerCapture(e.pointerId);
     dragStartElsRef.current = els;
     draggedRef.current = false;
     dragRef.current = {
@@ -285,6 +288,8 @@ export function FreeformEditor({ width, height, brand, initialElements, onChange
 
   const removeSelected = () => {
     if (!selectedId) return;
+    // Locked elements can't be deleted (incl. via the Del key) — unlock first.
+    if (els.find((e) => e.id === selectedId)?.locked) return;
     mutate((prev) => prev.filter((e) => e.id !== selectedId));
     setSelectedId(null);
   };
@@ -377,8 +382,10 @@ export function FreeformEditor({ width, height, brand, initialElements, onChange
                     onPointerUp={onPointerUp}
                     style={{
                       ...base,
-                      cursor: "move",
-                      boxShadow: isSel ? `0 0 0 ${outline}px #6366f1` : undefined,
+                      cursor: el.locked ? "default" : "move",
+                      boxShadow: isSel
+                        ? `0 0 0 ${outline}px ${el.locked ? "#94a3b8" : "#6366f1"}`
+                        : undefined,
                     }}
                     data-testid={`element-${el.id}`}
                   >
@@ -411,7 +418,24 @@ export function FreeformEditor({ width, height, brand, initialElements, onChange
                       </div>
                     )}
 
+                    {isSel && el.locked && (
+                      <div
+                        style={{
+                          position: "absolute",
+                          top: 2,
+                          right: 2,
+                          fontSize: 12,
+                          lineHeight: 1,
+                          zIndex: 9999,
+                        }}
+                        title="Locked"
+                      >
+                        🔒
+                      </div>
+                    )}
+
                     {isSel &&
+                      !el.locked &&
                       HANDLES.map((h) => (
                         <div
                           key={h}
@@ -550,10 +574,37 @@ function Inspector({
     <div className="rounded-lg border border-border/50 p-4 space-y-4">
       <div className="flex items-center justify-between">
         <span className="text-sm font-semibold capitalize">{el.type}</span>
-        <Button type="button" size="sm" variant="ghost" className="text-destructive h-7 px-2" onClick={onDelete} data-testid="button-delete-element">
-          <Trash2 className="w-4 h-4" />
-        </Button>
+        <div className="flex items-center gap-1">
+          <Button
+            type="button"
+            size="sm"
+            variant={el.locked ? "secondary" : "ghost"}
+            className="h-7 px-2 text-xs gap-1"
+            onClick={() => onPatch({ locked: el.locked ? undefined : true })}
+            title={
+              el.locked
+                ? "Unlock: allow moving/editing and brief copy substitution"
+                : "Lock: pin this element — it can't be moved and brief copy never replaces its content"
+            }
+            data-testid="button-lock-element"
+          >
+            {el.locked ? "🔒 Locked" : "🔓 Lock"}
+          </Button>
+          <Button type="button" size="sm" variant="ghost" className="text-destructive h-7 px-2" onClick={onDelete} disabled={el.locked} data-testid="button-delete-element">
+            <Trash2 className="w-4 h-4" />
+          </Button>
+        </div>
       </div>
+
+      {el.locked && (
+        <p className="text-xs text-muted-foreground rounded bg-muted/60 px-2 py-1.5">
+          Pinned brand element — unlock to edit. Generated copy never replaces
+          locked content.
+        </p>
+      )}
+
+      {/* Native disabled propagation: every field goes read-only while locked. */}
+      <fieldset disabled={!!el.locked} className="space-y-4 border-0 m-0 p-0 min-w-0 disabled:opacity-60">
 
       <div className="grid grid-cols-2 gap-2">
         <NumField label="X" value={el.x ?? 0} onChange={(v) => onPatch({ x: v })} testid="input-x" />
@@ -716,6 +767,8 @@ function Inspector({
           </div>
         </>
       )}
+
+      </fieldset>
     </div>
   );
 }
