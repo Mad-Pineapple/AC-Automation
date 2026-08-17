@@ -180,10 +180,10 @@ export default function ImportPdf() {
                 }`}
                 data-testid="mode-key-visual"
               >
-                <p className="font-semibold text-sm">Key visual (pixel-faithful)</p>
+                <p className="font-semibold text-sm">Recreate artwork</p>
                 <p className="text-xs text-muted-foreground mt-1">
-                  Renders the page at high resolution as one image, exactly as designed. Best for
-                  vector artwork you want replicated across sizes untouched.
+                  Artwork becomes one pixel-faithful image; the type is lifted off as live text on
+                  top. Adaptations re-compose each size — art crops behind, text re-anchors in front.
                 </p>
               </button>
             </div>

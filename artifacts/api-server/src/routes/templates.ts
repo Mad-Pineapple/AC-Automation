@@ -175,7 +175,7 @@ router.post("/templates/dissect-pdf", requireAdmin, async (req, res): Promise<vo
   const page = Number.isInteger(req.body?.page) && req.body.page >= 1 ? req.body.page : 1;
   const mode = req.body?.mode === "keyVisual" ? "keyVisual" : "elements";
   try {
-    const paletteHexes = mode === "elements" ? await dissectPaletteHexes(req.body?.brandId) : [];
+    const paletteHexes = await dissectPaletteHexes(req.body?.brandId);
     const result = await dissectPdfToTemplate(objectPath, page, paletteHexes, mode);
     res.json(result);
   } catch (err) {
