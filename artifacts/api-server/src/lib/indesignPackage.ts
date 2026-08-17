@@ -18,6 +18,7 @@
 import JSZip from "jszip";
 import sharp from "sharp";
 import { ObjectStorageService } from "./objectStorage";
+import { parseIdmlToLayout, type IdmlParseResult } from "./idmlParse";
 
 const objectStorageService = new ObjectStorageService();
 
@@ -47,6 +48,10 @@ export interface PackageImportResult {
   documentPdfPath: string | null;
   idmlFound: boolean;
   fontsSkipped: number;
+  /** Parsed layout from the package's IDML (Stage 2): the designer's exact
+   * text, colours, frames and stacking order, ready to become a template. */
+  idmlLayout: IdmlParseResult | null;
+  idmlError: string | null;
 }
 
 function ext(name: string): string {
@@ -69,10 +74,15 @@ export async function importInDesignPackage(objectPath: string): Promise<Package
     documentPdfPath: null,
     idmlFound: false,
     fontsSkipped: 0,
+    idmlLayout: null,
+    idmlError: null,
   };
 
   // The largest PDF outside Links/ is taken as the document PDF.
   let docPdf: { name: string; bytes: Buffer } | null = null;
+  let idmlBytes: Buffer | null = null;
+  // Original link filename -> stored asset, for matching IDML image frames.
+  const linksByName = new Map<string, { objectPath: string; kind: string }>();
 
   const entries = Object.values(zip.files)
     .filter((e) => !e.dir)
@@ -91,6 +101,7 @@ export async function importInDesignPackage(objectPath: string): Promise<Package
     }
     if (e === ".idml") {
       result.idmlFound = true;
+      idmlBytes = Buffer.from(await entry.async("arraybuffer"));
       continue;
     }
     if (e === ".pdf" && !inLinks) {
@@ -109,6 +120,7 @@ export async function importInDesignPackage(objectPath: string): Promise<Package
       if (e in IMAGE_TYPES) {
         const storedPath = await objectStorageService.uploadBytes(bytes, IMAGE_TYPES[e]);
         result.imported.push({ name, objectPath: storedPath, contentType: IMAGE_TYPES[e], kind: "image" });
+        linksByName.set(name, { objectPath: storedPath, kind: "image" });
       } else if (e === ".tif" || e === ".tiff") {
         const png = await sharp(bytes).png().toBuffer();
         const storedPath = await objectStorageService.uploadBytes(png, "image/png");
@@ -118,6 +130,7 @@ export async function importInDesignPackage(objectPath: string): Promise<Package
           contentType: "image/png",
           kind: "image",
         });
+        linksByName.set(name, { objectPath: storedPath, kind: "image" });
       } else if (e === ".ai" || e === ".pdf") {
         // AI files are PDF-compatible in practice; render the first page.
         const { renderPdfPageToPng } = await import("./pdfRender");
@@ -129,10 +142,12 @@ export async function importInDesignPackage(objectPath: string): Promise<Package
           contentType: "image/png",
           kind: "image",
         });
+        linksByName.set(name, { objectPath: storedPath, kind: "image" });
       } else if (bytes.length <= MAX_RAW_FILE_BYTES) {
         // psd / eps / indd and friends: keep the original as a downloadable file.
         const storedPath = await objectStorageService.uploadBytes(bytes, "application/octet-stream");
         result.imported.push({ name, objectPath: storedPath, contentType: "application/octet-stream", kind: "file" });
+        linksByName.set(name, { objectPath: storedPath, kind: "file" });
       } else {
         result.skipped.push({ name, reason: "over 50MB" });
       }
@@ -146,6 +161,16 @@ export async function importInDesignPackage(objectPath: string): Promise<Package
 
   if (docPdf) {
     result.documentPdfPath = await objectStorageService.uploadBytes(docPdf.bytes, "application/pdf");
+  }
+
+  // Stage 2: parse the IDML into the designer's exact layout.
+  if (idmlBytes) {
+    try {
+      const idmlZip = await JSZip.loadAsync(idmlBytes);
+      result.idmlLayout = await parseIdmlToLayout(idmlZip, linksByName);
+    } catch (err) {
+      result.idmlError = err instanceof Error ? err.message.slice(0, 160) : "IDML could not be parsed";
+    }
   }
 
   return result;

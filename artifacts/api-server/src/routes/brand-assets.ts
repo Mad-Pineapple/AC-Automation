@@ -1,9 +1,12 @@
 import { Router } from "express";
 import { db } from "@workspace/db";
-import { brandAssetsTable, brandAssetKindValues } from "@workspace/db";
+import { brandAssetsTable, brandAssetKindValues, brandsTable, templatesTable } from "@workspace/db";
 import { eq } from "drizzle-orm";
 import { optionalAuth, requireAuth, requireAdmin } from "../middlewares/requireAuth";
 import { importInDesignPackage } from "../lib/indesignPackage";
+import { normalizeFreeformConfig } from "../lib/freeform";
+import { snapConfigToPalette } from "../lib/pdfDissect";
+import { collectBrandPaletteHexes } from "../lib/colorAdapter";
 
 const router = Router();
 
@@ -100,6 +103,33 @@ router.post("/brands/:brandId/assets/import-package", requireAdmin, async (req, 
         contentType: asset.contentType,
       });
     }
+    // Stage 2: the IDML layout becomes a fully editable template — the
+    // designer's exact text, colours, frames and stacking order.
+    let idmlTemplateId: number | null = null;
+    let idmlWarnings: string[] = [];
+    if (result.idmlLayout) {
+      const config = normalizeFreeformConfig({ kind: "freeform", elements: result.idmlLayout.elements });
+      const [brand] = await db.select().from(brandsTable).where(eq(brandsTable.id, brandId));
+      const snapped = brand ? snapConfigToPalette(config, collectBrandPaletteHexes(brand)) : 0;
+      idmlWarnings = [...result.idmlLayout.warnings];
+      if (snapped > 0) idmlWarnings.push(`${snapped} colour(s) snapped to exact brand values.`);
+      const [template] = await db
+        .insert(templatesTable)
+        .values({
+          name: packageName,
+          description: `Imported from InDesign package (IDML layout)`,
+          category: "custom",
+          width: result.idmlLayout.width,
+          height: result.idmlLayout.height,
+          config: JSON.stringify(config),
+          createdBy: (req as any).clerkUserId ?? null,
+        })
+        .returning();
+      idmlTemplateId = template.id;
+    } else if (result.idmlError) {
+      idmlWarnings = [`IDML could not be parsed: ${result.idmlError}`];
+    }
+
     res.json({
       importedCount: result.imported.length,
       skipped: result.skipped,
@@ -107,6 +137,8 @@ router.post("/brands/:brandId/assets/import-package", requireAdmin, async (req, 
       documentPdfPath: result.documentPdfPath,
       idmlFound: result.idmlFound,
       fontsSkipped: result.fontsSkipped,
+      idmlTemplateId,
+      idmlWarnings,
     });
   } catch (err) {
     (req as any).log?.error({ err }, "InDesign package import failed");

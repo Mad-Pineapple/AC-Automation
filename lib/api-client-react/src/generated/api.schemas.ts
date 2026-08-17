@@ -360,6 +360,9 @@ export interface ImportPackageResult {
   documentPdfPath?: string | null;
   idmlFound: boolean;
   fontsSkipped: number;
+  /** @nullable */
+  idmlTemplateId?: number | null;
+  idmlWarnings: string[];
 }
 
 export interface ComparisonNote {

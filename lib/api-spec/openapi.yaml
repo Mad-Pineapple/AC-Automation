@@ -2086,12 +2086,19 @@ components:
           type: boolean
         fontsSkipped:
           type: integer
+        idmlTemplateId:
+          type: ["integer", "null"]
+        idmlWarnings:
+          type: array
+          items:
+            type: string
       required:
         - importedCount
         - skipped
         - folder
         - idmlFound
         - fontsSkipped
+        - idmlWarnings
 
     ComparisonNote:
       type: object

@@ -130,13 +130,22 @@ export default function ImportPdf() {
         {
           onSuccess: (res) => {
             queryClient.invalidateQueries({ queryKey: getListBrandAssetsQueryKey(previewBrand.id) });
+            queryClient.invalidateQueries({ queryKey: getListTemplatesQueryKey() });
+            const idml = res.idmlTemplateId != null;
             toast({
-              title: `${res.importedCount} asset${res.importedCount === 1 ? "" : "s"} imported to the Library`,
-              description: `Folder "${res.folder}"${res.skipped.length ? ` · ${res.skipped.length} skipped` : ""}${
-                res.documentPdfPath ? " · opening the document PDF…" : ""
-              }`,
+              title: idml
+                ? `Editable layout imported + ${res.importedCount} asset${res.importedCount === 1 ? "" : "s"} to the Library`
+                : `${res.importedCount} asset${res.importedCount === 1 ? "" : "s"} imported to the Library`,
+              description: idml
+                ? `The IDML layout became a template — opening it now.${res.idmlWarnings.length ? ` (${res.idmlWarnings.length} note${res.idmlWarnings.length === 1 ? "" : "s"})` : ""}`
+                : `Folder "${res.folder}"${res.skipped.length ? ` · ${res.skipped.length} skipped` : ""}${
+                    res.documentPdfPath ? " · opening the document PDF…" : ""
+                  }`,
             });
-            if (res.documentPdfPath) runDissect(res.documentPdfPath, friendlyName);
+            // The IDML layout is the designer's exact structure — prefer it;
+            // fall back to the flattened document PDF when there is none.
+            if (res.idmlTemplateId != null) setLocation(`/templates/${res.idmlTemplateId}`);
+            else if (res.documentPdfPath) runDissect(res.documentPdfPath, friendlyName);
           },
           onError: () =>
             toast({

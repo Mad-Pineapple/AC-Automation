@@ -671,7 +671,9 @@ export const ImportBrandPackageResponse = zod.object({
   "folder": zod.string(),
   "documentPdfPath": zod.string().nullish(),
   "idmlFound": zod.boolean(),
-  "fontsSkipped": zod.number()
+  "fontsSkipped": zod.number(),
+  "idmlTemplateId": zod.number().nullish(),
+  "idmlWarnings": zod.array(zod.string())
 })
 
 

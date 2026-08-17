@@ -445,7 +445,7 @@ function extractTextBlocks(
  * near — but not on — the official digital hexes; snapping closes that gap.
  * Returns how many colours were adjusted.
  */
-function snapConfigToPalette(config: FreeformConfig, paletteHexes: string[]): number {
+export function snapConfigToPalette(config: FreeformConfig, paletteHexes: string[]): number {
   if (paletteHexes.length === 0) return 0;
   const snapper = createPaletteSnapper(paletteHexes);
   let snapped = 0;
