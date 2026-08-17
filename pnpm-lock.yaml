@@ -75,6 +75,9 @@ importers:
       '@napi-rs/canvas':
         specifier: ^1.0.6
         version: 1.0.6
+      jszip:
+        specifier: ^3.10.1
+        version: 3.10.1
       mammoth:
         specifier: ^1.12.0
         version: 1.12.0
@@ -130,6 +133,9 @@ importers:
       http-proxy-middleware:
         specifier: ^4.1.0
         version: 4.1.0
+      jszip:
+        specifier: ^3.10.1
+        version: 3.10.1
       mammoth:
         specifier: ^1.12.0
         version: 1.12.0

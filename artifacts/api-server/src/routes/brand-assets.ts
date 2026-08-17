@@ -3,6 +3,7 @@ import { db } from "@workspace/db";
 import { brandAssetsTable, brandAssetKindValues } from "@workspace/db";
 import { eq } from "drizzle-orm";
 import { optionalAuth, requireAuth, requireAdmin } from "../middlewares/requireAuth";
+import { importInDesignPackage } from "../lib/indesignPackage";
 
 const router = Router();
 
@@ -62,6 +63,55 @@ router.post("/brands/:brandId/assets", requireAuth, async (req, res): Promise<vo
     })
     .returning();
   res.status(201).json(formatBrandAsset(asset));
+});
+
+/**
+ * POST /brands/:brandId/assets/import-package  { objectPath, packageName? }
+ *
+ * Ingest a zipped InDesign package: every usable Links asset lands in the
+ * brand library (converted where needed), the document PDF is stored and
+ * returned so the client can feed it straight into Recreate-artwork.
+ */
+router.post("/brands/:brandId/assets/import-package", requireAdmin, async (req, res): Promise<void> => {
+  const brandId = Number(req.params.brandId);
+  if (!Number.isInteger(brandId)) {
+    res.status(400).json({ error: "Invalid brand id" });
+    return;
+  }
+  const objectPath = typeof req.body?.objectPath === "string" ? req.body.objectPath.trim() : "";
+  if (!objectPath.startsWith("/objects/")) {
+    res.status(400).json({ error: "objectPath is required" });
+    return;
+  }
+  const packageName =
+    typeof req.body?.packageName === "string" && req.body.packageName.trim()
+      ? req.body.packageName.trim().replace(/\.zip$/i, "").slice(0, 80)
+      : "InDesign package";
+  try {
+    const result = await importInDesignPackage(objectPath);
+    const folder = `Package — ${packageName}`;
+    for (const asset of result.imported) {
+      await db.insert(brandAssetsTable).values({
+        brandId,
+        name: asset.name,
+        kind: asset.kind,
+        folder,
+        objectPath: asset.objectPath,
+        contentType: asset.contentType,
+      });
+    }
+    res.json({
+      importedCount: result.imported.length,
+      skipped: result.skipped,
+      folder,
+      documentPdfPath: result.documentPdfPath,
+      idmlFound: result.idmlFound,
+      fontsSkipped: result.fontsSkipped,
+    });
+  } catch (err) {
+    (req as any).log?.error({ err }, "InDesign package import failed");
+    res.status(422).json({ error: "Could not read that package. Is it a zipped InDesign package folder?" });
+  }
 });
 
 router.delete("/brand-assets/:id", requireAdmin, async (req, res): Promise<void> => {

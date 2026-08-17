@@ -341,6 +341,27 @@ export interface BrandAssetInput {
   contentType?: string | null;
 }
 
+export interface ImportPackageRequest {
+  /** @minLength 1 */
+  objectPath: string;
+  packageName?: string;
+}
+
+export type ImportPackageResultSkippedItem = {
+  name: string;
+  reason: string;
+};
+
+export interface ImportPackageResult {
+  importedCount: number;
+  skipped: ImportPackageResultSkippedItem[];
+  folder: string;
+  /** @nullable */
+  documentPdfPath?: string | null;
+  idmlFound: boolean;
+  fontsSkipped: number;
+}
+
 export interface ComparisonNote {
   id: number;
   assetIdLow: number;

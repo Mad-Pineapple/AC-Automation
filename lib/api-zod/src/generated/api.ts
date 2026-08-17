@@ -648,6 +648,34 @@ export const RequestUploadUrlResponse = zod.object({
 
 
 /**
+ * @summary Ingest a zipped InDesign package into the brand library
+ */
+export const ImportBrandPackageParams = zod.object({
+  "brandId": zod.coerce.number()
+})
+
+
+
+
+export const ImportBrandPackageBody = zod.object({
+  "objectPath": zod.string().min(1),
+  "packageName": zod.string().optional()
+})
+
+export const ImportBrandPackageResponse = zod.object({
+  "importedCount": zod.number(),
+  "skipped": zod.array(zod.object({
+  "name": zod.string(),
+  "reason": zod.string()
+})),
+  "folder": zod.string(),
+  "documentPdfPath": zod.string().nullish(),
+  "idmlFound": zod.boolean(),
+  "fontsSkipped": zod.number()
+})
+
+
+/**
  * @summary List library assets for a brand
  */
 export const ListBrandAssetsParams = zod.object({

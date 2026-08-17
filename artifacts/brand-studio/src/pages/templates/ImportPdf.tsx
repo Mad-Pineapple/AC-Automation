@@ -5,8 +5,10 @@ import {
   useCreateTemplate,
   useAdaptTemplate,
   useDissectPdf,
+  useImportBrandPackage,
   useListBrands,
   getListTemplatesQueryKey,
+  getListBrandAssetsQueryKey,
   Brand,
   DissectPdfResult,
   FreeformElement,
@@ -49,6 +51,7 @@ export default function ImportPdf() {
     new Set(["social_square", "story", "mrec", "banner"]),
   );
   const adaptTemplate = useAdaptTemplate();
+  const importPackage = useImportBrandPackage();
   const [editedElements, setEditedElements] = useState<FreeformElement[]>([]);
   const [editorKey, setEditorKey] = useState(0);
   const [name, setName] = useState("");
@@ -75,22 +78,77 @@ export default function ImportPdf() {
 
   if (isLoadingMe || !isAdmin) return null;
 
-  const busy = isUploading || dissect.isPending;
+  const busy = isUploading || dissect.isPending || importPackage.isPending;
+
+  const runDissect = (objectPath: string, friendlyName: string) => {
+    dissect.mutate(
+      { data: { objectPath, mode } },
+      {
+        onSuccess: (res) => {
+          setResult(res);
+          setEditedElements(res.config.elements ?? []);
+          setEditorKey((k) => k + 1);
+          setName(friendlyName || res.name);
+          setDescription("");
+          setCategory("custom");
+        },
+        onError: () =>
+          toast({
+            title: "Could not read that PDF",
+            description: "The file may be encrypted or unsupported. Try another.",
+            variant: "destructive",
+          }),
+      },
+    );
+  };
 
   const handleFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     e.target.value = "";
     if (!file) return;
-    if (file.type !== "application/pdf" && !file.name.toLowerCase().endsWith(".pdf")) {
-      toast({ title: "Please choose a PDF file", variant: "destructive" });
+    const lower = file.name.toLowerCase();
+    const isZip = lower.endsWith(".zip");
+    const isPdf = file.type === "application/pdf" || lower.endsWith(".pdf");
+    if (!isPdf && !isZip) {
+      toast({ title: "Please choose a PDF or a zipped InDesign package", variant: "destructive" });
       return;
     }
-    const friendlyName = file.name.replace(/\.pdf$/i, "").trim();
+    const friendlyName = file.name.replace(/\.(pdf|zip)$/i, "").trim();
     const uploaded = await uploadFile(file);
     if (!uploaded) {
       toast({ title: "Upload failed", description: "Could not upload the file.", variant: "destructive" });
       return;
     }
+
+    if (isZip) {
+      if (!previewBrand) {
+        toast({ title: "Create a brand first", variant: "destructive" });
+        return;
+      }
+      importPackage.mutate(
+        { brandId: previewBrand.id, data: { objectPath: uploaded.objectPath, packageName: file.name } },
+        {
+          onSuccess: (res) => {
+            queryClient.invalidateQueries({ queryKey: getListBrandAssetsQueryKey(previewBrand.id) });
+            toast({
+              title: `${res.importedCount} asset${res.importedCount === 1 ? "" : "s"} imported to the Library`,
+              description: `Folder "${res.folder}"${res.skipped.length ? ` · ${res.skipped.length} skipped` : ""}${
+                res.documentPdfPath ? " · opening the document PDF…" : ""
+              }`,
+            });
+            if (res.documentPdfPath) runDissect(res.documentPdfPath, friendlyName);
+          },
+          onError: () =>
+            toast({
+              title: "Could not read that package",
+              description: "Zip the whole InDesign package folder (with its Links folder) and try again.",
+              variant: "destructive",
+            }),
+        },
+      );
+      return;
+    }
+
     dissect.mutate(
       { data: { objectPath: uploaded.objectPath, mode } },
       {
@@ -230,7 +288,13 @@ export default function ImportPdf() {
               }`}
               data-testid="dropzone-pdf"
             >
-              <input type="file" accept="application/pdf,.pdf" className="hidden" onChange={handleFile} disabled={busy} />
+              <input
+                type="file"
+                accept="application/pdf,.pdf,application/zip,.zip"
+                className="hidden"
+                onChange={handleFile}
+                disabled={busy}
+              />
               {busy ? (
                 <Loader2 className="w-10 h-10 text-primary animate-spin" />
               ) : (
@@ -240,10 +304,17 @@ export default function ImportPdf() {
               )}
               <div>
                 <p className="font-semibold">
-                  {isUploading ? "Uploading…" : dissect.isPending ? "Reading your PDF…" : "Upload a PDF"}
+                  {isUploading
+                    ? "Uploading…"
+                    : importPackage.isPending
+                      ? "Unpacking your InDesign package…"
+                      : dissect.isPending
+                        ? "Reading your PDF…"
+                        : "Upload a PDF or InDesign package (.zip)"}
                 </p>
                 <p className="text-sm text-muted-foreground mt-1 max-w-sm">
-                  We'll extract the page size, text, images, and color blocks from the first page into an editable layout.
+                  A zipped InDesign package imports every linked asset into the Library, then opens
+                  the document PDF here. A plain PDF imports directly.
                 </p>
               </div>
             </label>

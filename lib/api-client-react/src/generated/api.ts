@@ -58,6 +58,8 @@ import type {
   ErrorResponse,
   GetRecentActivityParams,
   HealthStatus,
+  ImportPackageRequest,
+  ImportPackageResult,
   ListAssetsParams,
   ListBriefsParams,
   ListComparisonNotesParams,
@@ -1403,6 +1405,78 @@ export const useRequestUploadUrl = <TError = ErrorType<ErrorResponse>,
         TContext
       > => {
       return useMutation(getRequestUploadUrlMutationOptions(options));
+    }
+
+export const getImportBrandPackageUrl = (brandId: number,) => {
+
+
+
+
+  return `/api/brands/${brandId}/assets/import-package`
+}
+
+/**
+ * @summary Ingest a zipped InDesign package into the brand library
+ */
+export const importBrandPackage = async (brandId: number,
+    importPackageRequest: ImportPackageRequest, options?: RequestInit): Promise<ImportPackageResult> => {
+
+  return customFetch<ImportPackageResult>(getImportBrandPackageUrl(brandId),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      importPackageRequest,)
+  }
+);}
+
+
+
+
+export const getImportBrandPackageMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof importBrandPackage>>, TError,{brandId: number;data: BodyType<ImportPackageRequest>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof importBrandPackage>>, TError,{brandId: number;data: BodyType<ImportPackageRequest>}, TContext> => {
+
+const mutationKey = ['importBrandPackage'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof importBrandPackage>>, {brandId: number;data: BodyType<ImportPackageRequest>}> = (props) => {
+          const {brandId,data} = props ?? {};
+
+          return  importBrandPackage(brandId,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type ImportBrandPackageMutationResult = NonNullable<Awaited<ReturnType<typeof importBrandPackage>>>
+    export type ImportBrandPackageMutationBody = BodyType<ImportPackageRequest>
+    export type ImportBrandPackageMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Ingest a zipped InDesign package into the brand library
+ */
+export const useImportBrandPackage = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof importBrandPackage>>, TError,{brandId: number;data: BodyType<ImportPackageRequest>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof importBrandPackage>>,
+        TError,
+        {brandId: number;data: BodyType<ImportPackageRequest>},
+        TContext
+      > => {
+      return useMutation(getImportBrandPackageMutationOptions(options));
     }
 
 export const getListBrandAssetsUrl = (brandId: number,) => {

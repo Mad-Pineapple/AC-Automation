@@ -442,6 +442,31 @@ paths:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
 
+  /brands/{brandId}/assets/import-package:
+    post:
+      operationId: importBrandPackage
+      tags: [brands]
+      summary: Ingest a zipped InDesign package into the brand library
+      parameters:
+        - name: brandId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ImportPackageRequest"
+      responses:
+        "200":
+          description: Package import summary
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ImportPackageResult"
+
   /brands/{brandId}/assets:
     get:
       operationId: listBrandAssets
@@ -2026,6 +2051,47 @@ components:
       required:
         - name
         - objectPath
+
+    ImportPackageRequest:
+      type: object
+      properties:
+        objectPath:
+          type: string
+          minLength: 1
+        packageName:
+          type: string
+      required:
+        - objectPath
+
+    ImportPackageResult:
+      type: object
+      properties:
+        importedCount:
+          type: integer
+        skipped:
+          type: array
+          items:
+            type: object
+            properties:
+              name:
+                type: string
+              reason:
+                type: string
+            required: [name, reason]
+        folder:
+          type: string
+        documentPdfPath:
+          type: ["string", "null"]
+        idmlFound:
+          type: boolean
+        fontsSkipped:
+          type: integer
+      required:
+        - importedCount
+        - skipped
+        - folder
+        - idmlFound
+        - fontsSkipped
 
     ComparisonNote:
       type: object
