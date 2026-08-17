@@ -44,6 +44,7 @@ export * from './dispatchInput';
 export * from './dispatchResult';
 export * from './dissectImageRequest';
 export * from './dissectPdfRequest';
+export * from './dissectPdfRequestMode';
 export * from './dissectPdfResult';
 export * from './errorResponse';
 export * from './extractedImage';

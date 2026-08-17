@@ -467,7 +467,8 @@ export const AdaptTemplateBody = zod.object({
 
 export const DissectPdfBody = zod.object({
   "objectPath": zod.string().min(1),
-  "page": zod.number().min(1).optional()
+  "page": zod.number().min(1).optional(),
+  "mode": zod.enum(['elements', 'keyVisual']).optional()
 })
 
 export const DissectPdfResponse = zod.object({

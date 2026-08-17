@@ -199,11 +199,20 @@ export interface TemplateUpdate {
   sourceImageUrl?: string | null;
 }
 
+export type DissectPdfRequestMode = typeof DissectPdfRequestMode[keyof typeof DissectPdfRequestMode];
+
+
+export const DissectPdfRequestMode = {
+  elements: 'elements',
+  keyVisual: 'keyVisual',
+} as const;
+
 export interface DissectPdfRequest {
   /** @minLength 1 */
   objectPath: string;
   /** @minimum 1 */
   page?: number;
+  mode?: DissectPdfRequestMode;
 }
 
 export interface DissectImageRequest {

@@ -465,15 +465,60 @@ function snapConfigToPalette(config: FreeformConfig, paletteHexes: string[]): nu
   return snapped;
 }
 
+export type DissectMode = "elements" | "keyVisual";
+
+/**
+ * Key Visual mode: render the page at high resolution and make it the
+ * template's single, locked, full-bleed background (fit: cover). Perfect for
+ * vector-heavy print masters — the artwork stays pixel-faithful, and size
+ * adaptation crops/scales it like a photo instead of reflowing pieces.
+ */
+async function renderKeyVisualTemplate(data: Uint8Array, page: number): Promise<DissectResult> {
+  const { renderPdfPageToPng } = await import("./pdfRender");
+  const { png, width, height } = await renderPdfPageToPng(data, page);
+  const storedPath = await objectStorageService.uploadBytes(png, "image/png");
+  const config = normalizeFreeformConfig({
+    kind: "freeform",
+    elements: [
+      {
+        id: "kv_background",
+        type: "image",
+        role: "product",
+        src: `/api/storage${storedPath}`,
+        fit: "cover",
+        x: 0,
+        y: 0,
+        w: width,
+        h: height,
+        locked: true,
+      },
+    ],
+  });
+  return {
+    name: "Key visual",
+    width,
+    height,
+    config,
+    warnings: [
+      "Key visual mode: the page was rendered as one pixel-faithful image. Adaptations will crop/scale the artwork — use Import (editable) mode instead if you need to change the text.",
+    ],
+  };
+}
+
 export async function dissectPdfToTemplate(
   objectPath: string,
   page: number,
   paletteHexes: string[] = [],
+  mode: DissectMode = "elements",
 ): Promise<DissectResult> {
   const file = await objectStorageService.getObjectEntityFile(objectPath);
   const response = await objectStorageService.downloadObject(file);
   const arrayBuffer = await response.arrayBuffer();
   const data = new Uint8Array(arrayBuffer);
+
+  if (mode === "keyVisual") {
+    return renderKeyVisualTemplate(data, page);
+  }
 
   const pdfjs: any = await import("pdfjs-dist/legacy/build/pdf.mjs");
   const loadingTask = pdfjs.getDocument({ data, useSystemFonts: true });

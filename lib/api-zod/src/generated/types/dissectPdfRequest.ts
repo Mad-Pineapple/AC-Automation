@@ -5,10 +5,12 @@
  * Brand Creative Automation Platform API
  * OpenAPI spec version: 0.1.0
  */
+import type { DissectPdfRequestMode } from './dissectPdfRequestMode';
 
 export interface DissectPdfRequest {
   /** @minLength 1 */
   objectPath: string;
   /** @minimum 1 */
   page?: number;
+  mode?: DissectPdfRequestMode;
 }

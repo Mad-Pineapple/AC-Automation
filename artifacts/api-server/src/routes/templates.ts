@@ -173,9 +173,10 @@ router.post("/templates/dissect-pdf", requireAdmin, async (req, res): Promise<vo
   const objectPath = typeof req.body?.objectPath === "string" ? req.body.objectPath.trim() : "";
   if (!objectPath) { res.status(400).json({ error: "objectPath is required" }); return; }
   const page = Number.isInteger(req.body?.page) && req.body.page >= 1 ? req.body.page : 1;
+  const mode = req.body?.mode === "keyVisual" ? "keyVisual" : "elements";
   try {
-    const paletteHexes = await dissectPaletteHexes(req.body?.brandId);
-    const result = await dissectPdfToTemplate(objectPath, page, paletteHexes);
+    const paletteHexes = mode === "elements" ? await dissectPaletteHexes(req.body?.brandId) : [];
+    const result = await dissectPdfToTemplate(objectPath, page, paletteHexes, mode);
     res.json(result);
   } catch (err) {
     (req as any).log?.error({ err }, "PDF dissection failed");

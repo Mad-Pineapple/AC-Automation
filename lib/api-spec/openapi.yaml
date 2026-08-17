@@ -1777,6 +1777,9 @@ components:
         page:
           type: integer
           minimum: 1
+        mode:
+          type: string
+          enum: [elements, keyVisual]
       required:
         - objectPath
 

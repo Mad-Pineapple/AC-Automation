@@ -39,6 +39,7 @@ export default function ImportPdf() {
   const dissect = useDissectPdf();
   const { uploadFile, isUploading } = useUpload();
 
+  const [mode, setMode] = useState<"elements" | "keyVisual">("elements");
   const [result, setResult] = useState<DissectPdfResult | null>(null);
   const [editedElements, setEditedElements] = useState<FreeformElement[]>([]);
   const [editorKey, setEditorKey] = useState(0);
@@ -83,7 +84,7 @@ export default function ImportPdf() {
       return;
     }
     dissect.mutate(
-      { data: { objectPath: uploaded.objectPath } },
+      { data: { objectPath: uploaded.objectPath, mode } },
       {
         onSuccess: (res) => {
           setResult(res);
@@ -155,7 +156,37 @@ export default function ImportPdf() {
 
       {!result ? (
         <Card className="border-border/50">
-          <CardContent className="py-12">
+          <CardContent className="py-12 space-y-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-w-2xl mx-auto">
+              <button
+                type="button"
+                onClick={() => setMode("elements")}
+                className={`rounded-xl border-2 p-4 text-left transition-colors ${
+                  mode === "elements" ? "border-primary bg-primary/5" : "border-border/60 hover:border-primary/40"
+                }`}
+                data-testid="mode-elements"
+              >
+                <p className="font-semibold text-sm">Editable elements</p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Extracts text, images and colour blocks as separate editable pieces. Best for
+                  text-led layouts you want to rewrite per campaign.
+                </p>
+              </button>
+              <button
+                type="button"
+                onClick={() => setMode("keyVisual")}
+                className={`rounded-xl border-2 p-4 text-left transition-colors ${
+                  mode === "keyVisual" ? "border-primary bg-primary/5" : "border-border/60 hover:border-primary/40"
+                }`}
+                data-testid="mode-key-visual"
+              >
+                <p className="font-semibold text-sm">Key visual (pixel-faithful)</p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Renders the page at high resolution as one image, exactly as designed. Best for
+                  vector artwork you want replicated across sizes untouched.
+                </p>
+              </button>
+            </div>
             <label
               className={`flex flex-col items-center justify-center text-center gap-4 rounded-xl border-2 border-dashed border-border/60 p-12 transition-colors ${
                 busy ? "opacity-60 pointer-events-none" : "cursor-pointer hover:border-primary/50 hover:bg-muted/30"
