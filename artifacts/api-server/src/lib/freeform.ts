@@ -44,6 +44,20 @@ export interface FreeformText extends FreeformBase {
   opacity?: number;
 }
 
+/** A baked-in text block captured from an imported key visual: carried as
+ * metadata (never rendered) so size adaptation can re-set the copy on each
+ * format's grid instead of cropping it. Coordinates in template px. */
+export interface KvTextBlock {
+  text: string;
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+  fontSize: number;
+  color?: string;
+  role?: string;
+}
+
 export interface FreeformImage extends FreeformBase {
   type: "image";
   role: ImageRole;
@@ -51,6 +65,11 @@ export interface FreeformImage extends FreeformBase {
   fit?: "cover" | "contain";
   radius?: number;
   opacity?: number;
+  /** 0..1 focal point for cover crops (drives CSS object-position). */
+  focusX?: number;
+  focusY?: number;
+  /** Key-visual metadata: source text blocks lifted at import. */
+  kvText?: KvTextBlock[];
 }
 
 export interface FreeformRect extends FreeformBase {
@@ -243,6 +262,26 @@ export function normalizeFreeformConfig(raw: unknown): FreeformConfig {
     } else if (el.type === "image") {
       const role = IMAGE_ROLES.includes(el.role as ImageRole) ? (el.role as ImageRole) : "decoration";
       const opacity = clampOpacity(el.opacity);
+      const focusX = clampOpacity(el.focusX);
+      const focusY = clampOpacity(el.focusY);
+      const kvText = Array.isArray(el.kvText)
+        ? (el.kvText as unknown[])
+            .slice(0, 12)
+            .filter((t): t is Record<string, unknown> => typeof t === "object" && t !== null)
+            .map((t) => ({
+              text: String(t.text ?? "").slice(0, MAX_TEXT_LEN),
+              x: num(t.x),
+              y: num(t.y),
+              w: Math.max(0, num(t.w)),
+              h: Math.max(0, num(t.h)),
+              fontSize: Math.min(2000, Math.max(1, num(t.fontSize, 16))),
+              ...(typeof t.color === "string" && SAFE_COLOR.test(t.color.trim())
+                ? { color: t.color.trim() }
+                : {}),
+              ...(typeof t.role === "string" ? { role: t.role.slice(0, 20) } : {}),
+            }))
+            .filter((t) => t.text.trim().length > 0)
+        : undefined;
       elements.push({
         ...base,
         type: "image",
@@ -251,6 +290,9 @@ export function normalizeFreeformConfig(raw: unknown): FreeformConfig {
         ...(el.fit === "contain" || el.fit === "cover" ? { fit: el.fit } : {}),
         ...(el.radius !== undefined ? { radius: Math.max(0, num(el.radius)) } : {}),
         ...(opacity !== undefined ? { opacity } : {}),
+        ...(focusX !== undefined ? { focusX } : {}),
+        ...(focusY !== undefined ? { focusY } : {}),
+        ...(kvText && kvText.length > 0 ? { kvText } : {}),
       });
     } else if (el.type === "rect") {
       const opacity = clampOpacity(el.opacity);

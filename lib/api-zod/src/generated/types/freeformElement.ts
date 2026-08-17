@@ -34,6 +34,10 @@ export interface FreeformElement {
   src?: string | null;
   /** cover | contain (image objectFit; default depends on role) */
   fit?: string;
+  /** 0..1 focal point for cover crops (CSS object-position x) */
+  focusX?: number;
+  /** 0..1 focal point for cover crops (CSS object-position y) */
+  focusY?: number;
   fill?: string;
   radius?: number;
   borderColor?: string;

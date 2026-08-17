@@ -1649,6 +1649,12 @@ components:
         fit:
           type: string
           description: "cover | contain (image objectFit; default depends on role)"
+        focusX:
+          type: number
+          description: "0..1 focal point for cover crops (CSS object-position x)"
+        focusY:
+          type: number
+          description: "0..1 focal point for cover crops (CSS object-position y)"
         fill:
           type: string
         radius:

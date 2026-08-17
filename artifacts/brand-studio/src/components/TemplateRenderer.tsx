@@ -529,7 +529,12 @@ export function freeformImageStyle(el: FreeformElement): React.CSSProperties {
   // An explicit `fit` always wins; otherwise fall back to the role default.
   const fit: "cover" | "contain" =
     el.fit === "contain" || el.fit === "cover" ? el.fit : defaultImageFit(el.role);
-  return { objectFit: fit, objectPosition: "center", borderRadius: el.radius ?? 0 };
+  // Key-visual artwork carries a focal point so cover crops frame the hero.
+  const objectPosition =
+    typeof el.focusX === "number" || typeof el.focusY === "number"
+      ? `${Math.round((el.focusX ?? 0.5) * 100)}% ${Math.round((el.focusY ?? 0.5) * 100)}%`
+      : "center";
+  return { objectFit: fit, objectPosition, borderRadius: el.radius ?? 0 };
 }
 
 export function freeformTextStyle(el: FreeformElement, brandFontFamily: string): React.CSSProperties {

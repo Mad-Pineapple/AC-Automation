@@ -5,6 +5,7 @@ import { eq } from "drizzle-orm";
 import { optionalAuth, requireAdmin } from "../middlewares/requireAuth";
 import { normalizeFreeformConfig, adaptFreeformConfig, isFreeformConfig, type FreeformConfig } from "../lib/freeform";
 import { collectBrandPaletteHexes } from "../lib/colorAdapter";
+import { composeKeyVisualAdaptation } from "../lib/kvAdapt";
 import { dissectPdfToTemplate } from "../lib/pdfDissect";
 import { dissectImageToTemplate } from "../lib/imageDissect";
 
@@ -116,6 +117,11 @@ router.post("/templates/:id/adapt", requireAdmin, async (req, res): Promise<void
   }
   const masterConfig = normalizeFreeformConfig(parsed);
 
+  // Key-visual masters get the designer's adapt: artwork re-cropped to its
+  // focal point, copy/strapline/logo RE-SET on each format's brand grid.
+  const [brand] = await db.select().from(brandsTable).orderBy(brandsTable.id).limit(1);
+  const brandInfo = { logoUrl: brand?.logoUrl ?? null, strapline: brand?.strapline ?? null };
+
   const rawTargets: unknown[] = Array.isArray(req.body?.targets) ? req.body.targets.slice(0, 8) : [];
   const created: (typeof templatesTable.$inferSelect)[] = [];
   for (const raw of rawTargets) {
@@ -127,7 +133,8 @@ router.post("/templates/:id/adapt", requireAdmin, async (req, res): Promise<void
       continue;
     }
     const adapted: FreeformConfig = normalizeFreeformConfig(
-      adaptFreeformConfig(masterConfig, master.width, master.height, width, height),
+      composeKeyVisualAdaptation(masterConfig, master.width, master.height, width, height, brandInfo) ??
+        adaptFreeformConfig(masterConfig, master.width, master.height, width, height),
     );
     const name =
       typeof t.name === "string" && t.name.trim()

@@ -488,67 +488,89 @@ async function renderKeyVisualTemplate(
   //    recognisable type layers they are hidden (the art layers render clean
   //    without them); a flat PDF renders exactly as designed, text included.
   //    pdfjs transfers (detaches) the buffer it is given and this function
-  //    may load the document twice, so the render gets its own copy.
+  //    loads the document twice, so the render gets its own copy.
   const { png, width, height, scale, hiddenLayers } = await renderPdfPageToPng(data.slice(), pageNum, {
     hideTextLayers: true,
   });
   const storedPath = await objectStorageService.uploadBytes(png, "image/png");
 
-  // 2. Live text elements are lifted off ONLY when real layers were hidden —
-  //    otherwise the type is already in the artwork and overlaying a copy
-  //    would double it.
+  // 2. Always read the type: layered masters render it as live elements;
+  //    flat masters carry it as kvText metadata so size adaptation can
+  //    RE-SET the copy on each format's grid instead of cropping it.
+  const pdfjs: any = await import("pdfjs-dist/legacy/build/pdf.mjs");
+  const loadingTask = pdfjs.getDocument({ data, useSystemFonts: true });
+  let blocks: TextBlock[] = [];
+  try {
+    const doc = await loadingTask.promise;
+    const pdfPage = await doc.getPage(Math.min(Math.max(1, pageNum || 1), doc.numPages));
+    const viewportTransform = pdfPage.getViewport({ scale: 1 }).transform as Matrix;
+    let textFills: string[] = [];
+    try {
+      const opList = await pdfPage.getOperatorList();
+      textFills = walkOperators(pdfjs, opList, viewportTransform, warnings).textFills;
+    } catch {
+      // colours become best-guess; not fatal
+    }
+    const content = await pdfPage.getTextContent();
+    blocks = extractTextBlocks(content, viewportTransform, pdfjs, textFills);
+  } catch {
+    warnings.push("Text could not be read from this PDF; adaptations will crop the artwork as-is.");
+  } finally {
+    await loadingTask.destroy();
+  }
+
+  const distinctSizes = Array.from(new Set(blocks.map((b) => Math.round(b.fontSize)))).sort((a, b) => b - a);
+  const rank = (size: number) => distinctSizes.indexOf(Math.round(size));
+  const roleOf = (b: TextBlock) => {
+    const r = rank(b.fontSize);
+    return r === 0 ? "headline" : r === 1 ? "subhead" : "body";
+  };
+
+  // Focal point for cover crops: posters put copy in the lower band, so when
+  // the headline sits in the lower half, the hero is the band above it.
+  let focusY = 0.45;
+  const headlineBlock = blocks.slice().sort((a, b) => b.fontSize - a.fontSize)[0];
+  const pageH = height / scale;
+  if (headlineBlock && headlineBlock.top > pageH * 0.45) {
+    focusY = Math.max(0.2, headlineBlock.top / pageH / 2);
+  }
+
+  const kvText = blocks.map((b) => ({
+    text: b.text,
+    x: b.x * scale,
+    y: b.top * scale,
+    w: Math.max(1, (b.right - b.x) * scale),
+    h: Math.max(b.fontSize, b.bottom - b.top) * scale,
+    fontSize: Math.round(b.fontSize * scale),
+    ...(b.color ? { color: b.color } : {}),
+    role: roleOf(b),
+  }));
+
   let textElements: Record<string, unknown>[] = [];
   if (hiddenLayers.length > 0) {
-    const pdfjs: any = await import("pdfjs-dist/legacy/build/pdf.mjs");
-    const loadingTask = pdfjs.getDocument({ data, useSystemFonts: true });
-    let blocks: TextBlock[] = [];
-    try {
-      const doc = await loadingTask.promise;
-      const pdfPage = await doc.getPage(Math.min(Math.max(1, pageNum || 1), doc.numPages));
-      const viewportTransform = pdfPage.getViewport({ scale: 1 }).transform as Matrix;
-      let textFills: string[] = [];
-      try {
-        const opList = await pdfPage.getOperatorList();
-        textFills = walkOperators(pdfjs, opList, viewportTransform, warnings).textFills;
-      } catch {
-        // colours become best-guess; not fatal
-      }
-      const content = await pdfPage.getTextContent();
-      blocks = extractTextBlocks(content, viewportTransform, pdfjs, textFills);
-    } catch {
-      warnings.push("Text could not be read from this PDF; the artwork was imported without live type.");
-    } finally {
-      await loadingTask.destroy();
-    }
-
-    const distinctSizes = Array.from(new Set(blocks.map((b) => Math.round(b.fontSize)))).sort((a, b) => b - a);
-    const rank = (size: number) => distinctSizes.indexOf(Math.round(size));
-    textElements = blocks.map((b, i) => {
-      const r = rank(b.fontSize);
-      return {
-        id: `txt_${i}`,
-        type: "text",
-        role: r === 0 ? "headline" : r === 1 ? "subhead" : "body",
-        text: b.text,
-        x: b.x * scale,
-        y: b.top * scale,
-        w: Math.max(1, (b.right - b.x) * scale),
-        h: Math.max(b.fontSize, b.bottom - b.top) * scale,
-        fontSize: Math.round(b.fontSize * scale),
-        fontWeight: b.bold || r === 0 ? 700 : 400,
-        color: b.color ?? "#111827",
-        align: "left",
-        lineHeight: 1.2,
-        ...(b.fontFamily ? { fontFamily: b.fontFamily } : {}),
-        ...(b.italic ? { fontStyle: "italic" } : {}),
-      };
-    });
+    textElements = blocks.map((b, i) => ({
+      id: `txt_${i}`,
+      type: "text",
+      role: roleOf(b),
+      text: b.text,
+      x: b.x * scale,
+      y: b.top * scale,
+      w: Math.max(1, (b.right - b.x) * scale),
+      h: Math.max(b.fontSize, b.bottom - b.top) * scale,
+      fontSize: Math.round(b.fontSize * scale),
+      fontWeight: b.bold || roleOf(b) === "headline" ? 700 : 400,
+      color: b.color ?? "#111827",
+      align: "left",
+      lineHeight: 1.2,
+      ...(b.fontFamily ? { fontFamily: b.fontFamily } : {}),
+      ...(b.italic ? { fontStyle: "italic" } : {}),
+    }));
     warnings.push(
       `Type layers (${hiddenLayers.join(", ")}) lifted off as live text — the artwork itself is untouched. Review fonts and colours before saving.`,
     );
   } else {
     warnings.push(
-      "Imported as one faithful image — the artwork (text included) is exactly as designed and is never modified. For live, re-flowable text across sizes, export the PDF with layers (InDesign: \"Create Acrobat Layers\").",
+      "Imported as one faithful image — the artwork (text included) is never modified. Size adaptations re-set the copy, strapline and logo on each format's brand grid.",
     );
   }
 
@@ -566,6 +588,9 @@ async function renderKeyVisualTemplate(
         w: width,
         h: height,
         locked: true,
+        focusX: 0.5,
+        focusY,
+        ...(kvText.length > 0 ? { kvText } : {}),
       },
       ...textElements,
     ],
