@@ -63,7 +63,10 @@ function baseName(path: string): string {
   return path.split("/").pop() ?? path;
 }
 
-export async function importInDesignPackage(objectPath: string): Promise<PackageImportResult> {
+export async function importInDesignPackage(
+  objectPath: string,
+  brandLogoUrl: string | null = null,
+): Promise<PackageImportResult> {
   const file = await objectStorageService.getObjectEntityFile(objectPath);
   const response = await objectStorageService.downloadObject(file);
   const zip = await JSZip.loadAsync(Buffer.from(await response.arrayBuffer()));
@@ -167,7 +170,7 @@ export async function importInDesignPackage(objectPath: string): Promise<Package
   if (idmlBytes) {
     try {
       const idmlZip = await JSZip.loadAsync(idmlBytes);
-      result.idmlLayout = await parseIdmlToLayout(idmlZip, linksByName);
+      result.idmlLayout = await parseIdmlToLayout(idmlZip, linksByName, brandLogoUrl);
     } catch (err) {
       result.idmlError = err instanceof Error ? err.message.slice(0, 160) : "IDML could not be parsed";
     }

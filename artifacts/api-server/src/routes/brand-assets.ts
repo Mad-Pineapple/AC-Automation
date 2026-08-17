@@ -91,7 +91,8 @@ router.post("/brands/:brandId/assets/import-package", requireAdmin, async (req, 
       ? req.body.packageName.trim().replace(/\.zip$/i, "").slice(0, 80)
       : "InDesign package";
   try {
-    const result = await importInDesignPackage(objectPath);
+    const [brandRow] = await db.select().from(brandsTable).where(eq(brandsTable.id, brandId));
+    const result = await importInDesignPackage(objectPath, brandRow?.logoUrl ?? null);
     const folder = `Package — ${packageName}`;
     for (const asset of result.imported) {
       await db.insert(brandAssetsTable).values({

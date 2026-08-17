@@ -50,9 +50,26 @@ function asArray<T>(v: T | T[] | undefined): T[] {
   return Array.isArray(v) ? v : [v];
 }
 
-/** Bounds of an item's path geometry, transformed into spread coordinates. */
-function itemBounds(item: Record<string, any>): { x: number; y: number; w: number; h: number } | null {
-  const m = parseMatrix(item["@_ItemTransform"]);
+/** Forward declaration wrapper so itemBounds (defined above the walker) can
+ * compose matrices; identical maths to compose(). */
+function composeForBounds(parent: Matrix, child: Matrix): Matrix {
+  return [
+    parent[0] * child[0] + parent[2] * child[1],
+    parent[1] * child[0] + parent[3] * child[1],
+    parent[0] * child[2] + parent[2] * child[3],
+    parent[1] * child[2] + parent[3] * child[3],
+    parent[0] * child[4] + parent[2] * child[5] + parent[4],
+    parent[1] * child[4] + parent[3] * child[5] + parent[5],
+  ];
+}
+
+/** Bounds of an item's path geometry, transformed into spread coordinates
+ * (through its own transform composed onto any ancestor-group transforms). */
+function itemBounds(
+  item: Record<string, any>,
+  parentMatrix: Matrix = IDENTITY,
+): { x: number; y: number; w: number; h: number } | null {
+  const m = composeForBounds(parentMatrix, parseMatrix(item["@_ItemTransform"]));
   const anchors: [number, number][] = [];
   const paths = asArray(item?.Properties?.PathGeometry?.GeometryPathType);
   for (const path of paths) {
@@ -174,17 +191,80 @@ function linkBasename(uri: unknown): string | null {
   }
 }
 
-/** Depth-first walk of a spread's page items in document (z) order. */
-function walkItems(node: Record<string, any>, visit: (kind: string, item: Record<string, any>) => void): void {
+/** Compose two ItemTransform matrices: child coordinates -> parent -> out. */
+function compose(parent: Matrix, child: Matrix): Matrix {
+  return [
+    parent[0] * child[0] + parent[2] * child[1],
+    parent[1] * child[0] + parent[3] * child[1],
+    parent[0] * child[2] + parent[2] * child[3],
+    parent[1] * child[2] + parent[3] * child[3],
+    parent[0] * child[4] + parent[2] * child[5] + parent[4],
+    parent[1] * child[4] + parent[3] * child[5] + parent[5],
+  ];
+}
+
+/** Item opacity from its BlendingSetting (InDesign percentages). Blend modes
+ * other than Normal can't be reproduced; opacity is the closest stand-in. */
+function itemOpacity(item: Record<string, any>): { opacity?: number; feathered: boolean; blended: boolean } {
+  const ts = item?.TransparencySetting;
+  const blend = ts?.BlendingSetting;
+  const raw = Number(blend?.["@_Opacity"]);
+  const mode = blend?.["@_BlendMode"];
+  const feathered = ts?.GradientFeatherSetting?.["@_Applied"] === "true" || !!ts?.GradientFeatherSetting;
+  const blended = typeof mode === "string" && mode !== "Normal";
+  if (Number.isFinite(raw) && raw >= 0 && raw < 100) {
+    return { opacity: raw / 100, feathered, blended };
+  }
+  return { opacity: blended ? 0.85 : undefined, feathered, blended };
+}
+
+/** A group that is the vector pōhutukawa lockup: a paper-white tile plus a
+ * cluster of small coloured polygons (anther, waves, leaves). */
+function isLogoGroup(group: Record<string, any>, colors: Map<string, string>): Record<string, any> | null {
+  const rects = asArray(group?.Rectangle);
+  const polys = asArray(group?.Polygon);
+  const whiteTile = rects.find((r) => {
+    const fill = typeof r?.["@_FillColor"] === "string" ? colors.get(r["@_FillColor"]) : undefined;
+    return fill && fill.toLowerCase() === "#ffffff";
+  });
+  const colouredPolys = polys.filter((p) => typeof p?.["@_FillColor"] === "string" && colors.get(p["@_FillColor"]));
+  return whiteTile && colouredPolys.length >= 3 ? whiteTile : null;
+}
+
+interface WalkVisit {
+  kind: string;
+  item: Record<string, any>;
+  /** Transform composed through all ancestor groups. */
+  matrix: Matrix;
+  layer: string | null;
+  logoTile?: Record<string, any>;
+}
+
+/** Depth-first walk of a spread's page items, compounding group transforms
+ * and inheriting the group's layer. Logo-lockup groups are emitted as a
+ * single `Group` visit carrying the tile, not flattened into fragments. */
+function walkItems(
+  node: Record<string, any>,
+  colors: Map<string, string>,
+  visit: (v: WalkVisit) => void,
+  parentMatrix: Matrix = IDENTITY,
+  parentLayer: string | null = null,
+): void {
   const KINDS = ["Rectangle", "Oval", "Polygon", "TextFrame", "GraphicLine", "Group"];
   for (const kind of KINDS) {
     for (const item of asArray(node?.[kind])) {
+      const layer = typeof item?.["@_ItemLayer"] === "string" ? item["@_ItemLayer"] : parentLayer;
+      if (item?.["@_Visible"] === "false") continue;
       if (kind === "Group") {
-        walkItems(item, visit);
+        const groupMatrix = compose(parentMatrix, parseMatrix(item["@_ItemTransform"]));
+        const tile = isLogoGroup(item, colors);
+        if (tile) {
+          visit({ kind: "Group", item, matrix: groupMatrix, layer, logoTile: tile });
+        } else {
+          walkItems(item, colors, visit, groupMatrix, layer);
+        }
       } else {
-        visit(kind, item);
-        // Nested items (images live inside Rectangles) are visited by the
-        // handler itself, not the walker.
+        visit({ kind, item, matrix: parentMatrix, layer });
       }
     }
   }
@@ -193,6 +273,7 @@ function walkItems(node: Record<string, any>, visit: (kind: string, item: Record
 export async function parseIdmlToLayout(
   idml: JSZip,
   linksByName: Map<string, { objectPath: string; kind: string }>,
+  brandLogoUrl: string | null = null,
 ): Promise<IdmlParseResult> {
   const parser = new XMLParser({ ignoreAttributes: false, attributeNamePrefix: "@_" });
   const warnings: string[] = [];
@@ -212,6 +293,14 @@ export async function parseIdmlToLayout(
 
   // First spread listed in the design map.
   const designMap = await readXml("designmap.xml");
+
+  // Layer visibility: items on hidden layers (guides, backups) are skipped.
+  const hiddenLayers = new Set<string>();
+  for (const layer of asArray(designMap?.Document?.Layer)) {
+    if (layer?.["@_Visible"] === "false" && typeof layer?.["@_Self"] === "string") {
+      hiddenLayers.add(layer["@_Self"]);
+    }
+  }
   const spreadRefs = asArray(designMap?.Document?.["idPkg:Spread"]).map((s: any) => s?.["@_src"]).filter(Boolean);
   if (spreadRefs.length === 0) {
     throw new Error("IDML has no spreads");
@@ -251,9 +340,15 @@ export async function parseIdmlToLayout(
   let idCounter = 0;
   let unmatchedImages = 0;
   let rotatedItems = 0;
+  let strokeOnlySkipped = 0;
+  let featheredItems = 0;
+  let blendedItems = 0;
 
-  walkItems(spread, (kind, item) => {
-    const bounds = itemBounds(item);
+  walkItems(spread, colors, ({ kind, item, matrix, layer, logoTile }) => {
+    if (layer && hiddenLayers.has(layer)) return;
+    // The logo lockup group imports as ONE brand-logo image at its tile.
+    const boundsSource = logoTile ?? item;
+    const bounds = itemBounds(boundsSource, matrix);
     if (!bounds) return;
     const x = bounds.x - pageX;
     const y = bounds.y - pageY;
@@ -262,6 +357,40 @@ export async function parseIdmlToLayout(
 
     const m = parseMatrix(item["@_ItemTransform"]);
     if (Math.abs(m[1]) > 0.001 || Math.abs(m[2]) > 0.001) rotatedItems++;
+
+    const { opacity, feathered, blended } = itemOpacity(item);
+    if (feathered) featheredItems++;
+    if (blended) blendedItems++;
+
+    if (logoTile) {
+      if (brandLogoUrl) {
+        const inset = Math.round(Math.min(bounds.w, bounds.h) / 8);
+        elements.push({
+          id: `idml_logo_tile_${idCounter++}`,
+          type: "rect",
+          fill: "#ffffff",
+          x,
+          y,
+          w: Math.max(1, bounds.w),
+          h: Math.max(1, bounds.h),
+          locked: true,
+        });
+        elements.push({
+          id: `idml_logo_${idCounter++}`,
+          type: "image",
+          role: "logo",
+          src: brandLogoUrl,
+          fit: "contain",
+          x: x + inset,
+          y: y + inset,
+          w: Math.max(1, bounds.w - inset * 2),
+          h: Math.max(1, bounds.h - inset * 2),
+          locked: true,
+        });
+        warnings.push("Vector pōhutukawa lockup replaced with the brand logo on its tile.");
+      }
+      return;
+    }
 
     if (kind === "TextFrame") {
       const storySelf = item?.["@_ParentStory"];
@@ -283,6 +412,7 @@ export async function parseIdmlToLayout(
         align: story.align,
         lineHeight: 1.2,
         ...(story.fontFamily ? { fontFamily: story.fontFamily } : {}),
+        ...(opacity !== undefined ? { opacity } : {}),
       });
       return;
     }
@@ -308,6 +438,7 @@ export async function parseIdmlToLayout(
           y,
           w: Math.max(1, bounds.w),
           h: Math.max(1, bounds.h),
+          ...(opacity !== undefined ? { opacity } : {}),
         });
       } else {
         unmatchedImages++;
@@ -327,7 +458,24 @@ export async function parseIdmlToLayout(
         y,
         w: Math.max(1, bounds.w),
         h: Math.max(1, bounds.h),
+        ...(opacity !== undefined ? { opacity } : {}),
       });
+      return;
+    }
+
+    // Stroke-only vector art (the anther device, rules) can't be recreated
+    // as live shapes yet; count it so the warning names what's missing.
+    const strokeRef = item?.["@_StrokeColor"];
+    const strokeW = Number(item?.["@_StrokeWeight"]);
+    if (
+      !fill &&
+      typeof strokeRef === "string" &&
+      colors.get(strokeRef) &&
+      Number.isFinite(strokeW) &&
+      strokeW > 0 &&
+      bounds.w * bounds.h > pageW * pageH * 0.02
+    ) {
+      strokeOnlySkipped++;
     }
   });
 
@@ -336,6 +484,16 @@ export async function parseIdmlToLayout(
   }
   if (rotatedItems > 0) {
     warnings.push(`${rotatedItems} rotated item(s) were imported axis-aligned (rotation is not yet supported).`);
+  }
+  if (strokeOnlySkipped > 0) {
+    warnings.push(
+      `${strokeOnlySkipped} outlined vector shape(s) — likely the anther framing device — could not be recreated as live artwork. Use Recreate-artwork mode if the anther must be kept, or re-add it in the editor.`,
+    );
+  }
+  if (featheredItems > 0 || blendedItems > 0) {
+    warnings.push(
+      "Some elements use blend modes or gradient fades; they were approximated with flat opacity — check panels over photography.",
+    );
   }
   if (elements.length === 0) {
     throw new Error("No importable items found on the first page");
