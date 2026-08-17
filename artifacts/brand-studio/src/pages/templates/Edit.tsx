@@ -143,15 +143,7 @@ export default function EditTemplate() {
   );
 }
 
-// Formats a master template can be adapted into (Storyteq's Adaptation
-// Studio pattern): one designed master → per-format layouts to fine-tune.
-const ADAPT_PRESETS = [
-  { key: "social_square", label: "Social Square", width: 1080, height: 1080 },
-  { key: "story", label: "Story", width: 1080, height: 1920 },
-  { key: "mrec", label: "MREC Display", width: 300, height: 250 },
-  { key: "banner", label: "Leaderboard", width: 728, height: 90 },
-  { key: "print_a4", label: "Print A4", width: 2480, height: 3508 },
-] as const;
+import { ADAPT_PRESETS } from "@/lib/adaptPresets";
 
 function AdaptDialog({ templateId, templateName }: { templateId: number; templateName: string }) {
   const [open, setOpen] = useState(false);

@@ -3,6 +3,7 @@ import { useLocation, Link } from "wouter";
 import { useQueryClient } from "@tanstack/react-query";
 import {
   useCreateTemplate,
+  useAdaptTemplate,
   useDissectPdf,
   useListBrands,
   getListTemplatesQueryKey,
@@ -10,6 +11,7 @@ import {
   DissectPdfResult,
   FreeformElement,
 } from "@workspace/api-client-react";
+import { ADAPT_PRESETS } from "@/lib/adaptPresets";
 import { useUpload } from "@workspace/object-storage-web";
 import { useToast } from "@/hooks/use-toast";
 import { useMe } from "@/hooks/use-me";
@@ -41,6 +43,12 @@ export default function ImportPdf() {
 
   const [mode, setMode] = useState<"elements" | "keyVisual">("elements");
   const [result, setResult] = useState<DissectPdfResult | null>(null);
+  // Output sizes generated alongside the master on save (digital set on by
+  // default; print off since the master usually IS the print artwork).
+  const [outputSizes, setOutputSizes] = useState<Set<string>>(
+    new Set(["social_square", "story", "mrec", "banner"]),
+  );
+  const adaptTemplate = useAdaptTemplate();
   const [editedElements, setEditedElements] = useState<FreeformElement[]>([]);
   const [editorKey, setEditorKey] = useState(0);
   const [name, setName] = useState("");
@@ -118,6 +126,11 @@ export default function ImportPdf() {
       toast({ title: "Name is required", variant: "destructive" });
       return;
     }
+    const targets = ADAPT_PRESETS.filter((p) => outputSizes.has(p.key)).map((p) => ({
+      width: p.width,
+      height: p.height,
+      name: `${name.trim()} — ${p.label}`,
+    }));
     createTemplate.mutate(
       {
         data: {
@@ -130,10 +143,34 @@ export default function ImportPdf() {
         },
       },
       {
-        onSuccess: () => {
-          toast({ title: "Template created from PDF" });
+        onSuccess: (created) => {
           queryClient.invalidateQueries({ queryKey: getListTemplatesQueryKey() });
-          setLocation("/templates");
+          if (targets.length === 0) {
+            toast({ title: "Template created from PDF" });
+            setLocation("/templates");
+            return;
+          }
+          adaptTemplate.mutate(
+            { id: created.id, data: { targets } },
+            {
+              onSuccess: (adapted) => {
+                queryClient.invalidateQueries({ queryKey: getListTemplatesQueryKey() });
+                toast({
+                  title: `Master + ${adapted.length} size${adapted.length === 1 ? "" : "s"} created`,
+                  description: "Each size is a normal template — fine-tune any of them in the editor.",
+                });
+                setLocation("/templates");
+              },
+              onError: () => {
+                toast({
+                  title: "Master saved, but size adaptation failed",
+                  description: "Open the template and use Adapt to other sizes.",
+                  variant: "destructive",
+                });
+                setLocation("/templates");
+              },
+            },
+          );
         },
         onError: () => toast({ title: "Failed to save template", variant: "destructive" }),
       },
@@ -278,6 +315,46 @@ export default function ImportPdf() {
                 <Badge variant="secondary">{counts.text} text</Badge>
                 <Badge variant="secondary">{counts.image} image</Badge>
                 <Badge variant="secondary">{counts.rect} shape</Badge>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="border-border/50">
+            <CardHeader>
+              <CardTitle className="text-base">Output sizes</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-xs text-muted-foreground mb-3">
+                Saving creates the master plus an adapted template for every ticked size — artwork
+                re-crops, text re-anchors. Untick everything to save just the master.
+              </p>
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2">
+                {ADAPT_PRESETS.map((p) => {
+                  const on = outputSizes.has(p.key);
+                  return (
+                    <button
+                      key={p.key}
+                      type="button"
+                      onClick={() =>
+                        setOutputSizes((prev) => {
+                          const next = new Set(prev);
+                          if (next.has(p.key)) next.delete(p.key);
+                          else next.add(p.key);
+                          return next;
+                        })
+                      }
+                      className={`rounded-lg border-2 px-3 py-2 text-left transition-colors ${
+                        on ? "border-primary bg-primary/5" : "border-border/60 hover:border-primary/40"
+                      }`}
+                      data-testid={`output-size-${p.key}`}
+                    >
+                      <p className="text-sm font-medium">{p.label}</p>
+                      <p className="text-[11px] text-muted-foreground font-mono">
+                        {p.width}×{p.height}
+                      </p>
+                    </button>
+                  );
+                })}
               </div>
             </CardContent>
           </Card>

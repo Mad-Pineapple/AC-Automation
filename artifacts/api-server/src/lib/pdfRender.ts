@@ -71,9 +71,13 @@ class NapiCanvasFactory {
   }
 }
 
-/** Average colour of the ring of pixels just outside a box — the "what was
- * behind the text" estimate used to erase it. */
-function sampleRingColor(
+/**
+ * Erase a box by stretching the pixels at its left and right edges across it
+ * (per-row linear interpolation). Unlike a flat fill, this continues the
+ * surrounding texture through the erased area — no visible patch box — and
+ * adds nothing that wasn't sampled from the original artwork.
+ */
+function eraseBoxBlended(
   ctx: ReturnType<Canvas["getContext"]>,
   x: number,
   y: number,
@@ -81,30 +85,34 @@ function sampleRingColor(
   h: number,
   canvasW: number,
   canvasH: number,
-): string {
-  const OFFSET = 4;
-  const points: [number, number][] = [];
-  const steps = 24;
-  for (let i = 0; i <= steps; i++) {
-    const t = i / steps;
-    points.push([x + w * t, y - OFFSET]); // above
-    points.push([x + w * t, y + h + OFFSET]); // below
+): void {
+  const x0 = Math.max(0, Math.round(x));
+  const y0 = Math.max(0, Math.round(y));
+  const x1 = Math.min(canvasW, Math.round(x + w));
+  const y1 = Math.min(canvasH, Math.round(y + h));
+  const wdt = x1 - x0;
+  const hgt = y1 - y0;
+  if (wdt <= 0 || hgt <= 0) return;
+
+  const OFFSET = 3;
+  const leftX = Math.max(0, x0 - OFFSET);
+  const rightX = Math.min(canvasW - 1, x1 + OFFSET);
+  const left = ctx.getImageData(leftX, y0, 1, hgt).data;
+  const right = ctx.getImageData(rightX, y0, 1, hgt).data;
+
+  const out = ctx.createImageData(wdt, hgt);
+  for (let row = 0; row < hgt; row++) {
+    const li = row * 4;
+    for (let col = 0; col < wdt; col++) {
+      const t = wdt === 1 ? 0.5 : col / (wdt - 1);
+      const oi = (row * wdt + col) * 4;
+      out.data[oi] = left[li] + (right[li] - left[li]) * t;
+      out.data[oi + 1] = left[li + 1] + (right[li + 1] - left[li + 1]) * t;
+      out.data[oi + 2] = left[li + 2] + (right[li + 2] - left[li + 2]) * t;
+      out.data[oi + 3] = 255;
+    }
   }
-  for (let i = 0; i <= 8; i++) {
-    const t = i / 8;
-    points.push([x - OFFSET, y + h * t]); // left
-    points.push([x + w + OFFSET, y + h * t]); // right
-  }
-  let r = 0, g = 0, b = 0, n = 0;
-  for (const [px, py] of points) {
-    const cx = Math.round(px), cy = Math.round(py);
-    if (cx < 0 || cy < 0 || cx >= canvasW || cy >= canvasH) continue;
-    const d = ctx.getImageData(cx, cy, 1, 1).data;
-    r += d[0]; g += d[1]; b += d[2]; n++;
-  }
-  if (n === 0) return "#ffffff";
-  const to = (v: number) => Math.round(v / n).toString(16).padStart(2, "0");
-  return `#${to(r)}${to(g)}${to(b)}`;
+  ctx.putImageData(out, x0, y0);
 }
 
 export async function renderPdfPageToPng(
@@ -183,13 +191,16 @@ export async function renderPdfPageToPng(
     // laid on top don't double up. Skipped when real layers were hidden.
     if (hiddenLayers.length === 0 && options.eraseBoxes?.length) {
       for (const box of options.eraseBoxes) {
-        const pad = Math.max(2, box.h * 0.15) * scale;
-        const x = box.x * scale - pad;
-        const y = box.y * scale - pad;
-        const w = box.w * scale + pad * 2;
-        const h = box.h * scale + pad * 2;
-        context.fillStyle = sampleRingColor(context, x, y, w, h, width, height);
-        context.fillRect(x, y, w, h);
+        const pad = Math.max(2, box.h * 0.1) * scale;
+        eraseBoxBlended(
+          context,
+          box.x * scale - pad,
+          box.y * scale - pad,
+          box.w * scale + pad * 2,
+          box.h * scale + pad * 2,
+          width,
+          height,
+        );
       }
     }
 

@@ -107,19 +107,26 @@ export function FreeformEditor({ width, height, brand, initialElements, onChange
 
   const { uploadFile, isUploading } = useUpload();
 
-  // Fit the (width x height) canvas into the available column width.
+  // Fit the (width x height) canvas into the available column width AND the
+  // viewport height, so tall masters (e.g. imported posters) don't force the
+  // user to scroll the artwork.
   useLayoutEffect(() => {
     const node = containerRef.current;
     if (!node) return;
     const measure = () => {
       const avail = node.clientWidth;
-      if (avail > 0) setScale(Math.min(1, avail / width));
+      const maxH = Math.max(320, window.innerHeight * 0.7);
+      if (avail > 0) setScale(Math.min(1, avail / width, maxH / height));
     };
     measure();
     const ro = new ResizeObserver(measure);
     ro.observe(node);
-    return () => ro.disconnect();
-  }, [width]);
+    window.addEventListener("resize", measure);
+    return () => {
+      ro.disconnect();
+      window.removeEventListener("resize", measure);
+    };
+  }, [width, height]);
 
   const selected = els.find((e) => e.id === selectedId) ?? null;
   const canUndo = pastRef.current.length > 0;
