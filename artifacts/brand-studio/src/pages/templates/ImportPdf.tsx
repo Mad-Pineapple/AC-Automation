@@ -219,8 +219,8 @@ export default function ImportPdf() {
               >
                 <p className="font-semibold text-sm">Recreate artwork</p>
                 <p className="text-xs text-muted-foreground mt-1">
-                  Artwork becomes one pixel-faithful image; the type is lifted off as live text on
-                  top. Adaptations re-compose each size — art crops behind, text re-anchors in front.
+                  A pixel-faithful copy of the page — the artwork is never modified. Layered PDFs
+                  get their type lifted off as live text; flat PDFs import exactly as designed.
                 </p>
               </button>
             </div>

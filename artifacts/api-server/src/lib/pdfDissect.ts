@@ -484,74 +484,72 @@ async function renderKeyVisualTemplate(
   const { renderPdfPageToPng } = await import("./pdfRender");
   const warnings: string[] = [];
 
-  // 1. Extract text blocks (scale-1 page coordinates) exactly like the
-  //    elements mode, so the recreation carries live, palette-true type.
-  const pdfjs: any = await import("pdfjs-dist/legacy/build/pdf.mjs");
-  // pdfjs transfers (detaches) the buffer it is given, and this function
-  // loads the document twice — text pass here, render pass below — so each
-  // load gets its own copy.
-  const loadingTask = pdfjs.getDocument({ data: data.slice(), useSystemFonts: true });
-  let blocks: TextBlock[] = [];
-  try {
-    const doc = await loadingTask.promise;
-    const pdfPage = await doc.getPage(Math.min(Math.max(1, pageNum || 1), doc.numPages));
-    const viewportTransform = pdfPage.getViewport({ scale: 1 }).transform as Matrix;
-    let textFills: string[] = [];
-    try {
-      const opList = await pdfPage.getOperatorList();
-      textFills = walkOperators(pdfjs, opList, viewportTransform, warnings).textFills;
-    } catch {
-      // colours become best-guess; not fatal
-    }
-    const content = await pdfPage.getTextContent();
-    blocks = extractTextBlocks(content, viewportTransform, pdfjs, textFills);
-  } catch {
-    warnings.push("Text could not be read from this PDF; the artwork was imported without live type.");
-  } finally {
-    await loadingTask.destroy();
-  }
-
-  // 2. Render the artwork without the type: hide type layers if the PDF has
-  //    them, otherwise erase the text boxes from the flat render.
-  const { png, width, height, scale, hiddenLayers } = await renderPdfPageToPng(data, pageNum, {
+  // 1. Render the artwork. THE ARTWORK IS NEVER ALTERED: if the PDF has
+  //    recognisable type layers they are hidden (the art layers render clean
+  //    without them); a flat PDF renders exactly as designed, text included.
+  //    pdfjs transfers (detaches) the buffer it is given and this function
+  //    may load the document twice, so the render gets its own copy.
+  const { png, width, height, scale, hiddenLayers } = await renderPdfPageToPng(data.slice(), pageNum, {
     hideTextLayers: true,
-    eraseBoxes: blocks.map((b) => ({ x: b.x, y: b.top, w: b.right - b.x, h: b.bottom - b.top })),
   });
   const storedPath = await objectStorageService.uploadBytes(png, "image/png");
 
+  // 2. Live text elements are lifted off ONLY when real layers were hidden —
+  //    otherwise the type is already in the artwork and overlaying a copy
+  //    would double it.
+  let textElements: Record<string, unknown>[] = [];
   if (hiddenLayers.length > 0) {
-    warnings.push(`Type layers hidden from the artwork render: ${hiddenLayers.join(", ")}.`);
-  } else if (blocks.length > 0) {
-    warnings.push(
-      "Flat PDF: text was erased from the artwork by filling with the surrounding colour — check busy areas and touch up if needed.",
-    );
-  }
+    const pdfjs: any = await import("pdfjs-dist/legacy/build/pdf.mjs");
+    const loadingTask = pdfjs.getDocument({ data, useSystemFonts: true });
+    let blocks: TextBlock[] = [];
+    try {
+      const doc = await loadingTask.promise;
+      const pdfPage = await doc.getPage(Math.min(Math.max(1, pageNum || 1), doc.numPages));
+      const viewportTransform = pdfPage.getViewport({ scale: 1 }).transform as Matrix;
+      let textFills: string[] = [];
+      try {
+        const opList = await pdfPage.getOperatorList();
+        textFills = walkOperators(pdfjs, opList, viewportTransform, warnings).textFills;
+      } catch {
+        // colours become best-guess; not fatal
+      }
+      const content = await pdfPage.getTextContent();
+      blocks = extractTextBlocks(content, viewportTransform, pdfjs, textFills);
+    } catch {
+      warnings.push("Text could not be read from this PDF; the artwork was imported without live type.");
+    } finally {
+      await loadingTask.destroy();
+    }
 
-  // 3. Live text elements in render-pixel coordinates on top of the artwork.
-  const distinctSizes = Array.from(new Set(blocks.map((b) => Math.round(b.fontSize)))).sort((a, b) => b - a);
-  const rank = (size: number) => distinctSizes.indexOf(Math.round(size));
-  const textElements = blocks.map((b, i) => {
-    const r = rank(b.fontSize);
-    return {
-      id: `txt_${i}`,
-      type: "text",
-      role: r === 0 ? "headline" : r === 1 ? "subhead" : "body",
-      text: b.text,
-      x: b.x * scale,
-      y: b.top * scale,
-      w: Math.max(1, (b.right - b.x) * scale),
-      h: Math.max(b.fontSize, b.bottom - b.top) * scale,
-      fontSize: Math.round(b.fontSize * scale),
-      fontWeight: b.bold || r === 0 ? 700 : 400,
-      color: b.color ?? "#111827",
-      align: "left",
-      lineHeight: 1.2,
-      ...(b.fontFamily ? { fontFamily: b.fontFamily } : {}),
-      ...(b.italic ? { fontStyle: "italic" } : {}),
-    };
-  });
-  if (textElements.length > 0) {
-    warnings.push("Recreated type is best-guess for font and colour — review before saving.");
+    const distinctSizes = Array.from(new Set(blocks.map((b) => Math.round(b.fontSize)))).sort((a, b) => b - a);
+    const rank = (size: number) => distinctSizes.indexOf(Math.round(size));
+    textElements = blocks.map((b, i) => {
+      const r = rank(b.fontSize);
+      return {
+        id: `txt_${i}`,
+        type: "text",
+        role: r === 0 ? "headline" : r === 1 ? "subhead" : "body",
+        text: b.text,
+        x: b.x * scale,
+        y: b.top * scale,
+        w: Math.max(1, (b.right - b.x) * scale),
+        h: Math.max(b.fontSize, b.bottom - b.top) * scale,
+        fontSize: Math.round(b.fontSize * scale),
+        fontWeight: b.bold || r === 0 ? 700 : 400,
+        color: b.color ?? "#111827",
+        align: "left",
+        lineHeight: 1.2,
+        ...(b.fontFamily ? { fontFamily: b.fontFamily } : {}),
+        ...(b.italic ? { fontStyle: "italic" } : {}),
+      };
+    });
+    warnings.push(
+      `Type layers (${hiddenLayers.join(", ")}) lifted off as live text — the artwork itself is untouched. Review fonts and colours before saving.`,
+    );
+  } else {
+    warnings.push(
+      "Imported as one faithful image — the artwork (text included) is exactly as designed and is never modified. For live, re-flowable text across sizes, export the PDF with layers (InDesign: \"Create Acrobat Layers\").",
+    );
   }
 
   const config = normalizeFreeformConfig({
