@@ -16,6 +16,7 @@
  */
 import { promises as fsp } from "node:fs";
 import path from "node:path";
+import { fileURLToPath } from "node:url";
 import { put } from "@vercel/blob";
 
 const EXTENSION_CONTENT_TYPES: Record<string, string> = {
@@ -36,7 +37,9 @@ const EXTENSION_CONTENT_TYPES: Record<string, string> = {
   ".mp4": "video/mp4",
 };
 
-const scriptDir = path.dirname(new URL(import.meta.url).pathname);
+// fileURLToPath, not URL.pathname: the latter percent-encodes spaces in the
+// repo path ("AC Automatioin" -> "AC%20Automatioin") and every fs call fails.
+const scriptDir = path.dirname(fileURLToPath(import.meta.url));
 const storageRoot = path.resolve(
   process.env.OBJECT_STORAGE_DIR ||
     path.join(scriptDir, "../../artifacts/api-server/data/objects"),
