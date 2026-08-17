@@ -132,9 +132,11 @@ router.post("/templates/:id/adapt", requireAdmin, async (req, res): Promise<void
     if (!Number.isInteger(width) || !Number.isInteger(height) || width < 16 || height < 16 || width > 8000 || height > 8000) {
       continue;
     }
+    const composed = await composeKeyVisualAdaptation(
+      masterConfig, master.width, master.height, width, height, brandInfo,
+    );
     const adapted: FreeformConfig = normalizeFreeformConfig(
-      composeKeyVisualAdaptation(masterConfig, master.width, master.height, width, height, brandInfo) ??
-        adaptFreeformConfig(masterConfig, master.width, master.height, width, height),
+      composed ?? adaptFreeformConfig(masterConfig, master.width, master.height, width, height),
     );
     const name =
       typeof t.name === "string" && t.name.trim()

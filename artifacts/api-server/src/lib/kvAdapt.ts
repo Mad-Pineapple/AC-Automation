@@ -17,7 +17,11 @@
  *  - The artwork layer keeps a focal point so cover crops frame the hero,
  *    and its pixels are never modified.
  */
+import sharp from "sharp";
+import { ObjectStorageService } from "./objectStorage";
 import type { FreeformConfig, FreeformElement, FreeformImage, KvTextBlock } from "./freeform";
+
+const objectStorageService = new ObjectStorageService();
 
 export interface KvBrandInfo {
   logoUrl: string | null;
@@ -26,6 +30,58 @@ export interface KvBrandInfo {
 
 const STRIP_MAX_HEIGHT = 120;
 const MIN_HEADLINE_PX = 13;
+/** White copy needs a treatment when the artwork behind it is lighter than
+ * this (0-255 luminance) — same threshold the compliance checker uses. */
+const SCRIM_LUMINANCE_THRESHOLD = 140;
+const SCRIM_COLOR = "#11263d"; // Ocean, per the guidelines' colour/opacity effect
+const SCRIM_OPACITY = 0.55;
+
+// One-entry cache so adapting several sizes of the same master downloads the
+// artwork once per process, not once per target.
+let artworkCache: { src: string; buffer: Buffer } | null = null;
+
+async function loadArtwork(src: string): Promise<Buffer | null> {
+  if (artworkCache?.src === src) return artworkCache.buffer;
+  try {
+    const objectPath = src.replace(/^\/api\/storage/, "");
+    const file = await objectStorageService.getObjectEntityFile(objectPath);
+    const response = await objectStorageService.downloadObject(file);
+    const buffer = Buffer.from(await response.arrayBuffer());
+    artworkCache = { src, buffer };
+    return buffer;
+  } catch {
+    return null;
+  }
+}
+
+/** Mean luminance (0-255) of the artwork region behind a canvas-space box,
+ * or null when it can't be sampled (missing artwork, box off-image). */
+async function sampleLuminanceBehind(
+  src: string,
+  imgW: number,
+  imgH: number,
+  art: { x: number; y: number; w: number; h: number },
+  box: { x: number; y: number; w: number; h: number },
+): Promise<number | null> {
+  const buffer = await loadArtwork(src);
+  if (!buffer) return null;
+  const s = art.w / imgW; // canvas px per source px
+  const left = Math.round((box.x - art.x) / s);
+  const top = Math.round((box.y - art.y) / s);
+  const width = Math.round(box.w / s);
+  const height = Math.round(box.h / s);
+  const cl = Math.max(0, Math.min(imgW - 1, left));
+  const ct = Math.max(0, Math.min(imgH - 1, top));
+  const cw = Math.max(1, Math.min(imgW - cl, width - (cl - left)));
+  const ch = Math.max(1, Math.min(imgH - ct, height - (ct - top)));
+  try {
+    const stats = await sharp(buffer).extract({ left: cl, top: ct, width: cw, height: ch }).stats();
+    const [r, g, b] = stats.channels;
+    return 0.299 * r.mean + 0.587 * g.mean + 0.114 * b.mean;
+  } catch {
+    return null;
+  }
+}
 
 /** The KV master shape: first element is a locked, full-bleed cover image. */
 export function findKvBackground(config: FreeformConfig, srcW: number, srcH: number): FreeformImage | null {
@@ -42,14 +98,14 @@ function pickBlock(kvText: KvTextBlock[], role: string): KvTextBlock | undefined
   return undefined;
 }
 
-export function composeKeyVisualAdaptation(
+export async function composeKeyVisualAdaptation(
   master: FreeformConfig,
   srcW: number,
   srcH: number,
   dstW: number,
   dstH: number,
   brand: KvBrandInfo,
-): FreeformConfig | null {
+): Promise<FreeformConfig | null> {
   const bg = findKvBackground(master, srcW, srcH);
   if (!bg) return null;
 
@@ -226,6 +282,39 @@ export function composeKeyVisualAdaptation(
       h: tile - inset * 2,
       locked: true,
     } as FreeformElement);
+  }
+
+  // 5. Readability (guidelines: backgrounds behind copy get a colour/opacity
+  //    effect and must pass contrast). Sample the actual artwork behind each
+  //    copy block; where white type would fail, slide an Ocean panel between
+  //    artwork and type. The artwork itself stays untouched underneath.
+  if (bg.src) {
+    const art = { x: artX, y: artY, w: artW, h: artH };
+    const copyElements = elements.filter(
+      (el): el is FreeformElement & { type: "text" } =>
+        el.type === "text" && (el.id === "kv_headline" || el.id === "kv_strapline"),
+    );
+    const scrims: FreeformElement[] = [];
+    for (const el of copyElements) {
+      const lum = await sampleLuminanceBehind(bg.src, srcW, srcH, art, el);
+      if (lum !== null && lum >= SCRIM_LUMINANCE_THRESHOLD) {
+        const pad = Math.round(margin / 2);
+        scrims.push({
+          id: `${el.id}_scrim`,
+          type: "rect",
+          fill: SCRIM_COLOR,
+          opacity: SCRIM_OPACITY,
+          radius: Math.min(12, pad),
+          x: el.x - pad,
+          y: el.y - pad,
+          w: el.w + pad * 2,
+          h: el.h + pad * 2,
+          locked: true,
+        } as FreeformElement);
+      }
+    }
+    // z-order: artwork, then scrims, then everything else.
+    elements.splice(1, 0, ...scrims);
   }
 
   return { kind: "freeform", elements };
