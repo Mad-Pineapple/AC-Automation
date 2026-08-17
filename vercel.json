@@ -6,7 +6,8 @@
   "framework": null,
   "functions": {
     "api/index.mjs": {
-      "maxDuration": 300
+      "maxDuration": 300,
+      "includeFiles": "node_modules/.pnpm/{pdfjs-dist@,@napi-rs+canvas}*/**"
     }
   },
   "rewrites": [
