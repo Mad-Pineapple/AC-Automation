@@ -346,6 +346,89 @@ export interface ComparisonNoteInput {
   body: string;
 }
 
+export interface AssetComment {
+  id: number;
+  assetId: number;
+  /** @nullable */
+  authorId?: number | null;
+  /** @nullable */
+  authorName?: string | null;
+  body: string;
+  /** @nullable */
+  pinX?: number | null;
+  /** @nullable */
+  pinY?: number | null;
+  /** @nullable */
+  resolvedAt?: string | null;
+  /** @nullable */
+  resolvedBy?: string | null;
+  createdAt: string;
+}
+
+export interface AssetCommentInput {
+  body: string;
+  /** @nullable */
+  pinX?: number | null;
+  /** @nullable */
+  pinY?: number | null;
+}
+
+export interface AssetCommentUpdate {
+  resolved: boolean;
+}
+
+export type ShareLinkStatus = typeof ShareLinkStatus[keyof typeof ShareLinkStatus];
+
+
+export const ShareLinkStatus = {
+  active: 'active',
+  expired: 'expired',
+  revoked: 'revoked',
+} as const;
+
+export interface ShareLink {
+  id: number;
+  token: string;
+  briefId: number;
+  /** @nullable */
+  createdBy?: string | null;
+  createdAt: string;
+  /** @nullable */
+  expiresAt?: string | null;
+  status: ShareLinkStatus;
+}
+
+export interface ShareLinkInput {
+  /** @nullable */
+  expiresInDays?: number | null;
+}
+
+export interface SharedAsset {
+  id: number;
+  templateSize: string;
+  /** @nullable */
+  variantLabel?: string | null;
+  /** @nullable */
+  headline?: string | null;
+  /** @nullable */
+  imageUrl?: string | null;
+  isAnimated: boolean;
+  status: string;
+  /** @nullable */
+  complianceScore?: number | null;
+}
+
+export interface SharedBrief {
+  campaignName: string;
+  /** @nullable */
+  brandName?: string | null;
+  /** @nullable */
+  brandLogoUrl?: string | null;
+  /** @nullable */
+  expiresAt?: string | null;
+  assets: SharedAsset[];
+}
+
 export interface ReviewProgress {
   briefId: number;
   reviewedAssetIds: number[];

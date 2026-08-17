@@ -9,4 +9,6 @@ export * from "./users";
 export * from "./blocked-users";
 export * from "./templates";
 export * from "./comparison-notes";
+export * from "./asset-comments";
+export * from "./share-links";
 export * from "./review-progress";

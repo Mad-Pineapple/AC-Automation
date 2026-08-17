@@ -20,7 +20,7 @@ import { ChevronLeft, Upload, X } from "lucide-react";
 import { TEMPLATE_SIZE_LABELS, ALL_TEMPLATE_SIZES } from "@/components/TemplateRenderer";
 import { BrandIdentityPreview } from "@/components/BrandIdentityPreview";
 import { LibraryImagePicker } from "@/components/LibraryImagePicker";
-import { parseVariantsText, variantsToText } from "@/lib/variants";
+import { parseVariantsText, parseVariantsCsv, variantsToText } from "@/lib/variants";
 import { useUpload } from "@workspace/object-storage-web";
 
 const NO_CAMPAIGN = "__none__";
@@ -206,7 +206,37 @@ export default function EditBrief() {
 
               <FormField control={form.control} name="variantsText" render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Variants (optional)</FormLabel>
+                  <div className="flex items-center justify-between">
+                    <FormLabel>Variants (optional)</FormLabel>
+                    <label
+                      className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground cursor-pointer"
+                      data-testid="button-import-variants-csv"
+                    >
+                      <Upload className="w-3.5 h-3.5" />
+                      Import CSV
+                      <input
+                        type="file"
+                        accept=".csv,text/csv"
+                        className="hidden"
+                        onChange={async (e) => {
+                          const file = e.target.files?.[0];
+                          e.target.value = "";
+                          if (!file) return;
+                          const rows = parseVariantsCsv(await file.text());
+                          if (!rows) {
+                            toast({ title: "No variants found in that CSV", description: "Expected columns: Label, Headline, Body, CTA (a header row is optional).", variant: "destructive" });
+                            return;
+                          }
+                          const capped = rows.slice(0, 20);
+                          form.setValue("variantsText", variantsToText(capped), { shouldValidate: true });
+                          toast({
+                            title: `Imported ${capped.length} variant${capped.length === 1 ? "" : "s"} from CSV`,
+                            ...(rows.length > capped.length ? { description: `The CSV had ${rows.length} rows; a brief generates at most 20 variants.` } : {}),
+                          });
+                        }}
+                      />
+                    </label>
+                  </div>
                   <FormControl>
                     <Textarea
                       {...field}

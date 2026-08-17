@@ -17,7 +17,8 @@ import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { ChevronLeft, CheckCircle, RefreshCw, Edit2, X, Check, Maximize2, Columns2, Eye, XCircle, Clock, Trash2, Tag, ShieldCheck, ShieldAlert } from "lucide-react";
+import { ChevronLeft, CheckCircle, RefreshCw, Edit2, X, Check, Maximize2, Columns2, Eye, XCircle, Clock, Trash2, Tag, ShieldCheck, ShieldAlert, Link2 } from "lucide-react";
+import ShareLinkDialog from "@/components/ShareLinkDialog";
 import { TemplateThumbnail, getTemplateLabel, getTemplateConfig } from "@/components/TemplateRenderer";
 import HtmlBannerEditor from "@/components/HtmlBannerEditor";
 import AssetLightbox from "@/components/AssetLightbox";
@@ -187,6 +188,7 @@ export default function ApproveScreen() {
   const [pendingDeleteIds, setPendingDeleteIds] = useState<Set<number>>(new Set());
   const deleteTimersRef = useRef<Map<number, ReturnType<typeof setTimeout>>>(new Map());
   const [adTagsOpen, setAdTagsOpen] = useState(false);
+  const [shareOpen, setShareOpen] = useState(false);
   const [bulkClickUrl, setBulkClickUrl] = useState("");
   const createBriefAdTags = useCreateBriefAdTags();
 
@@ -673,6 +675,15 @@ export default function ApproveScreen() {
               Generate Ad Tags
             </Button>
           )}
+          <Button
+            variant="outline"
+            onClick={() => setShareOpen(true)}
+            data-testid="button-share-brief"
+          >
+            <Link2 className="w-4 h-4 mr-2" />
+            Share
+          </Button>
+          <ShareLinkDialog briefId={briefId} open={shareOpen} onOpenChange={setShareOpen} />
           <Button
             onClick={handleApproveAll}
             disabled={approveBrief.isPending || !visibleAssets.length || compareMode}

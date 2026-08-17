@@ -14,6 +14,8 @@ import storageRouter from "./storage";
 import brandAssetsRouter from "./brand-assets";
 import brandAnalysisRouter from "./brand-analysis";
 import comparisonNotesRouter from "./comparison-notes";
+import assetCommentsRouter from "./asset-comments";
+import shareLinksRouter from "./share-links";
 import reviewProgressRouter from "./review-progress";
 
 const router: IRouter = Router();
@@ -32,6 +34,8 @@ router.use(storageRouter);
 router.use(brandAssetsRouter);
 router.use(brandAnalysisRouter);
 router.use(comparisonNotesRouter);
+router.use(assetCommentsRouter);
+router.use(shareLinksRouter);
 router.use(reviewProgressRouter);
 router.use(statsRouter);
 

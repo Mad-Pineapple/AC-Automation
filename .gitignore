@@ -57,3 +57,5 @@ data/
 .env*.local
 .env.local
 scripts/migrate-blob.done.log
+.vercel
+.env*

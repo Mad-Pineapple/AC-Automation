@@ -27,6 +27,9 @@ import type {
   AnalyzeGuidelineRequest,
   AnalyzeGuidelineResponse,
   Asset,
+  AssetComment,
+  AssetCommentInput,
+  AssetCommentUpdate,
   AssetRejectInput,
   AssetUpdate,
   Brand,
@@ -63,6 +66,9 @@ import type {
   PerformanceStats,
   ReviewProgress,
   ReviewProgressInput,
+  ShareLink,
+  ShareLinkInput,
+  SharedBrief,
   SuggestBriefSizesRequest,
   SuggestBriefSizesResult,
   Template,
@@ -1772,6 +1778,593 @@ export const useCreateComparisonNote = <TError = ErrorType<unknown>,
       > => {
       return useMutation(getCreateComparisonNoteMutationOptions(options));
     }
+
+export const getListAssetCommentsUrl = (id: number,) => {
+
+
+
+
+  return `/api/assets/${id}/comments`
+}
+
+/**
+ * @summary List review comments on an asset
+ */
+export const listAssetComments = async (id: number, options?: RequestInit): Promise<AssetComment[]> => {
+
+  return customFetch<AssetComment[]>(getListAssetCommentsUrl(id),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListAssetCommentsQueryKey = (id: number,) => {
+    return [
+    `/api/assets/${id}/comments`
+    ] as const;
+    }
+
+
+export const getListAssetCommentsQueryOptions = <TData = Awaited<ReturnType<typeof listAssetComments>>, TError = ErrorType<unknown>>(id: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listAssetComments>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListAssetCommentsQueryKey(id);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listAssetComments>>> = ({ signal }) => listAssetComments(id, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: !!(id), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listAssetComments>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListAssetCommentsQueryResult = NonNullable<Awaited<ReturnType<typeof listAssetComments>>>
+export type ListAssetCommentsQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary List review comments on an asset
+ */
+
+export function useListAssetComments<TData = Awaited<ReturnType<typeof listAssetComments>>, TError = ErrorType<unknown>>(
+ id: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listAssetComments>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListAssetCommentsQueryOptions(id,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
+
+export const getCreateAssetCommentUrl = (id: number,) => {
+
+
+
+
+  return `/api/assets/${id}/comments`
+}
+
+/**
+ * @summary Add a review comment (optionally pinned) to an asset
+ */
+export const createAssetComment = async (id: number,
+    assetCommentInput: AssetCommentInput, options?: RequestInit): Promise<AssetComment> => {
+
+  return customFetch<AssetComment>(getCreateAssetCommentUrl(id),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      assetCommentInput,)
+  }
+);}
+
+
+
+
+export const getCreateAssetCommentMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createAssetComment>>, TError,{id: number;data: BodyType<AssetCommentInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof createAssetComment>>, TError,{id: number;data: BodyType<AssetCommentInput>}, TContext> => {
+
+const mutationKey = ['createAssetComment'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createAssetComment>>, {id: number;data: BodyType<AssetCommentInput>}> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  createAssetComment(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CreateAssetCommentMutationResult = NonNullable<Awaited<ReturnType<typeof createAssetComment>>>
+    export type CreateAssetCommentMutationBody = BodyType<AssetCommentInput>
+    export type CreateAssetCommentMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Add a review comment (optionally pinned) to an asset
+ */
+export const useCreateAssetComment = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createAssetComment>>, TError,{id: number;data: BodyType<AssetCommentInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof createAssetComment>>,
+        TError,
+        {id: number;data: BodyType<AssetCommentInput>},
+        TContext
+      > => {
+      return useMutation(getCreateAssetCommentMutationOptions(options));
+    }
+
+export const getUpdateAssetCommentUrl = (id: number,) => {
+
+
+
+
+  return `/api/asset-comments/${id}`
+}
+
+/**
+ * @summary Resolve or reopen an asset comment
+ */
+export const updateAssetComment = async (id: number,
+    assetCommentUpdate: AssetCommentUpdate, options?: RequestInit): Promise<AssetComment> => {
+
+  return customFetch<AssetComment>(getUpdateAssetCommentUrl(id),
+  {
+    ...options,
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      assetCommentUpdate,)
+  }
+);}
+
+
+
+
+export const getUpdateAssetCommentMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateAssetComment>>, TError,{id: number;data: BodyType<AssetCommentUpdate>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof updateAssetComment>>, TError,{id: number;data: BodyType<AssetCommentUpdate>}, TContext> => {
+
+const mutationKey = ['updateAssetComment'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof updateAssetComment>>, {id: number;data: BodyType<AssetCommentUpdate>}> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  updateAssetComment(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UpdateAssetCommentMutationResult = NonNullable<Awaited<ReturnType<typeof updateAssetComment>>>
+    export type UpdateAssetCommentMutationBody = BodyType<AssetCommentUpdate>
+    export type UpdateAssetCommentMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Resolve or reopen an asset comment
+ */
+export const useUpdateAssetComment = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateAssetComment>>, TError,{id: number;data: BodyType<AssetCommentUpdate>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof updateAssetComment>>,
+        TError,
+        {id: number;data: BodyType<AssetCommentUpdate>},
+        TContext
+      > => {
+      return useMutation(getUpdateAssetCommentMutationOptions(options));
+    }
+
+export const getDeleteAssetCommentUrl = (id: number,) => {
+
+
+
+
+  return `/api/asset-comments/${id}`
+}
+
+/**
+ * @summary Delete an asset comment (author or admin)
+ */
+export const deleteAssetComment = async (id: number, options?: RequestInit): Promise<void> => {
+
+  return customFetch<void>(getDeleteAssetCommentUrl(id),
+  {
+    ...options,
+    method: 'DELETE'
+
+
+  }
+);}
+
+
+
+
+export const getDeleteAssetCommentMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteAssetComment>>, TError,{id: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof deleteAssetComment>>, TError,{id: number}, TContext> => {
+
+const mutationKey = ['deleteAssetComment'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof deleteAssetComment>>, {id: number}> = (props) => {
+          const {id} = props ?? {};
+
+          return  deleteAssetComment(id,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type DeleteAssetCommentMutationResult = NonNullable<Awaited<ReturnType<typeof deleteAssetComment>>>
+
+    export type DeleteAssetCommentMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Delete an asset comment (author or admin)
+ */
+export const useDeleteAssetComment = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteAssetComment>>, TError,{id: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof deleteAssetComment>>,
+        TError,
+        {id: number},
+        TContext
+      > => {
+      return useMutation(getDeleteAssetCommentMutationOptions(options));
+    }
+
+export const getListShareLinksUrl = (id: number,) => {
+
+
+
+
+  return `/api/briefs/${id}/share-links`
+}
+
+/**
+ * @summary List share links for a brief
+ */
+export const listShareLinks = async (id: number, options?: RequestInit): Promise<ShareLink[]> => {
+
+  return customFetch<ShareLink[]>(getListShareLinksUrl(id),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListShareLinksQueryKey = (id: number,) => {
+    return [
+    `/api/briefs/${id}/share-links`
+    ] as const;
+    }
+
+
+export const getListShareLinksQueryOptions = <TData = Awaited<ReturnType<typeof listShareLinks>>, TError = ErrorType<unknown>>(id: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listShareLinks>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListShareLinksQueryKey(id);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listShareLinks>>> = ({ signal }) => listShareLinks(id, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: !!(id), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listShareLinks>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListShareLinksQueryResult = NonNullable<Awaited<ReturnType<typeof listShareLinks>>>
+export type ListShareLinksQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary List share links for a brief
+ */
+
+export function useListShareLinks<TData = Awaited<ReturnType<typeof listShareLinks>>, TError = ErrorType<unknown>>(
+ id: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listShareLinks>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListShareLinksQueryOptions(id,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
+
+export const getCreateShareLinkUrl = (id: number,) => {
+
+
+
+
+  return `/api/briefs/${id}/share-links`
+}
+
+/**
+ * @summary Create an external share link for a brief's assets
+ */
+export const createShareLink = async (id: number,
+    shareLinkInput?: ShareLinkInput, options?: RequestInit): Promise<ShareLink> => {
+
+  return customFetch<ShareLink>(getCreateShareLinkUrl(id),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      shareLinkInput,)
+  }
+);}
+
+
+
+
+export const getCreateShareLinkMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createShareLink>>, TError,{id: number;data?: BodyType<ShareLinkInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof createShareLink>>, TError,{id: number;data?: BodyType<ShareLinkInput>}, TContext> => {
+
+const mutationKey = ['createShareLink'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createShareLink>>, {id: number;data?: BodyType<ShareLinkInput>}> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  createShareLink(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CreateShareLinkMutationResult = NonNullable<Awaited<ReturnType<typeof createShareLink>>>
+    export type CreateShareLinkMutationBody = BodyType<ShareLinkInput> | undefined
+    export type CreateShareLinkMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Create an external share link for a brief's assets
+ */
+export const useCreateShareLink = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createShareLink>>, TError,{id: number;data?: BodyType<ShareLinkInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof createShareLink>>,
+        TError,
+        {id: number;data?: BodyType<ShareLinkInput>},
+        TContext
+      > => {
+      return useMutation(getCreateShareLinkMutationOptions(options));
+    }
+
+export const getRevokeShareLinkUrl = (id: number,) => {
+
+
+
+
+  return `/api/share-links/${id}`
+}
+
+/**
+ * @summary Revoke a share link
+ */
+export const revokeShareLink = async (id: number, options?: RequestInit): Promise<void> => {
+
+  return customFetch<void>(getRevokeShareLinkUrl(id),
+  {
+    ...options,
+    method: 'DELETE'
+
+
+  }
+);}
+
+
+
+
+export const getRevokeShareLinkMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof revokeShareLink>>, TError,{id: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof revokeShareLink>>, TError,{id: number}, TContext> => {
+
+const mutationKey = ['revokeShareLink'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof revokeShareLink>>, {id: number}> = (props) => {
+          const {id} = props ?? {};
+
+          return  revokeShareLink(id,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type RevokeShareLinkMutationResult = NonNullable<Awaited<ReturnType<typeof revokeShareLink>>>
+
+    export type RevokeShareLinkMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Revoke a share link
+ */
+export const useRevokeShareLink = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof revokeShareLink>>, TError,{id: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof revokeShareLink>>,
+        TError,
+        {id: number},
+        TContext
+      > => {
+      return useMutation(getRevokeShareLinkMutationOptions(options));
+    }
+
+export const getGetSharedBriefUrl = (token: string,) => {
+
+
+
+
+  return `/api/share/${token}`
+}
+
+/**
+ * @summary Public token-authorized view of a brief's assets
+ */
+export const getSharedBrief = async (token: string, options?: RequestInit): Promise<SharedBrief> => {
+
+  return customFetch<SharedBrief>(getGetSharedBriefUrl(token),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetSharedBriefQueryKey = (token: string,) => {
+    return [
+    `/api/share/${token}`
+    ] as const;
+    }
+
+
+export const getGetSharedBriefQueryOptions = <TData = Awaited<ReturnType<typeof getSharedBrief>>, TError = ErrorType<unknown>>(token: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getSharedBrief>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetSharedBriefQueryKey(token);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getSharedBrief>>> = ({ signal }) => getSharedBrief(token, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: !!(token), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getSharedBrief>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetSharedBriefQueryResult = NonNullable<Awaited<ReturnType<typeof getSharedBrief>>>
+export type GetSharedBriefQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Public token-authorized view of a brief's assets
+ */
+
+export function useGetSharedBrief<TData = Awaited<ReturnType<typeof getSharedBrief>>, TError = ErrorType<unknown>>(
+ token: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getSharedBrief>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetSharedBriefQueryOptions(token,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
 
 export const getListBrandStylesUrl = (brandId: number,) => {
 

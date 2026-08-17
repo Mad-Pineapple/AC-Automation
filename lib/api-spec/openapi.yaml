@@ -544,6 +544,166 @@ paths:
               schema:
                 $ref: "#/components/schemas/ComparisonNote"
 
+  /assets/{id}/comments:
+    get:
+      operationId: listAssetComments
+      tags: [assets]
+      summary: List review comments on an asset
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Asset comments
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/AssetComment"
+    post:
+      operationId: createAssetComment
+      tags: [assets]
+      summary: Add a review comment (optionally pinned) to an asset
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AssetCommentInput"
+      responses:
+        "201":
+          description: Created asset comment
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AssetComment"
+
+  /asset-comments/{id}:
+    patch:
+      operationId: updateAssetComment
+      tags: [assets]
+      summary: Resolve or reopen an asset comment
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AssetCommentUpdate"
+      responses:
+        "200":
+          description: Updated asset comment
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AssetComment"
+    delete:
+      operationId: deleteAssetComment
+      tags: [assets]
+      summary: Delete an asset comment (author or admin)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+
+  /briefs/{id}/share-links:
+    get:
+      operationId: listShareLinks
+      tags: [briefs]
+      summary: List share links for a brief
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Share links
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ShareLink"
+    post:
+      operationId: createShareLink
+      tags: [briefs]
+      summary: Create an external share link for a brief's assets
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ShareLinkInput"
+      responses:
+        "201":
+          description: Created share link
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ShareLink"
+
+  /share-links/{id}:
+    delete:
+      operationId: revokeShareLink
+      tags: [briefs]
+      summary: Revoke a share link
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Revoked
+
+  /share/{token}:
+    get:
+      operationId: getSharedBrief
+      tags: [briefs]
+      summary: Public token-authorized view of a brief's assets
+      parameters:
+        - name: token
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Shared brief gallery
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SharedBrief"
+
   /brands/{brandId}/styles:
     get:
       operationId: listBrandStyles
@@ -1895,6 +2055,130 @@ components:
         - assetA
         - assetB
         - body
+
+    AssetComment:
+      type: object
+      properties:
+        id:
+          type: integer
+        assetId:
+          type: integer
+        authorId:
+          type: ["integer", "null"]
+        authorName:
+          type: ["string", "null"]
+        body:
+          type: string
+        pinX:
+          type: ["number", "null"]
+        pinY:
+          type: ["number", "null"]
+        resolvedAt:
+          type: ["string", "null"]
+        resolvedBy:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+      required:
+        - id
+        - assetId
+        - body
+        - createdAt
+
+    AssetCommentInput:
+      type: object
+      properties:
+        body:
+          type: string
+        pinX:
+          type: ["number", "null"]
+        pinY:
+          type: ["number", "null"]
+      required:
+        - body
+
+    AssetCommentUpdate:
+      type: object
+      properties:
+        resolved:
+          type: boolean
+      required:
+        - resolved
+
+    ShareLink:
+      type: object
+      properties:
+        id:
+          type: integer
+        token:
+          type: string
+        briefId:
+          type: integer
+        createdBy:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+        expiresAt:
+          type: ["string", "null"]
+        status:
+          type: string
+          enum: [active, expired, revoked]
+      required:
+        - id
+        - token
+        - briefId
+        - createdAt
+        - status
+
+    ShareLinkInput:
+      type: object
+      properties:
+        expiresInDays:
+          type: ["integer", "null"]
+
+    SharedAsset:
+      type: object
+      properties:
+        id:
+          type: integer
+        templateSize:
+          type: string
+        variantLabel:
+          type: ["string", "null"]
+        headline:
+          type: ["string", "null"]
+        imageUrl:
+          type: ["string", "null"]
+        isAnimated:
+          type: boolean
+        status:
+          type: string
+        complianceScore:
+          type: ["integer", "null"]
+      required:
+        - id
+        - templateSize
+        - isAnimated
+        - status
+
+    SharedBrief:
+      type: object
+      properties:
+        campaignName:
+          type: string
+        brandName:
+          type: ["string", "null"]
+        brandLogoUrl:
+          type: ["string", "null"]
+        expiresAt:
+          type: ["string", "null"]
+        assets:
+          type: array
+          items:
+            $ref: "#/components/schemas/SharedAsset"
+      required:
+        - campaignName
+        - assets
 
     ReviewProgress:
       type: object

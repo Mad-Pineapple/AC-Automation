@@ -1,5 +1,6 @@
 import { useRef, useEffect, useCallback } from "react";
-import { X, ChevronLeft, ChevronRight, Download, Loader2, FileCode, Tag, Copy, Check } from "lucide-react";
+import { X, ChevronLeft, ChevronRight, Download, Loader2, FileCode, Tag, Copy, Check, MessageSquare } from "lucide-react";
+import { CommentPinsOverlay, CommentsPanel, useAssetComments, type PendingPin } from "@/components/AssetComments";
 import { useState } from "react";
 import { toPng } from "html-to-image";
 import DOMPurify from "dompurify";
@@ -80,6 +81,9 @@ export default function AssetLightbox({ assets, initialIndex, brand, onClose, on
   const [adTagOpen, setAdTagOpen] = useState(false);
   const [clickUrl, setClickUrl] = useState("");
   const [copied, setCopied] = useState<string | null>(null);
+  const [commentsOpen, setCommentsOpen] = useState(false);
+  const [pendingPin, setPendingPin] = useState<PendingPin | null>(null);
+  const [showResolved, setShowResolved] = useState(false);
   const canvasRef = useRef<HTMLDivElement>(null);
   const queryClient = useQueryClient();
   const { toast } = useToast();
@@ -98,7 +102,20 @@ export default function AssetLightbox({ assets, initialIndex, brand, onClose, on
 
   useEffect(() => {
     onViewed?.(asset.id);
+    setPendingPin(null);
   }, [asset.id]);
+
+  const { comments, isLoading: commentsLoading } = useAssetComments(asset.id, true);
+
+  const handleCanvasClick = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (!commentsOpen) return;
+    e.stopPropagation();
+    const rect = e.currentTarget.getBoundingClientRect();
+    setPendingPin({
+      x: Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width)),
+      y: Math.max(0, Math.min(1, (e.clientY - rect.top) / rect.height)),
+    });
+  };
 
   const handleGenerateTag = () => {
     createAdTag.mutate(
@@ -275,6 +292,16 @@ export default function AssetLightbox({ assets, initialIndex, brand, onClose, on
             Get Ad Tag
           </Button>
           <Button
+            size="sm"
+            variant={commentsOpen ? "default" : "secondary"}
+            onClick={() => setCommentsOpen(o => !o)}
+            data-testid="lightbox-comments"
+            className="h-8 gap-1.5"
+          >
+            <MessageSquare className="w-3.5 h-3.5" />
+            Comments{comments.length > 0 ? ` (${comments.length})` : ""}
+          </Button>
+          <Button
             size="icon"
             variant="ghost"
             onClick={onClose}
@@ -301,9 +328,11 @@ export default function AssetLightbox({ assets, initialIndex, brand, onClose, on
         {isHtml ? (
           <div
             style={{ width: displayW, height: displayH, overflow: "hidden", flexShrink: 0, position: "relative" }}
-            className="rounded shadow-2xl ring-1 ring-white/10 bg-white"
+            className={`rounded shadow-2xl ring-1 ring-white/10 bg-white ${commentsOpen ? "cursor-crosshair" : ""}`}
             data-testid="lightbox-canvas"
+            onClick={handleCanvasClick}
           >
+            <CommentPinsOverlay comments={comments} pendingPin={pendingPin} showResolved={showResolved} />
             <iframe
               srcDoc={asset.htmlContent ?? ""}
               sandbox="allow-scripts"
@@ -323,9 +352,11 @@ export default function AssetLightbox({ assets, initialIndex, brand, onClose, on
           <div
             ref={canvasRef}
             style={{ width: displayW, height: displayH, overflow: "hidden", flexShrink: 0, position: "relative" }}
-            className="rounded shadow-2xl ring-1 ring-white/10"
+            className={`rounded shadow-2xl ring-1 ring-white/10 ${commentsOpen ? "cursor-crosshair" : ""}`}
             data-testid="lightbox-canvas"
+            onClick={handleCanvasClick}
           >
+            <CommentPinsOverlay comments={comments} pendingPin={pendingPin} showResolved={showResolved} />
             <TemplateRenderer
               templateSize={asset.templateSize}
               brand={brand}
@@ -352,6 +383,19 @@ export default function AssetLightbox({ assets, initialIndex, brand, onClose, on
       </div>
 
       <p className="text-white/30 text-xs mt-4">Press ← → to navigate · Esc to close</p>
+
+      {commentsOpen && (
+        <CommentsPanel
+          assetId={asset.id}
+          comments={comments}
+          isLoading={commentsLoading}
+          pendingPin={pendingPin}
+          onClearPendingPin={() => setPendingPin(null)}
+          showResolved={showResolved}
+          onToggleResolved={() => setShowResolved(s => !s)}
+          onClose={() => { setCommentsOpen(false); setPendingPin(null); }}
+        />
+      )}
 
       <Dialog open={adTagOpen} onOpenChange={setAdTagOpen}>
         <DialogContent className="max-w-lg" onClick={e => e.stopPropagation()} data-testid="dialog-ad-tag">

@@ -708,6 +708,139 @@ export const CreateComparisonNoteBody = zod.object({
 
 
 /**
+ * @summary List review comments on an asset
+ */
+export const ListAssetCommentsParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const ListAssetCommentsResponseItem = zod.object({
+  "id": zod.number(),
+  "assetId": zod.number(),
+  "authorId": zod.number().nullish(),
+  "authorName": zod.string().nullish(),
+  "body": zod.string(),
+  "pinX": zod.number().nullish(),
+  "pinY": zod.number().nullish(),
+  "resolvedAt": zod.string().nullish(),
+  "resolvedBy": zod.string().nullish(),
+  "createdAt": zod.string()
+})
+export const ListAssetCommentsResponse = zod.array(ListAssetCommentsResponseItem)
+
+
+/**
+ * @summary Add a review comment (optionally pinned) to an asset
+ */
+export const CreateAssetCommentParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const CreateAssetCommentBody = zod.object({
+  "body": zod.string(),
+  "pinX": zod.number().nullish(),
+  "pinY": zod.number().nullish()
+})
+
+
+/**
+ * @summary Resolve or reopen an asset comment
+ */
+export const UpdateAssetCommentParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const UpdateAssetCommentBody = zod.object({
+  "resolved": zod.boolean()
+})
+
+export const UpdateAssetCommentResponse = zod.object({
+  "id": zod.number(),
+  "assetId": zod.number(),
+  "authorId": zod.number().nullish(),
+  "authorName": zod.string().nullish(),
+  "body": zod.string(),
+  "pinX": zod.number().nullish(),
+  "pinY": zod.number().nullish(),
+  "resolvedAt": zod.string().nullish(),
+  "resolvedBy": zod.string().nullish(),
+  "createdAt": zod.string()
+})
+
+
+/**
+ * @summary Delete an asset comment (author or admin)
+ */
+export const DeleteAssetCommentParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+
+/**
+ * @summary List share links for a brief
+ */
+export const ListShareLinksParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const ListShareLinksResponseItem = zod.object({
+  "id": zod.number(),
+  "token": zod.string(),
+  "briefId": zod.number(),
+  "createdBy": zod.string().nullish(),
+  "createdAt": zod.string(),
+  "expiresAt": zod.string().nullish(),
+  "status": zod.enum(['active', 'expired', 'revoked'])
+})
+export const ListShareLinksResponse = zod.array(ListShareLinksResponseItem)
+
+
+/**
+ * @summary Create an external share link for a brief's assets
+ */
+export const CreateShareLinkParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const CreateShareLinkBody = zod.object({
+  "expiresInDays": zod.number().nullish()
+})
+
+
+/**
+ * @summary Revoke a share link
+ */
+export const RevokeShareLinkParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+
+/**
+ * @summary Public token-authorized view of a brief's assets
+ */
+export const GetSharedBriefParams = zod.object({
+  "token": zod.coerce.string()
+})
+
+export const GetSharedBriefResponse = zod.object({
+  "campaignName": zod.string(),
+  "brandName": zod.string().nullish(),
+  "brandLogoUrl": zod.string().nullish(),
+  "expiresAt": zod.string().nullish(),
+  "assets": zod.array(zod.object({
+  "id": zod.number(),
+  "templateSize": zod.string(),
+  "variantLabel": zod.string().nullish(),
+  "headline": zod.string().nullish(),
+  "imageUrl": zod.string().nullish(),
+  "isAnimated": zod.boolean(),
+  "status": zod.string(),
+  "complianceScore": zod.number().nullish()
+}))
+})
+
+
+/**
  * @summary List style snippets for a brand
  */
 export const ListBrandStylesParams = zod.object({

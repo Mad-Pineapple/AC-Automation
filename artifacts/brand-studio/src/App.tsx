@@ -9,6 +9,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { ThemeProvider } from "@/lib/theme";
 import { Layout } from "@/components/Layout";
 import NotFound from "@/pages/not-found";
+import SharePage from "@/pages/Share";
 
 import Dashboard from "@/pages/Dashboard";
 import BrandList from "@/pages/brands/List";
@@ -224,6 +225,8 @@ function ClerkProviderWithRoutes() {
             <Switch>
               <Route path="/sign-in/*?" component={SignInPage} />
               <Route path="/sign-up/*?" component={SignUpPage} />
+              {/* Public stakeholder gallery — outside the authenticated shell. */}
+              <Route path="/share/:token" component={SharePage} />
               <Route component={AppRoutes} />
             </Switch>
             <Toaster />
