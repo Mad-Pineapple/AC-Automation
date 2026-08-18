@@ -1680,6 +1680,23 @@ components:
         focusY:
           type: number
           description: "0..1 focal point for cover crops (CSS object-position y)"
+        gradient:
+          type: object
+          description: "Rect linear gradient: {angle: deg, stops: [{color, alpha, at}]}"
+          properties:
+            angle:
+              type: number
+            stops:
+              type: array
+              items:
+                type: object
+                properties:
+                  color:
+                    type: string
+                  alpha:
+                    type: number
+                  at:
+                    type: number
         fill:
           type: string
         radius:

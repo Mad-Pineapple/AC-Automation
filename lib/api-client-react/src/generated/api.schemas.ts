@@ -108,6 +108,20 @@ export interface BrandUpdate {
   supportedTemplateSizes?: string[];
 }
 
+export type FreeformElementGradientStopsItem = {
+  color?: string;
+  alpha?: number;
+  at?: number;
+};
+
+/**
+ * Rect linear gradient: {angle: deg, stops: [{color, alpha, at}]}
+ */
+export type FreeformElementGradient = {
+  angle?: number;
+  stops?: FreeformElementGradientStopsItem[];
+};
+
 /**
  * A single positioned element in a freeform template layout.
  */
@@ -140,6 +154,8 @@ export interface FreeformElement {
   focusX?: number;
   /** 0..1 focal point for cover crops (CSS object-position y) */
   focusY?: number;
+  /** Rect linear gradient: {angle: deg, stops: [{color, alpha, at}]} */
+  gradient?: FreeformElementGradient;
   fill?: string;
   radius?: number;
   borderColor?: string;

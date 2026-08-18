@@ -79,6 +79,9 @@ export interface FreeformRect extends FreeformBase {
   borderColor?: string;
   borderWidth?: number;
   opacity?: number;
+  /** Directional opacity/colour gradient (CSS linear-gradient semantics:
+   * angle in degrees, stops at 0..1 with per-stop alpha). */
+  gradient?: { angle: number; stops: { color: string; alpha: number; at: number }[] };
 }
 
 export type FreeformElement = FreeformText | FreeformImage | FreeformRect;
@@ -297,6 +300,17 @@ export function normalizeFreeformConfig(raw: unknown): FreeformConfig {
     } else if (el.type === "rect") {
       const opacity = clampOpacity(el.opacity);
       const borderWidth = el.borderWidth !== undefined ? Math.max(0, num(el.borderWidth)) : undefined;
+      const rawGrad = el.gradient as { angle?: unknown; stops?: unknown } | undefined;
+      const gradStops = Array.isArray(rawGrad?.stops)
+        ? (rawGrad!.stops as unknown[])
+            .slice(0, 4)
+            .filter((s): s is Record<string, unknown> => typeof s === "object" && s !== null)
+            .map((s) => ({
+              color: sanitizeColor(s.color, "#000000"),
+              alpha: clampOpacity(s.alpha) ?? 1,
+              at: Math.max(0, Math.min(1, num(s.at))),
+            }))
+        : [];
       elements.push({
         ...base,
         type: "rect",
@@ -305,6 +319,7 @@ export function normalizeFreeformConfig(raw: unknown): FreeformConfig {
         ...(borderWidth !== undefined ? { borderWidth } : {}),
         ...(el.borderColor !== undefined ? { borderColor: sanitizeColor(el.borderColor, "#000000") } : {}),
         ...(opacity !== undefined ? { opacity } : {}),
+        ...(gradStops.length >= 2 ? { gradient: { angle: num(rawGrad?.angle) % 360, stops: gradStops } } : {}),
       });
     }
   }

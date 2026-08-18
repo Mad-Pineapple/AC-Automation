@@ -49,6 +49,8 @@ export * from './dissectPdfResult';
 export * from './errorResponse';
 export * from './extractedImage';
 export * from './freeformElement';
+export * from './freeformElementGradient';
+export * from './freeformElementGradientStopsItem';
 export * from './getRecentActivityParams';
 export * from './guidelineSuggestions';
 export * from './healthStatus';

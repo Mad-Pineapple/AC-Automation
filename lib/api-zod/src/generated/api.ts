@@ -217,6 +217,14 @@ export const ListTemplatesResponseItem = zod.object({
   "fit": zod.string().optional().describe('cover | contain (image objectFit; default depends on role)'),
   "focusX": zod.number().optional().describe('0..1 focal point for cover crops (CSS object-position x)'),
   "focusY": zod.number().optional().describe('0..1 focal point for cover crops (CSS object-position y)'),
+  "gradient": zod.object({
+  "angle": zod.number().optional(),
+  "stops": zod.array(zod.object({
+  "color": zod.string().optional(),
+  "alpha": zod.number().optional(),
+  "at": zod.number().optional()
+})).optional()
+}).optional().describe('Rect linear gradient: {angle: deg, stops: [{color, alpha, at}]}'),
   "fill": zod.string().optional(),
   "radius": zod.number().optional(),
   "borderColor": zod.string().optional(),
@@ -270,6 +278,14 @@ export const CreateTemplateBody = zod.object({
   "fit": zod.string().optional().describe('cover | contain (image objectFit; default depends on role)'),
   "focusX": zod.number().optional().describe('0..1 focal point for cover crops (CSS object-position x)'),
   "focusY": zod.number().optional().describe('0..1 focal point for cover crops (CSS object-position y)'),
+  "gradient": zod.object({
+  "angle": zod.number().optional(),
+  "stops": zod.array(zod.object({
+  "color": zod.string().optional(),
+  "alpha": zod.number().optional(),
+  "at": zod.number().optional()
+})).optional()
+}).optional().describe('Rect linear gradient: {angle: deg, stops: [{color, alpha, at}]}'),
   "fill": zod.string().optional(),
   "radius": zod.number().optional(),
   "borderColor": zod.string().optional(),
@@ -326,6 +342,14 @@ export const GetTemplateResponse = zod.object({
   "fit": zod.string().optional().describe('cover | contain (image objectFit; default depends on role)'),
   "focusX": zod.number().optional().describe('0..1 focal point for cover crops (CSS object-position x)'),
   "focusY": zod.number().optional().describe('0..1 focal point for cover crops (CSS object-position y)'),
+  "gradient": zod.object({
+  "angle": zod.number().optional(),
+  "stops": zod.array(zod.object({
+  "color": zod.string().optional(),
+  "alpha": zod.number().optional(),
+  "at": zod.number().optional()
+})).optional()
+}).optional().describe('Rect linear gradient: {angle: deg, stops: [{color, alpha, at}]}'),
   "fill": zod.string().optional(),
   "radius": zod.number().optional(),
   "borderColor": zod.string().optional(),
@@ -382,6 +406,14 @@ export const UpdateTemplateBody = zod.object({
   "fit": zod.string().optional().describe('cover | contain (image objectFit; default depends on role)'),
   "focusX": zod.number().optional().describe('0..1 focal point for cover crops (CSS object-position x)'),
   "focusY": zod.number().optional().describe('0..1 focal point for cover crops (CSS object-position y)'),
+  "gradient": zod.object({
+  "angle": zod.number().optional(),
+  "stops": zod.array(zod.object({
+  "color": zod.string().optional(),
+  "alpha": zod.number().optional(),
+  "at": zod.number().optional()
+})).optional()
+}).optional().describe('Rect linear gradient: {angle: deg, stops: [{color, alpha, at}]}'),
   "fill": zod.string().optional(),
   "radius": zod.number().optional(),
   "borderColor": zod.string().optional(),
@@ -430,6 +462,14 @@ export const UpdateTemplateResponse = zod.object({
   "fit": zod.string().optional().describe('cover | contain (image objectFit; default depends on role)'),
   "focusX": zod.number().optional().describe('0..1 focal point for cover crops (CSS object-position x)'),
   "focusY": zod.number().optional().describe('0..1 focal point for cover crops (CSS object-position y)'),
+  "gradient": zod.object({
+  "angle": zod.number().optional(),
+  "stops": zod.array(zod.object({
+  "color": zod.string().optional(),
+  "alpha": zod.number().optional(),
+  "at": zod.number().optional()
+})).optional()
+}).optional().describe('Rect linear gradient: {angle: deg, stops: [{color, alpha, at}]}'),
   "fill": zod.string().optional(),
   "radius": zod.number().optional(),
   "borderColor": zod.string().optional(),
@@ -514,6 +554,14 @@ export const DissectPdfResponse = zod.object({
   "fit": zod.string().optional().describe('cover | contain (image objectFit; default depends on role)'),
   "focusX": zod.number().optional().describe('0..1 focal point for cover crops (CSS object-position x)'),
   "focusY": zod.number().optional().describe('0..1 focal point for cover crops (CSS object-position y)'),
+  "gradient": zod.object({
+  "angle": zod.number().optional(),
+  "stops": zod.array(zod.object({
+  "color": zod.string().optional(),
+  "alpha": zod.number().optional(),
+  "at": zod.number().optional()
+})).optional()
+}).optional().describe('Rect linear gradient: {angle: deg, stops: [{color, alpha, at}]}'),
   "fill": zod.string().optional(),
   "radius": zod.number().optional(),
   "borderColor": zod.string().optional(),
@@ -568,6 +616,14 @@ export const DissectImageResponse = zod.object({
   "fit": zod.string().optional().describe('cover | contain (image objectFit; default depends on role)'),
   "focusX": zod.number().optional().describe('0..1 focal point for cover crops (CSS object-position x)'),
   "focusY": zod.number().optional().describe('0..1 focal point for cover crops (CSS object-position y)'),
+  "gradient": zod.object({
+  "angle": zod.number().optional(),
+  "stops": zod.array(zod.object({
+  "color": zod.string().optional(),
+  "alpha": zod.number().optional(),
+  "at": zod.number().optional()
+})).optional()
+}).optional().describe('Rect linear gradient: {angle: deg, stops: [{color, alpha, at}]}'),
   "fill": zod.string().optional(),
   "radius": zod.number().optional(),
   "borderColor": zod.string().optional(),

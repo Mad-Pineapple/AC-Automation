@@ -509,7 +509,28 @@ export function freeformBaseStyle(el: FreeformElement, zIndex: number): React.CS
   };
 }
 
+/** Hex + alpha -> rgba() (freeform gradients store alpha per stop). */
+function hexWithAlpha(hex: string, alpha: number): string {
+  const m = /^#([0-9a-fA-F]{2})([0-9a-fA-F]{2})([0-9a-fA-F]{2})$/.exec(hex);
+  if (!m) return hex;
+  const a = Math.max(0, Math.min(1, alpha));
+  return `rgba(${parseInt(m[1], 16)}, ${parseInt(m[2], 16)}, ${parseInt(m[3], 16)}, ${a})`;
+}
+
 export function freeformRectStyle(el: FreeformElement): React.CSSProperties {
+  // Directional opacity gradients (e.g. imported InDesign gradient feathers —
+  // a scrim fading over photography) render as a CSS linear-gradient.
+  const grad = (el as { gradient?: { angle: number; stops: { color: string; alpha: number; at: number }[] } }).gradient;
+  if (grad && Array.isArray(grad.stops) && grad.stops.length >= 2) {
+    const stops = grad.stops
+      .map((s) => `${hexWithAlpha(s.color, s.alpha)} ${Math.round(s.at * 100)}%`)
+      .join(", ");
+    return {
+      background: `linear-gradient(${Math.round(grad.angle)}deg, ${stops})`,
+      borderRadius: el.radius ?? 0,
+      boxSizing: "border-box",
+    };
+  }
   return {
     backgroundColor: el.fill ?? "transparent",
     borderRadius: el.radius ?? 0,

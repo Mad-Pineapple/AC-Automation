@@ -5,6 +5,7 @@
  * Brand Creative Automation Platform API
  * OpenAPI spec version: 0.1.0
  */
+import type { FreeformElementGradient } from './freeformElementGradient';
 
 /**
  * A single positioned element in a freeform template layout.
@@ -38,6 +39,8 @@ export interface FreeformElement {
   focusX?: number;
   /** 0..1 focal point for cover crops (CSS object-position y) */
   focusY?: number;
+  /** Rect linear gradient: {angle: deg, stops: [{color, alpha, at}]} */
+  gradient?: FreeformElementGradient;
   fill?: string;
   radius?: number;
   borderColor?: string;

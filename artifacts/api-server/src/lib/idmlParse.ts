@@ -106,6 +106,71 @@ function buildColorTable(graphicXml: Record<string, any> | null): Map<string, st
   return table;
 }
 
+/** Resolved paragraph-style attributes (with BasedOn inheritance applied). */
+interface ParaStyle {
+  font?: string;
+  fontStyle?: string;
+  pointSize?: number;
+  justification?: string;
+  /** Style name — carries conventions like "N2B" (National 2 Bold). */
+  name: string;
+}
+
+function buildParaStyleTable(stylesXml: Record<string, any> | null): Map<string, ParaStyle> {
+  const table = new Map<string, ParaStyle>();
+  const raw = new Map<string, Record<string, any>>();
+  const collect = (group: Record<string, any> | undefined) => {
+    if (!group) return;
+    for (const ps of asArray(group.ParagraphStyle)) {
+      const self = ps?.["@_Self"];
+      if (typeof self === "string") raw.set(self, ps);
+    }
+    for (const sub of asArray(group.ParagraphStyleGroup)) collect(sub);
+  };
+  const root = stylesXml?.["idPkg:Styles"] ?? stylesXml?.Styles ?? stylesXml;
+  collect(root?.RootParagraphStyleGroup);
+
+  const resolve = (self: string, depth = 0): ParaStyle => {
+    const cached = table.get(self);
+    if (cached) return cached;
+    const ps = raw.get(self);
+    const empty: ParaStyle = { name: self };
+    if (!ps || depth > 4) return empty;
+    const basedOnRaw = ps?.Properties?.BasedOn;
+    const basedOn = typeof basedOnRaw === "object" ? basedOnRaw?.["#text"] : basedOnRaw;
+    const parent =
+      typeof basedOn === "string" && basedOn !== self
+        ? resolve(basedOn.startsWith("ParagraphStyle/") ? basedOn : `ParagraphStyle/${basedOn}`, depth + 1)
+        : empty;
+    const appliedRaw = ps?.Properties?.AppliedFont;
+    const applied = typeof appliedRaw === "object" ? appliedRaw?.["#text"] : appliedRaw;
+    const size = Number(ps?.["@_PointSize"]);
+    const style: ParaStyle = {
+      name: self,
+      font: typeof applied === "string" && applied ? applied : parent.font,
+      fontStyle:
+        typeof ps?.["@_FontStyle"] === "string" && ps["@_FontStyle"] !== "None"
+          ? ps["@_FontStyle"]
+          : parent.fontStyle,
+      pointSize: Number.isFinite(size) && size > 0 ? size : parent.pointSize,
+      justification: typeof ps?.["@_Justification"] === "string" ? ps["@_Justification"] : parent.justification,
+    };
+    table.set(self, style);
+    return style;
+  };
+  for (const self of raw.keys()) resolve(self);
+  return table;
+}
+
+/** Normalize font names to the families the app self-hosts. */
+function normalizeFontFamily(font: string | undefined): string | undefined {
+  if (!font) return undefined;
+  if (/national\s*2/i.test(font)) return "National 2";
+  return font.replace(/[^\w\s,'-]/g, "").trim() || undefined;
+}
+
+const BOLD_HINT = /bold|black|heavy|semibold|n2b|n2cb/i;
+
 const JUSTIFY: Record<string, "left" | "center" | "right"> = {
   LeftAlign: "left",
   CenterAlign: "center",
@@ -126,8 +191,13 @@ interface StoryText {
 }
 
 /** Flatten a story's paragraph/character ranges into renderable text + the
- * dominant styling (largest run wins). */
-function parseStory(storyXml: Record<string, any>, colors: Map<string, string>): StoryText | null {
+ * dominant styling (largest run wins). Run attributes override the resolved
+ * paragraph style, which is where real documents keep their typography. */
+function parseStory(
+  storyXml: Record<string, any>,
+  colors: Map<string, string>,
+  paraStyles: Map<string, ParaStyle>,
+): StoryText | null {
   const story = storyXml?.["idPkg:Story"]?.Story ?? storyXml?.Story;
   if (!story) return null;
 
@@ -137,29 +207,32 @@ function parseStory(storyXml: Record<string, any>, colors: Map<string, string>):
 
   const paragraphs = asArray(story.ParagraphStyleRange);
   paragraphs.forEach((para, pIdx) => {
-    const j = JUSTIFY[para?.["@_Justification"]];
+    const styleRef = para?.["@_AppliedParagraphStyle"];
+    const style = typeof styleRef === "string" ? paraStyles.get(styleRef) : undefined;
+    const j = JUSTIFY[para?.["@_Justification"]] ?? (style?.justification ? JUSTIFY[style.justification] : undefined);
     if (j && pIdx === 0) align = j;
     if (pIdx > 0) text += "\n";
     for (const run of asArray(para?.CharacterStyleRange)) {
       // Content may be a string, an array (Br-separated), or absent.
       const contents = asArray(run?.Content).map((c: unknown) => (typeof c === "string" || typeof c === "number" ? String(c) : ""));
-      const brCount = asArray(run?.Br).length;
       let runText = contents.join("\n");
-      if (brCount > 0 && contents.length <= 1) runText = contents.join("") + "\n".repeat(0);
       text += runText;
       const len = runText.replace(/\s/g, "").length;
       if (len > best.len) {
         const size = Number(run?.["@_PointSize"]);
         const fillRef = run?.["@_FillColor"];
-        const fontStyle = String(run?.["@_FontStyle"] ?? "");
+        const runFontStyle = typeof run?.["@_FontStyle"] === "string" ? run["@_FontStyle"] : undefined;
         const applied = run?.Properties?.AppliedFont;
         const appliedName = typeof applied === "object" ? applied?.["#text"] : applied;
+        const effFontStyle = runFontStyle ?? style?.fontStyle ?? "";
         best = {
           len,
-          fontSize: Number.isFinite(size) && size > 0 ? size : 12,
-          bold: /bold|black|heavy|semibold|condensed bold/i.test(fontStyle),
+          fontSize: Number.isFinite(size) && size > 0 ? size : (style?.pointSize ?? 12),
+          bold: BOLD_HINT.test(effFontStyle) || (!!style && BOLD_HINT.test(style.name)),
           color: typeof fillRef === "string" ? colors.get(fillRef) : undefined,
-          font: typeof appliedName === "string" ? appliedName : undefined,
+          font: normalizeFontFamily(
+            (typeof appliedName === "string" ? appliedName : undefined) ?? style?.font,
+          ),
         };
       }
     }
@@ -288,8 +361,9 @@ export async function parseIdmlToLayout(
     }
   };
 
-  // Colours.
+  // Colours and paragraph styles (real documents keep typography in styles).
   const colors = buildColorTable(await readXml("Resources/Graphic.xml"));
+  const paraStyles = buildParaStyleTable(await readXml("Resources/Styles.xml"));
 
   // First spread listed in the design map.
   const designMap = await readXml("designmap.xml");
@@ -332,7 +406,7 @@ export async function parseIdmlToLayout(
     const story = xml?.["idPkg:Story"]?.Story ?? xml?.Story;
     const self = story?.["@_Self"];
     if (typeof self === "string" && xml) {
-      storyCache.set(self, parseStory(xml, colors));
+      storyCache.set(self, parseStory(xml, colors, paraStyles));
     }
   }
 
@@ -446,10 +520,47 @@ export async function parseIdmlToLayout(
       return;
     }
 
-    // Plain filled shape.
+    // Plain filled shape — with a real linear gradient when the design used
+    // a gradient feather (e.g. a scrim fading over photography).
     const fillRef = item?.["@_FillColor"];
     const fill = typeof fillRef === "string" ? colors.get(fillRef) : undefined;
     if (fill && kind !== "GraphicLine") {
+      const feather = item?.TransparencySetting?.GradientFeatherSetting;
+      let gradient: { angle: number; stops: { color: string; alpha: number; at: number }[] } | undefined;
+      if (feather) {
+        const rawStops = asArray(feather?.OpacityGradientStop)
+          .map((s: any) => ({ opacity: Number(s?.["@_Opacity"]), at: Number(s?.["@_Location"]) }))
+          .filter((s) => Number.isFinite(s.opacity) && Number.isFinite(s.at))
+          .sort((a, b) => a.at - b.at);
+        const startRaw = String(feather?.["@_GradientStart"] ?? "").trim().split(/\s+/).map(Number);
+        const angleDeg = Number(feather?.["@_Angle"]);
+        if (rawStops.length >= 2 && startRaw.length === 2 && Number.isFinite(angleDeg)) {
+          const own = composeForBounds(matrix, parseMatrix(item["@_ItemTransform"]));
+          const rad = (angleDeg * Math.PI) / 180;
+          // Direction of the feather axis in page space (linear part only).
+          let dx = own[0] * Math.cos(rad) + own[2] * Math.sin(rad);
+          let dy = own[1] * Math.cos(rad) + own[3] * Math.sin(rad);
+          // Orient the axis from the gradient's start point into the shape.
+          const [sx, sy] = apply(own, startRaw[0], startRaw[1]);
+          const cx = bounds.x + bounds.w / 2;
+          const cy = bounds.y + bounds.h / 2;
+          if (dx * (cx - sx) + dy * (cy - sy) < 0) {
+            dx = -dx;
+            dy = -dy;
+          }
+          // CSS: 0deg points up, angles run clockwise.
+          const cssAngle = ((Math.atan2(dx, -dy) * 180) / Math.PI + 360) % 360;
+          const baseAlpha = opacity ?? 1;
+          gradient = {
+            angle: cssAngle,
+            stops: rawStops.slice(0, 4).map((s) => ({
+              color: fill,
+              alpha: (s.opacity / 100) * baseAlpha,
+              at: Math.max(0, Math.min(1, s.at / 100)),
+            })),
+          };
+        }
+      }
       elements.push({
         id: `idml_rect_${idCounter++}`,
         type: "rect",
@@ -458,7 +569,7 @@ export async function parseIdmlToLayout(
         y,
         w: Math.max(1, bounds.w),
         h: Math.max(1, bounds.h),
-        ...(opacity !== undefined ? { opacity } : {}),
+        ...(gradient ? { gradient } : opacity !== undefined ? { opacity } : {}),
       });
       return;
     }
