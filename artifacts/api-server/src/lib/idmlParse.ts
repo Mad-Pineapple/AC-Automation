@@ -438,30 +438,22 @@ export async function parseIdmlToLayout(
 
     if (logoTile) {
       if (brandLogoUrl) {
-        const inset = Math.round(Math.min(bounds.w, bounds.h) / 8);
-        elements.push({
-          id: `idml_logo_tile_${idCounter++}`,
-          type: "rect",
-          fill: "#ffffff",
-          x,
-          y,
-          w: Math.max(1, bounds.w),
-          h: Math.max(1, bounds.h),
-          locked: true,
-        });
+        // The logo asset IS the master tile (mark on white with clearspace
+        // baked in): drawn as-is at the designer's tile position — never
+        // wrapped in another box, inset, or moved.
         elements.push({
           id: `idml_logo_${idCounter++}`,
           type: "image",
           role: "logo",
           src: brandLogoUrl,
           fit: "contain",
-          x: x + inset,
-          y: y + inset,
-          w: Math.max(1, bounds.w - inset * 2),
-          h: Math.max(1, bounds.h - inset * 2),
+          x,
+          y,
+          w: Math.max(1, bounds.w),
+          h: Math.max(1, bounds.h),
           locked: true,
         });
-        warnings.push("Vector pōhutukawa lockup replaced with the brand logo on its tile.");
+        warnings.push("Vector pōhutukawa lockup imported as the master logo tile at the designer's position.");
       }
       return;
     }

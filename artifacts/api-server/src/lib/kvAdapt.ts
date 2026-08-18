@@ -19,6 +19,7 @@
  */
 import sharp from "sharp";
 import { ObjectStorageService } from "./objectStorage";
+import { guidelineLogoPlacement } from "./logoRules";
 import type { FreeformConfig, FreeformElement, FreeformImage, KvTextBlock } from "./freeform";
 
 const objectStorageService = new ObjectStorageService();
@@ -257,31 +258,22 @@ export async function composeKeyVisualAdaptation(
     } as FreeformElement);
   }
 
-  // 4. Pōhutukawa tile: white tile, mark inset 1/8, flush bottom-right.
+  // 4. Pōhutukawa tile: placed by the shared guideline rules (flush
+  //    bottom-right, 1/8 inset, full-height on strips, none on social).
   if (showLogo) {
-    const inset = Math.round(tile / 8);
-    elements.push({
-      id: "kv_logo_tile",
-      type: "rect",
-      fill: "#ffffff",
-      x: dstW - tile,
-      y: dstH - tile,
-      w: tile,
-      h: tile,
-      locked: true,
-    } as FreeformElement);
-    elements.push({
-      id: "kv_logo",
-      type: "image",
-      role: "logo",
-      src: brand.logoUrl,
-      fit: "contain",
-      x: dstW - tile + inset,
-      y: dstH - tile + inset,
-      w: tile - inset * 2,
-      h: tile - inset * 2,
-      locked: true,
-    } as FreeformElement);
+    const placement = guidelineLogoPlacement(dstW, dstH);
+    if (placement) {
+      // The logo asset is the master tile itself — drawn as-is.
+      elements.push({
+        id: "kv_logo",
+        type: "image",
+        role: "logo",
+        src: brand.logoUrl,
+        fit: "contain",
+        ...placement.tile,
+        locked: true,
+      } as FreeformElement);
+    }
   }
 
   // 5. Readability (guidelines: backgrounds behind copy get a colour/opacity
