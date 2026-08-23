@@ -2,9 +2,11 @@ import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Link } from "wouter";
-import { Clock, Briefcase, FileImage, Send, ArrowUpRight } from "lucide-react";
+import { Clock, Briefcase, FileImage, Send, ArrowUpRight, FileUp, PlusCircle, LayoutTemplate, BarChart3 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { useListBrands } from "@workspace/api-client-react";
+import { useListBrands, useListTemplates } from "@workspace/api-client-react";
+import { useUser } from "@clerk/react";
+import { TemplateThumbnail } from "@/components/TemplateRenderer";
 import { cn } from "@/lib/utils";
 import { useTheme } from "@/lib/theme";
 
@@ -61,6 +63,20 @@ export default function Dashboard() {
   const { data: stats, isLoading: statsLoading } = useDashboardStats(viewMine);
   const { data: activity, isLoading: activityLoading } = useRecentActivity(viewMine);
   const { data: brands } = useListBrands();
+  const { data: templates } = useListTemplates();
+  const { user } = useUser();
+  const firstName = user?.firstName ?? null;
+  const today = new Date().toLocaleDateString(undefined, { weekday: "long", day: "numeric", month: "long" });
+  const recentTemplates = (templates ?? [])
+    .filter((t) => (t.config as { kind?: string })?.kind === "freeform")
+    .slice(-6)
+    .reverse();
+  const quickActions = [
+    { title: "Import artwork", desc: "PDF or InDesign package", href: "/templates/import", icon: FileUp, tint: "#0073bd" },
+    { title: "New brief", desc: "Generate a campaign", href: "/briefs/new", icon: PlusCircle, tint: "#de0a2b" },
+    { title: "Templates", desc: "Masters & adaptations", href: "/templates", icon: LayoutTemplate, tint: "#5b9c33" },
+    { title: "Performance", desc: "Creative analytics", href: "/performance", icon: BarChart3, tint: "#11263d" },
+  ];
 
   // Tile accents derive from the active brand's palette (white-label) with a
   // neutral success green for "dispatched" (status colour, not brand colour).
@@ -97,10 +113,11 @@ export default function Dashboard() {
       {/* Header */}
       <div className="flex items-end justify-between gap-4 flex-wrap">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight text-foreground">Dashboard</h1>
-          <p className="text-muted-foreground mt-1.5">
-            Here's what's happening across your brands today.
-          </p>
+          <p className="text-sm font-medium text-muted-foreground">{today}</p>
+          <h1 className="text-3xl md:text-4xl font-bold tracking-tight text-foreground mt-1">
+            {firstName ? `Kia ora, ${firstName}` : "Kia ora"}
+          </h1>
+          <p className="text-muted-foreground mt-1.5">Here's what's happening across your creative today.</p>
         </div>
         <div className="flex items-center gap-1 bg-muted rounded-full p-1">
           <Button
@@ -128,6 +145,30 @@ export default function Dashboard() {
             My activity
           </Button>
         </div>
+      </div>
+
+      {/* Quick actions */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        {quickActions.map((a) => (
+          <Link key={a.title} href={a.href}>
+            <div
+              className="group bg-card rounded-2xl border border-border/60 p-5 flex items-center gap-4 shadow-sm hover:shadow-lg hover:-translate-y-0.5 hover:border-primary/30 transition-all duration-200 cursor-pointer"
+              data-testid={`quick-${a.title.toLowerCase().replace(/\s+/g, "-")}`}
+            >
+              <div
+                className="w-11 h-11 rounded-xl flex items-center justify-center shrink-0"
+                style={{ backgroundColor: `color-mix(in srgb, ${a.tint} 12%, white)`, color: a.tint }}
+              >
+                <a.icon className="w-5 h-5" />
+              </div>
+              <div className="min-w-0">
+                <p className="font-semibold text-sm text-foreground">{a.title}</p>
+                <p className="text-xs text-muted-foreground truncate">{a.desc}</p>
+              </div>
+              <ArrowUpRight className="w-4 h-4 ml-auto text-muted-foreground/40 group-hover:text-primary transition-colors shrink-0" />
+            </div>
+          </Link>
+        ))}
       </div>
 
       {/* Metrics */}
@@ -170,6 +211,44 @@ export default function Dashboard() {
           </div>
         ))}
       </div>
+
+      {/* Recent templates */}
+      {recentTemplates.length > 0 && brands?.[0] && (
+        <div className="bg-card rounded-3xl p-6 md:p-8 border border-border/60 shadow-sm">
+          <div className="flex items-center justify-between mb-5">
+            <h2 className="text-xl font-bold text-foreground">Recent templates</h2>
+            <Link href="/templates">
+              <Button variant="ghost" size="sm" className="rounded-full text-primary hover:bg-primary/10 font-medium">
+                All templates
+              </Button>
+            </Link>
+          </div>
+          <div className="flex gap-4 overflow-x-auto pb-1">
+            {recentTemplates.map((t) => (
+              <Link key={t.id} href={`/templates/${t.id}`}>
+                <div className="group shrink-0 w-44 cursor-pointer" data-testid={`recent-template-${t.id}`}>
+                  <div className="h-28 rounded-xl border border-border/60 bg-muted/30 flex items-center justify-center overflow-hidden group-hover:border-primary/40 transition-colors">
+                    <TemplateThumbnail
+                      templateSize={t.key}
+                      maxWidth={168}
+                      maxHeight={104}
+                      overrideConfig={{
+                        width: t.width,
+                        height: t.height,
+                        kind: (t.config as { kind?: string })?.kind,
+                        elements: (t.config as { elements?: unknown[] })?.elements as never,
+                      }}
+                      brand={brands[0]}
+                    />
+                  </div>
+                  <p className="text-xs font-medium mt-2 truncate text-foreground">{t.name}</p>
+                  <p className="text-[11px] text-muted-foreground font-mono">{t.width}×{t.height}</p>
+                </div>
+              </Link>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Content grid */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
