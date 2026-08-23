@@ -29,6 +29,9 @@ function TemplateCard({ template, isAdmin, onDelete }: { template: Template; isA
   }, []);
   const PREVIEW_H = 180;
   const PAD = 16;
+  // Freeform layouts (imports, adaptations) carry their own copy and imagery
+  // and preview as they are; only legacy layout-option templates get
+  // placeholder copy so their structure shows.
 
   return (
     <Card className="border-border/50 overflow-hidden">
@@ -46,9 +49,9 @@ function TemplateCard({ template, isAdmin, onDelete }: { template: Template; isA
               elements: template.config?.elements,
             }}
             brand={brand}
-            headline={template.name}
-            bodyText="Sample supporting copy for this format."
-            callToAction="Shop Now"
+            {...(template.config?.kind === "freeform"
+              ? {}
+              : { headline: template.name, bodyText: "Sample supporting copy for this format.", callToAction: "Shop Now" })}
           />
         ) : (
           <LayoutTemplate className="w-10 h-10 text-muted-foreground" />
