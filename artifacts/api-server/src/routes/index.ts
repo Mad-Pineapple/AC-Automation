@@ -17,6 +17,7 @@ import comparisonNotesRouter from "./comparison-notes";
 import assetCommentsRouter from "./asset-comments";
 import shareLinksRouter from "./share-links";
 import reviewProgressRouter from "./review-progress";
+import exportsRouter from "./exports";
 
 const router: IRouter = Router();
 
@@ -30,6 +31,7 @@ router.use(briefsRouter);
 router.use(assetsRouter);
 router.use(campaignsRouter);
 router.use(templatesRouter);
+router.use(exportsRouter);
 router.use(storageRouter);
 router.use(brandAssetsRouter);
 router.use(brandAnalysisRouter);

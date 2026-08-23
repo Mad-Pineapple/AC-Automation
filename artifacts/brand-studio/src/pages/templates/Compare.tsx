@@ -6,6 +6,7 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { TemplateThumbnail, LayoutOptions } from "@/components/TemplateRenderer";
+import { ExportStaticMenu } from "@/components/ExportStaticMenu";
 
 /** Side-by-side review of a master and every size adapted from it — each
  * artwork shown complete at a comparable scale, with the layout engine's
@@ -39,6 +40,7 @@ export default function CompareTemplates() {
             {master.name} · {family.length - 1} adapted size{family.length === 2 ? "" : "s"} · every artwork shown complete
           </p>
         </div>
+        <ExportStaticMenu templateId={master.id} templateName={master.name} familyIds={family.map((t) => t.id)} />
       </div>
 
       {family.length === 1 && (

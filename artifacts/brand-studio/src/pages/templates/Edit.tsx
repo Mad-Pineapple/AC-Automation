@@ -27,6 +27,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { TemplateForm, TemplateFormValues, TEMPLATE_FORM_DEFAULTS } from "@/components/TemplateForm";
 import { FreeformEditor } from "@/components/FreeformEditor";
 import { LayoutOptions } from "@/components/TemplateRenderer";
+import { ExportStaticMenu } from "@/components/ExportStaticMenu";
 
 const CATEGORIES = ["social", "display", "print", "email", "custom"];
 
@@ -124,6 +125,7 @@ export default function EditTemplate() {
               </Button>
             </WLink>
             <AdaptDialog templateId={id} templateName={template.name} />
+            <ExportStaticMenu templateId={id} templateName={template.name} />
           </div>
         )}
       </div>
