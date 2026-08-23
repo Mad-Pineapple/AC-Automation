@@ -5,7 +5,9 @@ import { eq } from "drizzle-orm";
 import { optionalAuth, requireAdmin } from "../middlewares/requireAuth";
 import { normalizeFreeformConfig, adaptFreeformConfig, isFreeformConfig, type FreeformConfig } from "../lib/freeform";
 import { collectBrandPaletteHexes } from "../lib/colorAdapter";
-import { composeKeyVisualAdaptation } from "../lib/kvAdapt";
+import { composeKeyVisualAdaptation, findKvBackground, needsCutout } from "../lib/kvAdapt";
+import { isAdobeConfigured, removeBackground } from "../lib/adobeFirefly";
+import { ObjectStorageService } from "../lib/objectStorage";
 import { dissectPdfToTemplate } from "../lib/pdfDissect";
 import { dissectImageToTemplate } from "../lib/imageDissect";
 
@@ -120,9 +122,39 @@ router.post("/templates/:id/adapt", requireAdmin, async (req, res): Promise<void
   // Key-visual masters get the designer's adapt: artwork re-cropped to its
   // focal point, copy/strapline/logo RE-SET on each format's brand grid.
   const [brand] = await db.select().from(brandsTable).orderBy(brandsTable.id).limit(1);
-  const brandInfo = { logoUrl: brand?.logoUrl ?? null, strapline: brand?.strapline ?? null };
-
   const rawTargets: unknown[] = Array.isArray(req.body?.targets) ? req.body.targets.slice(0, 8) : [];
+
+  // Cut-out hero (Adobe Firefly remove-background): created once per master
+  // the first time a strip/skyscraper is requested, persisted on the master's
+  // artwork element, reused forever after.
+  const kvBg = findKvBackground(masterConfig, master.width, master.height);
+  let cutoutSrc: string | null = kvBg?.cutoutSrc ?? null;
+  const wantsCutout = rawTargets.some((t) => {
+    const o = t as Record<string, unknown> | null;
+    return o && needsCutout(Number(o.width), Number(o.height));
+  });
+  if (!cutoutSrc && wantsCutout && kvBg?.src && isAdobeConfigured()) {
+    try {
+      const base = process.env.PUBLIC_BASE_URL ?? `${req.protocol}://${req.get("host")}`;
+      const publicUrl = kvBg.src.startsWith("http") ? kvBg.src : `${base}${kvBg.src}`;
+      const { png } = await removeBackground(publicUrl);
+      const stored = await new ObjectStorageService().uploadBytes(png, "image/png");
+      cutoutSrc = `/api/storage${stored}`;
+      kvBg.cutoutSrc = cutoutSrc;
+      await db
+        .update(templatesTable)
+        .set({ config: JSON.stringify(masterConfig) })
+        .where(eq(templatesTable.id, master.id));
+    } catch (err) {
+      req.log?.warn({ err }, "cut-out creation failed; falling back to photo crop");
+    }
+  }
+  const brandInfo = {
+    logoUrl: brand?.logoUrl ?? null,
+    strapline: brand?.strapline ?? null,
+    cutoutSrc,
+    panelColor: brand?.primaryColor ?? "#11263d",
+  };
   const created: (typeof templatesTable.$inferSelect)[] = [];
   for (const raw of rawTargets) {
     if (typeof raw !== "object" || raw === null) continue;

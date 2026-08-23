@@ -27,6 +27,19 @@ const objectStorageService = new ObjectStorageService();
 export interface KvBrandInfo {
   logoUrl: string | null;
   strapline: string | null;
+  /** Transparent cut-out of the hero (PNG URL) when one exists — enables the
+   * cut-out composition on strip and skyscraper formats. */
+  cutoutSrc?: string | null;
+  /** Panel colour behind cut-out compositions (brand primary, Ocean). */
+  panelColor?: string;
+}
+
+/** Formats where a photo crop can't hold the subject: the composition
+ * switches to cut-out hero on a brand panel (the shipped GWD banner pattern). */
+export function needsCutout(w: number, h: number): boolean {
+  const isStrip = h <= STRIP_MAX_HEIGHT;
+  const isSkyscraper = h / w >= 2.5 && w <= 320;
+  return isStrip || isSkyscraper;
 }
 
 const STRIP_MAX_HEIGHT = 120;
@@ -122,6 +135,13 @@ export async function composeKeyVisualAdaptation(
   const showStrapline = !isSocialSquare && !isStrip && !isWide && dstH >= 400 && !!brand.strapline;
 
   const elements: FreeformElement[] = [];
+
+  // 0. Cut-out composition: strips and skyscrapers can't hold the photo, so
+  //    they get the subject cut out on a brand panel with copy and tile —
+  //    how AC's shipped banners are built. Only when a cut-out exists.
+  if (brand.cutoutSrc && needsCutout(dstW, dstH)) {
+    return composeCutout(master, srcW, srcH, dstW, dstH, brand, bg);
+  }
 
   // 1. Artwork: untouched pixels, cropped like a designer would — the element
   //    is drawn at the image's natural aspect and positioned so the CLEAN
@@ -421,5 +441,128 @@ export async function composeKeyVisualAdaptation(
     elements.splice(1, 0, ...scrims);
   }
 
+  return { kind: "freeform", elements };
+}
+
+
+/** Cut-out hero on a brand panel — strips (copy beside the hero) and
+ * skyscrapers (hero above the copy). Copy comes from the master's blocks. */
+function composeCutout(
+  master: FreeformConfig,
+  srcW: number,
+  srcH: number,
+  dstW: number,
+  dstH: number,
+  brand: KvBrandInfo,
+  bg: FreeformImage,
+): FreeformConfig {
+  const isStrip = dstH <= STRIP_MAX_HEIGHT;
+  const short = Math.min(dstW, dstH);
+  const tile = isStrip ? dstH : Math.max(24, Math.round(short / 6));
+  const margin = Math.max(6, Math.round(tile / 3));
+  const panel = brand.panelColor ?? "#11263d";
+  const elements: FreeformElement[] = [];
+
+  elements.push({ id: "kv_panel", type: "rect", fill: panel, x: 0, y: 0, w: dstW, h: dstH, locked: true } as FreeformElement);
+
+  // Copy: the master's headline words.
+  const live = master.elements.filter((el): el is FreeformText => el.type === "text");
+  const meta = (bg.kvText ?? []).slice().sort((a, b) => b.fontSize - a.fontSize);
+  const headlineText = meta[0]?.text ?? live.sort((a, b) => (b.fontSize ?? 0) - (a.fontSize ?? 0))[0]?.text ?? "";
+  const fontFamily = live[0]?.fontFamily;
+
+  const placement = brand.logoUrl ? guidelineLogoPlacement(dstW, dstH) : null;
+
+  if (isStrip) {
+    // Hero left (full height, bleeding slightly past the top), copy centre,
+    // tile right.
+    const heroW = Math.round(dstH * 1.35);
+    elements.push({
+      id: "kv_cutout",
+      type: "image",
+      role: "product",
+      src: brand.cutoutSrc,
+      fit: "contain",
+      x: margin,
+      y: Math.round(-dstH * 0.04),
+      w: heroW,
+      h: Math.round(dstH * 1.08),
+      locked: true,
+    } as FreeformElement);
+    const textX = margin + heroW + margin;
+    const textW = Math.max(40, dstW - textX - margin - (placement ? tile + margin : 0));
+    const text = headlineText.replace(/\n+/g, " ");
+    const fitW = textW / (Math.max(1, text.length) * 0.58);
+    const fontSize = Math.round(Math.max(MIN_HEADLINE_PX, Math.min(fitW, dstH * 0.34)));
+    const lines = Math.max(1, Math.ceil((text.length * 0.58 * fontSize) / textW));
+    const h = Math.round(lines * fontSize * 1.2 + fontSize * 0.25);
+    elements.push({
+      id: "kv_headline",
+      type: "text",
+      role: "headline",
+      text,
+      x: textX,
+      y: Math.max(margin, Math.round((dstH - h) / 2)),
+      w: textW,
+      h,
+      fontSize,
+      fontWeight: 700,
+      color: "#ffffff",
+      align: "left",
+      lineHeight: 1.2,
+      ...(fontFamily ? { fontFamily } : {}),
+    } as FreeformElement);
+  } else {
+    // Skyscraper: hero in the upper band, copy below, tile bottom-right.
+    const heroH = Math.round(dstH * 0.42);
+    elements.push({
+      id: "kv_cutout",
+      type: "image",
+      role: "product",
+      src: brand.cutoutSrc,
+      fit: "contain",
+      x: margin,
+      y: margin,
+      w: dstW - margin * 2,
+      h: heroH,
+      locked: true,
+    } as FreeformElement);
+    const textW = dstW - margin * 2;
+    const fitW = textW / (Math.max(...headlineText.split("\n").map((l) => l.length), 1) * 0.58);
+    const fontSize = Math.round(Math.max(MIN_HEADLINE_PX, Math.min(fitW, short * 0.12)));
+    const lines = headlineText
+      .split("\n")
+      .reduce((n, l) => n + Math.max(1, Math.ceil((l.length * 0.58 * fontSize) / textW)), 0);
+    const h = Math.round(lines * fontSize * 1.25 + fontSize * 0.25);
+    elements.push({
+      id: "kv_headline",
+      type: "text",
+      role: "headline",
+      text: headlineText,
+      x: margin,
+      y: margin + heroH + margin,
+      w: textW,
+      h,
+      fontSize,
+      fontWeight: 700,
+      color: "#ffffff",
+      align: "left",
+      lineHeight: 1.25,
+      ...(fontFamily ? { fontFamily } : {}),
+    } as FreeformElement);
+  }
+
+  if (placement) {
+    elements.push({
+      id: "kv_logo",
+      type: "image",
+      role: "logo",
+      src: brand.logoUrl,
+      fit: "contain",
+      ...placement.tile,
+      locked: true,
+    } as FreeformElement);
+  }
+  void srcW; void srcH;
   return { kind: "freeform", elements };
 }
