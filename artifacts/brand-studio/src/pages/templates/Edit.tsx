@@ -28,6 +28,7 @@ import { TemplateForm, TemplateFormValues, TEMPLATE_FORM_DEFAULTS } from "@/comp
 import { FreeformEditor } from "@/components/FreeformEditor";
 import { ExportHtmlDialog } from "@/components/ExportHtmlDialog";
 import { LayoutOptions } from "@/components/TemplateRenderer";
+import { ExportStaticMenu } from "@/components/ExportStaticMenu";
 
 const CATEGORIES = ["social", "display", "print", "email", "custom"];
 
@@ -126,6 +127,7 @@ export default function EditTemplate() {
             </WLink>
             <ExportHtmlDialog templateId={id} templateName={template.name} />
             <AdaptDialog templateId={id} templateName={template.name} />
+            <ExportStaticMenu templateId={id} templateName={template.name} />
           </div>
         )}
       </div>

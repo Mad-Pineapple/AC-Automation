@@ -16,9 +16,11 @@
   },
   "dependencies": {
     "@napi-rs/canvas": "^1.0.6",
+    "@pdf-lib/fontkit": "^1.1.1",
     "fast-xml-parser": "^5.11.0",
     "jszip": "^3.10.1",
     "mammoth": "^1.12.0",
+    "pdf-lib": "^1.17.1",
     "pdfjs-dist": "^6.0.227",
     "sharp": "^0.34.5"
   },
