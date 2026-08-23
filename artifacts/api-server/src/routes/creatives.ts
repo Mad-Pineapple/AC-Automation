@@ -63,6 +63,9 @@ router.post("/templates/:id/export-html", requireAdmin, async (req, res): Promis
   const variant = typeof body.variant === "string" && body.variant.trim() ? body.variant.trim().slice(0, 80) : null;
   const clickUrl = typeof body.clickUrl === "string" && /^https?:\/\//.test(body.clickUrl.trim()) ? body.clickUrl.trim().slice(0, 2000) : null;
   const fluid = body.fluid === true;
+  const pixelUrls = Array.isArray(body.pixelUrls)
+    ? (body.pixelUrls as unknown[]).filter((u): u is string => typeof u === "string" && /^https:\/\//i.test(u.trim())).map((u) => u.trim().slice(0, 1000)).slice(0, 5)
+    : [];
   const animate = body.animate !== false;
   const ANIMS = new Set(["none", "entrance", "kenburns", "frames", "reveal"]);
   const animation = (ANIMS.has(body.animation) ? body.animation : "entrance") as
@@ -109,6 +112,7 @@ router.post("/templates/:id/export-html", requireAdmin, async (req, res): Promis
     durationSec,
     loops,
     fluid,
+    pixelUrls,
     loadAsset: assetLoader(base),
   });
 

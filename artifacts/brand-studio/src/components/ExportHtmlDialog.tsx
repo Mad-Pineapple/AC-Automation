@@ -20,6 +20,7 @@ export function ExportHtmlDialog({ templateId, templateName }: { templateId: num
   const [variant, setVariant] = useState("");
   const [clickUrl, setClickUrl] = useState("https://www.aucklandcouncil.govt.nz/");
   const [fluid, setFluid] = useState(false);
+  const [pixels, setPixels] = useState("");
   const [animate, setAnimate] = useState(true);
   const [animation, setAnimation] = useState<"entrance" | "kenburns" | "frames" | "reveal">("entrance");
   const [artworkMotion, setArtworkMotion] = useState<"none" | "kenburns" | "drift" | "zoomout" | "breathe" | "wipe">("kenburns");
@@ -86,7 +87,7 @@ export function ExportHtmlDialog({ templateId, templateName }: { templateId: num
       const res = await fetch(`/api/templates/${templateId}/export-html`, {
         method: "POST",
         headers: { "Content-Type": "application/json", ...(token ? { Authorization: `Bearer ${token}` } : {}) },
-        body: JSON.stringify({ campaign, variant, clickUrl, fluid, ...motionBody() }),
+        body: JSON.stringify({ campaign, variant, clickUrl, fluid, pixelUrls: pixels.split(/\n+/).map((p) => p.trim()).filter(Boolean), ...motionBody() }),
       });
       if (!res.ok) throw new Error(await res.text());
       const blob = await res.blob();
@@ -209,6 +210,20 @@ export function ExportHtmlDialog({ templateId, templateName }: { templateId: num
                 </div>
               </div>
             )}
+          </div>
+          <div className="space-y-1.5">
+            <Label className="text-xs">Tracking pixels (optional, one URL per line)</Label>
+            <textarea
+              value={pixels}
+              onChange={(e) => setPixels(e.target.value)}
+              placeholder="https://ad.doubleclick.net/ddm/activity/…"
+              className="w-full h-14 rounded-md border border-input bg-background px-3 py-2 text-xs"
+              data-testid="input-export-pixels"
+            />
+            <p className="text-[10px] text-muted-foreground leading-tight">
+              Floodlight / conversion pixels fired on load (https only, max 5). Creative events also push to the
+              page&apos;s Google Tag Manager dataLayer when present, and forward to GA4 when the studio is configured.
+            </p>
           </div>
           <div className="flex items-center gap-4 text-sm">
             <label className="flex items-center gap-2">

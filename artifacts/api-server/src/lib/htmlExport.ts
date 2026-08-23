@@ -64,6 +64,9 @@ export interface HtmlExportOptions {
   /** Cycles (IAB display: ≤ 3). */
   loops?: number;
   fluid?: boolean;
+  /** Third-party tracking pixel URLs (Floodlight/conversion pixels) fired on
+   * load; https only. Ad-server macros are left untouched for expansion. */
+  pixelUrls?: string[];
   /** Preview mode: inline fonts/images as data URIs (single self-contained
    * HTML for an iframe srcdoc) and send no analytics beacons. */
   inline?: boolean;
@@ -375,6 +378,11 @@ ${artMotion === "wipe" ? `#stage{animation:wipe .9s cubic-bezier(.4,0,.2,1) both
   data-layout="${esc(tags.layoutLabel ?? "")}"
   data-animation="${preset}" data-artwork-motion="${artMotion}" data-copy-motion="${copyMotion}" data-story-frames="${storyFrames}" data-duration="${D}" data-loops="${L}">
 ${body.join("\n")}
+${(opts.pixelUrls ?? [])
+  .filter((u) => /^https:\/\//i.test(u))
+  .slice(0, 5)
+  .map((u) => `<img src="${esc(u)}" alt="" width="1" height="1" style="position:absolute;left:-9999px;top:0" aria-hidden="true">`)
+  .join("\n")}
 <a href="javascript:void(0)" id="clicktag-layer" aria-label="${esc(tags.name)}"></a>
 </div>
 </div>
@@ -445,6 +453,20 @@ ${body.join("\n")}
     }catch(e){}
   }
   beacon('impression');
+  // GTM hook: when this creative runs on a page carrying Google Tag Manager
+  // (same-origin embeds), push creative events to the dataLayer so the
+  // site's own tags can react. No-op everywhere else.
+  function dl(event){
+    try{
+      var w=window; try{ if(w.parent && w.parent.dataLayer) w=w.parent; }catch(e){}
+      if(w.dataLayer && typeof w.dataLayer.push==='function'){
+        w.dataLayer.push({event:event, creative_id:TOKEN, creative_name:stage.getAttribute('data-name'),
+          creative_campaign:stage.getAttribute('data-campaign'), creative_format:stage.getAttribute('data-format'),
+          creative_variant:stage.getAttribute('data-variant')});
+      }
+    }catch(e){}
+  }
+  dl('creative_impression');
   var viewMs=0,inView=false,since=0,viewableSent=false;
   function flush(){ if(inView){ viewMs+=Date.now()-since; since=Date.now(); } }
   if('IntersectionObserver' in window){
@@ -464,6 +486,7 @@ ${body.join("\n")}
   document.getElementById('clicktag-layer').addEventListener('click',function(ev){
     ev.preventDefault();
     beacon('click');
+    dl('creative_click');
     var url=window.clickTag||'';
     if(url){ window.open(url,'_blank'); }
   });

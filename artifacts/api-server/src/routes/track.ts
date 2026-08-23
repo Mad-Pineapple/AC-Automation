@@ -224,6 +224,34 @@ router.get("/click/:token", async (req, res) => {
  * Fired by HTML5 packages via sendBeacon/Image; always answers a 1x1 GIF.
  */
 const CREATIVE_EVENT_TYPES = new Set(["impression", "viewable", "view", "interaction", "click"]);
+
+/** Forward creative events to GA4 (Measurement Protocol) when configured:
+ * set GA4_MEASUREMENT_ID (G-XXXX) and GA4_API_SECRET. Fire-and-forget so
+ * analytics never slows the beacon response. */
+function forwardToGa4(type: string, creative: { token: string; name: string; campaign: string | null; format: string; variant: string | null }): void {
+  const id = process.env.GA4_MEASUREMENT_ID;
+  const secret = process.env.GA4_API_SECRET;
+  if (!id || !secret) return;
+  const payload = {
+    client_id: `${Date.now()}.${Math.floor(Math.random() * 1e9)}`,
+    non_personalized_ads: true,
+    events: [{
+      name: `creative_${type}`,
+      params: {
+        creative_id: creative.token,
+        creative_name: creative.name.slice(0, 100),
+        campaign: creative.campaign ?? "",
+        format: creative.format,
+        variant: creative.variant ?? "",
+      },
+    }],
+  };
+  fetch(`https://www.google-analytics.com/mp/collect?measurement_id=${encodeURIComponent(id)}&api_secret=${encodeURIComponent(secret)}`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  }).catch(() => {});
+}
 router.all("/c/:token", async (req, res) => {
   try {
     const type = String(req.query.t ?? "");
@@ -231,6 +259,7 @@ router.all("/c/:token", async (req, res) => {
       const [creative] = await db.select().from(creativesTable).where(eq(creativesTable.token, req.params.token));
       if (creative) {
         const ms = Number(req.query.ms);
+        forwardToGa4(type, creative);
         await db.insert(creativeEventsTable).values({
           creativeId: creative.id,
           type,
