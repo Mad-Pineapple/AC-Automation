@@ -273,7 +273,7 @@ export default function TeamPage() {
   const adminCount = members?.filter((m) => m.role === "admin").length ?? 0;
 
   return (
-    <div className="space-y-8 max-w-4xl mx-auto">
+    <div className="space-y-8 w-full">
       <div>
         <h1 className="text-4xl font-bold tracking-tight font-sans">Team</h1>
         <p className="text-muted-foreground mt-2 font-mono text-sm uppercase tracking-widest">

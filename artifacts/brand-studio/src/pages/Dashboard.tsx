@@ -93,7 +93,7 @@ export default function Dashboard() {
   ];
 
   return (
-    <div className="space-y-8 max-w-6xl mx-auto">
+    <div className="space-y-8 w-full">
       {/* Header */}
       <div className="flex items-end justify-between gap-4 flex-wrap">
         <div>

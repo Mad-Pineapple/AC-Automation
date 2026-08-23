@@ -245,7 +245,7 @@ export default function ImportPdf() {
   };
 
   return (
-    <div className="space-y-8 max-w-5xl mx-auto">
+    <div className="space-y-8 w-full">
       <div className="flex items-center gap-4">
         <Link href="/templates" className="p-2 hover:bg-muted rounded-full transition-colors">
           <ChevronLeft className="w-5 h-5" />

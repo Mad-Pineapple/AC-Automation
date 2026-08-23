@@ -273,7 +273,7 @@ export function Layout({ children }: LayoutProps) {
           role="alert"
           data-testid="banner-session-unrecognized"
         >
-          <div className="flex items-start gap-3 max-w-5xl mx-auto">
+          <div className="flex items-start gap-3 w-full">
             <AlertTriangle className="w-5 h-5 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
             <div className="flex-1 min-w-0">
               <p className="text-sm font-semibold text-amber-900 dark:text-amber-200">
@@ -323,7 +323,7 @@ export function Layout({ children }: LayoutProps) {
 
       {/* Main content */}
       <main className="flex-1 overflow-y-auto">
-        <div className="p-4 md:p-8 max-w-[1440px] mx-auto w-full">{children}</div>
+        <div className="px-4 py-4 md:px-8 md:py-6 w-full">{children}</div>
       </main>
       </div>
 

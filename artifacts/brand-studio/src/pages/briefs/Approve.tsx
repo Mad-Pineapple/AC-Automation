@@ -593,7 +593,7 @@ export default function ApproveScreen() {
 
   if (briefLoading || assetsLoading) {
     return (
-      <div className="space-y-6 max-w-6xl mx-auto">
+      <div className="space-y-6 w-full">
         <Skeleton className="h-10 w-64" />
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {[1, 2, 3].map(i => <Skeleton key={i} className="h-72 w-full rounded-xl" />)}
@@ -640,7 +640,7 @@ export default function ApproveScreen() {
   ];
 
   return (
-    <div className="space-y-8 max-w-6xl mx-auto">
+    <div className="space-y-8 w-full">
       <div className="flex items-start gap-4">
         <Link href={`/briefs/${briefId}`} className="p-2 hover:bg-muted rounded-full transition-colors mt-1">
           <ChevronLeft className="w-5 h-5" />

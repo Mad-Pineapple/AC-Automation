@@ -92,12 +92,12 @@ export default function EditTemplate() {
   };
 
   if (isLoading) {
-    return <div className="max-w-5xl mx-auto"><Skeleton className="h-96 rounded-lg" /></div>;
+    return <div className="w-full"><Skeleton className="h-96 rounded-lg" /></div>;
   }
 
   if (!template) {
     return (
-      <div className="max-w-5xl mx-auto text-center py-16">
+      <div className="w-full text-center py-16">
         <p className="text-muted-foreground">Template not found.</p>
         <WLink href="/templates" className="text-primary text-sm mt-3 inline-block">Back to templates</WLink>
       </div>
@@ -108,7 +108,7 @@ export default function EditTemplate() {
   const isFreeform = config.kind === "freeform";
 
   return (
-    <div className="space-y-8 max-w-5xl mx-auto">
+    <div className="space-y-8 w-full">
       <div className="flex items-center gap-4">
         <Link href="/templates" className="p-2 hover:bg-muted rounded-full transition-colors">
           <ChevronLeft className="w-5 h-5" />
@@ -322,6 +322,75 @@ function FreeformEditSection({
   return (
     <div className="space-y-6">
       <Card className="border-border/50">
+        <CardHeader className="flex flex-row items-center justify-between sticky top-0 z-20 bg-card/95 backdrop-blur rounded-t-xl border-b border-border/40">
+          <CardTitle className="text-base">Layout</CardTitle>
+          <div className="flex items-center gap-2">
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={() => {
+                setElements(original);
+                setDraft(original);
+                setEditorKey((k) => k + 1);
+              }}
+              disabled={submitting}
+              data-testid="button-edit-revert"
+            >
+              <Undo2 className="w-4 h-4 mr-2" />
+              Revert
+            </Button>
+            <WLink href="/templates">
+              <Button type="button" variant="outline" size="sm" disabled={submitting}>
+                Cancel
+              </Button>
+            </WLink>
+            <Button type="button" size="sm" onClick={handleSave} disabled={submitting} data-testid="button-edit-save">
+              {submitting ? "Saving…" : "Save Changes"}
+            </Button>
+          </div>
+        </CardHeader>
+        <CardContent>
+          {layoutOptions.length > 1 && (
+            <div className="mb-3 flex flex-wrap items-center gap-2" data-testid="layout-options">
+              <span className="text-xs text-muted-foreground mr-1">Layout options:</span>
+              {layoutOptions.map((opt) => {
+                const current = elements.find((el) => el.id === "kv_headline");
+                const active = !!current && Math.abs((current.x ?? 0) - opt.x) < 2 && Math.abs((current.y ?? 0) - opt.y) < 2;
+                return (
+                  <Button
+                    key={opt.label}
+                    type="button"
+                    size="sm"
+                    variant={active ? "default" : "outline"}
+                    className="h-7 text-xs"
+                    onClick={() => applyLayoutOption(opt)}
+                    title={`Engine score ${opt.score}`}
+                  >
+                    {opt.label}
+                  </Button>
+                );
+              })}
+            </div>
+          )}
+          {brand ? (
+            <FreeformEditor
+              key={editorKey}
+              width={width}
+              height={height}
+              brand={brand}
+              initialElements={draft}
+              onChange={setElements}
+            />
+          ) : (
+            <p className="text-sm text-muted-foreground text-center py-12">
+              Create a brand first to edit and preview this layout.
+            </p>
+          )}
+        </CardContent>
+      </Card>
+
+      <Card className="border-border/50">
         <CardHeader>
           <CardTitle className="text-base">Template Details</CardTitle>
         </CardHeader>
@@ -380,75 +449,6 @@ function FreeformEditSection({
         </CardContent>
       </Card>
 
-      <Card className="border-border/50">
-        <CardHeader className="flex flex-row items-center justify-between">
-          <CardTitle className="text-base">Edit Layout</CardTitle>
-          <Button
-            type="button"
-            variant="ghost"
-            size="sm"
-            onClick={() => {
-              setElements(original);
-              setDraft(original);
-              setEditorKey((k) => k + 1);
-            }}
-            disabled={submitting}
-            data-testid="button-edit-revert"
-          >
-            <Undo2 className="w-4 h-4 mr-2" />
-            Revert Edits
-          </Button>
-        </CardHeader>
-        <CardContent>
-          {layoutOptions.length > 1 && (
-            <div className="mb-3 flex flex-wrap items-center gap-2" data-testid="layout-options">
-              <span className="text-xs text-muted-foreground mr-1">Layout options:</span>
-              {layoutOptions.map((opt) => {
-                const current = elements.find((el) => el.id === "kv_headline");
-                const active = !!current && Math.abs((current.x ?? 0) - opt.x) < 2 && Math.abs((current.y ?? 0) - opt.y) < 2;
-                return (
-                  <Button
-                    key={opt.label}
-                    type="button"
-                    size="sm"
-                    variant={active ? "default" : "outline"}
-                    className="h-7 text-xs"
-                    onClick={() => applyLayoutOption(opt)}
-                    title={`Engine score ${opt.score}`}
-                  >
-                    {opt.label}
-                  </Button>
-                );
-              })}
-            </div>
-          )}
-          {brand ? (
-            <FreeformEditor
-              key={editorKey}
-              width={width}
-              height={height}
-              brand={brand}
-              initialElements={draft}
-              onChange={setElements}
-            />
-          ) : (
-            <p className="text-sm text-muted-foreground text-center py-12">
-              Create a brand first to edit and preview this layout.
-            </p>
-          )}
-        </CardContent>
-      </Card>
-
-      <div className="flex justify-end gap-3">
-        <WLink href="/templates">
-          <Button type="button" variant="outline" disabled={submitting}>
-            Cancel
-          </Button>
-        </WLink>
-        <Button type="button" onClick={handleSave} disabled={submitting} data-testid="button-edit-save">
-          {submitting ? "Saving…" : "Save Changes"}
-        </Button>
-      </div>
     </div>
   );
 }

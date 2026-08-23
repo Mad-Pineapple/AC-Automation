@@ -37,7 +37,7 @@ export default function Performance() {
 
   if (isLoading || !stats) {
     return (
-      <div className="space-y-8 max-w-6xl mx-auto">
+      <div className="space-y-8 w-full">
         <Skeleton className="h-10 w-48" />
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
           {[1, 2, 3, 4].map(i => <Skeleton key={i} className="h-28 w-full rounded-xl" />)}
@@ -51,7 +51,7 @@ export default function Performance() {
   const hasData = stats.impressions > 0 || stats.clicks > 0;
 
   return (
-    <div className="space-y-8 max-w-6xl mx-auto">
+    <div className="space-y-8 w-full">
       <div>
         <h1 className="text-4xl font-bold tracking-tight font-sans">Performance</h1>
         <p className="text-muted-foreground mt-2 font-mono text-sm uppercase tracking-widest">Ad Tracking & Engagement</p>

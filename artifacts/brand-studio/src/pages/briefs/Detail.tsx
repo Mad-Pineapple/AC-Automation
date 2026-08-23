@@ -84,7 +84,7 @@ export default function BriefDetail() {
 
   if (isLoading) {
     return (
-      <div className="space-y-6 max-w-4xl mx-auto">
+      <div className="space-y-6 w-full">
         <Skeleton className="h-10 w-48" />
         <Skeleton className="h-48 w-full" />
       </div>
@@ -94,7 +94,7 @@ export default function BriefDetail() {
   if (!brief) return <div className="text-muted-foreground p-8">Brief not found.</div>;
 
   return (
-    <div className="space-y-8 max-w-4xl mx-auto">
+    <div className="space-y-8 w-full">
       <div className="flex items-start gap-4">
         <Link href="/briefs" className="p-2 hover:bg-muted rounded-full transition-colors mt-1">
           <ChevronLeft className="w-5 h-5" />

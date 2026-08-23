@@ -71,14 +71,14 @@ export default function CampaignDetail() {
   };
 
   if (isLoading || !campaign) {
-    return <div className="space-y-6 max-w-4xl mx-auto"><Skeleton className="h-10 w-48" /><Skeleton className="h-64 w-full" /></div>;
+    return <div className="space-y-6 w-full"><Skeleton className="h-10 w-48" /><Skeleton className="h-64 w-full" /></div>;
   }
 
   const start = formatDate(campaign.startDate);
   const end = formatDate(campaign.endDate);
 
   return (
-    <div className="space-y-8 max-w-4xl mx-auto">
+    <div className="space-y-8 w-full">
       <div className="flex items-start justify-between gap-4">
         <div className="flex items-start gap-4">
           <Link href="/campaigns" className="p-2 hover:bg-muted rounded-full transition-colors mt-1">

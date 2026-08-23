@@ -115,7 +115,7 @@ export function FreeformEditor({ width, height, brand, initialElements, onChange
     if (!node) return;
     const measure = () => {
       const avail = node.clientWidth;
-      const maxH = Math.max(320, window.innerHeight * 0.7);
+      const maxH = Math.max(360, window.innerHeight * 0.78);
       if (avail > 0) setScale(Math.min(1, avail / width, maxH / height));
     };
     measure();
