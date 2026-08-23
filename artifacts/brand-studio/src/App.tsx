@@ -31,6 +31,7 @@ import TemplateList from "@/pages/templates/List";
 import NewTemplate from "@/pages/templates/New";
 import ImportPdf from "@/pages/templates/ImportPdf";
 import EditTemplate from "@/pages/templates/Edit";
+import CompareTemplates from "@/pages/templates/Compare";
 import KnowledgeList from "@/pages/knowledge/List";
 import LearnArtwork from "@/pages/knowledge/Learn";
 import KnowledgeGuidelines from "@/pages/knowledge/Guidelines";
@@ -166,6 +167,7 @@ function AppRoutes() {
         <Route path="/templates" component={TemplateList} />
         <Route path="/templates/new" component={NewTemplate} />
         <Route path="/templates/import" component={ImportPdf} />
+        <Route path="/templates/:id/compare" component={CompareTemplates} />
         <Route path="/templates/:id" component={EditTemplate} />
         <Route path="/knowledge" component={KnowledgeList} />
         <Route path="/knowledge/learn" component={LearnArtwork} />

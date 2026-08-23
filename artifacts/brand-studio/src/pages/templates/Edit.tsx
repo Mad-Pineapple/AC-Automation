@@ -115,7 +115,17 @@ export default function EditTemplate() {
           <h1 className="text-3xl font-bold tracking-tight">Edit Template</h1>
           <p className="text-muted-foreground text-sm font-mono mt-1 uppercase tracking-widest">{template.dims}</p>
         </div>
-        {isFreeform && <AdaptDialog templateId={id} templateName={template.name} />}
+        {isFreeform && (
+          <div className="flex items-center gap-2">
+            <WLink href={`/templates/${id}/compare`}>
+              <Button variant="outline" className="gap-2" data-testid="button-compare-sizes">
+                <Layers className="w-4 h-4" />
+                Compare sizes
+              </Button>
+            </WLink>
+            <AdaptDialog templateId={id} templateName={template.name} />
+          </div>
+        )}
       </div>
 
       {isFreeform ? (
