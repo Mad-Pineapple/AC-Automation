@@ -56,6 +56,11 @@ router.post("/templates/:id/export-html", requireAdmin, async (req, res): Promis
   const clickUrl = typeof body.clickUrl === "string" && /^https?:\/\//.test(body.clickUrl.trim()) ? body.clickUrl.trim().slice(0, 2000) : null;
   const fluid = body.fluid === true;
   const animate = body.animate !== false;
+  const ANIMS = new Set(["none", "entrance", "kenburns", "frames", "reveal"]);
+  const animation = (ANIMS.has(body.animation) ? body.animation : "entrance") as
+    "none" | "entrance" | "kenburns" | "frames" | "reveal";
+  const durationSec = Number.isFinite(Number(body.durationSec)) ? Number(body.durationSec) : undefined;
+  const loops = Number.isFinite(Number(body.loops)) ? Number(body.loops) : undefined;
   const headline = config.elements.find((e) => e.id === "kv_headline");
   const layoutLabel =
     headline && config.layoutOptions
@@ -90,6 +95,9 @@ router.post("/templates/:id/export-html", requireAdmin, async (req, res): Promis
     studioBase: base,
     brandFontFamily: brand?.fontFamily ?? "National 2",
     animate,
+    animation,
+    durationSec,
+    loops,
     fluid,
     loadAsset: assetLoader(base),
   });

@@ -20,6 +20,9 @@ export function ExportHtmlDialog({ templateId, templateName }: { templateId: num
   const [clickUrl, setClickUrl] = useState("https://www.aucklandcouncil.govt.nz/");
   const [fluid, setFluid] = useState(false);
   const [animate, setAnimate] = useState(true);
+  const [animation, setAnimation] = useState<"entrance" | "kenburns" | "frames" | "reveal">("entrance");
+  const [durationSec, setDurationSec] = useState(8);
+  const [loops, setLoops] = useState(1);
   const [busy, setBusy] = useState(false);
   const { getToken } = useAuth();
   const { toast } = useToast();
@@ -31,7 +34,7 @@ export function ExportHtmlDialog({ templateId, templateName }: { templateId: num
       const res = await fetch(`/api/templates/${templateId}/export-html`, {
         method: "POST",
         headers: { "Content-Type": "application/json", ...(token ? { Authorization: `Bearer ${token}` } : {}) },
-        body: JSON.stringify({ campaign, variant, clickUrl, fluid, animate }),
+        body: JSON.stringify({ campaign, variant, clickUrl, fluid, animate, animation: animate ? animation : "none", durationSec, loops }),
       });
       if (!res.ok) throw new Error(await res.text());
       const blob = await res.blob();
@@ -87,10 +90,53 @@ export function ExportHtmlDialog({ templateId, templateName }: { templateId: num
             <Label className="text-xs">Click-through URL</Label>
             <Input value={clickUrl} onChange={(e) => setClickUrl(e.target.value)} placeholder="https://…" data-testid="input-export-click" />
           </div>
+          <div className="space-y-1.5">
+            <Label className="text-xs">Motion</Label>
+            <div className="flex flex-wrap gap-1.5">
+              {([
+                ["none", "None"],
+                ["entrance", "Entrance"],
+                ["kenburns", "Ken Burns"],
+                ["frames", "Story frames"],
+                ["reveal", "Reveal"],
+              ] as const).map(([key, label]) => {
+                const active = animate ? animation === key : key === "none";
+                return (
+                  <Button
+                    key={key}
+                    type="button"
+                    size="sm"
+                    variant={active ? "default" : "outline"}
+                    className="h-7 text-xs"
+                    onClick={() => {
+                      if (key === "none") setAnimate(false);
+                      else { setAnimate(true); setAnimation(key); }
+                    }}
+                    data-testid={`button-anim-${key}`}
+                  >
+                    {label}
+                  </Button>
+                );
+              })}
+            </div>
+            <p className="text-[10px] text-muted-foreground leading-tight">
+              Ken Burns drifts the artwork toward the hero area. Story frames run hook → support → end-frame.
+              Spec-checked: ends within 15s, max 3 loops, reduced-motion respected.
+            </p>
+            {animate && (
+              <div className="grid grid-cols-2 gap-2">
+                <div className="space-y-1">
+                  <Label className="text-[10px]">Duration (s, max 15)</Label>
+                  <Input type="number" min={2} max={15} value={durationSec} onChange={(e) => setDurationSec(Math.min(15, Math.max(2, Number(e.target.value))))} className="h-8 text-xs" />
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-[10px]">Loops (max 3)</Label>
+                  <Input type="number" min={1} max={3} value={loops} onChange={(e) => setLoops(Math.min(3, Math.max(1, Number(e.target.value))))} className="h-8 text-xs" />
+                </div>
+              </div>
+            )}
+          </div>
           <div className="flex items-center gap-4 text-sm">
-            <label className="flex items-center gap-2">
-              <input type="checkbox" checked={animate} onChange={(e) => setAnimate(e.target.checked)} /> Entrance animation
-            </label>
             <label className="flex items-center gap-2">
               <input type="checkbox" checked={fluid} onChange={(e) => setFluid(e.target.checked)} /> Fluid (scale to container)
             </label>

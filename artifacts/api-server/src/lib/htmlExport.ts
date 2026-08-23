@@ -30,6 +30,8 @@ export interface CreativeTags {
   layoutLabel?: string | null;
 }
 
+export type AnimationPreset = "none" | "entrance" | "kenburns" | "frames" | "reveal";
+
 export interface HtmlExportOptions {
   width: number;
   height: number;
@@ -40,7 +42,15 @@ export interface HtmlExportOptions {
   /** Absolute origin of the studio (beacons + asset fetching). */
   studioBase: string;
   brandFontFamily?: string;
+  /** Kept for callers that only know on/off: false => "none". */
   animate?: boolean;
+  /** Motion preset. All CSS, spec-checked: ends within durationSec, loops ≤ 3,
+   * reduced-motion respected, clickTag layer untouched. */
+  animation?: AnimationPreset;
+  /** Total duration of one cycle in seconds (IAB display: ≤ 15s). */
+  durationSec?: number;
+  /** Cycles (IAB display: ≤ 3). */
+  loops?: number;
   fluid?: boolean;
   /** Fetch bytes for a src (storage object, public file, absolute URL). */
   loadAsset: (src: string) => Promise<{ bytes: Buffer; contentType: string } | null>;
@@ -144,6 +154,13 @@ export async function buildHtmlPackage(opts: HtmlExportOptions): Promise<HtmlPac
     }
   }
 
+  // Motion preset + spec guards (IAB display: ≤15s, ≤3 loops).
+  const preset: AnimationPreset = opts.animate === false ? "none" : (opts.animation ?? "entrance");
+  const D = Math.min(15, Math.max(2, opts.durationSec ?? (preset === "frames" ? 12 : preset === "kenburns" ? 8 : 3)));
+  const L = Math.min(3, Math.max(1, Math.round(opts.loops ?? 1)));
+  const bgImage = config.elements.find((e): e is FreeformImage => e.type === "image" && e.role !== "logo");
+  const kbOrigin = `${Math.round((bgImage?.focusX ?? 0.5) * 100)}% ${Math.round((bgImage?.focusY ?? 0.5) * 100)}%`;
+
   // Elements.
   const body: string[] = [];
   let imgIndex = 0;
@@ -155,10 +172,33 @@ export async function buildHtmlPackage(opts: HtmlExportOptions): Promise<HtmlPac
     if (el.type === "rect") return 0.15;
     return 0.45 + Math.min(0.3, (seq++) * 0.12);
   };
+  /** Story frames: which frame an element belongs to (artwork/scrim always on). */
+  const frameOf = (el: FreeformElement): 0 | 1 | 2 | 3 => {
+    if (el.type === "rect") return 0;
+    if (el.type === "image") return el.role === "logo" ? 3 : 0;
+    if (el.role === "headline") return 1;
+    if (el.role === "cta") return 3;
+    return 2; // subhead / body / other
+  };
+  const animFor = (el: FreeformElement): string => {
+    if (preset === "none") return "";
+    if (preset === "entrance") return `animation:enter .6s ease-out ${delayFor(el).toFixed(2)}s both`;
+    if (preset === "kenburns") {
+      if (el.type === "image" && el.role !== "logo") return `animation:kenburns ${D}s ease-out both;transform-origin:${kbOrigin}`;
+      return `animation:enter .6s ease-out ${(0.3 + delayFor(el)).toFixed(2)}s both`;
+    }
+    if (preset === "reveal") {
+      if (el.type === "image" && el.role !== "logo") return "";
+      return `animation:enter .6s ease-out ${(0.8 + delayFor(el)).toFixed(2)}s both`;
+    }
+    // frames
+    const f = frameOf(el);
+    return f === 0 ? "" : `animation:frame${f} ${D}s ease-in-out ${L} both`;
+  };
 
   for (const el of config.elements) {
     const base = `position:absolute;left:${el.x}px;top:${el.y}px;width:${el.w}px;height:${el.h}px;opacity:${el.opacity ?? 1}`;
-    const anim = opts.animate === false ? "" : `animation:enter .6s ease-out ${delayFor(el).toFixed(2)}s both`;
+    const anim = animFor(el);
     if (el.type === "rect") {
       body.push(`<div class="el rect" style="${base};${rectStyle(el)};${anim}"></div>`);
     } else if (el.type === "image") {
@@ -209,7 +249,14 @@ html,body{margin:0;padding:0;background:transparent}
 .el{box-sizing:border-box}
 .img{display:block}
 @keyframes enter{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
-@media (prefers-reduced-motion:reduce){.el{animation:none!important}}
+@keyframes kenburns{from{transform:scale(1)}to{transform:scale(1.08)}}
+@keyframes wipe{from{clip-path:inset(0 100% 0 0)}to{clip-path:inset(0 0 0 0)}}
+/* Story frames: 1 = hook, 2 = support, 3 = end-frame (holds). */
+@keyframes frame1{0%{opacity:0;transform:translateY(12px)}6%{opacity:1;transform:none}36%{opacity:1}42%{opacity:0;transform:translateY(-8px)}100%{opacity:0}}
+@keyframes frame2{0%{opacity:0}40%{opacity:0;transform:translateY(12px)}46%{opacity:1;transform:none}66%{opacity:1}72%{opacity:0;transform:translateY(-8px)}100%{opacity:0}}
+@keyframes frame3{0%{opacity:0}70%{opacity:0;transform:translateY(12px)}76%{opacity:1;transform:none}100%{opacity:1}}
+${preset === "reveal" ? `#stage{animation:wipe .9s cubic-bezier(.4,0,.2,1) both}` : ""}
+@media (prefers-reduced-motion:reduce){.el,#stage{animation:none!important;clip-path:none!important}}
 #clicktag-layer{position:absolute;left:0;top:0;width:${width}px;height:${height}px;z-index:2147483647;display:block;text-decoration:none;background:transparent;cursor:pointer}
 </style>
 <script type="text/javascript">var clickTag = window.clickTag || ${JSON.stringify(landing)};</script>
@@ -222,7 +269,8 @@ html,body{margin:0;padding:0;background:transparent}
   data-campaign="${esc(tags.campaign ?? "")}"
   data-format="${esc(tags.format)}"
   data-variant="${esc(tags.variant ?? "")}"
-  data-layout="${esc(tags.layoutLabel ?? "")}">
+  data-layout="${esc(tags.layoutLabel ?? "")}"
+  data-animation="${preset}" data-duration="${D}" data-loops="${L}">
 ${body.join("\n")}
 <a href="javascript:void(0)" id="clicktag-layer" aria-label="${esc(tags.name)}"></a>
 </div>
