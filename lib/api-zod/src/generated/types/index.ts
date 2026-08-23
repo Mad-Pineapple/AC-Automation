@@ -49,6 +49,7 @@ export * from './dissectPdfResult';
 export * from './errorResponse';
 export * from './extractedImage';
 export * from './freeformElement';
+export * from './freeformElementFocusBox';
 export * from './freeformElementGradient';
 export * from './freeformElementGradientStopsItem';
 export * from './getRecentActivityParams';

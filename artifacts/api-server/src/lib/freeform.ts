@@ -68,6 +68,9 @@ export interface FreeformImage extends FreeformBase {
   /** 0..1 focal point for cover crops (drives CSS object-position). */
   focusX?: number;
   focusY?: number;
+  /** Hero box in image fractions (0..1): the subject that every adapted
+   * format's crop window is chosen around. */
+  focusBox?: { x: number; y: number; w: number; h: number };
   /** Key-visual metadata: source text blocks lifted at import. */
   kvText?: KvTextBlock[];
 }
@@ -267,6 +270,16 @@ export function normalizeFreeformConfig(raw: unknown): FreeformConfig {
       const opacity = clampOpacity(el.opacity);
       const focusX = clampOpacity(el.focusX);
       const focusY = clampOpacity(el.focusY);
+      const fbRaw = el.focusBox as Record<string, unknown> | undefined;
+      const focusBox =
+        fbRaw && typeof fbRaw === "object"
+          ? {
+              x: clampOpacity(fbRaw.x) ?? 0,
+              y: clampOpacity(fbRaw.y) ?? 0,
+              w: Math.max(0.02, clampOpacity(fbRaw.w) ?? 0.5),
+              h: Math.max(0.02, clampOpacity(fbRaw.h) ?? 0.5),
+            }
+          : undefined;
       const kvText = Array.isArray(el.kvText)
         ? (el.kvText as unknown[])
             .slice(0, 12)
@@ -295,6 +308,7 @@ export function normalizeFreeformConfig(raw: unknown): FreeformConfig {
         ...(opacity !== undefined ? { opacity } : {}),
         ...(focusX !== undefined ? { focusX } : {}),
         ...(focusY !== undefined ? { focusY } : {}),
+        ...(focusBox ? { focusBox } : {}),
         ...(kvText && kvText.length > 0 ? { kvText } : {}),
       });
     } else if (el.type === "rect") {

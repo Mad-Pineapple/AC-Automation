@@ -138,7 +138,9 @@ export async function composeKeyVisualAdaptation(
   const visibleRows = dstH / s;
   // Centre the visible window on the hero (the stored focal point), clamped
   // so it never slides past the clean band into the baked copy.
-  const heroCentre = (bg.focusY ?? 0.45) * srcH;
+  // The hero box (detected at import / set in the editor) is the authority
+  // on what the crop must contain; fall back to the focal point.
+  const heroCentre = (bg.focusBox ? bg.focusBox.y + bg.focusBox.h / 2 : (bg.focusY ?? 0.45)) * srcH;
   const srcYOffset = Math.min(
     Math.max(0, heroCentre - visibleRows / 2),
     Math.max(0, cleanH - visibleRows),
@@ -150,7 +152,12 @@ export async function composeKeyVisualAdaptation(
     .sort((a, b) => (b.fontSize ?? 0) - (a.fontSize ?? 0))[0];
   const inferredFocusX =
     bg.focusX ?? (liveHeadline ? ((liveHeadline.x + liveHeadline.w / 2) / srcW > 0.5 ? 0.28 : 0.72) : 0.5);
-  const artX = Math.round((dstW - artW) * inferredFocusX);
+  // Horizontal window: centre on the hero box (or focal point), clamped so
+  // the artwork still covers the canvas.
+  const visibleCols = dstW / s;
+  const heroCentreX = (bg.focusBox ? bg.focusBox.x + bg.focusBox.w / 2 : inferredFocusX) * srcW;
+  const srcXOffset = Math.min(Math.max(0, heroCentreX - visibleCols / 2), Math.max(0, srcW - visibleCols));
+  const artX = -Math.round(srcXOffset * s);
   const artY = -Math.round(srcYOffset * s);
   elements.push({
     ...bg,

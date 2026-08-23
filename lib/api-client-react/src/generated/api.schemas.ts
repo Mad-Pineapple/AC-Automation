@@ -108,6 +108,16 @@ export interface BrandUpdate {
   supportedTemplateSizes?: string[];
 }
 
+/**
+ * Hero box in image fractions (0..1) that adapted crops are chosen around
+ */
+export type FreeformElementFocusBox = {
+  x?: number;
+  y?: number;
+  w?: number;
+  h?: number;
+};
+
 export type FreeformElementGradientStopsItem = {
   color?: string;
   alpha?: number;
@@ -154,6 +164,8 @@ export interface FreeformElement {
   focusX?: number;
   /** 0..1 focal point for cover crops (CSS object-position y) */
   focusY?: number;
+  /** Hero box in image fractions (0..1) that adapted crops are chosen around */
+  focusBox?: FreeformElementFocusBox;
   /** Rect linear gradient: {angle: deg, stops: [{color, alpha, at}]} */
   gradient?: FreeformElementGradient;
   fill?: string;

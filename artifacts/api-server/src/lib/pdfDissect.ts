@@ -493,6 +493,8 @@ async function renderKeyVisualTemplate(
     hideTextLayers: true,
   });
   const storedPath = await objectStorageService.uploadBytes(png, "image/png");
+  const { detectHeroBox } = await import("./heroBox");
+  const heroBox = await detectHeroBox(png);
 
   // 2. Always read the type: layered masters render it as live elements;
   //    flat masters carry it as kvText metadata so size adaptation can
@@ -588,8 +590,9 @@ async function renderKeyVisualTemplate(
         w: width,
         h: height,
         locked: true,
-        focusX: 0.5,
-        focusY,
+        focusX: heroBox ? heroBox.x + heroBox.w / 2 : 0.5,
+        focusY: heroBox ? heroBox.y + heroBox.h / 2 : focusY,
+        ...(heroBox ? { focusBox: heroBox } : {}),
         ...(kvText.length > 0 ? { kvText } : {}),
       },
       ...textElements,

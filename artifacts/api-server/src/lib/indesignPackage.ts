@@ -171,6 +171,27 @@ export async function importInDesignPackage(
     try {
       const idmlZip = await JSZip.loadAsync(idmlBytes);
       result.idmlLayout = await parseIdmlToLayout(idmlZip, linksByName, brandLogoUrl);
+      // Hero box on the layout's main artwork, so adapted crops frame the subject.
+      const images = result.idmlLayout.elements.filter(
+        (e) => e.type === "image" && e.role !== "logo" && typeof e.src === "string",
+      );
+      const main = images.sort((a, b) => Number(b.w) * Number(b.h) - Number(a.w) * Number(a.h))[0];
+      if (main) {
+        try {
+          const objPath = String(main.src).replace(/^\/api\/storage/, "");
+          const file = await objectStorageService.getObjectEntityFile(objPath);
+          const bytes = Buffer.from(await (await objectStorageService.downloadObject(file)).arrayBuffer());
+          const { detectHeroBox } = await import("./heroBox");
+          const box = await detectHeroBox(bytes);
+          if (box) {
+            main.focusBox = box;
+            main.focusX = box.x + box.w / 2;
+            main.focusY = box.y + box.h / 2;
+          }
+        } catch {
+          // hero detection is best-effort
+        }
+      }
     } catch (err) {
       result.idmlError = err instanceof Error ? err.message.slice(0, 160) : "IDML could not be parsed";
     }

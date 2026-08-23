@@ -399,6 +399,23 @@ export function FreeformEditor({ width, height, brand, initialElements, onChange
                     {el.type === "rect" && (
                       <div style={{ width: "100%", height: "100%", ...freeformRectStyle(el) }} />
                     )}
+                    {el.type === "image" && el.focusBox && (
+                      <div
+                        aria-hidden
+                        title="Hero area — adapted sizes crop around this"
+                        style={{
+                          position: "absolute",
+                          left: `${(el.focusBox.x ?? 0) * 100}%`,
+                          top: `${(el.focusBox.y ?? 0) * 100}%`,
+                          width: `${(el.focusBox.w ?? 0.5) * 100}%`,
+                          height: `${(el.focusBox.h ?? 0.5) * 100}%`,
+                          border: `${2 / scale}px dashed #ffe104`,
+                          boxShadow: "0 0 0 9999px rgba(17,38,61,0.18)",
+                          pointerEvents: "none",
+                          zIndex: 2,
+                        }}
+                      />
+                    )}
                     {el.type === "image" &&
                       (el.src ? (
                         <img src={el.src} alt="" draggable={false} style={{ width: "100%", height: "100%", ...freeformImageStyle(el) }} />
@@ -759,6 +776,45 @@ function Inspector({
               Cover fills the area (may crop). Contain fits the whole image inside.
             </p>
           </div>
+          {el.role !== "logo" && (
+            <div className="space-y-1.5">
+              <Label className="text-xs">Hero area (% of image)</Label>
+              <div className="grid grid-cols-4 gap-1">
+                {(["x", "y", "w", "h"] as const).map((k) => (
+                  <Input
+                    key={k}
+                    type="number"
+                    min={0}
+                    max={100}
+                    className="h-8 text-xs px-1"
+                    placeholder={k.toUpperCase()}
+                    value={el.focusBox ? Math.round(((el.focusBox as Record<string, number>)[k] ?? 0) * 100) : ""}
+                    onChange={(e) => {
+                      const v = Math.max(0, Math.min(100, Number(e.target.value))) / 100;
+                      const cur = el.focusBox ?? { x: 0.25, y: 0.25, w: 0.5, h: 0.5 };
+                      onPatch({ focusBox: { ...cur, [k]: v } });
+                    }}
+                    data-testid={`input-hero-${k}`}
+                  />
+                ))}
+              </div>
+              <div className="flex gap-1">
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  className="h-7 flex-1 text-xs"
+                  onClick={() => onPatch({ focusBox: el.focusBox ? undefined : { x: 0.25, y: 0.25, w: 0.5, h: 0.5 } })}
+                  data-testid="button-hero-toggle"
+                >
+                  {el.focusBox ? "Clear hero area" : "Set hero area"}
+                </Button>
+              </div>
+              <p className="text-[10px] text-muted-foreground leading-tight">
+                The subject every adapted size crops around. Detected at import; adjust here.
+              </p>
+            </div>
+          )}
           <NumField label="Corner radius" value={el.radius ?? 0} onChange={(v) => onPatch({ radius: Math.max(0, v) })} testid="input-radius" />
           <RoleSelect roles={IMAGE_ROLES} value={el.role ?? "decoration"} onChange={(v) => onPatch({ role: v })} />
         </>

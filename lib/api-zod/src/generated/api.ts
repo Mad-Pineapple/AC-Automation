@@ -217,6 +217,12 @@ export const ListTemplatesResponseItem = zod.object({
   "fit": zod.string().optional().describe('cover | contain (image objectFit; default depends on role)'),
   "focusX": zod.number().optional().describe('0..1 focal point for cover crops (CSS object-position x)'),
   "focusY": zod.number().optional().describe('0..1 focal point for cover crops (CSS object-position y)'),
+  "focusBox": zod.object({
+  "x": zod.number().optional(),
+  "y": zod.number().optional(),
+  "w": zod.number().optional(),
+  "h": zod.number().optional()
+}).optional().describe('Hero box in image fractions (0..1) that adapted crops are chosen around'),
   "gradient": zod.object({
   "angle": zod.number().optional(),
   "stops": zod.array(zod.object({
@@ -278,6 +284,12 @@ export const CreateTemplateBody = zod.object({
   "fit": zod.string().optional().describe('cover | contain (image objectFit; default depends on role)'),
   "focusX": zod.number().optional().describe('0..1 focal point for cover crops (CSS object-position x)'),
   "focusY": zod.number().optional().describe('0..1 focal point for cover crops (CSS object-position y)'),
+  "focusBox": zod.object({
+  "x": zod.number().optional(),
+  "y": zod.number().optional(),
+  "w": zod.number().optional(),
+  "h": zod.number().optional()
+}).optional().describe('Hero box in image fractions (0..1) that adapted crops are chosen around'),
   "gradient": zod.object({
   "angle": zod.number().optional(),
   "stops": zod.array(zod.object({
@@ -342,6 +354,12 @@ export const GetTemplateResponse = zod.object({
   "fit": zod.string().optional().describe('cover | contain (image objectFit; default depends on role)'),
   "focusX": zod.number().optional().describe('0..1 focal point for cover crops (CSS object-position x)'),
   "focusY": zod.number().optional().describe('0..1 focal point for cover crops (CSS object-position y)'),
+  "focusBox": zod.object({
+  "x": zod.number().optional(),
+  "y": zod.number().optional(),
+  "w": zod.number().optional(),
+  "h": zod.number().optional()
+}).optional().describe('Hero box in image fractions (0..1) that adapted crops are chosen around'),
   "gradient": zod.object({
   "angle": zod.number().optional(),
   "stops": zod.array(zod.object({
@@ -406,6 +424,12 @@ export const UpdateTemplateBody = zod.object({
   "fit": zod.string().optional().describe('cover | contain (image objectFit; default depends on role)'),
   "focusX": zod.number().optional().describe('0..1 focal point for cover crops (CSS object-position x)'),
   "focusY": zod.number().optional().describe('0..1 focal point for cover crops (CSS object-position y)'),
+  "focusBox": zod.object({
+  "x": zod.number().optional(),
+  "y": zod.number().optional(),
+  "w": zod.number().optional(),
+  "h": zod.number().optional()
+}).optional().describe('Hero box in image fractions (0..1) that adapted crops are chosen around'),
   "gradient": zod.object({
   "angle": zod.number().optional(),
   "stops": zod.array(zod.object({
@@ -462,6 +486,12 @@ export const UpdateTemplateResponse = zod.object({
   "fit": zod.string().optional().describe('cover | contain (image objectFit; default depends on role)'),
   "focusX": zod.number().optional().describe('0..1 focal point for cover crops (CSS object-position x)'),
   "focusY": zod.number().optional().describe('0..1 focal point for cover crops (CSS object-position y)'),
+  "focusBox": zod.object({
+  "x": zod.number().optional(),
+  "y": zod.number().optional(),
+  "w": zod.number().optional(),
+  "h": zod.number().optional()
+}).optional().describe('Hero box in image fractions (0..1) that adapted crops are chosen around'),
   "gradient": zod.object({
   "angle": zod.number().optional(),
   "stops": zod.array(zod.object({
@@ -554,6 +584,12 @@ export const DissectPdfResponse = zod.object({
   "fit": zod.string().optional().describe('cover | contain (image objectFit; default depends on role)'),
   "focusX": zod.number().optional().describe('0..1 focal point for cover crops (CSS object-position x)'),
   "focusY": zod.number().optional().describe('0..1 focal point for cover crops (CSS object-position y)'),
+  "focusBox": zod.object({
+  "x": zod.number().optional(),
+  "y": zod.number().optional(),
+  "w": zod.number().optional(),
+  "h": zod.number().optional()
+}).optional().describe('Hero box in image fractions (0..1) that adapted crops are chosen around'),
   "gradient": zod.object({
   "angle": zod.number().optional(),
   "stops": zod.array(zod.object({
@@ -616,6 +652,12 @@ export const DissectImageResponse = zod.object({
   "fit": zod.string().optional().describe('cover | contain (image objectFit; default depends on role)'),
   "focusX": zod.number().optional().describe('0..1 focal point for cover crops (CSS object-position x)'),
   "focusY": zod.number().optional().describe('0..1 focal point for cover crops (CSS object-position y)'),
+  "focusBox": zod.object({
+  "x": zod.number().optional(),
+  "y": zod.number().optional(),
+  "w": zod.number().optional(),
+  "h": zod.number().optional()
+}).optional().describe('Hero box in image fractions (0..1) that adapted crops are chosen around'),
   "gradient": zod.object({
   "angle": zod.number().optional(),
   "stops": zod.array(zod.object({

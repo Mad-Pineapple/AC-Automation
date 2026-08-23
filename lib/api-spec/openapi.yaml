@@ -1680,6 +1680,18 @@ components:
         focusY:
           type: number
           description: "0..1 focal point for cover crops (CSS object-position y)"
+        focusBox:
+          type: object
+          description: "Hero box in image fractions (0..1) that adapted crops are chosen around"
+          properties:
+            x:
+              type: number
+            y:
+              type: number
+            w:
+              type: number
+            h:
+              type: number
         gradient:
           type: object
           description: "Rect linear gradient: {angle: deg, stops: [{color, alpha, at}]}"
