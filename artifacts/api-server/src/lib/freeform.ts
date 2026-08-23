@@ -89,9 +89,24 @@ export interface FreeformRect extends FreeformBase {
 
 export type FreeformElement = FreeformText | FreeformImage | FreeformRect;
 
+/** An alternative headline placement the layout engine scored; applying one
+ * patches the kv_headline element. */
+export interface LayoutOption {
+  label: string;
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+  fontSize: number;
+  align: "left" | "center" | "right";
+  color: string;
+  score: number;
+}
+
 export interface FreeformConfig {
   kind: "freeform";
   elements: FreeformElement[];
+  layoutOptions?: LayoutOption[];
 }
 
 const MAX_ELEMENTS = 200;
@@ -338,5 +353,22 @@ export function normalizeFreeformConfig(raw: unknown): FreeformConfig {
     }
   }
 
-  return { kind: "freeform", elements };
+  const rawOpts = (raw as { layoutOptions?: unknown }).layoutOptions;
+  const layoutOptions = Array.isArray(rawOpts)
+    ? (rawOpts as unknown[])
+        .slice(0, 4)
+        .filter((o): o is Record<string, unknown> => typeof o === "object" && o !== null)
+        .map((o) => ({
+          label: String(o.label ?? "Option").slice(0, 40),
+          x: num(o.x),
+          y: num(o.y),
+          w: Math.max(1, num(o.w)),
+          h: Math.max(1, num(o.h)),
+          fontSize: Math.min(2000, Math.max(1, num(o.fontSize, 16))),
+          align: (o.align === "center" || o.align === "right" ? o.align : "left") as "left" | "center" | "right",
+          color: sanitizeColor(o.color, "#ffffff"),
+          score: num(o.score),
+        }))
+    : [];
+  return { kind: "freeform", elements, ...(layoutOptions.length > 0 ? { layoutOptions } : {}) };
 }

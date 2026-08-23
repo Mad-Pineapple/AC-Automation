@@ -84,6 +84,38 @@ async function sampleLuminanceBehind(
   }
 }
 
+/** Luminance (0-255) and busyness (mean channel std-dev) of the artwork
+ * behind a canvas-space box — the "what is behind the type" measurement. */
+async function sampleRegionStats(
+  src: string,
+  imgW: number,
+  imgH: number,
+  art: { x: number; y: number; w: number; h: number },
+  box: { x: number; y: number; w: number; h: number },
+): Promise<{ lum: number; busy: number } | null> {
+  const buffer = await loadArtwork(src);
+  if (!buffer) return null;
+  const s = art.w / imgW;
+  const left = Math.round((box.x - art.x) / s);
+  const top = Math.round((box.y - art.y) / s);
+  const width = Math.round(box.w / s);
+  const height = Math.round(box.h / s);
+  const cl = Math.max(0, Math.min(imgW - 1, left));
+  const ct = Math.max(0, Math.min(imgH - 1, top));
+  const cw = Math.max(1, Math.min(imgW - cl, width - (cl - left)));
+  const ch = Math.max(1, Math.min(imgH - ct, height - (ct - top)));
+  try {
+    const stats = await sharp(buffer).extract({ left: cl, top: ct, width: cw, height: ch }).stats();
+    const [r, g, b] = stats.channels;
+    return {
+      lum: 0.299 * r.mean + 0.587 * g.mean + 0.114 * b.mean,
+      busy: (r.stdev + g.stdev + b.stdev) / 3,
+    };
+  } catch {
+    return null;
+  }
+}
+
 /** The KV master shape: first element is a locked, full-bleed cover image. */
 export function findKvBackground(config: FreeformConfig, srcW: number, srcH: number): FreeformImage | null {
   const first = config.elements[0];
@@ -122,6 +154,7 @@ export async function composeKeyVisualAdaptation(
   const showStrapline = !isSocialSquare && !isStrip && !isWide && dstH >= 400 && !!brand.strapline;
 
   const elements: FreeformElement[] = [];
+  let layoutOptions: FreeformConfig["layoutOptions"] = undefined;
 
   // 1. Artwork: untouched pixels, cropped like a designer would — the element
   //    is drawn at the image's natural aspect and positioned so the CLEAN
@@ -266,57 +299,115 @@ export async function composeKeyVisualAdaptation(
     } as FreeformElement);
   }
 
-  // 3. Headline: the master's own words at the master's own scale, placed at
-  //    the master's own height fraction — clamped to the format's grid.
+  // 3. Headline placement — decided from the artwork, the way a designer
+  //    decides: candidate zones around the hero (right / left / below /
+  //    above), the designer's own column, and the bottom band are each sized
+  //    for the copy, then scored on collision with the subject, busyness and
+  //    tone of the pixels behind the type, and achievable type size. The
+  //    best zone wins; runners-up are kept as selectable layout options.
   if (headline) {
     const text = isStrip ? headline.text.replace(/\n+/g, " ") : headline.text;
     const lines = text.split("\n").length;
-    const wAvail = dstW - margin * 2 - (isStrip || isWide ? tile + margin : 0);
-
-    // Horizontal placement honours the designer's copy column (e.g. copy
-    // right of the subject) whenever the format has room for it; otherwise
-    // the copy drops to the margin.
-    let w = Math.max(40, Math.min(wAvail, Math.round(headlineWidthFrac * dstW)));
-    let x: number;
-    if (headlineCentred && !isStrip && !isWide) {
-      x = Math.round((dstW - w) / 2);
-    } else {
-      const columnX = Math.round(headlineXFrac * dstW);
-      const roomRight = dstW - columnX - margin - (showLogo && (isStrip || isWide) ? tile + margin : 0);
-      if (headlineXFrac > 0.25 && roomRight >= dstW * 0.3 && dstW / dstH >= 1.5) {
-        x = columnX;
-        w = Math.max(40, Math.min(w, roomRight));
-      } else {
-        x = margin;
-        w = Math.max(40, wAvail); // no column to honour: copy spans the format
-      }
-    }
-    // Target scale = the design's own ratio. Bounds = what physically fits:
-    // the longest line across the available width, and the line count within
-    // the format's height band. Wide/strip formats are display media, so when
-    // the design ratio comes out unreadably small they size up to fit instead.
-    const fitToWidth = w / (longestLineChars(text) * 0.58);
-    const fitToHeight = (dstH - margin * 2) / (lines * 1.3);
-    const fitCap = Math.min(fitToWidth, fitToHeight);
     const designSize = headlineRatio * short;
-    const fontSize = Math.round(
-      Math.max(
-        MIN_HEADLINE_PX,
-        Math.min(fitCap, isStrip || isWide ? Math.max(designSize, fitCap * 0.8) : designSize),
-      ),
-    );
+    const tileReserve = showLogo ? tile + margin : 0;
+    const bottomLimit = showStrapline ? straplineTopY - margin : dstH - (showLogo ? tile : margin) - margin;
 
-    const estH = boxHeight(text, fontSize, w, 1.25);
-    let y: number;
-    if (isStrip || isWide) {
-      y = Math.max(margin, Math.round((dstH - estH) / 2)); // centred beside the tile
-    } else {
-      // The designer's height fraction, clamped inside margins and above the
-      // strapline/logo furniture.
-      const bottomLimit = showStrapline ? straplineTopY - margin : dstH - (showLogo ? tile : margin) - margin;
-      const target = Math.round(headlineCentreYFrac * dstH - estH / 2);
-      y = Math.min(Math.max(margin, target), Math.max(margin, bottomLimit - estH));
+    // Hero box projected into the output canvas (art placement known).
+    const fb = bg.focusBox ?? { x: Math.max(0, inferredFocusX - 0.25), y: 0.15, w: 0.5, h: 0.7 };
+    const hero = {
+      x: artX + fb.x * artW,
+      y: artY + fb.y * artH,
+      w: fb.w * artW,
+      h: fb.h * artH,
+    };
+    const heroRight = hero.x + hero.w;
+    const heroBottom = hero.y + hero.h;
+    const designerSide: "left" | "right" | "below" | "centre" =
+      headlineCentred ? "centre" : headlineXFrac > 0.5 ? "right" : headlineCentreYFrac > 0.6 ? "below" : "left";
+
+    type Candidate = { label: string; x: number; y: number; w: number; h: number; fontSize: number; align: "left" | "center" | "right"; color: string; score: number; zone: string };
+    const fitFont = (w: number, hAvail: number) => {
+      const fitToWidth = w / (longestLineChars(text) * 0.58);
+      const fitToHeight = hAvail / (lines * 1.3);
+      const fitCap = Math.min(fitToWidth, fitToHeight);
+      return Math.round(Math.max(MIN_HEADLINE_PX, Math.min(fitCap, isStrip || isWide ? Math.max(designSize, fitCap * 0.8) : designSize)));
+    };
+    const mk = (label: string, zone: string, zx: number, zy: number, zw: number, zh: number, align: "left" | "center" | "right"): Candidate | null => {
+      zx = Math.max(margin, zx);
+      zy = Math.max(margin, zy);
+      zw = Math.min(zw, dstW - margin - zx);
+      zh = Math.min(zh, bottomLimit - zy);
+      if (zw < dstW * 0.26 || zh < MIN_HEADLINE_PX * 2.6) return null;
+      const fontSize = fitFont(zw, zh);
+      const h = boxHeight(text, fontSize, zw, 1.25);
+      if (h > zh + fontSize * 0.6) return null; // copy would not fit the zone
+      return { label, zone, x: Math.round(zx), y: Math.round(zy), w: Math.round(zw), h, fontSize, align, color: headline.color ?? "#ffffff", score: 0 };
+    };
+
+    const candidates: Candidate[] = [];
+    // Right of the hero, vertically centred on it.
+    {
+      const zx = heroRight + margin;
+      const zw = dstW - zx - margin - tileReserve;
+      const c = mk("Copy right of hero", "right", zx, hero.y, zw, Math.max(0, Math.min(heroBottom, bottomLimit) - hero.y), "left");
+      if (c) { c.y = Math.max(margin, Math.min(Math.round(hero.y + hero.h / 2 - c.h / 2), bottomLimit - c.h)); candidates.push(c); }
     }
+    // Left of the hero.
+    {
+      const zw = hero.x - margin * 2;
+      const c = mk("Copy left of hero", "left", margin, hero.y, zw, Math.max(0, Math.min(heroBottom, bottomLimit) - hero.y), "left");
+      if (c) { c.y = Math.max(margin, Math.min(Math.round(hero.y + hero.h / 2 - c.h / 2), bottomLimit - c.h)); candidates.push(c); }
+    }
+    // Below the hero, full width.
+    {
+      const zy = heroBottom + margin;
+      const c = mk("Copy below hero", "below", margin, zy, dstW - margin * 2 - (isStrip || isWide ? tileReserve : 0), bottomLimit - zy, headlineCentred ? "center" : "left");
+      if (c) candidates.push(c);
+    }
+    // Above the hero, full width.
+    {
+      const c = mk("Copy above hero", "above", margin, margin, dstW - margin * 2 - (isStrip || isWide ? tileReserve : 0), hero.y - margin * 2, headlineCentred ? "center" : "left");
+      if (c) candidates.push(c);
+    }
+    // The designer's own column / height fraction (their intent as a prior).
+    {
+      const w = Math.max(40, Math.min(dstW - margin * 2 - tileReserve, Math.round(headlineWidthFrac * dstW)));
+      const x = headlineCentred ? Math.round((dstW - w) / 2) : Math.min(Math.max(margin, Math.round(headlineXFrac * dstW)), dstW - margin - w);
+      const fontSize = fitFont(w, dstH - margin * 2);
+      const h = boxHeight(text, fontSize, w, 1.25);
+      const y = Math.min(Math.max(margin, Math.round(headlineCentreYFrac * dstH - h / 2)), Math.max(margin, bottomLimit - h));
+      candidates.push({ label: "Designer's position", zone: "designer", x, y, w, h, fontSize, align: headlineCentred ? "center" : "left", color: headline.color ?? "#ffffff", score: 0 });
+    }
+    // Bottom band, full width (the universal fallback).
+    {
+      const w = dstW - margin * 2 - (isStrip || isWide ? tileReserve : 0);
+      const fontSize = fitFont(w, dstH - margin * 2);
+      const h = boxHeight(text, fontSize, w, 1.25);
+      candidates.push({ label: "Bottom band", zone: "bottom", x: margin, y: Math.max(margin, bottomLimit - h), w, h, fontSize, align: headlineCentred ? "center" : "left", color: headline.color ?? "#ffffff", score: 0 });
+    }
+
+    // Score: readable size, no collision with the subject, calm and dark
+    // pixels behind white type, the designer's side as a tie-breaker.
+    const overlap = (c: Candidate) => {
+      const ix = Math.max(0, Math.min(c.x + c.w, heroRight) - Math.max(c.x, hero.x));
+      const iy = Math.max(0, Math.min(c.y + c.h, heroBottom) - Math.max(c.y, hero.y));
+      return (ix * iy) / Math.max(1, c.w * c.h);
+    };
+    const art = { x: artX, y: artY, w: artW, h: artH };
+    for (const c of candidates) {
+      const stats = bg.src ? await sampleRegionStats(bg.src, srcW, srcH, art, c) : null;
+      const sizeScore = 100 * Math.min(1, c.fontSize / Math.max(MIN_HEADLINE_PX, designSize));
+      const collision = 220 * overlap(c);
+      const busy = stats ? Math.min(60, stats.busy * 0.9) : 0;
+      const tone = stats && stats.lum > SCRIM_LUMINANCE_THRESHOLD ? Math.min(50, (stats.lum - SCRIM_LUMINANCE_THRESHOLD) * 0.6) : 0;
+      const prior = c.zone === designerSide || (c.zone === "designer" && designerSide !== "centre") ? 18 : 0;
+      c.score = sizeScore - collision - busy - tone + prior;
+      // Very bright, calm zones take Ocean type instead of a scrim.
+      if (stats && stats.lum > 190 && stats.busy < 22) c.color = "#11263d";
+    }
+    candidates.sort((a, b) => b.score - a.score);
+    const best = candidates[0];
+    const x = best.x, y = best.y, w = best.w, estH = best.h, fontSize = best.fontSize;
 
     elements.push({
       id: "kv_headline",
@@ -329,47 +420,37 @@ export async function composeKeyVisualAdaptation(
       h: estH,
       fontSize,
       fontWeight: headline.fontWeight ?? 700,
-      color: headline.color ?? "#ffffff",
-      align: headlineCentred && !isStrip && !isWide ? "center" : (headline.align === "right" ? "right" : "left"),
+      color: best.color,
+      align: best.align,
       lineHeight: 1.25,
       ...(headline.fontFamily ? { fontFamily: headline.fontFamily } : {}),
     } as FreeformElement);
 
-    // Carry the master's scrim behind the copy: a column fade on wide
-    // formats, a bottom band fade on tall/square ones — same colour and
-    // strength as the designer's.
+    // Keep the runners-up as selectable layout options (distinct positions).
+    const seen = new Set<string>();
+    layoutOptions = candidates
+      .filter((c) => { const k = `${Math.round(c.x / 20)}:${Math.round(c.y / 20)}`; if (seen.has(k)) return false; seen.add(k); return true; })
+      .slice(0, 4)
+      .map((c) => ({ label: c.label, x: c.x, y: c.y, w: c.w, h: c.h, fontSize: c.fontSize, align: c.align, color: c.color, score: Math.round(c.score) }));
+
+    // Carry the master's scrim behind the copy, oriented to where the copy
+    // landed: a column fade for side placements, a band fade for top/bottom.
     if (masterScrim) {
       const strength = masterScrim.gradient
         ? Math.max(...masterScrim.gradient.stops.map((s) => s.alpha))
         : (masterScrim.opacity ?? 0.65);
       const color = masterScrim.fill;
-      const scrim: FreeformElement = isStrip || isWide || dstW / dstH >= 1.4
-        ? ({
-            id: "kv_scrim",
-            type: "rect",
-            fill: color,
-            x: Math.max(0, x - margin * 3),
-            y: 0,
-            w: dstW - Math.max(0, x - margin * 3),
-            h: dstH,
-            gradient: { angle: 270, stops: [{ color, alpha: strength, at: 0.4 }, { color, alpha: 0, at: 1 }] },
-            locked: true,
-          } as FreeformElement)
-        : ({
-            id: "kv_scrim",
-            type: "rect",
-            fill: color,
-            x: 0,
-            y: Math.max(0, y - margin * 3),
-            w: dstW,
-            h: dstH - Math.max(0, y - margin * 3),
-            gradient: { angle: 0, stops: [{ color, alpha: strength, at: 0.5 }, { color, alpha: 0, at: 1 }] },
-            locked: true,
-          } as FreeformElement);
+      const mkScrim = (geom: { x: number; y: number; w: number; h: number }, angle: number): FreeformElement =>
+        ({ id: "kv_scrim", type: "rect", fill: color, ...geom, gradient: { angle, stops: [{ color, alpha: strength, at: 0.45 }, { color, alpha: 0, at: 1 }] }, locked: true } as FreeformElement);
+      const zone = best.zone === "designer" ? designerSide : best.zone;
+      let scrim: FreeformElement;
+      if (zone === "right") scrim = mkScrim({ x: Math.max(0, x - margin * 3), y: 0, w: dstW - Math.max(0, x - margin * 3), h: dstH }, 270);
+      else if (zone === "left") scrim = mkScrim({ x: 0, y: 0, w: Math.min(dstW, x + w + margin * 3), h: dstH }, 90);
+      else if (zone === "above") scrim = mkScrim({ x: 0, y: 0, w: dstW, h: Math.min(dstH, y + estH + margin * 3) }, 180);
+      else scrim = mkScrim({ x: 0, y: Math.max(0, y - margin * 3), w: dstW, h: dstH - Math.max(0, y - margin * 3) }, 0);
       elements.splice(1, 0, scrim); // directly above the artwork, below copy
     }
   }
-
   // 4. Pōhutukawa tile: placed by the shared guideline rules (flush
   //    bottom-right, 1/8 inset, full-height on strips, none on social).
   if (showLogo) {
@@ -421,5 +502,5 @@ export async function composeKeyVisualAdaptation(
     elements.splice(1, 0, ...scrims);
   }
 
-  return { kind: "freeform", elements };
+  return { kind: "freeform", elements, ...(layoutOptions && layoutOptions.length > 1 ? { layoutOptions } : {}) };
 }

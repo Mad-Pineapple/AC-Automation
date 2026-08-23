@@ -248,7 +248,7 @@ interface FreeformSavePayload {
   category: string;
   width: number;
   height: number;
-  config: { kind: "freeform"; elements: FreeformElement[] };
+  config: { kind: "freeform"; elements: FreeformElement[]; layoutOptions?: unknown[] };
 }
 
 function FreeformEditSection({
@@ -269,7 +269,21 @@ function FreeformEditSection({
   const [width, setWidth] = useState(template.width);
   const [height, setHeight] = useState(template.height);
   const [elements, setElements] = useState<FreeformElement[]>(original);
+  const [draft, setDraft] = useState<FreeformElement[]>(original);
   const [editorKey, setEditorKey] = useState(0);
+  // Alternative headline placements the layout engine scored for this size.
+  type LayoutOption = { label: string; x: number; y: number; w: number; h: number; fontSize: number; align: string; color: string; score: number };
+  const layoutOptions = ((template.config as { layoutOptions?: LayoutOption[] })?.layoutOptions ?? []) as LayoutOption[];
+  const applyLayoutOption = (opt: LayoutOption) => {
+    const next = elements.map((el) =>
+      el.id === "kv_headline"
+        ? ({ ...el, x: opt.x, y: opt.y, w: opt.w, h: opt.h, fontSize: opt.fontSize, align: opt.align, color: opt.color } as FreeformElement)
+        : el,
+    );
+    setElements(next);
+    setDraft(next);
+    setEditorKey((k) => k + 1);
+  };
   const { toast } = useToast();
 
   const handleSave = () => {
@@ -287,7 +301,7 @@ function FreeformEditSection({
       category,
       width,
       height,
-      config: { kind: "freeform", elements },
+      config: { kind: "freeform", elements, ...(layoutOptions.length > 0 ? { layoutOptions } : {}) },
     });
   };
 
@@ -361,6 +375,7 @@ function FreeformEditSection({
             size="sm"
             onClick={() => {
               setElements(original);
+              setDraft(original);
               setEditorKey((k) => k + 1);
             }}
             disabled={submitting}
@@ -371,13 +386,35 @@ function FreeformEditSection({
           </Button>
         </CardHeader>
         <CardContent>
+          {layoutOptions.length > 1 && (
+            <div className="mb-3 flex flex-wrap items-center gap-2" data-testid="layout-options">
+              <span className="text-xs text-muted-foreground mr-1">Layout options:</span>
+              {layoutOptions.map((opt) => {
+                const current = elements.find((el) => el.id === "kv_headline");
+                const active = !!current && Math.abs((current.x ?? 0) - opt.x) < 2 && Math.abs((current.y ?? 0) - opt.y) < 2;
+                return (
+                  <Button
+                    key={opt.label}
+                    type="button"
+                    size="sm"
+                    variant={active ? "default" : "outline"}
+                    className="h-7 text-xs"
+                    onClick={() => applyLayoutOption(opt)}
+                    title={`Engine score ${opt.score}`}
+                  >
+                    {opt.label}
+                  </Button>
+                );
+              })}
+            </div>
+          )}
           {brand ? (
             <FreeformEditor
               key={editorKey}
               width={width}
               height={height}
               brand={brand}
-              initialElements={original}
+              initialElements={draft}
               onChange={setElements}
             />
           ) : (
