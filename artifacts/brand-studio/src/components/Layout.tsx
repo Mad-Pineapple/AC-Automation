@@ -7,10 +7,8 @@ import {
   LogOut,
   Users,
   LogIn,
-  Megaphone,
   BarChart3,
   LayoutTemplate,
-  Sparkles,
   Plus,
   UploadCloud,
   ImageIcon,
@@ -67,12 +65,10 @@ export function Layout({ children }: LayoutProps) {
 
   const navigation = [
     { name: "Dashboard", href: "/", icon: LayoutDashboard, show: true },
-    { name: "Campaigns", href: "/campaigns", icon: Megaphone, show: true },
     { name: "Briefs", href: "/briefs", icon: Briefcase, show: true },
     { name: "Brands", href: "/brands", icon: Palette, show: true },
     { name: "Library", href: "/library", icon: Images, show: true },
     { name: "Templates", href: "/templates", icon: LayoutTemplate, show: true },
-    { name: "Knowledge", href: "/knowledge", icon: Sparkles, show: true },
     { name: "Performance", href: "/performance", icon: BarChart3, show: true },
     { name: "Team", href: "/team", icon: Users, show: isAdmin },
   ].filter((n) => n.show);
