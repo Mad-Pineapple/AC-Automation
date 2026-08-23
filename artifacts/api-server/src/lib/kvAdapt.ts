@@ -20,7 +20,7 @@
 import sharp from "sharp";
 import { ObjectStorageService } from "./objectStorage";
 import { guidelineLogoPlacement } from "./logoRules";
-import type { FreeformConfig, FreeformElement, FreeformImage, KvTextBlock } from "./freeform";
+import type { FreeformConfig, FreeformElement, FreeformImage, FreeformRect, FreeformText, KvTextBlock } from "./freeform";
 
 const objectStorageService = new ObjectStorageService();
 
@@ -93,7 +93,7 @@ export function findKvBackground(config: FreeformConfig, srcW: number, srcH: num
   return fullBleed && (img.fit ?? "cover") === "cover" ? img : null;
 }
 
-function pickBlock(kvText: KvTextBlock[], role: string): KvTextBlock | undefined {
+function pickBlock<T extends KvTextBlock>(kvText: T[], role: string): T | undefined {
   const byRole = kvText.filter((t) => t.role === role);
   if (byRole.length > 0) return byRole.sort((a, b) => b.fontSize - a.fontSize)[0];
   return undefined;
@@ -143,7 +143,14 @@ export async function composeKeyVisualAdaptation(
     Math.max(0, heroCentre - visibleRows / 2),
     Math.max(0, cleanH - visibleRows),
   );
-  const artX = Math.round((dstW - artW) * (bg.focusX ?? 0.5));
+  // Structured masters carry no focal point: the hero sits opposite the copy
+  // column (copy right of centre => hero left, and vice versa).
+  const liveHeadline = master.elements
+    .filter((el): el is FreeformText => el.type === "text")
+    .sort((a, b) => (b.fontSize ?? 0) - (a.fontSize ?? 0))[0];
+  const inferredFocusX =
+    bg.focusX ?? (liveHeadline ? ((liveHeadline.x + liveHeadline.w / 2) / srcW > 0.5 ? 0.28 : 0.72) : 0.5);
+  const artX = Math.round((dstW - artW) * inferredFocusX);
   const artY = -Math.round(srcYOffset * s);
   elements.push({
     ...bg,
@@ -160,10 +167,47 @@ export async function composeKeyVisualAdaptation(
   // The master is the design authority: measure its type scale, copy position
   // and alignment, then reproduce those proportions on every format, bounded
   // by the guideline grid. No arbitrary constants.
-  const kvText = bg.kvText ?? [];
-  const headline = pickBlock(kvText, "headline") ?? kvText.slice().sort((a, b) => b.fontSize - a.fontSize)[0];
-  const subhead = pickBlock(kvText, "subhead");
+  // Copy blocks come from kvText metadata (flat-PDF masters) or, for
+  // structured masters (IDML import), from the master's own live text
+  // elements — carrying their real fonts, weights and alignment.
+  type Block = KvTextBlock & { fontFamily?: string; fontWeight?: number; align?: string };
+  const liveText: Block[] = master.elements
+    .filter((el): el is FreeformText => el.type === "text")
+    .map((el) => ({
+      text: el.text,
+      x: el.x,
+      y: el.y,
+      w: el.w,
+      h: el.h,
+      fontSize: el.fontSize ?? 16,
+      ...(el.color ? { color: el.color } : {}),
+      ...(el.role ? { role: el.role } : {}),
+      ...(el.fontFamily ? { fontFamily: el.fontFamily } : {}),
+      ...(el.fontWeight ? { fontWeight: el.fontWeight } : {}),
+      ...(el.align ? { align: el.align } : {}),
+    }));
+  const kvText: Block[] = bg.kvText && bg.kvText.length > 0 ? bg.kvText : liveText;
+  const bySize = (a: Block, b: Block) => b.fontSize - a.fontSize;
+  const headline = pickBlock(kvText, "headline") ?? kvText.slice().sort(bySize)[0];
+  const subhead =
+    pickBlock(kvText, "subhead") ?? (headline ? kvText.filter((b) => b !== headline).sort(bySize)[0] : undefined);
   const srcShort = Math.min(srcW, srcH);
+  // Where the designer put the copy column (fraction of width).
+  const headlineXFrac = headline ? headline.x / srcW : 0;
+
+  // A translucent/gradient panel behind the copy in the master (a scrim) is
+  // part of the design's readability system — carry it into every output.
+  const masterScrim = headline
+    ? master.elements.find(
+        (el): el is FreeformRect =>
+          el.type === "rect" &&
+          ((el as FreeformRect).gradient !== undefined || ((el as FreeformRect).opacity ?? 1) < 1) &&
+          el.x < headline.x + headline.w &&
+          el.x + el.w > headline.x &&
+          el.y < headline.y + headline.h &&
+          el.y + el.h > headline.y,
+      )
+    : undefined;
 
   // Type scale as designed: headline px relative to the master's short axis.
   const headlineRatio = headline ? headline.fontSize / srcShort : 0.05;
@@ -197,10 +241,11 @@ export async function composeKeyVisualAdaptation(
       w: Math.max(40, dstW - (showLogo ? tile + margin : 0) - margin * 2),
       h: estH,
       fontSize,
-      fontWeight: 700,
+      fontWeight: subhead?.fontWeight ?? 700,
       color: subhead?.color ?? "#ffffff",
       align: "left",
       lineHeight: 1.3,
+      ...(subhead?.fontFamily ? { fontFamily: subhead.fontFamily } : {}),
       locked: true,
     } as FreeformElement);
   }
@@ -239,8 +284,24 @@ export async function composeKeyVisualAdaptation(
       y = Math.min(Math.max(margin, target), Math.max(margin, bottomLimit - estH));
     }
 
-    const w = Math.max(40, Math.min(wAvail, Math.round(headlineWidthFrac * dstW)));
-    const x = headlineCentred && !isStrip && !isWide ? Math.round((dstW - w) / 2) : margin;
+    // Horizontal placement honours the designer's copy column (e.g. copy
+    // right of the subject) whenever the format has room for it; otherwise
+    // the copy drops to the margin.
+    let w = Math.max(40, Math.min(wAvail, Math.round(headlineWidthFrac * dstW)));
+    let x: number;
+    if (headlineCentred && !isStrip && !isWide) {
+      x = Math.round((dstW - w) / 2);
+    } else {
+      const columnX = Math.round(headlineXFrac * dstW);
+      const roomRight = dstW - columnX - margin - (showLogo && (isStrip || isWide) ? tile + margin : 0);
+      if (headlineXFrac > 0.25 && roomRight >= dstW * 0.3 && dstW / dstH >= 1.2) {
+        x = columnX;
+        w = Math.max(40, Math.min(w, roomRight));
+      } else {
+        x = margin;
+        w = Math.max(40, wAvail); // no column to honour: copy spans the format
+      }
+    }
     elements.push({
       id: "kv_headline",
       type: "text",
@@ -251,11 +312,46 @@ export async function composeKeyVisualAdaptation(
       w,
       h: estH,
       fontSize,
-      fontWeight: 700,
+      fontWeight: headline.fontWeight ?? 700,
       color: headline.color ?? "#ffffff",
-      align: headlineCentred && !isStrip && !isWide ? "center" : "left",
+      align: headlineCentred && !isStrip && !isWide ? "center" : (headline.align === "right" ? "right" : "left"),
       lineHeight: 1.25,
+      ...(headline.fontFamily ? { fontFamily: headline.fontFamily } : {}),
     } as FreeformElement);
+
+    // Carry the master's scrim behind the copy: a column fade on wide
+    // formats, a bottom band fade on tall/square ones — same colour and
+    // strength as the designer's.
+    if (masterScrim) {
+      const strength = masterScrim.gradient
+        ? Math.max(...masterScrim.gradient.stops.map((s) => s.alpha))
+        : (masterScrim.opacity ?? 0.65);
+      const color = masterScrim.fill;
+      const scrim: FreeformElement = isStrip || isWide || dstW / dstH >= 1.4
+        ? ({
+            id: "kv_scrim",
+            type: "rect",
+            fill: color,
+            x: Math.max(0, x - margin * 3),
+            y: 0,
+            w: dstW - Math.max(0, x - margin * 3),
+            h: dstH,
+            gradient: { angle: 270, stops: [{ color, alpha: strength, at: 0.4 }, { color, alpha: 0, at: 1 }] },
+            locked: true,
+          } as FreeformElement)
+        : ({
+            id: "kv_scrim",
+            type: "rect",
+            fill: color,
+            x: 0,
+            y: Math.max(0, y - margin * 3),
+            w: dstW,
+            h: dstH - Math.max(0, y - margin * 3),
+            gradient: { angle: 0, stops: [{ color, alpha: strength, at: 0.5 }, { color, alpha: 0, at: 1 }] },
+            locked: true,
+          } as FreeformElement);
+      elements.splice(1, 0, scrim); // directly above the artwork, below copy
+    }
   }
 
   // 4. Pōhutukawa tile: placed by the shared guideline rules (flush
@@ -280,7 +376,7 @@ export async function composeKeyVisualAdaptation(
   //    effect and must pass contrast). Sample the actual artwork behind each
   //    copy block; where white type would fail, slide an Ocean panel between
   //    artwork and type. The artwork itself stays untouched underneath.
-  if (bg.src) {
+  if (bg.src && !masterScrim) {
     const art = { x: artX, y: artY, w: artW, h: artH };
     const copyElements = elements.filter(
       (el): el is FreeformElement & { type: "text" } =>
