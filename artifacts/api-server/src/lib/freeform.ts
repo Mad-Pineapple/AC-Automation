@@ -73,9 +73,6 @@ export interface FreeformImage extends FreeformBase {
   focusBox?: { x: number; y: number; w: number; h: number };
   /** Key-visual metadata: source text blocks lifted at import. */
   kvText?: KvTextBlock[];
-  /** Transparent cut-out of the hero (created once, reused by strip and
-   * skyscraper compositions). */
-  cutoutSrc?: string;
 }
 
 export interface FreeformRect extends FreeformBase {
@@ -312,7 +309,6 @@ export function normalizeFreeformConfig(raw: unknown): FreeformConfig {
         ...(focusX !== undefined ? { focusX } : {}),
         ...(focusY !== undefined ? { focusY } : {}),
         ...(focusBox ? { focusBox } : {}),
-        ...(sanitizeSrc(el.cutoutSrc) ? { cutoutSrc: sanitizeSrc(el.cutoutSrc) as string } : {}),
         ...(kvText && kvText.length > 0 ? { kvText } : {}),
       });
     } else if (el.type === "rect") {
