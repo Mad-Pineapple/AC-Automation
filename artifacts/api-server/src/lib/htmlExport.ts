@@ -52,6 +52,9 @@ export interface HtmlExportOptions {
   /** Cycles (IAB display: ≤ 3). */
   loops?: number;
   fluid?: boolean;
+  /** Preview mode: inline fonts/images as data URIs (single self-contained
+   * HTML for an iframe srcdoc) and send no analytics beacons. */
+  inline?: boolean;
   /** Fetch bytes for a src (storage object, public file, absolute URL). */
   loadAsset: (src: string) => Promise<{ bytes: Buffer; contentType: string } | null>;
 }
@@ -148,9 +151,14 @@ export async function buildHtmlPackage(opts: HtmlExportOptions): Promise<HtmlPac
   for (const f of FONT_FILES) {
     const asset = await opts.loadAsset(f.src);
     if (asset) {
-      zip.file(f.file, asset.bytes);
-      files.push(f.file);
-      fontFaces.push(`@font-face{font-family:"National 2";font-weight:${f.weight};font-style:normal;src:url("${f.file}") format("woff");font-display:block}`);
+      let ref = f.file;
+      if (opts.inline) {
+        ref = `data:font/woff;base64,${asset.bytes.toString("base64")}`;
+      } else {
+        zip.file(f.file, asset.bytes);
+        files.push(f.file);
+      }
+      fontFaces.push(`@font-face{font-family:"National 2";font-weight:${f.weight};font-style:normal;src:url("${ref}") format("woff");font-display:block}`);
     }
   }
 
@@ -206,10 +214,14 @@ export async function buildHtmlPackage(opts: HtmlExportOptions): Promise<HtmlPac
       if (el.src) {
         const asset = await opts.loadAsset(el.src);
         if (asset) {
-          const name = safeFileName(el.src, imgIndex++, asset.contentType);
-          zip.file(name, asset.bytes);
-          files.push(name);
-          src = name;
+          if (opts.inline) {
+            src = `data:${asset.contentType};base64,${asset.bytes.toString("base64")}`;
+          } else {
+            const name = safeFileName(el.src, imgIndex++, asset.contentType);
+            zip.file(name, asset.bytes);
+            files.push(name);
+            src = name;
+          }
         }
       }
       const dyn = el.role === "product" ? ` data-dynamic="image"` : "";
@@ -317,7 +329,9 @@ ${body.join("\n")}
   fit(); window.addEventListener('resize',fit);
 
   // ---- Analytics beacons (fire-and-forget; never block the creative). ----
+  var TRACK=${opts.inline ? "false" : "true"};
   function beacon(type,extra){
+    if(!TRACK) return;
     try{
       var q='?t='+encodeURIComponent(type)+(dynKey?'&k='+encodeURIComponent(dynKey):'')+(extra||'');
       var url=STUDIO+'/track/c/'+TOKEN+q;
@@ -352,6 +366,7 @@ ${body.join("\n")}
 </body>
 </html>`;
 
+  if (opts.inline) return { zip: Buffer.alloc(0), html, files: ["index.html"] };
   zip.file("index.html", html);
   files.unshift("index.html");
   const zipBuf = await zip.generateAsync({ type: "nodebuffer", compression: "DEFLATE" });

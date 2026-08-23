@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useAuth } from "@clerk/react";
 import { Code2, Loader2 } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
@@ -24,8 +24,47 @@ export function ExportHtmlDialog({ templateId, templateName }: { templateId: num
   const [durationSec, setDurationSec] = useState(8);
   const [loops, setLoops] = useState(1);
   const [busy, setBusy] = useState(false);
+  const [previewHtml, setPreviewHtml] = useState<string | null>(null);
+  const [previewBusy, setPreviewBusy] = useState(false);
+  const [replayKey, setReplayKey] = useState(0);
+  const [previewScale, setPreviewScale] = useState(1);
+  const previewBoxRef = useRef<HTMLDivElement>(null);
+  const [dims, setDims] = useState<{ w: number; h: number } | null>(null);
   const { getToken } = useAuth();
   const { toast } = useToast();
+
+  const loadPreview = async () => {
+    setPreviewBusy(true);
+    try {
+      const token = await getToken();
+      const res = await fetch(`/api/templates/${templateId}/preview-html`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+        body: JSON.stringify({ clickUrl, fluid: false, animate, animation: animate ? animation : "none", durationSec, loops }),
+      });
+      if (!res.ok) throw new Error(await res.text());
+      const html = await res.text();
+      const m = /name="ad\.size" content="width=(\d+),height=(\d+)"/.exec(html);
+      if (m) setDims({ w: Number(m[1]), h: Number(m[2]) });
+      setPreviewHtml(html);
+      setReplayKey((k) => k + 1);
+    } catch (err) {
+      toast({ title: "Preview failed", description: err instanceof Error ? err.message.slice(0, 160) : undefined, variant: "destructive" });
+    } finally {
+      setPreviewBusy(false);
+    }
+  };
+
+  // Fit the ad inside the preview box (never crop it).
+  useEffect(() => {
+    const node = previewBoxRef.current;
+    if (!node || !dims) return;
+    const measure = () => setPreviewScale(Math.min(1, (node.clientWidth - 16) / dims.w, 420 / dims.h));
+    measure();
+    const ro = new ResizeObserver(measure);
+    ro.observe(node);
+    return () => ro.disconnect();
+  }, [dims, previewHtml]);
 
   const run = async () => {
     setBusy(true);
@@ -67,7 +106,7 @@ export function ExportHtmlDialog({ templateId, templateName }: { templateId: num
           Export HTML5
         </Button>
       </DialogTrigger>
-      <DialogContent className="max-w-md">
+      <DialogContent className="max-w-3xl">
         <DialogHeader>
           <DialogTitle>Export “{templateName}” as HTML5</DialogTitle>
         </DialogHeader>
@@ -142,12 +181,42 @@ export function ExportHtmlDialog({ templateId, templateName }: { templateId: num
             </label>
           </div>
         </div>
-        <div className="flex justify-end gap-2 pt-2">
+        <div ref={previewBoxRef} className="rounded-lg border border-border/60 bg-muted/30 p-2 overflow-hidden" data-testid="html-preview">
+          {previewHtml && dims ? (
+            <div style={{ width: dims.w * previewScale, height: dims.h * previewScale, margin: "0 auto", position: "relative" }}>
+              <iframe
+                key={replayKey}
+                title="Creative preview"
+                srcDoc={previewHtml}
+                sandbox="allow-scripts"
+                style={{ width: dims.w, height: dims.h, border: 0, transform: `scale(${previewScale})`, transformOrigin: "top left", position: "absolute", left: 0, top: 0, background: "#fff" }}
+              />
+            </div>
+          ) : (
+            <p className="text-xs text-muted-foreground text-center py-8">
+              Click “Preview motion” to play the exact package — same HTML, same animation — before downloading.
+            </p>
+          )}
+        </div>
+        <div className="flex justify-between gap-2 pt-2">
+          <div className="flex gap-2">
+            <Button type="button" variant="outline" onClick={loadPreview} disabled={previewBusy || busy} data-testid="button-export-preview">
+              {previewBusy ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
+              {previewHtml ? "Update preview" : "Preview motion"}
+            </Button>
+            {previewHtml && (
+              <Button type="button" variant="ghost" onClick={() => setReplayKey((k) => k + 1)} data-testid="button-export-replay">
+                Replay
+              </Button>
+            )}
+          </div>
+          <div className="flex gap-2">
           <Button type="button" variant="ghost" onClick={() => setOpen(false)} disabled={busy}>Cancel</Button>
           <Button type="button" onClick={run} disabled={busy} data-testid="button-export-html-run">
             {busy ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
             Download package
           </Button>
+          </div>
         </div>
       </DialogContent>
     </Dialog>

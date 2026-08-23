@@ -110,6 +110,46 @@ router.post("/templates/:id/export-html", requireAdmin, async (req, res): Promis
   res.send(pkg.zip);
 });
 
+/**
+ * POST /templates/:id/preview-html — the same package rendered as ONE
+ * self-contained HTML document (assets inlined, beacons off) for an in-app
+ * motion preview. Nothing is registered.
+ */
+router.post("/templates/:id/preview-html", requireAuth, async (req, res): Promise<void> => {
+  const id = Number(req.params.id);
+  const [template] = await db.select().from(templatesTable).where(eq(templatesTable.id, id));
+  if (!template) { res.status(404).json({ error: "Template not found" }); return; }
+  let parsed: unknown;
+  try { parsed = JSON.parse(template.config || "{}"); } catch { parsed = {}; }
+  if (!isFreeformConfig(parsed)) { res.status(400).json({ error: "Only freeform templates export to HTML5" }); return; }
+  const config = normalizeFreeformConfig(parsed);
+  const [brand] = await db.select().from(brandsTable).orderBy(brandsTable.id).limit(1);
+  const body = req.body ?? {};
+  const ANIMS = new Set(["none", "entrance", "kenburns", "frames", "reveal"]);
+  const animation = (ANIMS.has(body.animation) ? body.animation : "entrance") as
+    "none" | "entrance" | "kenburns" | "frames" | "reveal";
+  const base = process.env.PUBLIC_BASE_URL ?? requestBase(req);
+  const pkg = await buildHtmlPackage({
+    width: template.width,
+    height: template.height,
+    config,
+    tags: { token: "preview", name: template.name, campaign: null, format: `${template.width}x${template.height}`, variant: null, layoutLabel: null },
+    clickUrl: typeof body.clickUrl === "string" ? body.clickUrl : null,
+    studioBase: base,
+    brandFontFamily: brand?.fontFamily ?? "National 2",
+    animate: body.animate !== false,
+    animation,
+    durationSec: Number.isFinite(Number(body.durationSec)) ? Number(body.durationSec) : undefined,
+    loops: Number.isFinite(Number(body.loops)) ? Number(body.loops) : undefined,
+    fluid: body.fluid === true,
+    inline: true,
+    loadAsset: assetLoader(base),
+  });
+  res.set("Content-Type", "text/html; charset=utf-8");
+  res.set("Cache-Control", "no-store");
+  res.send(pkg.html);
+});
+
 /** GET /creatives — exported creatives with event counts (Performance view). */
 router.get("/creatives", requireAuth, async (_req, res): Promise<void> => {
   const rows = await db
