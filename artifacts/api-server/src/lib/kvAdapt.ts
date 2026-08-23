@@ -222,6 +222,14 @@ export async function composeKeyVisualAdaptation(
 
   const longestLineChars = (text: string) =>
     Math.max(...text.split("\n").map((l) => l.trim().length), 1);
+  // Lines the copy will actually occupy once wrapped into a box of width w
+  // (avg glyph ≈ 0.58em for National 2 Bold), so boxes snap to the copy's end.
+  const wrappedLines = (text: string, fontSize: number, w: number) =>
+    text
+      .split("\n")
+      .reduce((n, line) => n + Math.max(1, Math.ceil((line.trim().length * 0.58 * fontSize) / Math.max(1, w))), 0);
+  const boxHeight = (text: string, fontSize: number, w: number, lineHeight: number) =>
+    Math.round(wrappedLines(text, fontSize, w) * fontSize * lineHeight + fontSize * 0.25);
 
   // 2. Strapline re-set whole on the bottom margin (never cropped). Sized by
   //    the master's own subhead scale when it carried one.
@@ -229,7 +237,8 @@ export async function composeKeyVisualAdaptation(
   if (showStrapline) {
     const lines = (brand.strapline as string).split("\n").filter(Boolean).slice(0, 2);
     const fontSize = Math.max(10, Math.round(subheadRatio * short));
-    const estH = Math.round(lines.length * fontSize * 1.3);
+    const wStrap = Math.max(40, dstW - (showLogo ? tile + margin : 0) - margin * 2);
+    const estH = boxHeight(lines.join("\n"), fontSize, wStrap, 1.3);
     straplineTopY = dstH - margin - estH;
     elements.push({
       id: "kv_strapline",
@@ -238,7 +247,7 @@ export async function composeKeyVisualAdaptation(
       text: lines.join("\n"),
       x: margin,
       y: straplineTopY,
-      w: Math.max(40, dstW - (showLogo ? tile + margin : 0) - margin * 2),
+      w: wStrap,
       h: estH,
       fontSize,
       fontWeight: subhead?.fontWeight ?? 700,
@@ -257,11 +266,29 @@ export async function composeKeyVisualAdaptation(
     const lines = text.split("\n").length;
     const wAvail = dstW - margin * 2 - (isStrip || isWide ? tile + margin : 0);
 
+    // Horizontal placement honours the designer's copy column (e.g. copy
+    // right of the subject) whenever the format has room for it; otherwise
+    // the copy drops to the margin.
+    let w = Math.max(40, Math.min(wAvail, Math.round(headlineWidthFrac * dstW)));
+    let x: number;
+    if (headlineCentred && !isStrip && !isWide) {
+      x = Math.round((dstW - w) / 2);
+    } else {
+      const columnX = Math.round(headlineXFrac * dstW);
+      const roomRight = dstW - columnX - margin - (showLogo && (isStrip || isWide) ? tile + margin : 0);
+      if (headlineXFrac > 0.25 && roomRight >= dstW * 0.3 && dstW / dstH >= 1.5) {
+        x = columnX;
+        w = Math.max(40, Math.min(w, roomRight));
+      } else {
+        x = margin;
+        w = Math.max(40, wAvail); // no column to honour: copy spans the format
+      }
+    }
     // Target scale = the design's own ratio. Bounds = what physically fits:
     // the longest line across the available width, and the line count within
     // the format's height band. Wide/strip formats are display media, so when
     // the design ratio comes out unreadably small they size up to fit instead.
-    const fitToWidth = wAvail / (longestLineChars(text) * 0.58);
+    const fitToWidth = w / (longestLineChars(text) * 0.58);
     const fitToHeight = (dstH - margin * 2) / (lines * 1.3);
     const fitCap = Math.min(fitToWidth, fitToHeight);
     const designSize = headlineRatio * short;
@@ -272,7 +299,7 @@ export async function composeKeyVisualAdaptation(
       ),
     );
 
-    const estH = Math.round(lines * fontSize * 1.25);
+    const estH = boxHeight(text, fontSize, w, 1.25);
     let y: number;
     if (isStrip || isWide) {
       y = Math.max(margin, Math.round((dstH - estH) / 2)); // centred beside the tile
@@ -284,24 +311,6 @@ export async function composeKeyVisualAdaptation(
       y = Math.min(Math.max(margin, target), Math.max(margin, bottomLimit - estH));
     }
 
-    // Horizontal placement honours the designer's copy column (e.g. copy
-    // right of the subject) whenever the format has room for it; otherwise
-    // the copy drops to the margin.
-    let w = Math.max(40, Math.min(wAvail, Math.round(headlineWidthFrac * dstW)));
-    let x: number;
-    if (headlineCentred && !isStrip && !isWide) {
-      x = Math.round((dstW - w) / 2);
-    } else {
-      const columnX = Math.round(headlineXFrac * dstW);
-      const roomRight = dstW - columnX - margin - (showLogo && (isStrip || isWide) ? tile + margin : 0);
-      if (headlineXFrac > 0.25 && roomRight >= dstW * 0.3 && dstW / dstH >= 1.2) {
-        x = columnX;
-        w = Math.max(40, Math.min(w, roomRight));
-      } else {
-        x = margin;
-        w = Math.max(40, wAvail); // no column to honour: copy spans the format
-      }
-    }
     elements.push({
       id: "kv_headline",
       type: "text",

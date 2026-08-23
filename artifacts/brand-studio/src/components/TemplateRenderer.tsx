@@ -570,7 +570,9 @@ export function freeformTextStyle(el: FreeformElement, brandFontFamily: string):
     textAlign: (el.align as React.CSSProperties["textAlign"]) ?? "left",
     lineHeight: el.lineHeight ?? 1.2,
     whiteSpace: "pre-wrap",
-    overflow: "hidden",
+    // Copy is never cropped by its box: the box is a layout guide, the text
+    // may extend past it (composer/editor size boxes from a wrap estimate).
+    overflow: "visible",
     ...(el.letterSpacing != null ? { letterSpacing: el.letterSpacing } : {}),
   };
 }
