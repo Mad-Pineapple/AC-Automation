@@ -5,7 +5,15 @@ import { templatesTable, brandsTable, creativesTable, creativeEventsTable } from
 import { eq, sql, desc } from "drizzle-orm";
 import { requireAdmin, requireAuth } from "../middlewares/requireAuth";
 import { normalizeFreeformConfig, isFreeformConfig } from "../lib/freeform";
-import { buildHtmlPackage } from "../lib/htmlExport";
+import { buildHtmlPackage, ARTWORK_MOTIONS, COPY_MOTIONS, type ArtworkMotion, type CopyMotion } from "../lib/htmlExport";
+
+function motionFromBody(body: any): { artworkMotion?: ArtworkMotion; copyMotion?: CopyMotion; storyFrames?: boolean } {
+  const out: { artworkMotion?: ArtworkMotion; copyMotion?: CopyMotion; storyFrames?: boolean } = {};
+  if (ARTWORK_MOTIONS.includes(body?.artworkMotion)) out.artworkMotion = body.artworkMotion;
+  if (COPY_MOTIONS.includes(body?.copyMotion)) out.copyMotion = body.copyMotion;
+  if (typeof body?.storyFrames === "boolean") out.storyFrames = body.storyFrames;
+  return out;
+}
 import { ObjectStorageService } from "../lib/objectStorage";
 
 const router = Router();
@@ -96,6 +104,8 @@ router.post("/templates/:id/export-html", requireAdmin, async (req, res): Promis
     brandFontFamily: brand?.fontFamily ?? "National 2",
     animate,
     animation,
+    ...motionFromBody(body),
+    accentColor: brand?.primaryColor ?? "#11263d",
     durationSec,
     loops,
     fluid,
@@ -139,6 +149,8 @@ router.post("/templates/:id/preview-html", requireAuth, async (req, res): Promis
     brandFontFamily: brand?.fontFamily ?? "National 2",
     animate: body.animate !== false,
     animation,
+    ...motionFromBody(body),
+    accentColor: brand?.primaryColor ?? "#11263d",
     durationSec: Number.isFinite(Number(body.durationSec)) ? Number(body.durationSec) : undefined,
     loops: Number.isFinite(Number(body.loops)) ? Number(body.loops) : undefined,
     fluid: body.fluid === true,

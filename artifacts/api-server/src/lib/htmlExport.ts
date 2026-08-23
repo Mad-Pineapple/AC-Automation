@@ -32,6 +32,11 @@ export interface CreativeTags {
 }
 
 export type AnimationPreset = "none" | "entrance" | "kenburns" | "frames" | "reveal";
+/** Canva-style motion library: artwork and copy move independently. */
+export type ArtworkMotion = "none" | "kenburns" | "drift" | "zoomout" | "breathe" | "wipe";
+export type CopyMotion = "none" | "fade" | "rise" | "pan" | "pop" | "wipe" | "baseline" | "tumble" | "typewriter" | "block";
+export const ARTWORK_MOTIONS: ArtworkMotion[] = ["none", "kenburns", "drift", "zoomout", "breathe", "wipe"];
+export const COPY_MOTIONS: CopyMotion[] = ["none", "fade", "rise", "pan", "pop", "wipe", "baseline", "tumble", "typewriter", "block"];
 
 export interface HtmlExportOptions {
   width: number;
@@ -48,6 +53,12 @@ export interface HtmlExportOptions {
   /** Motion preset. All CSS, spec-checked: ends within durationSec, loops ≤ 3,
    * reduced-motion respected, clickTag layer untouched. */
   animation?: AnimationPreset;
+  /** Motion library (takes precedence over `animation` when given). */
+  artworkMotion?: ArtworkMotion;
+  copyMotion?: CopyMotion;
+  storyFrames?: boolean;
+  /** Brand colour for block reveals. */
+  accentColor?: string;
   /** Total duration of one cycle in seconds (IAB display: ≤ 15s). */
   durationSec?: number;
   /** Cycles (IAB display: ≤ 3). */
@@ -218,21 +229,53 @@ export async function buildHtmlPackage(opts: HtmlExportOptions): Promise<HtmlPac
     if (el.role === "cta") return 3;
     return 2; // subhead / body / other
   };
+  // Resolve the motion library from either the explicit axes or the legacy preset.
+  const legacy: { art: ArtworkMotion; copy: CopyMotion; frames: boolean } =
+    preset === "none" ? { art: "none", copy: "none", frames: false }
+    : preset === "kenburns" ? { art: "kenburns", copy: "rise", frames: false }
+    : preset === "frames" ? { art: "none", copy: "rise", frames: true }
+    : preset === "reveal" ? { art: "wipe", copy: "rise", frames: false }
+    : { art: "none", copy: "rise", frames: false };
+  const artMotion: ArtworkMotion = opts.artworkMotion ?? legacy.art;
+  const copyMotion: CopyMotion = opts.copyMotion ?? legacy.copy;
+  const storyFrames = opts.storyFrames ?? legacy.frames;
+  const copyLead = artMotion === "wipe" ? 0.8 : 0.3;
+  const isArt = (el: FreeformElement) => el.type === "image" && el.role !== "logo";
+  const isCopy = (el: FreeformElement) => el.type === "text" || (el.type === "image" && el.role === "logo");
+
   const animFor = (el: FreeformElement): string => {
-    if (preset === "none") return "";
-    if (preset === "entrance") return `animation:enter .6s ease-out ${delayFor(el).toFixed(2)}s both`;
-    if (preset === "kenburns") {
-      if (el.type === "image" && el.role !== "logo") return `animation:kenburns ${D}s ease-out both;transform-origin:${kbOrigin}`;
-      return `animation:enter .6s ease-out ${(0.3 + delayFor(el)).toFixed(2)}s both`;
+    // Artwork layer.
+    if (isArt(el)) {
+      switch (artMotion) {
+        case "kenburns": return `animation:kenburns ${D}s ease-out both;transform-origin:${kbOrigin}`;
+        case "drift": return `animation:drift ${D}s ease-in-out both;transform-origin:${kbOrigin}`;
+        case "zoomout": return `animation:zoomout ${D}s ease-out both;transform-origin:${kbOrigin}`;
+        case "breathe": return `animation:breathe ${Math.max(4, D)}s ease-in-out ${L === 1 ? 2 : L * 2} alternate both;transform-origin:${kbOrigin}`;
+        default: return ""; // none / wipe (wipe is applied to the stage)
+      }
     }
-    if (preset === "reveal") {
-      if (el.type === "image" && el.role !== "logo") return "";
-      return `animation:enter .6s ease-out ${(0.8 + delayFor(el)).toFixed(2)}s both`;
+    // Shapes (scrims/panels) simply fade in with the artwork.
+    if (el.type === "rect") return artMotion === "none" && copyMotion === "none" ? "" : `animation:fadein .6s ease-out .15s both`;
+    // Copy + logo.
+    if (storyFrames) {
+      const f = frameOf(el);
+      return f === 0 ? "" : `animation:frame${f} ${D}s ease-in-out ${L} both`;
     }
-    // frames
-    const f = frameOf(el);
-    return f === 0 ? "" : `animation:frame${f} ${D}s ease-in-out ${L} both`;
+    const d = (copyLead + delayFor(el)).toFixed(2);
+    switch (copyMotion) {
+      case "fade": return `animation:fadein .7s ease-out ${d}s both`;
+      case "rise": return `animation:enter .6s ease-out ${d}s both`;
+      case "pan": return `animation:pan .7s cubic-bezier(.2,.8,.2,1) ${d}s both`;
+      case "pop": return `animation:pop .55s cubic-bezier(.34,1.56,.64,1) ${d}s both`;
+      case "wipe": return `animation:wipein .7s cubic-bezier(.4,0,.2,1) ${d}s both`;
+      case "baseline": return `animation:baseline .7s cubic-bezier(.2,.8,.2,1) ${d}s both`;
+      case "tumble": return `animation:tumble .7s cubic-bezier(.2,.8,.2,1) ${d}s both`;
+      case "typewriter": return el.type === "text" ? "" : `animation:fadein .6s ease-out ${d}s both`;
+      case "block": return `animation:fadein .01s linear ${(Number(d) + 0.45).toFixed(2)}s both`;
+      default: return "";
+    }
   };
+  const accent = opts.accentColor ?? "#11263d";
 
   for (const el of config.elements) {
     const base = `position:absolute;left:${el.x}px;top:${el.y}px;width:${el.w}px;height:${el.h}px;opacity:${el.opacity ?? 1}`;
@@ -262,8 +305,14 @@ export async function buildHtmlPackage(opts: HtmlExportOptions): Promise<HtmlPac
     } else if (el.type === "text") {
       const key = dynamicKey(el);
       const dyn = key ? ` data-dynamic="${key}"` : "";
+      const extraCls = !storyFrames && copyMotion === "typewriter" ? " tw" : "";
+      const blockDelay = (copyLead + delayFor(el)).toFixed(2);
+      const blockMarkup =
+        !storyFrames && copyMotion === "block"
+          ? `<div class="block-reveal" style="position:absolute;left:${el.x}px;top:${el.y}px;width:${el.w}px;height:${el.h}px;background:${accent};animation:blockwipe .9s cubic-bezier(.7,0,.3,1) ${blockDelay}s both;transform-origin:left center;pointer-events:none"></div>\n`
+          : "";
       body.push(
-        `<div class="el text ${el.role}"${dyn} style="${base};${textStyle(el, brandFont)};${anim}">${esc(el.text)}</div>`,
+        `${blockMarkup}<div class="el text ${el.role}${extraCls}"${dyn} data-delay="${(copyLead + delayFor(el)).toFixed(2)}" style="${base};${textStyle(el, brandFont)};${anim}">${esc(el.text)}</div>`,
       );
     }
   }
@@ -293,12 +342,23 @@ html,body{margin:0;padding:0;background:transparent}
 .img{display:block}
 @keyframes enter{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
 @keyframes kenburns{from{transform:scale(1)}to{transform:scale(1.08)}}
+@keyframes drift{0%{transform:scale(1.06) translate(0,0)}100%{transform:scale(1.06) translate(-2.5%,1.5%)}}
+@keyframes zoomout{from{transform:scale(1.12)}to{transform:scale(1)}}
+@keyframes breathe{from{transform:scale(1)}to{transform:scale(1.035)}}
+@keyframes fadein{from{opacity:0}to{opacity:1}}
+@keyframes pan{from{opacity:0;transform:translateX(-28px)}to{opacity:1;transform:none}}
+@keyframes pop{from{opacity:0;transform:scale(.82)}to{opacity:1;transform:scale(1)}}
+@keyframes wipein{from{clip-path:inset(0 100% 0 0);opacity:1}to{clip-path:inset(0 0 0 0);opacity:1}}
+@keyframes baseline{from{clip-path:inset(0 0 100% 0);transform:translateY(18px)}to{clip-path:inset(0 0 0 0);transform:none}}
+@keyframes tumble{from{opacity:0;transform:rotate(-5deg) translateY(16px);transform-origin:left bottom}to{opacity:1;transform:none}}
+@keyframes blockwipe{0%{transform:scaleX(0);transform-origin:left center}45%{transform:scaleX(1);transform-origin:left center}55%{transform:scaleX(1);transform-origin:right center}100%{transform:scaleX(0);transform-origin:right center}}
+.tw .w{opacity:0;animation:fadein .18s ease-out both}
 @keyframes wipe{from{clip-path:inset(0 100% 0 0)}to{clip-path:inset(0 0 0 0)}}
 /* Story frames: 1 = hook, 2 = support, 3 = end-frame (holds). */
 @keyframes frame1{0%{opacity:0;transform:translateY(12px)}6%{opacity:1;transform:none}36%{opacity:1}42%{opacity:0;transform:translateY(-8px)}100%{opacity:0}}
 @keyframes frame2{0%{opacity:0}40%{opacity:0;transform:translateY(12px)}46%{opacity:1;transform:none}66%{opacity:1}72%{opacity:0;transform:translateY(-8px)}100%{opacity:0}}
 @keyframes frame3{0%{opacity:0}70%{opacity:0;transform:translateY(12px)}76%{opacity:1;transform:none}100%{opacity:1}}
-${preset === "reveal" ? `#stage{animation:wipe .9s cubic-bezier(.4,0,.2,1) both}` : ""}
+${artMotion === "wipe" ? `#stage{animation:wipe .9s cubic-bezier(.4,0,.2,1) both}` : ""}
 @media (prefers-reduced-motion:reduce){.el,#stage{animation:none!important;clip-path:none!important}}
 #clicktag-layer{position:absolute;left:0;top:0;width:${width}px;height:${height}px;z-index:2147483647;display:block;text-decoration:none;background:transparent;cursor:pointer}
 </style>
@@ -313,7 +373,7 @@ ${preset === "reveal" ? `#stage{animation:wipe .9s cubic-bezier(.4,0,.2,1) both}
   data-format="${esc(tags.format)}"
   data-variant="${esc(tags.variant ?? "")}"
   data-layout="${esc(tags.layoutLabel ?? "")}"
-  data-animation="${preset}" data-duration="${D}" data-loops="${L}">
+  data-animation="${preset}" data-artwork-motion="${artMotion}" data-copy-motion="${copyMotion}" data-story-frames="${storyFrames}" data-duration="${D}" data-loops="${L}">
 ${body.join("\n")}
 <a href="javascript:void(0)" id="clicktag-layer" aria-label="${esc(tags.name)}"></a>
 </div>
@@ -346,6 +406,21 @@ ${body.join("\n")}
   if(params.get('feed')){
     try{ fetch(params.get('feed'),{mode:'cors'}).then(function(r){return r.json();}).then(applyDynamic).catch(function(){}); }catch(e){}
   }
+
+  // ---- Typewriter: reveal copy word by word (keeps line breaks). ----
+  document.querySelectorAll('.tw').forEach(function(el){
+    var text=el.textContent||''; var delay=parseFloat(el.getAttribute('data-delay')||'0');
+    el.textContent='';
+    var i=0;
+    text.split(/(\n)/).forEach(function(part){
+      if(part==='\n'){ el.appendChild(document.createTextNode('\n')); return; }
+      part.split(/(\s+)/).forEach(function(tok){
+        if(!tok) return;
+        if(/^\s+$/.test(tok)){ el.appendChild(document.createTextNode(tok)); return; }
+        var sp=document.createElement('span'); sp.className='w'; sp.textContent=tok; sp.style.animationDelay=(delay+i*0.09).toFixed(2)+'s'; el.appendChild(sp); i++;
+      });
+    });
+  });
 
   // ---- Fluid mode: scale the stage to its container. ----
   var fluid=params.get('fluid')==='1'||${opts.fluid ? "true" : "false"};

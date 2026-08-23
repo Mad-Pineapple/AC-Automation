@@ -22,6 +22,18 @@ export function ExportHtmlDialog({ templateId, templateName }: { templateId: num
   const [fluid, setFluid] = useState(false);
   const [animate, setAnimate] = useState(true);
   const [animation, setAnimation] = useState<"entrance" | "kenburns" | "frames" | "reveal">("entrance");
+  const [artworkMotion, setArtworkMotion] = useState<"none" | "kenburns" | "drift" | "zoomout" | "breathe" | "wipe">("kenburns");
+  const [copyMotion, setCopyMotion] = useState<"none" | "fade" | "rise" | "pan" | "pop" | "wipe" | "baseline" | "tumble" | "typewriter" | "block">("rise");
+  const [storyFrames, setStoryFrames] = useState(false);
+  const motionBody = () => ({
+    animate,
+    animation: animate ? animation : "none",
+    artworkMotion: animate ? artworkMotion : "none",
+    copyMotion: animate ? copyMotion : "none",
+    storyFrames: animate ? storyFrames : false,
+    durationSec,
+    loops,
+  });
   const [durationSec, setDurationSec] = useState(8);
   const [loops, setLoops] = useState(1);
   const [busy, setBusy] = useState(false);
@@ -41,7 +53,7 @@ export function ExportHtmlDialog({ templateId, templateName }: { templateId: num
       const res = await fetch(`/api/templates/${templateId}/preview-html`, {
         method: "POST",
         headers: { "Content-Type": "application/json", ...(token ? { Authorization: `Bearer ${token}` } : {}) },
-        body: JSON.stringify({ clickUrl, fluid: false, animate, animation: animate ? animation : "none", durationSec, loops }),
+        body: JSON.stringify({ clickUrl, fluid: false, ...motionBody() }),
       });
       if (!res.ok) throw new Error(await res.text());
       const html = await res.text();
@@ -74,7 +86,7 @@ export function ExportHtmlDialog({ templateId, templateName }: { templateId: num
       const res = await fetch(`/api/templates/${templateId}/export-html`, {
         method: "POST",
         headers: { "Content-Type": "application/json", ...(token ? { Authorization: `Bearer ${token}` } : {}) },
-        body: JSON.stringify({ campaign, variant, clickUrl, fluid, animate, animation: animate ? animation : "none", durationSec, loops }),
+        body: JSON.stringify({ campaign, variant, clickUrl, fluid, ...motionBody() }),
       });
       if (!res.ok) throw new Error(await res.text());
       const blob = await res.blob();
@@ -130,39 +142,61 @@ export function ExportHtmlDialog({ templateId, templateName }: { templateId: num
             <Label className="text-xs">Click-through URL</Label>
             <Input value={clickUrl} onChange={(e) => setClickUrl(e.target.value)} placeholder="https://…" data-testid="input-export-click" />
           </div>
-          <div className="space-y-1.5">
-            <Label className="text-xs">Motion</Label>
-            <div className="flex flex-wrap gap-1.5">
-              {([
-                ["none", "None"],
-                ["entrance", "Entrance"],
-                ["kenburns", "Ken Burns"],
-                ["frames", "Story frames"],
-                ["reveal", "Reveal"],
-              ] as const).map(([key, label]) => {
-                const active = animate ? animation === key : key === "none";
-                return (
-                  <Button
-                    key={key}
-                    type="button"
-                    size="sm"
-                    variant={active ? "default" : "outline"}
-                    className="h-7 text-xs"
-                    onClick={() => {
-                      if (key === "none") setAnimate(false);
-                      else { setAnimate(true); setAnimation(key); }
-                    }}
-                    data-testid={`button-anim-${key}`}
-                  >
-                    {label}
-                  </Button>
-                );
-              })}
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <Label className="text-xs">Motion</Label>
+              <label className="flex items-center gap-2 text-xs">
+                <input type="checkbox" checked={animate} onChange={(e) => setAnimate(e.target.checked)} /> Animate
+              </label>
             </div>
-            <p className="text-[10px] text-muted-foreground leading-tight">
-              Ken Burns drifts the artwork toward the hero area. Story frames run hook → support → end-frame.
-              Spec-checked: ends within 15s, max 3 loops, reduced-motion respected.
-            </p>
+            {animate && (
+              <>
+                <div className="space-y-1">
+                  <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Artwork</p>
+                  <div className="flex flex-wrap gap-1.5">
+                    {([
+                      ["none", "Still"],
+                      ["kenburns", "Ken Burns"],
+                      ["drift", "Drift"],
+                      ["zoomout", "Zoom out"],
+                      ["breathe", "Breathe"],
+                      ["wipe", "Wipe in"],
+                    ] as const).map(([key, label]) => (
+                      <Button key={key} type="button" size="sm" variant={artworkMotion === key ? "default" : "outline"} className="h-7 text-xs" onClick={() => setArtworkMotion(key)} data-testid={`button-art-${key}`}>
+                        {label}
+                      </Button>
+                    ))}
+                  </div>
+                </div>
+                <div className="space-y-1">
+                  <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Copy &amp; logo</p>
+                  <div className="flex flex-wrap gap-1.5">
+                    {([
+                      ["none", "Still"],
+                      ["fade", "Fade"],
+                      ["rise", "Rise"],
+                      ["pan", "Pan"],
+                      ["pop", "Pop"],
+                      ["wipe", "Wipe"],
+                      ["baseline", "Baseline"],
+                      ["tumble", "Tumble"],
+                      ["typewriter", "Typewriter"],
+                      ["block", "Block reveal"],
+                    ] as const).map(([key, label]) => (
+                      <Button key={key} type="button" size="sm" variant={!storyFrames && copyMotion === key ? "default" : "outline"} className="h-7 text-xs" disabled={storyFrames} onClick={() => setCopyMotion(key)} data-testid={`button-copy-${key}`}>
+                        {label}
+                      </Button>
+                    ))}
+                  </div>
+                </div>
+                <label className="flex items-center gap-2 text-xs">
+                  <input type="checkbox" checked={storyFrames} onChange={(e) => setStoryFrames(e.target.checked)} /> Story frames (hook → support → end-frame; replaces copy motion)
+                </label>
+                <p className="text-[10px] text-muted-foreground leading-tight">
+                  Spec-checked: ends within 15s, max 3 loops, reduced-motion respected, click layer untouched.
+                </p>
+              </>
+            )}
             {animate && (
               <div className="grid grid-cols-2 gap-2">
                 <div className="space-y-1">
