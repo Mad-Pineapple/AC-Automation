@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
+import { tokenOrNull } from "@/lib/authToken";
 
 /**
  * Export a freeform template as a tagged, tracked HTML5 ad package (zip):
@@ -36,7 +37,7 @@ export function ExportHtmlDialog({ templateId, templateName }: { templateId: num
   const loadPreview = async () => {
     setPreviewBusy(true);
     try {
-      const token = await getToken();
+      const token = await tokenOrNull(getToken);
       const res = await fetch(`/api/templates/${templateId}/preview-html`, {
         method: "POST",
         headers: { "Content-Type": "application/json", ...(token ? { Authorization: `Bearer ${token}` } : {}) },
@@ -69,7 +70,7 @@ export function ExportHtmlDialog({ templateId, templateName }: { templateId: num
   const run = async () => {
     setBusy(true);
     try {
-      const token = await getToken();
+      const token = await tokenOrNull(getToken);
       const res = await fetch(`/api/templates/${templateId}/export-html`, {
         method: "POST",
         headers: { "Content-Type": "application/json", ...(token ? { Authorization: `Bearer ${token}` } : {}) },

@@ -19,6 +19,7 @@
  *  - an entrance animation (artwork → copy → logo) in pure CSS
  */
 import JSZip from "jszip";
+import sharp from "sharp";
 import type { FreeformConfig, FreeformElement, FreeformImage, FreeformRect, FreeformText } from "./freeform";
 
 export interface CreativeTags {
@@ -89,6 +90,35 @@ function safeFileName(src: string, index: number, contentType: string): string {
     : contentType.includes("gif") ? "gif"
     : (src.split(".").pop() ?? "bin").replace(/[^a-z0-9]/gi, "").slice(0, 4) || "bin";
   return `assets/img-${index}.${ext}`;
+}
+
+/**
+ * Ad weight matters (publishers cap standard display around 150–200KB), so
+ * every packaged image is resized to what the creative can actually show:
+ * at most 2× the element box (retina), re-encoded as JPEG unless it has
+ * transparency (logos), which stays PNG. Originals are never modified.
+ */
+async function optimizeForExport(
+  bytes: Buffer,
+  contentType: string,
+  boxW: number,
+  boxH: number,
+): Promise<{ bytes: Buffer; contentType: string }> {
+  try {
+    if (contentType.includes("svg")) return { bytes, contentType };
+    const img = sharp(bytes, { failOn: "none" });
+    const meta = await img.metadata();
+    const maxW = Math.max(16, Math.round(boxW * 2));
+    const maxH = Math.max(16, Math.round(boxH * 2));
+    const needsResize = (meta.width ?? 0) > maxW || (meta.height ?? 0) > maxH;
+    const pipeline = needsResize ? img.resize({ width: maxW, height: maxH, fit: "inside", withoutEnlargement: true }) : img;
+    if (meta.hasAlpha) {
+      return { bytes: await pipeline.png({ compressionLevel: 9, palette: true }).toBuffer(), contentType: "image/png" };
+    }
+    return { bytes: await pipeline.jpeg({ quality: 82, mozjpeg: true }).toBuffer(), contentType: "image/jpeg" };
+  } catch {
+    return { bytes, contentType };
+  }
 }
 
 function rectStyle(el: FreeformRect): string {
@@ -212,7 +242,8 @@ export async function buildHtmlPackage(opts: HtmlExportOptions): Promise<HtmlPac
     } else if (el.type === "image") {
       let src = "";
       if (el.src) {
-        const asset = await opts.loadAsset(el.src);
+        const raw = await opts.loadAsset(el.src);
+        const asset = raw ? await optimizeForExport(raw.bytes, raw.contentType, el.w, el.h) : null;
         if (asset) {
           if (opts.inline) {
             src = `data:${asset.contentType};base64,${asset.bytes.toString("base64")}`;

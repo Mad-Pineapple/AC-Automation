@@ -16,6 +16,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useToast } from "@/hooks/use-toast";
+import { tokenOrNull } from "@/lib/authToken";
 
 interface ExportStaticMenuProps {
   templateId: number;
@@ -89,7 +90,7 @@ export function ExportStaticMenu({ templateId, templateName, familyIds, size = "
       const headers = new Headers(init.headers);
       let token: string | null = null;
       try {
-        token = await getToken();
+        token = await tokenOrNull(getToken);
       } catch {
         token = null;
       }
