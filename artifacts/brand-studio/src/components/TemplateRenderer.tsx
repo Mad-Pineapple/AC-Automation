@@ -780,12 +780,29 @@ export function TemplateRenderer({ templateSize, brand, headline, bodyText, call
   );
 }
 
-export function TemplateThumbnail({ templateSize, brand, headline, bodyText, callToAction, imageUrl, isAnimated, overrideConfig }: WrapperProps) {
+export function TemplateThumbnail({
+  templateSize,
+  brand,
+  headline,
+  bodyText,
+  callToAction,
+  imageUrl,
+  isAnimated,
+  overrideConfig,
+  maxWidth,
+  maxHeight,
+}: WrapperProps & { maxWidth?: number; maxHeight?: number }) {
   const custom = useCustomConfigs();
   const resolved: ResolvedConfig = overrideConfig
     ? { width: overrideConfig.width, height: overrideConfig.height, label: "", dims: "", scale: computePreviewScale(overrideConfig.width, overrideConfig.height), layout: overrideConfig.layout, kind: overrideConfig.kind, elements: overrideConfig.elements }
     : builtinConfig(templateSize) ?? custom[templateSize] ?? builtinConfig("social_square")!;
-  const s = resolved.scale;
+  // A preview always shows the WHOLE format: fit inside the box it's given
+  // on both axes (tall and wide formats alike), never crop.
+  const s = Math.min(
+    resolved.scale,
+    maxWidth ? maxWidth / resolved.width : Infinity,
+    maxHeight ? maxHeight / resolved.height : Infinity,
+  );
   const { width, height, layout, kind, elements } = resolved;
   const animated = isAnimated ?? templateSize === "animated_social";
   const previewW = Math.round(width * s);

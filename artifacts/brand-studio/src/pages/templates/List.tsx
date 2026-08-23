@@ -1,3 +1,4 @@
+import { useLayoutEffect, useRef, useState } from "react";
 import { Link } from "wouter";
 import { useListBrands, useListTemplates, useDeleteTemplate, getListTemplatesQueryKey, Template, useListBrandAssets, getListBrandAssetsQueryKey } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
@@ -14,12 +15,28 @@ import { useMe } from "@/hooks/use-me";
 function TemplateCard({ template, isAdmin, onDelete }: { template: Template; isAdmin: boolean; onDelete: (t: Template) => void }) {
   const { data: brands } = useListBrands();
   const brand = brands?.[0];
+  // Measure the preview box so the thumbnail fits inside it entirely.
+  const boxRef = useRef<HTMLDivElement>(null);
+  const [boxW, setBoxW] = useState(0);
+  useLayoutEffect(() => {
+    const node = boxRef.current;
+    if (!node) return;
+    const measure = () => setBoxW(node.clientWidth);
+    measure();
+    const ro = new ResizeObserver(measure);
+    ro.observe(node);
+    return () => ro.disconnect();
+  }, []);
+  const PREVIEW_H = 180;
+  const PAD = 16;
 
   return (
     <Card className="border-border/50 overflow-hidden">
-      <div className="flex items-center justify-center bg-muted/30 p-4" style={{ height: 180 }}>
+      <div ref={boxRef} className="flex items-center justify-center bg-muted/30 p-4" style={{ height: PREVIEW_H }}>
         {brand ? (
           <TemplateThumbnail
+            maxWidth={Math.max(40, boxW - PAD * 2)}
+            maxHeight={PREVIEW_H - PAD * 2}
             templateSize={template.key}
             overrideConfig={{
               width: template.width,
