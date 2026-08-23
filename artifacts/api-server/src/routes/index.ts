@@ -17,6 +17,7 @@ import comparisonNotesRouter from "./comparison-notes";
 import assetCommentsRouter from "./asset-comments";
 import shareLinksRouter from "./share-links";
 import reviewProgressRouter from "./review-progress";
+import creativesRouter from "./creatives";
 
 const router: IRouter = Router();
 
@@ -37,6 +38,7 @@ router.use(comparisonNotesRouter);
 router.use(assetCommentsRouter);
 router.use(shareLinksRouter);
 router.use(reviewProgressRouter);
+router.use(creativesRouter);
 router.use(statsRouter);
 
 export default router;

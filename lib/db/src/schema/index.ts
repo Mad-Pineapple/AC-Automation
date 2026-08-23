@@ -12,3 +12,4 @@ export * from "./comparison-notes";
 export * from "./asset-comments";
 export * from "./share-links";
 export * from "./review-progress";
+export * from "./creatives";

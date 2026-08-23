@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { db } from "@workspace/db";
-import { adTagsTable, adEventsTable, assetsTable } from "@workspace/db";
+import { adTagsTable, adEventsTable, assetsTable, creativesTable, creativeEventsTable } from "@workspace/db";
 import { eq } from "drizzle-orm";
 import { logger } from "../lib/logger";
 
@@ -217,6 +217,37 @@ router.get("/click/:token", async (req, res) => {
     logger.error({ err }, "ad tag click failed");
   }
   res.status(404).send("No destination configured");
+});
+
+/**
+ * Exported-creative beacons: GET /track/c/:token?t=<type>&ms=<viewMs>&k=<dynamicKey>
+ * Fired by HTML5 packages via sendBeacon/Image; always answers a 1x1 GIF.
+ */
+const CREATIVE_EVENT_TYPES = new Set(["impression", "viewable", "view", "interaction", "click"]);
+router.all("/c/:token", async (req, res) => {
+  try {
+    const type = String(req.query.t ?? "");
+    if (CREATIVE_EVENT_TYPES.has(type)) {
+      const [creative] = await db.select().from(creativesTable).where(eq(creativesTable.token, req.params.token));
+      if (creative) {
+        const ms = Number(req.query.ms);
+        await db.insert(creativeEventsTable).values({
+          creativeId: creative.id,
+          type,
+          viewMs: Number.isFinite(ms) && ms > 0 ? Math.min(3_600_000, Math.round(ms)) : null,
+          dynamicKey: typeof req.query.k === "string" && req.query.k ? String(req.query.k).slice(0, 80) : null,
+          referrer: (req.get("referer") || req.get("referrer") || null) as string | null,
+          userAgent: (req.get("user-agent") || null) as string | null,
+        });
+      }
+    }
+  } catch (err) {
+    logger.error({ err }, "creative beacon failed");
+  }
+  noCache(res);
+  res.set("Access-Control-Allow-Origin", "*");
+  res.set("Content-Type", "image/gif");
+  res.send(PIXEL);
 });
 
 export default router;

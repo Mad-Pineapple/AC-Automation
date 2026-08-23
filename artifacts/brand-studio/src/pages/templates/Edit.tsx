@@ -26,6 +26,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { TemplateForm, TemplateFormValues, TEMPLATE_FORM_DEFAULTS } from "@/components/TemplateForm";
 import { FreeformEditor } from "@/components/FreeformEditor";
+import { ExportHtmlDialog } from "@/components/ExportHtmlDialog";
 import { LayoutOptions } from "@/components/TemplateRenderer";
 
 const CATEGORIES = ["social", "display", "print", "email", "custom"];
@@ -123,6 +124,7 @@ export default function EditTemplate() {
                 Compare sizes
               </Button>
             </WLink>
+            <ExportHtmlDialog templateId={id} templateName={template.name} />
             <AdaptDialog templateId={id} templateName={template.name} />
           </div>
         )}
