@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { ImportCollateralDialog } from "@/components/ImportCollateralDialog";
 import { useQuery } from "@tanstack/react-query";
 import { useListBriefs, useDuplicateBrief, getListBriefsQueryKey } from "@workspace/api-client-react";
 import { Link } from "wouter";
@@ -114,6 +115,7 @@ export default function BriefList() {
           <h1 className="text-4xl font-bold tracking-tight font-sans">Campaigns</h1>
           <p className="text-muted-foreground mt-2 font-mono text-sm uppercase tracking-widest">All Campaign Briefs</p>
         </div>
+        <ImportCollateralDialog />
         <Link href="/briefs/new">
           <Button data-testid="button-new-brief" className="font-mono uppercase text-xs tracking-wider">
             <Plus className="w-4 h-4 mr-2" />

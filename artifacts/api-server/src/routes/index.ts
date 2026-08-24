@@ -18,6 +18,7 @@ import assetCommentsRouter from "./asset-comments";
 import shareLinksRouter from "./share-links";
 import reviewProgressRouter from "./review-progress";
 import creativesRouter from "./creatives";
+import collateralRouter from "./collateral";
 import exportsRouter from "./exports";
 
 const router: IRouter = Router();
@@ -41,6 +42,7 @@ router.use(assetCommentsRouter);
 router.use(shareLinksRouter);
 router.use(reviewProgressRouter);
 router.use(creativesRouter);
+router.use(collateralRouter);
 router.use(statsRouter);
 
 export default router;

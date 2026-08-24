@@ -47,6 +47,8 @@ import type {
   Campaign,
   CampaignInput,
   CampaignUpdate,
+  CollateralPlan,
+  CollateralPlanRequest,
   ComparisonNote,
   ComparisonNoteInput,
   DashboardStats,
@@ -1405,6 +1407,77 @@ export const useRequestUploadUrl = <TError = ErrorType<ErrorResponse>,
         TContext
       > => {
       return useMutation(getRequestUploadUrlMutationOptions(options));
+    }
+
+export const getParseCollateralPlanUrl = () => {
+
+
+
+
+  return `/api/briefs/collateral-plan`
+}
+
+/**
+ * @summary Parse a Design Studio collateral workbook into a structured plan
+ */
+export const parseCollateralPlan = async (collateralPlanRequest: CollateralPlanRequest, options?: RequestInit): Promise<CollateralPlan> => {
+
+  return customFetch<CollateralPlan>(getParseCollateralPlanUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      collateralPlanRequest,)
+  }
+);}
+
+
+
+
+export const getParseCollateralPlanMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof parseCollateralPlan>>, TError,{data: BodyType<CollateralPlanRequest>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof parseCollateralPlan>>, TError,{data: BodyType<CollateralPlanRequest>}, TContext> => {
+
+const mutationKey = ['parseCollateralPlan'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof parseCollateralPlan>>, {data: BodyType<CollateralPlanRequest>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  parseCollateralPlan(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type ParseCollateralPlanMutationResult = NonNullable<Awaited<ReturnType<typeof parseCollateralPlan>>>
+    export type ParseCollateralPlanMutationBody = BodyType<CollateralPlanRequest>
+    export type ParseCollateralPlanMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Parse a Design Studio collateral workbook into a structured plan
+ */
+export const useParseCollateralPlan = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof parseCollateralPlan>>, TError,{data: BodyType<CollateralPlanRequest>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof parseCollateralPlan>>,
+        TError,
+        {data: BodyType<CollateralPlanRequest>},
+        TContext
+      > => {
+      return useMutation(getParseCollateralPlanMutationOptions(options));
     }
 
 export const getImportBrandPackageUrl = (brandId: number,) => {

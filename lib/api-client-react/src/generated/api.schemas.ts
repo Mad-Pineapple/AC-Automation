@@ -369,6 +369,56 @@ export interface BrandAssetInput {
   contentType?: string | null;
 }
 
+export interface CollateralPlanRequest {
+  /** @minLength 1 */
+  objectPath: string;
+}
+
+export type CollateralPlanDeliverablesItemContent = {
+  headline?: string;
+  body?: string;
+  image?: string;
+  cta?: string;
+  clickUrl?: string;
+  logos?: string;
+};
+
+export type CollateralPlanDeliverablesItem = {
+  channel: string;
+  projectNumber: string;
+  name: string;
+  rawSize?: string;
+  /** @nullable */
+  widthPx?: number | null;
+  /** @nullable */
+  heightPx?: number | null;
+  unit: string;
+  count: number;
+  content?: CollateralPlanDeliverablesItemContent;
+  /** @nullable */
+  proofDate?: string | null;
+  /** @nullable */
+  dispatchDate?: string | null;
+  /** @nullable */
+  notes?: string | null;
+};
+
+export type CollateralPlanUniqueSizesItem = {
+  width: number;
+  height: number;
+  unit: string;
+  count: number;
+  names: string[];
+};
+
+export interface CollateralPlan {
+  campaignName: string;
+  projectNumbers: string[];
+  deliverables: CollateralPlanDeliverablesItem[];
+  uniqueSizes: CollateralPlanUniqueSizesItem[];
+  warnings: string[];
+}
+
 export interface ImportPackageRequest {
   /** @minLength 1 */
   objectPath: string;

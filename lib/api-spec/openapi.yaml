@@ -442,6 +442,25 @@ paths:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
 
+  /briefs/collateral-plan:
+    post:
+      operationId: parseCollateralPlan
+      tags: [briefs]
+      summary: Parse a Design Studio collateral workbook into a structured plan
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CollateralPlanRequest"
+      responses:
+        "200":
+          description: Structured collateral plan
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CollateralPlan"
+
   /brands/{brandId}/assets/import-package:
     post:
       operationId: importBrandPackage
@@ -2080,6 +2099,67 @@ components:
       required:
         - name
         - objectPath
+
+    CollateralPlanRequest:
+      type: object
+      properties:
+        objectPath:
+          type: string
+          minLength: 1
+      required: [objectPath]
+
+    CollateralPlan:
+      type: object
+      properties:
+        campaignName:
+          type: string
+        projectNumbers:
+          type: array
+          items:
+            type: string
+        deliverables:
+          type: array
+          items:
+            type: object
+            properties:
+              channel: { type: string }
+              projectNumber: { type: string }
+              name: { type: string }
+              rawSize: { type: string }
+              widthPx: { type: ["integer", "null"] }
+              heightPx: { type: ["integer", "null"] }
+              unit: { type: string }
+              count: { type: integer }
+              content:
+                type: object
+                properties:
+                  headline: { type: string }
+                  body: { type: string }
+                  image: { type: string }
+                  cta: { type: string }
+                  clickUrl: { type: string }
+                  logos: { type: string }
+              proofDate: { type: ["string", "null"] }
+              dispatchDate: { type: ["string", "null"] }
+              notes: { type: ["string", "null"] }
+            required: [channel, projectNumber, name, unit, count]
+        uniqueSizes:
+          type: array
+          items:
+            type: object
+            properties:
+              width: { type: integer }
+              height: { type: integer }
+              unit: { type: string }
+              count: { type: integer }
+              names:
+                type: array
+                items: { type: string }
+            required: [width, height, unit, count, names]
+        warnings:
+          type: array
+          items: { type: string }
+      required: [campaignName, projectNumbers, deliverables, uniqueSizes, warnings]
 
     ImportPackageRequest:
       type: object

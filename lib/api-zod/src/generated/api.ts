@@ -746,6 +746,51 @@ export const RequestUploadUrlResponse = zod.object({
 
 
 /**
+ * @summary Parse a Design Studio collateral workbook into a structured plan
+ */
+
+
+
+export const ParseCollateralPlanBody = zod.object({
+  "objectPath": zod.string().min(1)
+})
+
+export const ParseCollateralPlanResponse = zod.object({
+  "campaignName": zod.string(),
+  "projectNumbers": zod.array(zod.string()),
+  "deliverables": zod.array(zod.object({
+  "channel": zod.string(),
+  "projectNumber": zod.string(),
+  "name": zod.string(),
+  "rawSize": zod.string().optional(),
+  "widthPx": zod.number().nullish(),
+  "heightPx": zod.number().nullish(),
+  "unit": zod.string(),
+  "count": zod.number(),
+  "content": zod.object({
+  "headline": zod.string().optional(),
+  "body": zod.string().optional(),
+  "image": zod.string().optional(),
+  "cta": zod.string().optional(),
+  "clickUrl": zod.string().optional(),
+  "logos": zod.string().optional()
+}).optional(),
+  "proofDate": zod.string().nullish(),
+  "dispatchDate": zod.string().nullish(),
+  "notes": zod.string().nullish()
+})),
+  "uniqueSizes": zod.array(zod.object({
+  "width": zod.number(),
+  "height": zod.number(),
+  "unit": zod.string(),
+  "count": zod.number(),
+  "names": zod.array(zod.string())
+})),
+  "warnings": zod.array(zod.string())
+})
+
+
+/**
  * @summary Ingest a zipped InDesign package into the brand library
  */
 export const ImportBrandPackageParams = zod.object({
