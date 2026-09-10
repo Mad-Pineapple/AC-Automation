@@ -2,6 +2,7 @@ import type { IncomingMessage, ServerResponse } from "http";
 import app from "./app";
 import { logger } from "./lib/logger";
 import { seedDemoData } from "./lib/seed";
+import { ensureSchemaAdditions } from "./lib/schemaGuard";
 import { ensureStorageDirs } from "./lib/objectStorage";
 import { runDispatchTick } from "./lib/scheduler";
 import { runInBackground } from "./lib/background";
@@ -22,6 +23,7 @@ let initPromise: Promise<void> | null = null;
 function initOnce(): Promise<void> {
   initPromise ??= (async () => {
     await ensureStorageDirs();
+    await ensureSchemaAdditions();
     await seedDemoData();
   })().catch((err) => {
     initPromise = null; // retry on the next request rather than failing forever

@@ -11,6 +11,8 @@ export const templatesTable = pgTable("templates", {
   height: integer("height").notNull(),
   config: text("config").notNull().default("{}"),
   sourceImageUrl: text("source_image_url"),
+  /** The master this template was adapted from (null for masters). */
+  sourceTemplateId: integer("source_template_id"),
   createdBy: text("created_by"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),

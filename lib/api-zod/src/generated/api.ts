@@ -179,6 +179,10 @@ export const AnalyzeBrandGuidelineResponse = zod.object({
 /**
  * @summary List all custom templates
  */
+export const ListTemplatesQueryParams = zod.object({
+  "include": zod.enum(['knowledge', 'all']).optional()
+})
+
 export const ListTemplatesResponseItem = zod.object({
   "id": zod.number(),
   "key": zod.string(),
@@ -202,6 +206,7 @@ export const ListTemplatesResponseItem = zod.object({
   "y": zod.number().optional(),
   "w": zod.number().optional(),
   "h": zod.number().optional(),
+  "slot": zod.string().optional().describe('Composition slot: photo | cutout | scrim | panel | band | headline | subheadline | message | cta | ctaLabel | ctaIcon | lockup | logo'),
   "role": zod.string().optional(),
   "text": zod.string().optional(),
   "fontSize": zod.number().optional(),
@@ -236,9 +241,12 @@ export const ListTemplatesResponseItem = zod.object({
   "borderColor": zod.string().optional(),
   "borderWidth": zod.number().optional(),
   "locked": zod.boolean().optional().describe('Locked elements are pinned brand furniture: brief copy\/imagery is never poured into them (their captured content always renders), and editors treat them as read-only.\n')
-}).describe('A single positioned element in a freeform template layout.')).optional()
+}).describe('A single positioned element in a freeform template layout.')).optional(),
+  "adaptMethod": zod.string().optional().describe('How an adapted template was derived: recomposed:<class> | key-visual | panel | scaled'),
+  "adaptNotes": zod.array(zod.string()).optional().describe('What the adapt engine decided and what a designer should check')
 }),
   "sourceImageUrl": zod.string().nullish(),
+  "sourceTemplateId": zod.number().nullish().describe('The master this template was adapted from'),
   "createdBy": zod.string().nullish(),
   "createdAt": zod.string(),
   "updatedAt": zod.string()
@@ -269,6 +277,7 @@ export const CreateTemplateBody = zod.object({
   "y": zod.number().optional(),
   "w": zod.number().optional(),
   "h": zod.number().optional(),
+  "slot": zod.string().optional().describe('Composition slot: photo | cutout | scrim | panel | band | headline | subheadline | message | cta | ctaLabel | ctaIcon | lockup | logo'),
   "role": zod.string().optional(),
   "text": zod.string().optional(),
   "fontSize": zod.number().optional(),
@@ -303,7 +312,9 @@ export const CreateTemplateBody = zod.object({
   "borderColor": zod.string().optional(),
   "borderWidth": zod.number().optional(),
   "locked": zod.boolean().optional().describe('Locked elements are pinned brand furniture: brief copy\/imagery is never poured into them (their captured content always renders), and editors treat them as read-only.\n')
-}).describe('A single positioned element in a freeform template layout.')).optional()
+}).describe('A single positioned element in a freeform template layout.')).optional(),
+  "adaptMethod": zod.string().optional().describe('How an adapted template was derived: recomposed:<class> | key-visual | panel | scaled'),
+  "adaptNotes": zod.array(zod.string()).optional().describe('What the adapt engine decided and what a designer should check')
 }).optional(),
   "sourceImageUrl": zod.string().nullish()
 })
@@ -339,6 +350,7 @@ export const GetTemplateResponse = zod.object({
   "y": zod.number().optional(),
   "w": zod.number().optional(),
   "h": zod.number().optional(),
+  "slot": zod.string().optional().describe('Composition slot: photo | cutout | scrim | panel | band | headline | subheadline | message | cta | ctaLabel | ctaIcon | lockup | logo'),
   "role": zod.string().optional(),
   "text": zod.string().optional(),
   "fontSize": zod.number().optional(),
@@ -373,9 +385,12 @@ export const GetTemplateResponse = zod.object({
   "borderColor": zod.string().optional(),
   "borderWidth": zod.number().optional(),
   "locked": zod.boolean().optional().describe('Locked elements are pinned brand furniture: brief copy\/imagery is never poured into them (their captured content always renders), and editors treat them as read-only.\n')
-}).describe('A single positioned element in a freeform template layout.')).optional()
+}).describe('A single positioned element in a freeform template layout.')).optional(),
+  "adaptMethod": zod.string().optional().describe('How an adapted template was derived: recomposed:<class> | key-visual | panel | scaled'),
+  "adaptNotes": zod.array(zod.string()).optional().describe('What the adapt engine decided and what a designer should check')
 }),
   "sourceImageUrl": zod.string().nullish(),
+  "sourceTemplateId": zod.number().nullish().describe('The master this template was adapted from'),
   "createdBy": zod.string().nullish(),
   "createdAt": zod.string(),
   "updatedAt": zod.string()
@@ -409,6 +424,7 @@ export const UpdateTemplateBody = zod.object({
   "y": zod.number().optional(),
   "w": zod.number().optional(),
   "h": zod.number().optional(),
+  "slot": zod.string().optional().describe('Composition slot: photo | cutout | scrim | panel | band | headline | subheadline | message | cta | ctaLabel | ctaIcon | lockup | logo'),
   "role": zod.string().optional(),
   "text": zod.string().optional(),
   "fontSize": zod.number().optional(),
@@ -443,7 +459,9 @@ export const UpdateTemplateBody = zod.object({
   "borderColor": zod.string().optional(),
   "borderWidth": zod.number().optional(),
   "locked": zod.boolean().optional().describe('Locked elements are pinned brand furniture: brief copy\/imagery is never poured into them (their captured content always renders), and editors treat them as read-only.\n')
-}).describe('A single positioned element in a freeform template layout.')).optional()
+}).describe('A single positioned element in a freeform template layout.')).optional(),
+  "adaptMethod": zod.string().optional().describe('How an adapted template was derived: recomposed:<class> | key-visual | panel | scaled'),
+  "adaptNotes": zod.array(zod.string()).optional().describe('What the adapt engine decided and what a designer should check')
 }).optional(),
   "sourceImageUrl": zod.string().nullish()
 })
@@ -471,6 +489,7 @@ export const UpdateTemplateResponse = zod.object({
   "y": zod.number().optional(),
   "w": zod.number().optional(),
   "h": zod.number().optional(),
+  "slot": zod.string().optional().describe('Composition slot: photo | cutout | scrim | panel | band | headline | subheadline | message | cta | ctaLabel | ctaIcon | lockup | logo'),
   "role": zod.string().optional(),
   "text": zod.string().optional(),
   "fontSize": zod.number().optional(),
@@ -505,9 +524,12 @@ export const UpdateTemplateResponse = zod.object({
   "borderColor": zod.string().optional(),
   "borderWidth": zod.number().optional(),
   "locked": zod.boolean().optional().describe('Locked elements are pinned brand furniture: brief copy\/imagery is never poured into them (their captured content always renders), and editors treat them as read-only.\n')
-}).describe('A single positioned element in a freeform template layout.')).optional()
+}).describe('A single positioned element in a freeform template layout.')).optional(),
+  "adaptMethod": zod.string().optional().describe('How an adapted template was derived: recomposed:<class> | key-visual | panel | scaled'),
+  "adaptNotes": zod.array(zod.string()).optional().describe('What the adapt engine decided and what a designer should check')
 }),
   "sourceImageUrl": zod.string().nullish(),
+  "sourceTemplateId": zod.number().nullish().describe('The master this template was adapted from'),
   "createdBy": zod.string().nullish(),
   "createdAt": zod.string(),
   "updatedAt": zod.string()
@@ -519,6 +541,15 @@ export const UpdateTemplateResponse = zod.object({
  */
 export const DeleteTemplateParams = zod.object({
   "id": zod.coerce.number()
+})
+
+
+/**
+ * @summary Delete every work-in-progress template not referenced by an asset
+ */
+export const ClearWipTemplatesResponse = zod.object({
+  "deleted": zod.number(),
+  "kept": zod.number()
 })
 
 
@@ -569,6 +600,7 @@ export const DissectPdfResponse = zod.object({
   "y": zod.number().optional(),
   "w": zod.number().optional(),
   "h": zod.number().optional(),
+  "slot": zod.string().optional().describe('Composition slot: photo | cutout | scrim | panel | band | headline | subheadline | message | cta | ctaLabel | ctaIcon | lockup | logo'),
   "role": zod.string().optional(),
   "text": zod.string().optional(),
   "fontSize": zod.number().optional(),
@@ -603,7 +635,9 @@ export const DissectPdfResponse = zod.object({
   "borderColor": zod.string().optional(),
   "borderWidth": zod.number().optional(),
   "locked": zod.boolean().optional().describe('Locked elements are pinned brand furniture: brief copy\/imagery is never poured into them (their captured content always renders), and editors treat them as read-only.\n')
-}).describe('A single positioned element in a freeform template layout.')).optional()
+}).describe('A single positioned element in a freeform template layout.')).optional(),
+  "adaptMethod": zod.string().optional().describe('How an adapted template was derived: recomposed:<class> | key-visual | panel | scaled'),
+  "adaptNotes": zod.array(zod.string()).optional().describe('What the adapt engine decided and what a designer should check')
 }),
   "warnings": zod.array(zod.string())
 })
@@ -637,6 +671,7 @@ export const DissectImageResponse = zod.object({
   "y": zod.number().optional(),
   "w": zod.number().optional(),
   "h": zod.number().optional(),
+  "slot": zod.string().optional().describe('Composition slot: photo | cutout | scrim | panel | band | headline | subheadline | message | cta | ctaLabel | ctaIcon | lockup | logo'),
   "role": zod.string().optional(),
   "text": zod.string().optional(),
   "fontSize": zod.number().optional(),
@@ -671,7 +706,9 @@ export const DissectImageResponse = zod.object({
   "borderColor": zod.string().optional(),
   "borderWidth": zod.number().optional(),
   "locked": zod.boolean().optional().describe('Locked elements are pinned brand furniture: brief copy\/imagery is never poured into them (their captured content always renders), and editors treat them as read-only.\n')
-}).describe('A single positioned element in a freeform template layout.')).optional()
+}).describe('A single positioned element in a freeform template layout.')).optional(),
+  "adaptMethod": zod.string().optional().describe('How an adapted template was derived: recomposed:<class> | key-visual | panel | scaled'),
+  "adaptNotes": zod.array(zod.string()).optional().describe('What the adapt engine decided and what a designer should check')
 }),
   "warnings": zod.array(zod.string())
 })
@@ -791,6 +828,60 @@ export const ParseCollateralPlanResponse = zod.object({
 
 
 /**
+ * @summary Import example artwork of any kind as master template(s)
+ */
+
+
+
+
+export const ImportExampleArtworkBody = zod.object({
+  "objectPath": zod.string().min(1),
+  "fileName": zod.string().min(1),
+  "brandId": zod.number().optional()
+})
+
+
+/**
+ * @summary Match every brief size to the closest-shaped example artwork
+ */
+export const PlanCampaignBuildBody = zod.object({
+  "masterTemplateIds": zod.array(zod.number()),
+  "sizes": zod.array(zod.object({
+  "width": zod.number(),
+  "height": zod.number(),
+  "unit": zod.string().optional(),
+  "names": zod.array(zod.string()).optional()
+})),
+  "campaignName": zod.string().optional()
+})
+
+export const PlanCampaignBuildResponse = zod.object({
+  "jobs": zod.array(zod.object({
+  "masterId": zod.number(),
+  "masterName": zod.string(),
+  "width": zod.number(),
+  "height": zod.number(),
+  "name": zod.string(),
+  "variant": zod.string().nullish(),
+  "sourceLabel": zod.string(),
+  "aspectDistance": zod.number(),
+  "recomposed": zod.boolean(),
+  "formatClass": zod.string().optional().describe('tower | portrait | square | landscape | wide | strip'),
+  "formatLabel": zod.string().optional().describe('Catalog or brief deliverable name for the size'),
+  "method": zod.string().optional().describe('scale | recompose'),
+  "needsReview": zod.boolean().optional().describe('No example shares the target\'s shape class; rebuilt from the recipe alone')
+})),
+  "variants": zod.array(zod.string()),
+  "skipped": zod.array(zod.object({
+  "width": zod.number(),
+  "height": zod.number(),
+  "reason": zod.string()
+})),
+  "warnings": zod.array(zod.string())
+})
+
+
+/**
  * @summary Ingest a zipped InDesign package into the brand library
  */
 export const ImportBrandPackageParams = zod.object({
@@ -816,6 +907,7 @@ export const ImportBrandPackageResponse = zod.object({
   "idmlFound": zod.boolean(),
   "fontsSkipped": zod.number(),
   "idmlTemplateId": zod.number().nullish(),
+  "idmlTemplateIds": zod.array(zod.number()).optional(),
   "idmlWarnings": zod.array(zod.string())
 })
 
@@ -1343,6 +1435,15 @@ export const GenerateBriefAssetsParams = zod.object({
   "id": zod.coerce.number()
 })
 
+export const generateBriefAssetsBodyVariantsMax = 3;
+
+
+
+export const GenerateBriefAssetsBody = zod.object({
+  "force": zod.boolean().optional().describe('Replace an existing approved\/dispatched set without asking again'),
+  "variants": zod.number().min(1).max(generateBriefAssetsBodyVariantsMax).optional().describe('AI copy options to generate per size (artwork is shared)')
+})
+
 export const GenerateBriefAssetsResponse = zod.object({
   "id": zod.number(),
   "campaignName": zod.string(),
@@ -1392,6 +1493,92 @@ export const GenerateBriefAssetsResponse = zod.object({
   "dispatchedByName": zod.string().nullish(),
   "dispatchedBy": zod.string().nullish(),
   "dispatchedAt": zod.string().nullish(),
+  "createdAt": zod.string(),
+  "updatedAt": zod.string()
+})
+
+
+/**
+ * @summary Suggest timely campaign ideas for a brand
+ */
+export const SuggestCampaignIdeasBody = zod.object({
+  "brandId": zod.number()
+})
+
+export const SuggestCampaignIdeasResponse = zod.object({
+  "ideas": zod.array(zod.object({
+  "title": zod.string(),
+  "objective": zod.string().optional(),
+  "keyMessage": zod.string().optional(),
+  "notes": zod.string(),
+  "sizes": zod.array(zod.string()),
+  "rationale": zod.string().optional()
+}))
+})
+
+
+/**
+ * @summary Build brand-field suggestions from a public website URL
+ */
+export const AnalyzeBrandUrlBody = zod.object({
+  "url": zod.string()
+})
+
+export const AnalyzeBrandUrlResponse = zod.object({
+  "suggestions": zod.object({
+  "primaryColor": zod.string().optional(),
+  "secondaryColor": zod.string().optional(),
+  "accentColor": zod.string().optional(),
+  "backgroundColor": zod.string().optional(),
+  "textColor": zod.string().optional(),
+  "fontFamily": zod.string().optional(),
+  "toneOfVoice": zod.string().optional(),
+  "strapline": zod.string().nullish(),
+  "industry": zod.string().optional()
+}),
+  "guidelines": zod.string(),
+  "notes": zod.array(zod.string()),
+  "images": zod.array(zod.object({
+  "url": zod.string(),
+  "objectPath": zod.string(),
+  "width": zod.number(),
+  "height": zod.number()
+})).optional(),
+  "fonts": zod.array(zod.string()).optional()
+})
+
+
+/**
+ * @summary Apply a prompt-based edit to an asset's generated artwork
+ */
+export const EditAssetImageParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const EditAssetImageBody = zod.object({
+  "instruction": zod.string().describe('Plain-language description of the artwork change')
+})
+
+export const EditAssetImageResponse = zod.object({
+  "id": zod.number(),
+  "briefId": zod.number(),
+  "templateSize": zod.string(),
+  "variantLabel": zod.string().nullish(),
+  "headline": zod.string().nullish(),
+  "bodyText": zod.string().nullish(),
+  "callToAction": zod.string().nullish(),
+  "imageUrl": zod.string().nullish(),
+  "htmlContent": zod.string().nullish(),
+  "isAnimated": zod.boolean(),
+  "status": zod.string(),
+  "rejectedBy": zod.string().nullish(),
+  "rejectedByName": zod.string().nullish(),
+  "rejectedAt": zod.string().nullish(),
+  "rejectionReason": zod.string().nullish(),
+  "complianceStatus": zod.string().nullish().describe('Brand-compliance verdict for the generated artwork; one of \"passed\", \"failed\", \"skipped\", or null for legacy assets.'),
+  "complianceScore": zod.number().nullish().describe('Compliance score 0-100 (null when skipped or not checked).'),
+  "complianceIssues": zod.string().nullish().describe('JSON-encoded array of specific brand-compliance violation strings.'),
+  "complianceCheckedAt": zod.string().nullish(),
   "createdAt": zod.string(),
   "updatedAt": zod.string()
 })
@@ -1978,6 +2165,220 @@ export const GetPerformanceStatsResponse = zod.object({
   "impressions": zod.number(),
   "clicks": zod.number()
 }))
+})
+
+
+/**
+ * @summary Ask Claude, the studio's final reviewer, to judge this piece (advisory verdict + element-level issues, stored on the template)
+ */
+export const ClaudeReviewTemplateParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const ClaudeReviewTemplateResponse = zod.object({
+  "id": zod.number(),
+  "key": zod.string(),
+  "name": zod.string(),
+  "description": zod.string().nullish(),
+  "category": zod.string(),
+  "width": zod.number(),
+  "height": zod.number(),
+  "dims": zod.string(),
+  "config": zod.object({
+  "contentAlignment": zod.string().optional(),
+  "textAlign": zod.string().optional(),
+  "showAccentBar": zod.boolean().optional(),
+  "showLogoBar": zod.boolean().optional(),
+  "imageStyle": zod.string().optional(),
+  "kind": zod.string().optional().describe('preset | freeform (absent means preset)'),
+  "elements": zod.array(zod.object({
+  "type": zod.string().describe('text | image | rect'),
+  "id": zod.string().optional(),
+  "x": zod.number().optional(),
+  "y": zod.number().optional(),
+  "w": zod.number().optional(),
+  "h": zod.number().optional(),
+  "slot": zod.string().optional().describe('Composition slot: photo | cutout | scrim | panel | band | headline | subheadline | message | cta | ctaLabel | ctaIcon | lockup | logo'),
+  "role": zod.string().optional(),
+  "text": zod.string().optional(),
+  "fontSize": zod.number().optional(),
+  "fontWeight": zod.number().optional(),
+  "color": zod.string().optional(),
+  "align": zod.string().optional(),
+  "lineHeight": zod.number().optional(),
+  "fontFamily": zod.string().optional(),
+  "fontStyle": zod.string().optional().describe('normal | italic'),
+  "letterSpacing": zod.number().optional(),
+  "opacity": zod.number().optional().describe('0..1'),
+  "src": zod.string().nullish(),
+  "fit": zod.string().optional().describe('cover | contain (image objectFit; default depends on role)'),
+  "focusX": zod.number().optional().describe('0..1 focal point for cover crops (CSS object-position x)'),
+  "focusY": zod.number().optional().describe('0..1 focal point for cover crops (CSS object-position y)'),
+  "focusBox": zod.object({
+  "x": zod.number().optional(),
+  "y": zod.number().optional(),
+  "w": zod.number().optional(),
+  "h": zod.number().optional()
+}).optional().describe('Hero box in image fractions (0..1) that adapted crops are chosen around'),
+  "gradient": zod.object({
+  "angle": zod.number().optional(),
+  "stops": zod.array(zod.object({
+  "color": zod.string().optional(),
+  "alpha": zod.number().optional(),
+  "at": zod.number().optional()
+})).optional()
+}).optional().describe('Rect linear gradient: {angle: deg, stops: [{color, alpha, at}]}'),
+  "fill": zod.string().optional(),
+  "radius": zod.number().optional(),
+  "borderColor": zod.string().optional(),
+  "borderWidth": zod.number().optional(),
+  "locked": zod.boolean().optional().describe('Locked elements are pinned brand furniture: brief copy\/imagery is never poured into them (their captured content always renders), and editors treat them as read-only.\n')
+}).describe('A single positioned element in a freeform template layout.')).optional(),
+  "adaptMethod": zod.string().optional().describe('How an adapted template was derived: recomposed:<class> | key-visual | panel | scaled'),
+  "adaptNotes": zod.array(zod.string()).optional().describe('What the adapt engine decided and what a designer should check')
+}),
+  "sourceImageUrl": zod.string().nullish(),
+  "sourceTemplateId": zod.number().nullish().describe('The master this template was adapted from'),
+  "createdBy": zod.string().nullish(),
+  "createdAt": zod.string(),
+  "updatedAt": zod.string()
+})
+
+
+/**
+ * @summary Put the piece's elements back as they were before Claude's fixes
+ */
+export const UndoClaudeReviewTemplateParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const UndoClaudeReviewTemplateResponse = zod.object({
+  "id": zod.number(),
+  "key": zod.string(),
+  "name": zod.string(),
+  "description": zod.string().nullish(),
+  "category": zod.string(),
+  "width": zod.number(),
+  "height": zod.number(),
+  "dims": zod.string(),
+  "config": zod.object({
+  "contentAlignment": zod.string().optional(),
+  "textAlign": zod.string().optional(),
+  "showAccentBar": zod.boolean().optional(),
+  "showLogoBar": zod.boolean().optional(),
+  "imageStyle": zod.string().optional(),
+  "kind": zod.string().optional().describe('preset | freeform (absent means preset)'),
+  "elements": zod.array(zod.object({
+  "type": zod.string().describe('text | image | rect'),
+  "id": zod.string().optional(),
+  "x": zod.number().optional(),
+  "y": zod.number().optional(),
+  "w": zod.number().optional(),
+  "h": zod.number().optional(),
+  "slot": zod.string().optional().describe('Composition slot: photo | cutout | scrim | panel | band | headline | subheadline | message | cta | ctaLabel | ctaIcon | lockup | logo'),
+  "role": zod.string().optional(),
+  "text": zod.string().optional(),
+  "fontSize": zod.number().optional(),
+  "fontWeight": zod.number().optional(),
+  "color": zod.string().optional(),
+  "align": zod.string().optional(),
+  "lineHeight": zod.number().optional(),
+  "fontFamily": zod.string().optional(),
+  "fontStyle": zod.string().optional().describe('normal | italic'),
+  "letterSpacing": zod.number().optional(),
+  "opacity": zod.number().optional().describe('0..1'),
+  "src": zod.string().nullish(),
+  "fit": zod.string().optional().describe('cover | contain (image objectFit; default depends on role)'),
+  "focusX": zod.number().optional().describe('0..1 focal point for cover crops (CSS object-position x)'),
+  "focusY": zod.number().optional().describe('0..1 focal point for cover crops (CSS object-position y)'),
+  "focusBox": zod.object({
+  "x": zod.number().optional(),
+  "y": zod.number().optional(),
+  "w": zod.number().optional(),
+  "h": zod.number().optional()
+}).optional().describe('Hero box in image fractions (0..1) that adapted crops are chosen around'),
+  "gradient": zod.object({
+  "angle": zod.number().optional(),
+  "stops": zod.array(zod.object({
+  "color": zod.string().optional(),
+  "alpha": zod.number().optional(),
+  "at": zod.number().optional()
+})).optional()
+}).optional().describe('Rect linear gradient: {angle: deg, stops: [{color, alpha, at}]}'),
+  "fill": zod.string().optional(),
+  "radius": zod.number().optional(),
+  "borderColor": zod.string().optional(),
+  "borderWidth": zod.number().optional(),
+  "locked": zod.boolean().optional().describe('Locked elements are pinned brand furniture: brief copy\/imagery is never poured into them (their captured content always renders), and editors treat them as read-only.\n')
+}).describe('A single positioned element in a freeform template layout.')).optional(),
+  "adaptMethod": zod.string().optional().describe('How an adapted template was derived: recomposed:<class> | key-visual | panel | scaled'),
+  "adaptNotes": zod.array(zod.string()).optional().describe('What the adapt engine decided and what a designer should check')
+}),
+  "sourceImageUrl": zod.string().nullish(),
+  "sourceTemplateId": zod.number().nullish().describe('The master this template was adapted from'),
+  "createdBy": zod.string().nullish(),
+  "createdAt": zod.string(),
+  "updatedAt": zod.string()
+})
+
+
+/**
+ * @summary Meta Ads results (impressions, link clicks, spend) joined to studio creative
+ */
+export const GetMetaPerformanceQueryParams = zod.object({
+  "days": zod.coerce.number().optional()
+})
+
+export const GetMetaPerformanceResponse = zod.object({
+  "configured": zod.boolean(),
+  "lastSyncedAt": zod.string().nullable(),
+  "days": zod.number(),
+  "currency": zod.string().nullable(),
+  "totals": zod.object({
+  "impressions": zod.number(),
+  "reach": zod.number(),
+  "clicks": zod.number(),
+  "linkClicks": zod.number(),
+  "spend": zod.number(),
+  "ctr": zod.number(),
+  "cpm": zod.number(),
+  "cpc": zod.number()
+}),
+  "timeseries": zod.array(zod.object({
+  "day": zod.string(),
+  "impressions": zod.number(),
+  "linkClicks": zod.number(),
+  "spend": zod.number()
+})),
+  "ads": zod.array(zod.object({
+  "adId": zod.string(),
+  "adName": zod.string(),
+  "campaignName": zod.string().nullish(),
+  "adsetName": zod.string().nullish(),
+  "impressions": zod.number(),
+  "reach": zod.number(),
+  "linkClicks": zod.number(),
+  "spend": zod.number(),
+  "ctr": zod.number(),
+  "cpm": zod.number(),
+  "templateId": zod.number().nullish(),
+  "templateName": zod.string().nullish(),
+  "briefId": zod.number().nullish(),
+  "briefCampaignName": zod.string().nullish()
+}))
+})
+
+
+/**
+ * @summary Pull the latest Meta Ads insights now (admin)
+ */
+export const SyncMetaPerformanceResponse = zod.object({
+  "ok": zod.boolean(),
+  "configured": zod.boolean(),
+  "days": zod.number(),
+  "fetched": zod.number(),
+  "upserted": zod.number(),
+  "errors": zod.array(zod.string())
 })
 
 

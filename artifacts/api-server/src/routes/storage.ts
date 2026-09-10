@@ -77,7 +77,7 @@ router.post("/storage/uploads/request-url", requireAuth, async (req: Request, re
 router.put(
   "/storage/uploads/direct/:id",
   requireAuth,
-  express.raw({ type: () => true, limit: "100mb" }),
+  express.raw({ type: () => true, limit: "2gb" }),
   async (req: Request, res: Response) => {
     try {
       const rawContentType = req.headers["content-type"];

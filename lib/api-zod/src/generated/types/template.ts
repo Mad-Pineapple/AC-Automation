@@ -20,6 +20,11 @@ export interface Template {
   config: TemplateConfig;
   /** @nullable */
   sourceImageUrl?: string | null;
+  /**
+     * The master this template was adapted from
+     * @nullable
+     */
+  sourceTemplateId?: number | null;
   /** @nullable */
   createdBy?: string | null;
   createdAt: string;

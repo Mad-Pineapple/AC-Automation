@@ -34,7 +34,7 @@ export default function LibraryPage() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-4xl font-bold tracking-tight font-sans">Library</h1>
-          <p className="text-muted-foreground mt-2 font-mono text-sm uppercase tracking-widest">
+          <p className="text-muted-foreground mt-1.5">
             Brand imagery, logos & files
           </p>
         </div>

@@ -25,7 +25,7 @@ export default function CampaignList() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-4xl font-bold tracking-tight font-sans">Campaigns</h1>
-          <p className="text-muted-foreground mt-2 font-mono text-sm uppercase tracking-widest">Group Briefs & Shared Schedules</p>
+          <p className="text-muted-foreground mt-1.5">Group Briefs & Shared Schedules</p>
         </div>
         <Link href="/campaigns/new">
           <Button data-testid="button-new-campaign" className="font-mono uppercase text-xs tracking-wider">

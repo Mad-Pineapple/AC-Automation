@@ -276,7 +276,7 @@ export default function TeamPage() {
     <div className="space-y-8 w-full">
       <div>
         <h1 className="text-4xl font-bold tracking-tight font-sans">Team</h1>
-        <p className="text-muted-foreground mt-2 font-mono text-sm uppercase tracking-widest">
+        <p className="text-muted-foreground mt-1.5">
           Manage roles &amp; permissions
         </p>
       </div>

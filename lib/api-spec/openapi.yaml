@@ -176,6 +176,13 @@ paths:
   /templates:
     get:
       operationId: listTemplates
+      parameters:
+        - name: include
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [knowledge, all]
       tags: [templates]
       summary: List all custom templates
       responses:
@@ -265,6 +272,23 @@ paths:
       responses:
         "204":
           description: Deleted
+
+  /templates/clear-wip:
+    post:
+      operationId: clearWipTemplates
+      summary: Delete every work-in-progress template not referenced by an asset
+      tags: [Templates]
+      responses:
+        "200":
+          description: How many were removed and how many were kept because assets use them
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  deleted: { type: integer }
+                  kept: { type: integer }
+                required: [deleted, kept]
 
   /templates/{id}/adapt:
     post:
@@ -460,6 +484,44 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/CollateralPlan"
+
+  /templates/import-example:
+    post:
+      operationId: importExampleArtwork
+      tags: [templates]
+      summary: Import example artwork of any kind as master template(s)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ImportExampleRequest"
+      responses:
+        "201":
+          description: Master templates created from the example
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ImportExampleResult"
+
+  /campaigns/build-plan:
+    post:
+      operationId: planCampaignBuild
+      tags: [briefs]
+      summary: Match every brief size to the closest-shaped example artwork
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CampaignBuildPlanRequest"
+      responses:
+        "200":
+          description: The build work list
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CampaignBuildPlan"
 
   /brands/{brandId}/assets/import-package:
     post:
@@ -948,6 +1010,12 @@ paths:
           required: true
           schema:
             type: integer
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/GenerateBriefRequest"
       responses:
         "200":
           description: Generation started, returns updated brief
@@ -955,6 +1023,81 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Brief"
+
+  /campaign-ideas:
+    post:
+      operationId: suggestCampaignIdeas
+      tags: [briefs]
+      summary: Suggest timely campaign ideas for a brand
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CampaignIdeasRequest"
+      responses:
+        "200":
+          description: Suggested campaign ideas
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CampaignIdeasResponse"
+
+  /brands/analyze-url:
+    post:
+      operationId: analyzeBrandUrl
+      tags: [brands]
+      summary: Build brand-field suggestions from a public website URL
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AnalyzeUrlRequest"
+      responses:
+        "200":
+          description: Suggested brand fields
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AnalyzeGuidelineResponse"
+        "422":
+          description: Site could not be fetched or read
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /assets/{id}/edit-image:
+    post:
+      operationId: editAssetImage
+      tags: [assets]
+      summary: Apply a prompt-based edit to an asset's generated artwork
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/EditAssetImageRequest"
+      responses:
+        "200":
+          description: Updated asset with edited artwork
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Asset"
+        "403":
+          description: Imported/library artwork is never modified
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
 
   /briefs/{id}/approve:
     post:
@@ -1434,6 +1577,79 @@ paths:
               schema:
                 $ref: "#/components/schemas/PerformanceStats"
 
+  /templates/{id}/claude-review:
+    post:
+      operationId: claudeReviewTemplate
+      tags: [templates]
+      summary: Ask Claude, the studio's final reviewer, to judge this piece (advisory verdict + element-level issues, stored on the template)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: The template with `config.claudeReview` filled in
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Template"
+        "502":
+          description: The review could not be completed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /templates/{id}/claude-review/undo:
+    post:
+      operationId: undoClaudeReviewTemplate
+      tags: [templates]
+      summary: Put the piece's elements back as they were before Claude's fixes
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: The restored template
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Template"
+  /performance/meta:
+    get:
+      operationId: getMetaPerformance
+      tags: [stats]
+      summary: Meta Ads results (impressions, link clicks, spend) joined to studio creative
+      parameters:
+        - name: days
+          in: query
+          required: false
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Meta Ads summary; `configured` is false until the ad account is connected
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MetaPerformance"
+  /performance/meta/sync:
+    post:
+      operationId: syncMetaPerformance
+      tags: [stats]
+      summary: Pull the latest Meta Ads insights now (admin)
+      responses:
+        "200":
+          description: Sync result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MetaSyncResult"
+
 components:
   schemas:
     HealthStatus:
@@ -1498,6 +1714,75 @@ components:
         - objectPath
         - width
         - height
+
+    GenerateBriefRequest:
+      type: object
+      properties:
+        force:
+          type: boolean
+          description: Replace an existing approved/dispatched set without asking again
+        variants:
+          type: integer
+          minimum: 1
+          maximum: 3
+          description: AI copy options to generate per size (artwork is shared)
+
+    CampaignIdeasRequest:
+      type: object
+      properties:
+        brandId:
+          type: integer
+      required:
+        - brandId
+
+    CampaignIdea:
+      type: object
+      properties:
+        title:
+          type: string
+        objective:
+          type: string
+        keyMessage:
+          type: string
+        notes:
+          type: string
+        sizes:
+          type: array
+          items:
+            type: string
+        rationale:
+          type: string
+      required:
+        - title
+        - notes
+        - sizes
+
+    CampaignIdeasResponse:
+      type: object
+      properties:
+        ideas:
+          type: array
+          items:
+            $ref: "#/components/schemas/CampaignIdea"
+      required:
+        - ideas
+
+    AnalyzeUrlRequest:
+      type: object
+      properties:
+        url:
+          type: string
+      required:
+        - url
+
+    EditAssetImageRequest:
+      type: object
+      properties:
+        instruction:
+          type: string
+          description: Plain-language description of the artwork change
+      required:
+        - instruction
 
     AnalyzeGuidelineResponse:
       type: object
@@ -1664,6 +1949,9 @@ components:
           type: number
         h:
           type: number
+        slot:
+          type: string
+          description: "Composition slot: photo | cutout | scrim | panel | band | headline | subheadline | message | cta | ctaLabel | ctaIcon | lockup | logo"
         role:
           type: string
         text:
@@ -1765,6 +2053,13 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/FreeformElement"
+        adaptMethod:
+          type: string
+          description: "How an adapted template was derived: recomposed:<class> | key-visual | panel | scaled"
+        adaptNotes:
+          type: array
+          items: { type: string }
+          description: What the adapt engine decided and what a designer should check
 
     Template:
       type: object
@@ -1789,6 +2084,9 @@ components:
           $ref: "#/components/schemas/TemplateConfig"
         sourceImageUrl:
           type: ["string", "null"]
+        sourceTemplateId:
+          type: ["integer", "null"]
+          description: The master this template was adapted from
         createdBy:
           type: ["string", "null"]
         createdAt:
@@ -2161,6 +2459,97 @@ components:
           items: { type: string }
       required: [campaignName, projectNumbers, deliverables, uniqueSizes, warnings]
 
+    ImportExampleRequest:
+      type: object
+      properties:
+        objectPath:
+          type: string
+          minLength: 1
+        fileName:
+          type: string
+          minLength: 1
+        brandId:
+          type: integer
+      required: [objectPath, fileName]
+
+    ImportExampleResult:
+      type: object
+      properties:
+        kind:
+          type: string
+          enum: [package, idml, pdf, psd, image]
+        templates:
+          type: array
+          items:
+            $ref: "#/components/schemas/Template"
+        warnings:
+          type: array
+          items: { type: string }
+        assetsImported:
+          type: integer
+      required: [kind, templates, warnings, assetsImported]
+
+    CampaignBuildPlanRequest:
+      type: object
+      properties:
+        masterTemplateIds:
+          type: array
+          items: { type: integer }
+        sizes:
+          type: array
+          items:
+            type: object
+            properties:
+              width: { type: number }
+              height: { type: number }
+              unit: { type: string }
+              names:
+                type: array
+                items: { type: string }
+            required: [width, height]
+        campaignName:
+          type: string
+      required: [masterTemplateIds, sizes]
+
+    CampaignBuildPlan:
+      type: object
+      properties:
+        jobs:
+          type: array
+          items:
+            type: object
+            properties:
+              masterId: { type: integer }
+              masterName: { type: string }
+              width: { type: integer }
+              height: { type: integer }
+              name: { type: string }
+              variant: { type: ["string", "null"] }
+              sourceLabel: { type: string }
+              aspectDistance: { type: number }
+              recomposed: { type: boolean }
+              formatClass: { type: string, description: "tower | portrait | square | landscape | wide | strip" }
+              formatLabel: { type: string, description: "Catalog or brief deliverable name for the size" }
+              method: { type: string, description: "scale | recompose" }
+              needsReview: { type: boolean, description: "No example shares the target's shape class; rebuilt from the recipe alone" }
+            required: [masterId, masterName, width, height, name, sourceLabel, aspectDistance, recomposed]
+        variants:
+          type: array
+          items: { type: string }
+        skipped:
+          type: array
+          items:
+            type: object
+            properties:
+              width: { type: number }
+              height: { type: number }
+              reason: { type: string }
+            required: [width, height, reason]
+        warnings:
+          type: array
+          items: { type: string }
+      required: [jobs, variants, skipped, warnings]
+
     ImportPackageRequest:
       type: object
       properties:
@@ -2197,6 +2586,10 @@ components:
           type: integer
         idmlTemplateId:
           type: ["integer", "null"]
+        idmlTemplateIds:
+          type: array
+          items:
+            type: integer
         idmlWarnings:
           type: array
           items:
@@ -2933,6 +3326,72 @@ components:
         - updated
         - tags
 
+    MetaPerformance:
+      type: object
+      properties:
+        configured:
+          type: boolean
+        lastSyncedAt:
+          type: ["string", "null"]
+        days:
+          type: integer
+        currency:
+          type: ["string", "null"]
+        totals:
+          type: object
+          properties:
+            impressions: { type: integer }
+            reach: { type: integer }
+            clicks: { type: integer }
+            linkClicks: { type: integer }
+            spend: { type: number }
+            ctr: { type: number }
+            cpm: { type: number }
+            cpc: { type: number }
+          required: [impressions, reach, clicks, linkClicks, spend, ctr, cpm, cpc]
+        timeseries:
+          type: array
+          items:
+            type: object
+            properties:
+              day: { type: string }
+              impressions: { type: integer }
+              linkClicks: { type: integer }
+              spend: { type: number }
+            required: [day, impressions, linkClicks, spend]
+        ads:
+          type: array
+          items:
+            type: object
+            properties:
+              adId: { type: string }
+              adName: { type: string }
+              campaignName: { type: ["string", "null"] }
+              adsetName: { type: ["string", "null"] }
+              impressions: { type: integer }
+              reach: { type: integer }
+              linkClicks: { type: integer }
+              spend: { type: number }
+              ctr: { type: number }
+              cpm: { type: number }
+              templateId: { type: ["integer", "null"] }
+              templateName: { type: ["string", "null"] }
+              briefId: { type: ["integer", "null"] }
+              briefCampaignName: { type: ["string", "null"] }
+            required: [adId, adName, impressions, reach, linkClicks, spend, ctr, cpm]
+      required: [configured, lastSyncedAt, days, currency, totals, timeseries, ads]
+    MetaSyncResult:
+      type: object
+      properties:
+        ok: { type: boolean }
+        configured: { type: boolean }
+        days: { type: integer }
+        fetched: { type: integer }
+        upserted: { type: integer }
+        errors:
+          type: array
+          items: { type: string }
+      required: [ok, configured, days, fetched, upserted, errors]
     PerformanceStats:
       type: object
       properties:

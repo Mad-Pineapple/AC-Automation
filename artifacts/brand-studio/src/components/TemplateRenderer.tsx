@@ -1,5 +1,5 @@
 import { Brand, FreeformElement, Template } from "@workspace/api-client-react";
-import { useSyncExternalStore } from "react";
+import { useEffect, useState, useSyncExternalStore } from "react";
 
 export type LayoutOptions = {
   contentAlignment?: "top" | "center" | "bottom";
@@ -92,6 +92,133 @@ function CtaLabel({ text }: { text: string }) {
   );
 }
 
+type CanvasFormat = "ultraStrip" | "wideStrip" | "landscape" | "square" | "poster" | "story";
+
+interface CanvasDesign {
+  format: CanvasFormat;
+  headlineSize: number;
+  bodySize: number;
+  ctaSize: number;
+  bodyLines: number;
+  showBody: boolean;
+  /** Where the copy block sits vertically — designers don't centre everything. */
+  anchor: "top" | "center" | "bottom";
+  /** Insets that keep copy clear of platform UI (Meta story chrome). */
+  safeTop: number;
+  safeBottom: number;
+  /** Copy measure: long lines are unreadable, so cap the text column. */
+  copyWidth: string;
+  /** Composition axis for awkward canvases (measured from shipped AC creative:
+   *  wide → image left / panel right; tall → image top / panel bottom). */
+  split: "none" | "vertical" | "horizontal";
+  /** Fraction of the canvas the IMAGE zone occupies when split. */
+  imageFraction: number;
+  /** Message-line size for the panel on split canvases. */
+  messageSize: number;
+}
+
+/**
+ * Make the layout decisions a designer would make for THIS canvas, instead of
+ * scaling one template up and down.
+ *
+ * Two ideas do most of the work:
+ *  - Type is sized off the SHORT axis (how a designer judges a canvas), so a
+ *    970×250 banner gets banner-sized type rather than type derived from its
+ *    970px width, and an A4 poster gets poster-sized type.
+ *  - Elements earn their place: body copy is dropped where there is no room
+ *    for it, rather than being crushed to an illegible size.
+ */
+function designFor(
+  width: number,
+  height: number,
+  headline: string | undefined,
+  hasBody: boolean,
+): CanvasDesign {
+  const short = Math.min(width, height);
+  const ratio = width / height;
+  const area = width * height;
+
+  const format: CanvasFormat =
+    ratio >= 5 ? "ultraStrip"
+    : ratio >= 2 ? "wideStrip"
+    : ratio >= 1.25 ? "landscape"
+    : ratio >= 0.85 ? "square"
+    : ratio >= 0.62 ? "poster"
+    : "story";
+
+  // Extreme ratios use the split composition measured off the shipped Get
+  // Ready statics: the axis follows the canvas. Tall posters split too when
+  // they lean narrow (384×592 OOH does; A4 at 0.71 stays full-bleed).
+  const split: CanvasDesign["split"] =
+    format === "wideStrip" ? "vertical" : ratio <= 0.68 ? "horizontal" : "none";
+  // Measured: DV360 970×250 gives the photo ~65% / panel ~35%; the talls give
+  // the photo the top ~55% with the panel on the bottom ~38% (band eats the rest).
+  const imageFraction = split === "vertical" ? 0.65 : 0.55;
+
+  const margin = Math.max(8, short / 18);
+
+  // ---- Headline: on a split canvas it lives ON THE PHOTO (every shipped
+  // example does this), so it is sized against the IMAGE zone, not the panel.
+  const hlBoxW = (split === "vertical" ? width * imageFraction : width) - margin * 2;
+  const hlBoxH = (split === "horizontal" ? height * imageFraction : height) - margin * 2;
+
+  // Ceilings measured off the statics: display type runs ~38% of the short
+  // axis on wides, ~20% of the width on talls; full-bleed formats keep the
+  // earlier scales. Box-fitting below pulls long sentences back down.
+  const headlineScale: Record<CanvasFormat, number> = {
+    ultraStrip: 0.34,
+    wideStrip: 0.38,
+    landscape: 0.12,
+    square: 0.095,
+    poster: 0.085,
+    story: 0.115,
+  };
+  const hlCeiling =
+    split === "horizontal" ? width * 0.2 : short * headlineScale[format];
+
+  const chars = Math.max(1, (headline ?? "").length);
+  // The share of its box the headline block may claim: most of the image zone
+  // when split (nothing else lives there); less when it shares with body+CTA.
+  const showBody = split !== "none" ? hasBody : hasBody && format !== "ultraStrip" && short >= 200 && area >= 120_000;
+  const headlineShare = split !== "none" ? 0.7 : showBody ? 0.46 : 0.62;
+
+  let headlineSize = hlCeiling;
+  for (let i = 0; i < 40; i++) {
+    const lines = Math.max(1, Math.ceil((chars * headlineSize * 0.52) / Math.max(1, hlBoxW)));
+    if (lines * headlineSize * 1.1 <= hlBoxH * headlineShare) break;
+    headlineSize *= 0.92;
+  }
+  headlineSize = Math.max(11, headlineSize);
+
+  // ---- Panel message line (split canvases): sized to the panel, bold and
+  // short — "Make a plan today." — never paragraph copy.
+  const panelW = (split === "vertical" ? width * (1 - imageFraction) : width) - margin * 2;
+  const messageSize = Math.min(30, Math.max(13, panelW * 0.085));
+
+  const bodySize =
+    split !== "none" ? messageSize : Math.max(9, headlineSize * (format === "poster" ? 0.3 : 0.34));
+  // Shipped AC banners keep the search pill at ~43px tall on both a 300×600
+  // and a 970×250 — placed at a legibility floor, not scaled with the canvas.
+  const ctaFloor = Math.min(19, short * 0.075);
+  const ctaSize = Math.max(11, ctaFloor, headlineSize * (format === "ultraStrip" ? 0.5 : 0.32));
+
+  return {
+    format,
+    headlineSize,
+    bodySize,
+    ctaSize,
+    bodyLines: split !== "none" ? 2 : format === "poster" ? 4 : 3,
+    showBody,
+    anchor: format === "story" ? "center" : format === "landscape" ? "center" : "bottom",
+    safeTop: format === "story" && split === "none" ? height * 0.14 : 0,
+    safeBottom: format === "story" && split === "none" ? height * 0.16 : 0,
+    copyWidth: format === "landscape" ? "58%" : "100%",
+    split,
+    imageFraction,
+    messageSize,
+  };
+}
+
 function BrandCanvas({
   brand,
   headline,
@@ -103,18 +230,27 @@ function BrandCanvas({
   isAnimated,
   layout,
 }: TemplateProps & { width: number; height: number; layout?: LayoutOptions }) {
+  const design = designFor(width, height, headline ?? undefined, !!bodyText);
   const showAccentBar = layout?.showAccentBar !== false;
   const showLogoBar = layout?.showLogoBar !== false;
   const imageMode = layout?.imageStyle ?? "background";
   // Very wide & short formats (e.g. 728×90 banners) can't use the vertical
   // headline/body/CTA stack — it crushes the headline to ~10px. They get a
   // dedicated horizontal "strip" layout instead.
-  const isStrip = width >= 300 && height <= width * 0.35;
-  const useSideImage = !isStrip && imageMode === "side" && !!imageUrl;
-  const useBgImage = !!imageUrl && (imageMode === "background" || isStrip);
+  const isStrip = design.format === "ultraStrip";
+  // A split composition owns the image placement, so the legacy "side image"
+  // mode must stand down — otherwise it both moves the photo to the wrong
+  // half AND reserves half the canvas, collapsing the copy column to zero.
+  const useSideImage = !isStrip && design.split === "none" && imageMode === "side" && !!imageUrl;
+  // A split composition places the photo in its own zone, so it always uses
+  // the background treatment regardless of the template's image mode.
+  const useBgImage = !!imageUrl && (imageMode === "background" || isStrip || design.split !== "none");
   // Legible ink for marks set on the brand's primary colour (CTA, logo bar).
   const onPrimary = readableOn(brand.primaryColor);
-  const textAlign: "left" | "center" | "right" = layout?.textAlign ?? "left";
+  // Split-canvas panels are centre-aligned in every shipped example,
+  // regardless of what the template's layout options say.
+  const textAlign: "left" | "center" | "right" =
+    design.split !== "none" ? "center" : (layout?.textAlign ?? "left");
   const alignItems = textAlign === "center" ? "center" : textAlign === "right" ? "flex-end" : "flex-start";
   const justifyContent =
     layout?.contentAlignment === "top"
@@ -123,9 +259,13 @@ function BrandCanvas({
         ? "flex-end"
         : layout?.contentAlignment === "center"
           ? "center"
-          : imageUrl
-            ? "flex-end"
-            : "center";
+          : design.split !== "none"
+            ? "center"
+            : design.anchor === "top"
+              ? "flex-start"
+              : design.anchor === "bottom"
+                ? "flex-end"
+                : "center";
 
   const style: React.CSSProperties = {
     width,
@@ -205,10 +345,18 @@ function BrandCanvas({
 
   const contentArea: React.CSSProperties = {
     position: "absolute",
-    top: margin,
-    left: margin,
-    right: useSideImage ? Math.max(contentRight, width * 0.5) : contentRight,
-    bottom: showStrapline ? margin + Math.round(tile * 0.55) : margin,
+    // On a split canvas this area IS the message panel (the headline lives
+    // over the photo, rendered separately): message + CTA, centred.
+    top:
+      design.split === "horizontal"
+        ? `calc(${design.imageFraction * 100}% + ${margin}px)`
+        : margin + design.safeTop,
+    left: design.split === "vertical" ? `calc(${design.imageFraction * 100}% + ${margin}px)` : margin,
+    right: design.split !== "none" ? margin : useSideImage ? Math.max(contentRight, width * 0.5) : contentRight,
+    bottom:
+      design.split !== "none"
+        ? margin + (showLogoTile ? Math.round(tile * 0.4) : 0)
+        : (showStrapline ? margin + Math.round(tile * 0.55) : margin) + design.safeBottom,
     display: "flex",
     flexDirection: "column",
     justifyContent,
@@ -219,27 +367,44 @@ function BrandCanvas({
   };
 
   const headlineStyle: React.CSSProperties = {
-    fontSize: Math.max(10, Math.min(width * 0.065, height * 0.065)),
+    fontSize: design.headlineSize,
     fontWeight: 700,
-    lineHeight: 1.15,
+    // Display type sets tighter; small type needs air.
+    lineHeight: design.headlineSize > 48 ? 1.05 : 1.15,
     color: useBgImage ? "#ffffff" : brand.textColor,
     letterSpacing: "-0.02em",
     textAlign,
     textShadow: useBgImage ? "0 1px 4px rgba(0,0,0,0.45)" : "none",
   };
 
-  const bodyStyle: React.CSSProperties = {
-    fontSize: Math.max(9, width * 0.03),
-    lineHeight: 1.4,
-    color: useBgImage ? "#ffffff" : brand.textColor,
-    opacity: useBgImage ? 0.95 : 0.85,
-    textAlign,
-    textShadow: useBgImage ? "0 1px 3px rgba(0,0,0,0.4)" : "none",
-    display: "-webkit-box",
-    WebkitLineClamp: 3,
-    WebkitBoxOrient: "vertical",
-    overflow: "hidden",
-  };
+  const bodyStyle: React.CSSProperties =
+    design.split !== "none"
+      ? {
+          // The panel message line — "Make a plan today." — bold, Kōwhai
+          // yellow on a dark panel (as in every Get Ready static), dark ink
+          // on a light one.
+          fontSize: design.messageSize,
+          lineHeight: 1.25,
+          fontWeight: 700,
+          color: onPrimary === "#ffffff" ? "#ffe104" : brand.textColor,
+          textAlign,
+          display: "-webkit-box",
+          WebkitLineClamp: design.bodyLines,
+          WebkitBoxOrient: "vertical",
+          overflow: "hidden",
+        }
+      : {
+          fontSize: design.bodySize,
+          lineHeight: 1.4,
+          color: useBgImage ? "#ffffff" : brand.textColor,
+          opacity: useBgImage ? 0.95 : 0.85,
+          textAlign,
+          textShadow: useBgImage ? "0 1px 3px rgba(0,0,0,0.4)" : "none",
+          display: "-webkit-box",
+          WebkitLineClamp: design.bodyLines,
+          WebkitBoxOrient: "vertical",
+          overflow: "hidden",
+        };
 
   // Sized to shipped AC posters: the search pill is discreet — text at body
   // size, total pill height ≈ 4% of the canvas, snug horizontal padding so
@@ -247,16 +412,20 @@ function BrandCanvas({
   const ctaStyle: React.CSSProperties = {
     display: "inline-flex",
     alignItems: "center",
-    backgroundColor: brand.primaryColor,
-    color: onPrimary,
-    fontSize: Math.max(11, width * 0.022),
+    // On a split canvas the pill sits on the solid brand panel, so it flips to
+    // white-on-dark exactly like the shipped Get Ready OOH search bars.
+    backgroundColor: design.split === "none" ? brand.primaryColor : "#ffffff",
+    color: design.split === "none" ? onPrimary : brand.primaryColor,
+    fontSize: design.ctaSize,
     fontWeight: 700,
-    padding: `${Math.max(5, height * 0.011)}px ${Math.max(12, width * 0.028)}px`,
+    padding: `${Math.max(5, design.ctaSize * 0.55)}px ${Math.max(12, design.ctaSize * 1.25)}px`,
     borderRadius: 9999,
     // Guidelines: CTAs are sentence case (search-bar treatment supplies its
     // own per-word weights/tracking via CtaLabel) — never uppercase.
     alignSelf: textAlign === "center" ? "center" : textAlign === "right" ? "flex-end" : "flex-start",
     marginTop: Math.max(4, height * 0.01),
+    whiteSpace: "nowrap" as const,
+    maxWidth: "100%",
   };
 
   const sideImageStyle: React.CSSProperties = {
@@ -286,14 +455,74 @@ function BrandCanvas({
     pointerEvents: "none",
   };
 
+  // When the canvas is split, the photo is confined to its zone and
+  // cover-cropped inside it (shipped AC creative crops oversized and offsets
+  // the subject rather than letterboxing).
   const bgImageStyle: React.CSSProperties = {
     position: "absolute",
-    inset: 0,
-    width: "100%",
-    height: "100%",
+    top: 0,
+    left: 0,
+    width: design.split === "vertical" ? `${design.imageFraction * 100}%` : "100%",
+    height: design.split === "horizontal" ? `${design.imageFraction * 100}%` : "100%",
     objectFit: "cover",
     objectPosition: "center",
     zIndex: 0,
+  };
+
+  // On split canvases the display headline sits ON the photograph, centred in
+  // the image zone — every shipped Get Ready static does this in every size.
+  const imageHeadlineStyle: React.CSSProperties = {
+    position: "absolute",
+    zIndex: 2,
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    textAlign: "center",
+    padding: margin,
+    color: "#ffffff",
+    fontWeight: 700,
+    fontSize: design.headlineSize,
+    lineHeight: design.headlineSize > 48 ? 1.05 : 1.15,
+    letterSpacing: "-0.02em",
+    textShadow: "0 2px 8px rgba(0,0,0,0.55)",
+    ...(design.split === "vertical"
+      ? { top: 0, bottom: 0, left: 0, width: `${design.imageFraction * 100}%` }
+      : { top: 0, left: 0, right: 0, height: `${design.imageFraction * 100}%` }),
+  };
+
+  // Light scrim over just the image zone so the headline stays legible.
+  const imageZoneScrimStyle: React.CSSProperties = {
+    position: "absolute",
+    zIndex: 1,
+    background: "linear-gradient(180deg, rgba(0,0,0,0.30) 0%, rgba(0,0,0,0.12) 55%, rgba(0,0,0,0.30) 100%)",
+    ...(design.split === "vertical"
+      ? { top: 0, bottom: 0, left: 0, width: `${design.imageFraction * 100}%` }
+      : { top: 0, left: 0, right: 0, height: `${design.imageFraction * 100}%` }),
+  };
+
+  // The solid brand-colour message panel that carries copy on split canvases.
+  const panelStyle: React.CSSProperties = {
+    position: "absolute",
+    zIndex: 1,
+    backgroundColor: brand.primaryColor,
+    ...(design.split === "vertical"
+      ? { top: 0, bottom: 0, right: 0, width: `${(1 - design.imageFraction) * 100}%` }
+      : { left: 0, right: 0, bottom: 0, height: `${(1 - design.imageFraction) * 100}%` }),
+  };
+
+  // Kotahitanga pattern band on the seam between image and panel — Kōwhai and
+  // Shore tohu shapes on Ocean, as used on the Get Ready OOH.
+  const seamBand = Math.max(6, Math.round(Math.min(width, height) * 0.055));
+  const bandStyle: React.CSSProperties = {
+    position: "absolute",
+    zIndex: 2,
+    backgroundColor: brand.primaryColor,
+    backgroundImage:
+      `repeating-linear-gradient(90deg, #ffe104 0 ${seamBand * 0.5}px, transparent ${seamBand * 0.5}px ${seamBand}px),` +
+      `repeating-linear-gradient(90deg, transparent 0 ${seamBand}px, #0073bd ${seamBand}px ${seamBand * 1.6}px)`,
+    ...(design.split === "vertical"
+      ? { top: 0, right: 0, width: `${(1 - design.imageFraction) * 100}%`, height: seamBand }
+      : { left: 0, right: 0, top: `${design.imageFraction * 100}%`, height: seamBand, transform: `translateY(-${seamBand / 2}px)` }),
   };
 
   // Darker at top and (especially) bottom where copy sits, lighter through the
@@ -381,7 +610,7 @@ function BrandCanvas({
     textOverflow: "ellipsis",
   };
 
-  const contentMaxWidth = "100%";
+  const contentMaxWidth = design.copyWidth;
 
   const animationStyle = isAnimated
     ? { animation: "brandPulse 2.5s ease-in-out infinite" }
@@ -410,7 +639,19 @@ function BrandCanvas({
       `}</style>
 
       {useBgImage && <img src={imageUrl!} alt="" style={bgImageStyle} />}
-      {useBgImage && <div style={isStrip ? stripScrimStyle : scrimStyle} />}
+      {useBgImage && design.split === "none" && <div style={isStrip ? stripScrimStyle : scrimStyle} />}
+      {design.split !== "none" && (
+        <>
+          {useBgImage && <div style={imageZoneScrimStyle} />}
+          <div style={panelStyle} />
+          <div style={bandStyle} />
+          {headline && (
+            <div style={imageHeadlineStyle} data-animate="headline">
+              <span>{headline}</span>
+            </div>
+          )}
+        </>
+      )}
 
       {showAccentBar && <div style={accentBar} />}
 
@@ -438,12 +679,12 @@ function BrandCanvas({
       ) : (
         <>
           <div style={contentArea}>
-            {headline && (
+            {headline && design.split === "none" && (
               <div style={{ ...headlineStyle, maxWidth: contentMaxWidth }} data-animate="headline">
                 {headline}
               </div>
             )}
-            {bodyText && (
+            {bodyText && design.showBody && (
               <div style={{ ...bodyStyle, maxWidth: contentMaxWidth }} data-animate="body">
                 {bodyText}
               </div>
@@ -558,11 +799,51 @@ export function freeformImageStyle(el: FreeformElement): React.CSSProperties {
   return { objectFit: fit, objectPosition, borderRadius: el.radius ?? 0 };
 }
 
+/**
+ * Cap-height frames (`baselineFit: "cap"`): InDesign auto-sized frames hug
+ * the cap height, and the server renderer puts the single line's baseline on
+ * the frame's bottom edge. CSS would instead top-align the line box, sitting
+ * the glyphs ~0.25em lower than the export. Measure the resolved font and
+ * shift the line so its baseline lands on the frame bottom too.
+ */
+let capFitCanvas: CanvasRenderingContext2D | null | undefined;
+export function capFitShift(el: FreeformElement, fontFamilyCss: string): number {
+  const fit = (el as { baselineFit?: string }).baselineFit;
+  if (fit !== "cap" || !el.text || el.text.includes("\n") || !(el.h && el.h > 0)) return 0;
+  try {
+    if (capFitCanvas === undefined) capFitCanvas = document.createElement("canvas").getContext("2d");
+    if (!capFitCanvas) return 0;
+    const fs = el.fontSize ?? 16;
+    capFitCanvas.font = `${el.fontStyle === "italic" ? "italic" : "normal"} ${el.fontWeight ?? 400} ${fs}px ${fontFamilyCss}`;
+    const m = capFitCanvas.measureText("Hg");
+    const asc = m.fontBoundingBoxAscent ?? fs * 0.8;
+    const desc = m.fontBoundingBoxDescent ?? fs * 0.2;
+    const lineHeightPx = (el.lineHeight ?? 1.2) * fs;
+    const baselineFromTop = (lineHeightPx - (asc + desc)) / 2 + asc;
+    return Math.round((el.h - baselineFromTop) * 10) / 10;
+  } catch {
+    return 0;
+  }
+}
+
+/** Re-render once web fonts finish loading so cap-fit measurements use the real face. */
+export function useFontsReady(): boolean {
+  const [ready, setReady] = useState<boolean>(() => (typeof document !== "undefined" && "fonts" in document ? document.fonts.status === "loaded" : true));
+  useEffect(() => {
+    if (ready || typeof document === "undefined" || !("fonts" in document)) return;
+    let alive = true;
+    document.fonts.ready.then(() => { if (alive) setReady(true); });
+    return () => { alive = false; };
+  }, [ready]);
+  return ready;
+}
+
 export function freeformTextStyle(el: FreeformElement, brandFontFamily: string): React.CSSProperties {
+  const fontFamilyCss = el.fontFamily ? `"${el.fontFamily}", ${brandFontStack(brandFontFamily)}` : brandFontStack(brandFontFamily);
+  const shift = capFitShift(el, fontFamilyCss);
   return {
-    fontFamily: el.fontFamily
-      ? `"${el.fontFamily}", ${brandFontStack(brandFontFamily)}`
-      : brandFontStack(brandFontFamily),
+    ...(shift ? { transform: `translateY(${shift}px)` } : {}),
+    fontFamily: fontFamilyCss,
     fontSize: el.fontSize ?? 16,
     fontWeight: el.fontWeight ?? 400,
     fontStyle: el.fontStyle === "italic" ? "italic" : "normal",
@@ -588,6 +869,7 @@ function FreeformCanvas({
   isAnimated,
   elements,
 }: TemplateProps & { width: number; height: number; elements: FreeformElement[] }) {
+  useFontsReady();
   const containerStyle: React.CSSProperties = {
     width,
     height,
@@ -635,7 +917,9 @@ function FreeformCanvas({
             <div
               key={el.id ?? `el-${i}`}
               data-animate={animate}
-              style={{ ...freeformBaseStyle(el, i + 1), height: "auto", ...freeformTextStyle(el, brand.fontFamily) }}
+              // Copy always sits on top: text z-indexes live in a band above
+              // every image/rect layer, preserving order among the texts.
+              style={{ ...freeformBaseStyle(el, i + 1001), height: "auto", ...freeformTextStyle(el, brand.fontFamily) }}
             >
               {text}
             </div>

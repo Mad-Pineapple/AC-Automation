@@ -266,8 +266,8 @@ export default function LearnArtwork() {
           <ChevronLeft className="w-5 h-5" />
         </Link>
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Learn New Artwork</h1>
-          <p className="text-muted-foreground text-sm font-mono mt-1 uppercase tracking-widest">
+          <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight">Learn New Artwork</h1>
+          <p className="text-muted-foreground mt-1.5">
             Teach The Studio One Or More Finished Creatives
           </p>
         </div>

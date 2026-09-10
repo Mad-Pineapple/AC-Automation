@@ -2,9 +2,10 @@ import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Link } from "wouter";
-import { Clock, Briefcase, FileImage, Send, ArrowUpRight, FileUp, PlusCircle, LayoutTemplate, BarChart3 } from "lucide-react";
+import { Clock, Briefcase, FileImage, Send, ArrowUpRight, FileUp, PlusCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { useListBrands, useListTemplates } from "@workspace/api-client-react";
+import { useListBrands, useListTemplates, useListBriefs } from "@workspace/api-client-react";
+import { CampaignIdeasPanel } from "@/components/CampaignIdeas";
 import { useUser } from "@clerk/react";
 import { TemplateThumbnail } from "@/components/TemplateRenderer";
 import { cn } from "@/lib/utils";
@@ -64,31 +65,26 @@ export default function Dashboard() {
   const { data: activity, isLoading: activityLoading } = useRecentActivity(viewMine);
   const { data: brands } = useListBrands();
   const { data: templates } = useListTemplates();
+  const { data: briefs } = useListBriefs();
+  const pendingBriefs = (briefs ?? []).filter((b) => b.status === "pending_approval");
   const { user } = useUser();
   const firstName = user?.firstName ?? null;
   const today = new Date().toLocaleDateString(undefined, { weekday: "long", day: "numeric", month: "long" });
   const recentTemplates = (templates ?? [])
     .filter((t) => (t.config as { kind?: string })?.kind === "freeform")
-    .slice(-6)
-    .reverse();
-  const quickActions = [
-    { title: "Import artwork", desc: "PDF or InDesign package", href: "/templates/import", icon: FileUp, tint: "#0073bd" },
-    { title: "New brief", desc: "Generate a campaign", href: "/briefs/new", icon: PlusCircle, tint: "#de0a2b" },
-    { title: "Templates", desc: "Masters & adaptations", href: "/templates", icon: LayoutTemplate, tint: "#5b9c33" },
-    { title: "Performance", desc: "Creative analytics", href: "/performance", icon: BarChart3, tint: "#11263d" },
-  ];
-
+    // The API lists templates newest first.
+    .slice(0, 6);
   // Tile accents derive from the active brand's palette (white-label) with a
   // neutral success green for "dispatched" (status colour, not brand colour).
   const metrics = [
     {
-      title: "Total Briefs",
+      title: "Campaigns",
       value: stats?.totalBriefs,
       icon: Briefcase,
       tint: theme.secondaryHex,
     },
     {
-      title: "Pending Approval",
+      title: "Awaiting review",
       value: stats?.pendingApproval,
       icon: Clock,
       tint: theme.accentHex,
@@ -101,7 +97,7 @@ export default function Dashboard() {
       tint: "#5b9c33",
     },
     {
-      title: "Total Assets",
+      title: "Assets",
       value: stats?.totalAssets,
       icon: FileImage,
       tint: theme.primaryHex,
@@ -110,107 +106,105 @@ export default function Dashboard() {
 
   return (
     <div className="space-y-8 w-full">
-      {/* Header */}
-      <div className="flex items-end justify-between gap-4 flex-wrap">
-        <div>
-          <p className="text-sm font-medium text-muted-foreground">{today}</p>
-          <h1 className="text-3xl md:text-4xl font-bold tracking-tight text-foreground mt-1">
+      {/* Hero band — Ocean gradient with the kotahitanga waves as texture
+          (guidelines: patterns as subtle background rows, ≤30% opacity). */}
+      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-[#11263d] via-[#16324e] to-[#183a68] text-white p-7 md:p-10 shadow-lg">
+        <svg
+          aria-hidden
+          viewBox="0 0 1200 160"
+          preserveAspectRatio="none"
+          className="pointer-events-none absolute inset-x-0 bottom-0 h-24 md:h-32 w-full"
+        >
+          <path d="M0 60 Q75 20 150 60 T300 60 T450 60 T600 60 T750 60 T900 60 T1050 60 T1200 60 V160 H0 Z" fill="#0073bd" opacity="0.18" />
+          <path d="M0 95 Q75 55 150 95 T300 95 T450 95 T600 95 T750 95 T900 95 T1050 95 T1200 95 V160 H0 Z" fill="#00a7e5" opacity="0.12" />
+          <path d="M0 130 Q75 95 150 130 T300 130 T450 130 T600 130 T750 130 T900 130 T1050 130 T1200 130 V160 H0 Z" fill="#ffffff" opacity="0.08" />
+        </svg>
+        <div className="relative">
+          <span className="inline-block text-[11px] font-bold uppercase tracking-[0.2em] text-white/70 bg-white/10 rounded-full px-3 py-1">
+            {today}
+          </span>
+          <h1 className="text-4xl md:text-5xl font-extrabold tracking-tight mt-3">
             {firstName ? `Kia ora, ${firstName}` : "Kia ora"}
           </h1>
-          <p className="text-muted-foreground mt-1.5">Here's what's happening across your creative today.</p>
-        </div>
-        <div className="flex items-center gap-1 bg-muted rounded-full p-1">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => setViewMine(false)}
-            className={cn(
-              "rounded-full",
-              !viewMine ? "bg-card shadow-sm text-foreground" : "text-muted-foreground",
-            )}
-            data-testid="button-view-all"
-          >
-            All activity
-          </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => setViewMine(true)}
-            className={cn(
-              "rounded-full",
-              viewMine ? "bg-card shadow-sm text-foreground" : "text-muted-foreground",
-            )}
-            data-testid="button-view-mine"
-          >
-            My activity
-          </Button>
-        </div>
-      </div>
+          <p className="text-white/70 mt-2 max-w-md">
+            Here's what's happening across your creative today.
+          </p>
 
-      {/* Quick actions */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        {quickActions.map((a) => (
-          <Link key={a.title} href={a.href}>
-            <div
-              className="group bg-card rounded-2xl border border-border/60 p-5 flex items-center gap-4 shadow-sm hover:shadow-lg hover:-translate-y-0.5 hover:border-primary/30 transition-all duration-200 cursor-pointer"
-              data-testid={`quick-${a.title.toLowerCase().replace(/\s+/g, "-")}`}
-            >
-              <div
-                className="w-11 h-11 rounded-xl flex items-center justify-center shrink-0"
-                style={{ backgroundColor: `color-mix(in srgb, ${a.tint} 12%, white)`, color: a.tint }}
+          {/* Primary path first: the app's main job is starting a campaign. */}
+          <div className="flex flex-wrap items-center gap-3 mt-6">
+            <Link href="/briefs/new">
+              <Button size="lg" className="rounded-full bg-white text-[#11263d] hover:bg-white/90 font-semibold gap-2 shadow-md">
+                <PlusCircle className="w-4 h-4" />
+                Start a new campaign
+              </Button>
+            </Link>
+            <Link href="/wip/import">
+              <Button
+                size="lg"
+                variant="ghost"
+                className="rounded-full text-white border border-white/25 hover:bg-white/10 hover:text-white gap-2"
               >
-                <a.icon className="w-5 h-5" />
-              </div>
-              <div className="min-w-0">
-                <p className="font-semibold text-sm text-foreground">{a.title}</p>
-                <p className="text-xs text-muted-foreground truncate">{a.desc}</p>
-              </div>
-              <ArrowUpRight className="w-4 h-4 ml-auto text-muted-foreground/40 group-hover:text-primary transition-colors shrink-0" />
-            </div>
-          </Link>
-        ))}
-      </div>
-
-      {/* Metrics */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-        {metrics.map((m) => (
-          <div
-            key={m.title}
-            className={cn(
-              "bg-card rounded-3xl p-6 border shadow-sm hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200",
-              m.alert ? "border-destructive/40" : "border-border/60",
-            )}
-            data-testid={`stat-${m.title.toLowerCase().replace(/\s+/g, "-")}`}
-          >
-            <div
-              className={cn(
-                "w-12 h-12 rounded-2xl flex items-center justify-center mb-4",
-                m.alert && "bg-destructive/10 text-destructive",
-              )}
-              style={
-                m.alert
-                  ? undefined
-                  : { backgroundColor: `color-mix(in srgb, ${m.tint} 12%, white)`, color: m.tint }
-              }
-            >
-              <m.icon className="w-6 h-6" />
-            </div>
-            <h3 className="text-sm font-medium text-muted-foreground mb-1">{m.title}</h3>
-            {statsLoading ? (
-              <Skeleton className="h-9 w-16" />
-            ) : (
-              <span
-                className={cn(
-                  "text-3xl font-bold tracking-tight",
-                  m.alert ? "text-destructive" : "text-foreground",
-                )}
-              >
-                {m.value ?? 0}
-              </span>
-            )}
+                <FileUp className="w-4 h-4" />
+                Import artwork
+              </Button>
+            </Link>
           </div>
-        ))}
+
+          {/* At-a-glance numbers, inline — no competing card row below. */}
+          <div className="flex flex-wrap items-center gap-x-8 gap-y-3 mt-7 pt-6 border-t border-white/15">
+            {metrics.map((m) => (
+              <div key={m.title} className="flex items-center gap-2.5">
+                <m.icon className={cn("w-4 h-4", m.alert ? "text-[#ff8a9b]" : "text-white/50")} />
+                {statsLoading ? (
+                  <Skeleton className="h-6 w-8 bg-white/20" />
+                ) : (
+                  <span className={cn("text-2xl font-extrabold tracking-tight", m.alert && "text-[#ff8a9b]")}>
+                    {m.value ?? 0}
+                  </span>
+                )}
+                <span className="text-xs text-white/60">{m.title}</span>
+              </div>
+            ))}
+          </div>
+        </div>
       </div>
+
+      {/* Needs your attention — the single clearest "what do I do next". */}
+      {pendingBriefs.length > 0 && (
+        <div className="bg-card rounded-3xl border border-border/60 shadow-sm overflow-hidden">
+          <div className="flex items-center justify-between gap-3 px-6 md:px-8 pt-6 pb-4">
+            <div className="flex items-center gap-2.5">
+              <span className="w-8 h-8 rounded-xl bg-destructive/10 text-destructive flex items-center justify-center">
+                <Clock className="w-4 h-4" />
+              </span>
+              <h2 className="text-xl font-bold text-foreground">Needs your review</h2>
+            </div>
+            <Link href="/briefs">
+              <Button variant="ghost" size="sm" className="rounded-full text-primary hover:bg-primary/10 font-medium">
+                All campaigns
+              </Button>
+            </Link>
+          </div>
+          <div className="divide-y divide-border/60">
+            {pendingBriefs.slice(0, 4).map((b) => (
+              <Link key={b.id} href={`/briefs/${b.id}/approve`}>
+                <div className="group flex items-center gap-4 px-6 md:px-8 py-4 hover:bg-muted/40 transition-colors cursor-pointer">
+                  <div className="min-w-0 flex-1">
+                    <p className="font-semibold text-sm truncate text-foreground">{b.campaignName}</p>
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      {b.assetCount} asset{b.assetCount === 1 ? "" : "s"} waiting · {b.brand?.name ?? ""}
+                    </p>
+                  </div>
+                  <Button size="sm" className="rounded-full gap-1.5 shrink-0">
+                    Review
+                    <ArrowUpRight className="w-3.5 h-3.5" />
+                  </Button>
+                </div>
+              </Link>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Recent templates */}
       {recentTemplates.length > 0 && brands?.[0] && (
@@ -250,14 +244,39 @@ export default function Dashboard() {
         </div>
       )}
 
+      <CampaignIdeasPanel />
+
       {/* Content grid */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Recent activity */}
         <div className="lg:col-span-2 bg-card rounded-3xl p-6 md:p-8 border border-border/60 shadow-sm">
           <div className="flex items-center justify-between mb-6">
-            <h2 className="text-xl font-bold text-foreground">
-              {viewMine ? "My Recent Activity" : "Recent Activity"}
-            </h2>
+            <h2 className="text-xl font-bold text-foreground">Recent activity</h2>
+            <div className="flex items-center gap-2">
+              <div className="flex items-center gap-0.5 bg-muted rounded-full p-0.5">
+                <button
+                  type="button"
+                  onClick={() => setViewMine(false)}
+                  className={cn(
+                    "rounded-full px-3 py-1 text-xs font-medium transition-colors",
+                    !viewMine ? "bg-card shadow-sm text-foreground" : "text-muted-foreground hover:text-foreground",
+                  )}
+                  data-testid="button-view-all"
+                >
+                  Everyone
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setViewMine(true)}
+                  className={cn(
+                    "rounded-full px-3 py-1 text-xs font-medium transition-colors",
+                    viewMine ? "bg-card shadow-sm text-foreground" : "text-muted-foreground hover:text-foreground",
+                  )}
+                  data-testid="button-view-mine"
+                >
+                  Just me
+                </button>
+              </div>
             <Link href="/briefs">
               <Button
                 variant="ghost"
@@ -268,6 +287,7 @@ export default function Dashboard() {
                 View all
               </Button>
             </Link>
+            </div>
           </div>
 
           {activityLoading ? (

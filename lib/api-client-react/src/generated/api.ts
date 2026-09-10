@@ -26,6 +26,7 @@ import type {
   AdaptTemplateRequest,
   AnalyzeGuidelineRequest,
   AnalyzeGuidelineResponse,
+  AnalyzeUrlRequest,
   Asset,
   AssetComment,
   AssetCommentInput,
@@ -45,8 +46,13 @@ import type {
   BulkAdTagResult,
   BulkBriefInput,
   Campaign,
+  CampaignBuildPlan,
+  CampaignBuildPlanRequest,
+  CampaignIdeasRequest,
+  CampaignIdeasResponse,
   CampaignInput,
   CampaignUpdate,
+  ClearWipTemplates200,
   CollateralPlan,
   CollateralPlanRequest,
   ComparisonNote,
@@ -57,14 +63,22 @@ import type {
   DissectImageRequest,
   DissectPdfRequest,
   DissectPdfResult,
+  EditAssetImageRequest,
   ErrorResponse,
+  GenerateBriefRequest,
+  GetMetaPerformanceParams,
   GetRecentActivityParams,
   HealthStatus,
+  ImportExampleRequest,
+  ImportExampleResult,
   ImportPackageRequest,
   ImportPackageResult,
   ListAssetsParams,
   ListBriefsParams,
   ListComparisonNotesParams,
+  ListTemplatesParams,
+  MetaPerformance,
+  MetaSyncResult,
   ParseBriefDocumentRequest,
   ParseBriefDocumentResult,
   PerformanceStats,
@@ -615,20 +629,27 @@ export const useAnalyzeBrandGuideline = <TError = ErrorType<ErrorResponse>,
       return useMutation(getAnalyzeBrandGuidelineMutationOptions(options));
     }
 
-export const getListTemplatesUrl = () => {
+export const getListTemplatesUrl = (params?: ListTemplatesParams,) => {
+  const normalizedParams = new URLSearchParams();
 
+  Object.entries(params || {}).forEach(([key, value]) => {
 
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : value.toString())
+    }
+  });
 
+  const stringifiedParams = normalizedParams.toString();
 
-  return `/api/templates`
+  return stringifiedParams.length > 0 ? `/api/templates?${stringifiedParams}` : `/api/templates`
 }
 
 /**
  * @summary List all custom templates
  */
-export const listTemplates = async ( options?: RequestInit): Promise<Template[]> => {
+export const listTemplates = async (params?: ListTemplatesParams, options?: RequestInit): Promise<Template[]> => {
 
-  return customFetch<Template[]>(getListTemplatesUrl(),
+  return customFetch<Template[]>(getListTemplatesUrl(params),
   {
     ...options,
     method: 'GET'
@@ -641,23 +662,23 @@ export const listTemplates = async ( options?: RequestInit): Promise<Template[]>
 
 
 
-export const getListTemplatesQueryKey = () => {
+export const getListTemplatesQueryKey = (params?: ListTemplatesParams,) => {
     return [
-    `/api/templates`
+    `/api/templates`, ...(params ? [params] : [])
     ] as const;
     }
 
 
-export const getListTemplatesQueryOptions = <TData = Awaited<ReturnType<typeof listTemplates>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listTemplates>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+export const getListTemplatesQueryOptions = <TData = Awaited<ReturnType<typeof listTemplates>>, TError = ErrorType<unknown>>(params?: ListTemplatesParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listTemplates>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
 ) => {
 
 const {query: queryOptions, request: requestOptions} = options ?? {};
 
-  const queryKey =  queryOptions?.queryKey ?? getListTemplatesQueryKey();
+  const queryKey =  queryOptions?.queryKey ?? getListTemplatesQueryKey(params);
 
 
 
-    const queryFn: QueryFunction<Awaited<ReturnType<typeof listTemplates>>> = ({ signal }) => listTemplates({ signal, ...requestOptions });
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listTemplates>>> = ({ signal }) => listTemplates(params, { signal, ...requestOptions });
 
 
 
@@ -675,11 +696,11 @@ export type ListTemplatesQueryError = ErrorType<unknown>
  */
 
 export function useListTemplates<TData = Awaited<ReturnType<typeof listTemplates>>, TError = ErrorType<unknown>>(
-  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listTemplates>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+ params?: ListTemplatesParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listTemplates>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
 
  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
 
-  const queryOptions = getListTemplatesQueryOptions(options)
+  const queryOptions = getListTemplatesQueryOptions(params,options)
 
   const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
 
@@ -980,6 +1001,76 @@ export const useDeleteTemplate = <TError = ErrorType<unknown>,
         TContext
       > => {
       return useMutation(getDeleteTemplateMutationOptions(options));
+    }
+
+export const getClearWipTemplatesUrl = () => {
+
+
+
+
+  return `/api/templates/clear-wip`
+}
+
+/**
+ * @summary Delete every work-in-progress template not referenced by an asset
+ */
+export const clearWipTemplates = async ( options?: RequestInit): Promise<ClearWipTemplates200> => {
+
+  return customFetch<ClearWipTemplates200>(getClearWipTemplatesUrl(),
+  {
+    ...options,
+    method: 'POST'
+
+
+  }
+);}
+
+
+
+
+export const getClearWipTemplatesMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof clearWipTemplates>>, TError,void, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof clearWipTemplates>>, TError,void, TContext> => {
+
+const mutationKey = ['clearWipTemplates'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof clearWipTemplates>>, void> = () => {
+
+
+          return  clearWipTemplates(requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type ClearWipTemplatesMutationResult = NonNullable<Awaited<ReturnType<typeof clearWipTemplates>>>
+
+    export type ClearWipTemplatesMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Delete every work-in-progress template not referenced by an asset
+ */
+export const useClearWipTemplates = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof clearWipTemplates>>, TError,void, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof clearWipTemplates>>,
+        TError,
+        void,
+        TContext
+      > => {
+      return useMutation(getClearWipTemplatesMutationOptions(options));
     }
 
 export const getAdaptTemplateUrl = (id: number,) => {
@@ -1478,6 +1569,148 @@ export const useParseCollateralPlan = <TError = ErrorType<unknown>,
         TContext
       > => {
       return useMutation(getParseCollateralPlanMutationOptions(options));
+    }
+
+export const getImportExampleArtworkUrl = () => {
+
+
+
+
+  return `/api/templates/import-example`
+}
+
+/**
+ * @summary Import example artwork of any kind as master template(s)
+ */
+export const importExampleArtwork = async (importExampleRequest: ImportExampleRequest, options?: RequestInit): Promise<ImportExampleResult> => {
+
+  return customFetch<ImportExampleResult>(getImportExampleArtworkUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      importExampleRequest,)
+  }
+);}
+
+
+
+
+export const getImportExampleArtworkMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof importExampleArtwork>>, TError,{data: BodyType<ImportExampleRequest>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof importExampleArtwork>>, TError,{data: BodyType<ImportExampleRequest>}, TContext> => {
+
+const mutationKey = ['importExampleArtwork'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof importExampleArtwork>>, {data: BodyType<ImportExampleRequest>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  importExampleArtwork(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type ImportExampleArtworkMutationResult = NonNullable<Awaited<ReturnType<typeof importExampleArtwork>>>
+    export type ImportExampleArtworkMutationBody = BodyType<ImportExampleRequest>
+    export type ImportExampleArtworkMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Import example artwork of any kind as master template(s)
+ */
+export const useImportExampleArtwork = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof importExampleArtwork>>, TError,{data: BodyType<ImportExampleRequest>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof importExampleArtwork>>,
+        TError,
+        {data: BodyType<ImportExampleRequest>},
+        TContext
+      > => {
+      return useMutation(getImportExampleArtworkMutationOptions(options));
+    }
+
+export const getPlanCampaignBuildUrl = () => {
+
+
+
+
+  return `/api/campaigns/build-plan`
+}
+
+/**
+ * @summary Match every brief size to the closest-shaped example artwork
+ */
+export const planCampaignBuild = async (campaignBuildPlanRequest: CampaignBuildPlanRequest, options?: RequestInit): Promise<CampaignBuildPlan> => {
+
+  return customFetch<CampaignBuildPlan>(getPlanCampaignBuildUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      campaignBuildPlanRequest,)
+  }
+);}
+
+
+
+
+export const getPlanCampaignBuildMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof planCampaignBuild>>, TError,{data: BodyType<CampaignBuildPlanRequest>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof planCampaignBuild>>, TError,{data: BodyType<CampaignBuildPlanRequest>}, TContext> => {
+
+const mutationKey = ['planCampaignBuild'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof planCampaignBuild>>, {data: BodyType<CampaignBuildPlanRequest>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  planCampaignBuild(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type PlanCampaignBuildMutationResult = NonNullable<Awaited<ReturnType<typeof planCampaignBuild>>>
+    export type PlanCampaignBuildMutationBody = BodyType<CampaignBuildPlanRequest>
+    export type PlanCampaignBuildMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Match every brief size to the closest-shaped example artwork
+ */
+export const usePlanCampaignBuild = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof planCampaignBuild>>, TError,{data: BodyType<CampaignBuildPlanRequest>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof planCampaignBuild>>,
+        TError,
+        {data: BodyType<CampaignBuildPlanRequest>},
+        TContext
+      > => {
+      return useMutation(getPlanCampaignBuildMutationOptions(options));
     }
 
 export const getImportBrandPackageUrl = (brandId: number,) => {
@@ -3190,14 +3423,16 @@ export const getGenerateBriefAssetsUrl = (id: number,) => {
 /**
  * @summary Trigger AI generation for a brief
  */
-export const generateBriefAssets = async (id: number, options?: RequestInit): Promise<Brief> => {
+export const generateBriefAssets = async (id: number,
+    generateBriefRequest?: GenerateBriefRequest, options?: RequestInit): Promise<Brief> => {
 
   return customFetch<Brief>(getGenerateBriefAssetsUrl(id),
   {
     ...options,
-    method: 'POST'
-
-
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      generateBriefRequest,)
   }
 );}
 
@@ -3205,8 +3440,8 @@ export const generateBriefAssets = async (id: number, options?: RequestInit): Pr
 
 
 export const getGenerateBriefAssetsMutationOptions = <TError = ErrorType<unknown>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof generateBriefAssets>>, TError,{id: number}, TContext>, request?: SecondParameter<typeof customFetch>}
-): UseMutationOptions<Awaited<ReturnType<typeof generateBriefAssets>>, TError,{id: number}, TContext> => {
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof generateBriefAssets>>, TError,{id: number;data?: BodyType<GenerateBriefRequest>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof generateBriefAssets>>, TError,{id: number;data?: BodyType<GenerateBriefRequest>}, TContext> => {
 
 const mutationKey = ['generateBriefAssets'];
 const {mutation: mutationOptions, request: requestOptions} = options ?
@@ -3218,10 +3453,10 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
 
 
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof generateBriefAssets>>, {id: number}> = (props) => {
-          const {id} = props ?? {};
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof generateBriefAssets>>, {id: number;data?: BodyType<GenerateBriefRequest>}> = (props) => {
+          const {id,data} = props ?? {};
 
-          return  generateBriefAssets(id,requestOptions)
+          return  generateBriefAssets(id,data,requestOptions)
         }
 
 
@@ -3232,21 +3467,235 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
   return  { mutationFn, ...mutationOptions }}
 
     export type GenerateBriefAssetsMutationResult = NonNullable<Awaited<ReturnType<typeof generateBriefAssets>>>
-
+    export type GenerateBriefAssetsMutationBody = BodyType<GenerateBriefRequest> | undefined
     export type GenerateBriefAssetsMutationError = ErrorType<unknown>
 
     /**
  * @summary Trigger AI generation for a brief
  */
 export const useGenerateBriefAssets = <TError = ErrorType<unknown>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof generateBriefAssets>>, TError,{id: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof generateBriefAssets>>, TError,{id: number;data?: BodyType<GenerateBriefRequest>}, TContext>, request?: SecondParameter<typeof customFetch>}
  ): UseMutationResult<
         Awaited<ReturnType<typeof generateBriefAssets>>,
         TError,
-        {id: number},
+        {id: number;data?: BodyType<GenerateBriefRequest>},
         TContext
       > => {
       return useMutation(getGenerateBriefAssetsMutationOptions(options));
+    }
+
+export const getSuggestCampaignIdeasUrl = () => {
+
+
+
+
+  return `/api/campaign-ideas`
+}
+
+/**
+ * @summary Suggest timely campaign ideas for a brand
+ */
+export const suggestCampaignIdeas = async (campaignIdeasRequest: CampaignIdeasRequest, options?: RequestInit): Promise<CampaignIdeasResponse> => {
+
+  return customFetch<CampaignIdeasResponse>(getSuggestCampaignIdeasUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      campaignIdeasRequest,)
+  }
+);}
+
+
+
+
+export const getSuggestCampaignIdeasMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof suggestCampaignIdeas>>, TError,{data: BodyType<CampaignIdeasRequest>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof suggestCampaignIdeas>>, TError,{data: BodyType<CampaignIdeasRequest>}, TContext> => {
+
+const mutationKey = ['suggestCampaignIdeas'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof suggestCampaignIdeas>>, {data: BodyType<CampaignIdeasRequest>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  suggestCampaignIdeas(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type SuggestCampaignIdeasMutationResult = NonNullable<Awaited<ReturnType<typeof suggestCampaignIdeas>>>
+    export type SuggestCampaignIdeasMutationBody = BodyType<CampaignIdeasRequest>
+    export type SuggestCampaignIdeasMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Suggest timely campaign ideas for a brand
+ */
+export const useSuggestCampaignIdeas = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof suggestCampaignIdeas>>, TError,{data: BodyType<CampaignIdeasRequest>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof suggestCampaignIdeas>>,
+        TError,
+        {data: BodyType<CampaignIdeasRequest>},
+        TContext
+      > => {
+      return useMutation(getSuggestCampaignIdeasMutationOptions(options));
+    }
+
+export const getAnalyzeBrandUrlUrl = () => {
+
+
+
+
+  return `/api/brands/analyze-url`
+}
+
+/**
+ * @summary Build brand-field suggestions from a public website URL
+ */
+export const analyzeBrandUrl = async (analyzeUrlRequest: AnalyzeUrlRequest, options?: RequestInit): Promise<AnalyzeGuidelineResponse> => {
+
+  return customFetch<AnalyzeGuidelineResponse>(getAnalyzeBrandUrlUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      analyzeUrlRequest,)
+  }
+);}
+
+
+
+
+export const getAnalyzeBrandUrlMutationOptions = <TError = ErrorType<ErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof analyzeBrandUrl>>, TError,{data: BodyType<AnalyzeUrlRequest>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof analyzeBrandUrl>>, TError,{data: BodyType<AnalyzeUrlRequest>}, TContext> => {
+
+const mutationKey = ['analyzeBrandUrl'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof analyzeBrandUrl>>, {data: BodyType<AnalyzeUrlRequest>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  analyzeBrandUrl(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type AnalyzeBrandUrlMutationResult = NonNullable<Awaited<ReturnType<typeof analyzeBrandUrl>>>
+    export type AnalyzeBrandUrlMutationBody = BodyType<AnalyzeUrlRequest>
+    export type AnalyzeBrandUrlMutationError = ErrorType<ErrorResponse>
+
+    /**
+ * @summary Build brand-field suggestions from a public website URL
+ */
+export const useAnalyzeBrandUrl = <TError = ErrorType<ErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof analyzeBrandUrl>>, TError,{data: BodyType<AnalyzeUrlRequest>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof analyzeBrandUrl>>,
+        TError,
+        {data: BodyType<AnalyzeUrlRequest>},
+        TContext
+      > => {
+      return useMutation(getAnalyzeBrandUrlMutationOptions(options));
+    }
+
+export const getEditAssetImageUrl = (id: number,) => {
+
+
+
+
+  return `/api/assets/${id}/edit-image`
+}
+
+/**
+ * @summary Apply a prompt-based edit to an asset's generated artwork
+ */
+export const editAssetImage = async (id: number,
+    editAssetImageRequest: EditAssetImageRequest, options?: RequestInit): Promise<Asset> => {
+
+  return customFetch<Asset>(getEditAssetImageUrl(id),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      editAssetImageRequest,)
+  }
+);}
+
+
+
+
+export const getEditAssetImageMutationOptions = <TError = ErrorType<ErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof editAssetImage>>, TError,{id: number;data: BodyType<EditAssetImageRequest>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof editAssetImage>>, TError,{id: number;data: BodyType<EditAssetImageRequest>}, TContext> => {
+
+const mutationKey = ['editAssetImage'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof editAssetImage>>, {id: number;data: BodyType<EditAssetImageRequest>}> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  editAssetImage(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type EditAssetImageMutationResult = NonNullable<Awaited<ReturnType<typeof editAssetImage>>>
+    export type EditAssetImageMutationBody = BodyType<EditAssetImageRequest>
+    export type EditAssetImageMutationError = ErrorType<ErrorResponse>
+
+    /**
+ * @summary Apply a prompt-based edit to an asset's generated artwork
+ */
+export const useEditAssetImage = <TError = ErrorType<ErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof editAssetImage>>, TError,{id: number;data: BodyType<EditAssetImageRequest>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof editAssetImage>>,
+        TError,
+        {id: number;data: BodyType<EditAssetImageRequest>},
+        TContext
+      > => {
+      return useMutation(getEditAssetImageMutationOptions(options));
     }
 
 export const getApproveBriefUrl = (id: number,) => {
@@ -5022,4 +5471,298 @@ export function useGetPerformanceStats<TData = Awaited<ReturnType<typeof getPerf
 
 
 
+
+export const getClaudeReviewTemplateUrl = (id: number,) => {
+
+
+
+
+  return `/api/templates/${id}/claude-review`
+}
+
+/**
+ * @summary Ask Claude, the studio's final reviewer, to judge this piece (advisory verdict + element-level issues, stored on the template)
+ */
+export const claudeReviewTemplate = async (id: number, options?: RequestInit): Promise<Template> => {
+
+  return customFetch<Template>(getClaudeReviewTemplateUrl(id),
+  {
+    ...options,
+    method: 'POST'
+
+
+  }
+);}
+
+
+
+
+export const getClaudeReviewTemplateMutationOptions = <TError = ErrorType<ErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof claudeReviewTemplate>>, TError,{id: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof claudeReviewTemplate>>, TError,{id: number}, TContext> => {
+
+const mutationKey = ['claudeReviewTemplate'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof claudeReviewTemplate>>, {id: number}> = (props) => {
+          const {id} = props ?? {};
+
+          return  claudeReviewTemplate(id,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type ClaudeReviewTemplateMutationResult = NonNullable<Awaited<ReturnType<typeof claudeReviewTemplate>>>
+
+    export type ClaudeReviewTemplateMutationError = ErrorType<ErrorResponse>
+
+    /**
+ * @summary Ask Claude, the studio's final reviewer, to judge this piece (advisory verdict + element-level issues, stored on the template)
+ */
+export const useClaudeReviewTemplate = <TError = ErrorType<ErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof claudeReviewTemplate>>, TError,{id: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof claudeReviewTemplate>>,
+        TError,
+        {id: number},
+        TContext
+      > => {
+      return useMutation(getClaudeReviewTemplateMutationOptions(options));
+    }
+
+export const getUndoClaudeReviewTemplateUrl = (id: number,) => {
+
+
+
+
+  return `/api/templates/${id}/claude-review/undo`
+}
+
+/**
+ * @summary Put the piece's elements back as they were before Claude's fixes
+ */
+export const undoClaudeReviewTemplate = async (id: number, options?: RequestInit): Promise<Template> => {
+
+  return customFetch<Template>(getUndoClaudeReviewTemplateUrl(id),
+  {
+    ...options,
+    method: 'POST'
+
+
+  }
+);}
+
+
+
+
+export const getUndoClaudeReviewTemplateMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof undoClaudeReviewTemplate>>, TError,{id: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof undoClaudeReviewTemplate>>, TError,{id: number}, TContext> => {
+
+const mutationKey = ['undoClaudeReviewTemplate'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof undoClaudeReviewTemplate>>, {id: number}> = (props) => {
+          const {id} = props ?? {};
+
+          return  undoClaudeReviewTemplate(id,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UndoClaudeReviewTemplateMutationResult = NonNullable<Awaited<ReturnType<typeof undoClaudeReviewTemplate>>>
+
+    export type UndoClaudeReviewTemplateMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Put the piece's elements back as they were before Claude's fixes
+ */
+export const useUndoClaudeReviewTemplate = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof undoClaudeReviewTemplate>>, TError,{id: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof undoClaudeReviewTemplate>>,
+        TError,
+        {id: number},
+        TContext
+      > => {
+      return useMutation(getUndoClaudeReviewTemplateMutationOptions(options));
+    }
+
+export const getGetMetaPerformanceUrl = (params?: GetMetaPerformanceParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : value.toString())
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/performance/meta?${stringifiedParams}` : `/api/performance/meta`
+}
+
+/**
+ * @summary Meta Ads results (impressions, link clicks, spend) joined to studio creative
+ */
+export const getMetaPerformance = async (params?: GetMetaPerformanceParams, options?: RequestInit): Promise<MetaPerformance> => {
+
+  return customFetch<MetaPerformance>(getGetMetaPerformanceUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetMetaPerformanceQueryKey = (params?: GetMetaPerformanceParams,) => {
+    return [
+    `/api/performance/meta`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getGetMetaPerformanceQueryOptions = <TData = Awaited<ReturnType<typeof getMetaPerformance>>, TError = ErrorType<unknown>>(params?: GetMetaPerformanceParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getMetaPerformance>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetMetaPerformanceQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getMetaPerformance>>> = ({ signal }) => getMetaPerformance(params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getMetaPerformance>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetMetaPerformanceQueryResult = NonNullable<Awaited<ReturnType<typeof getMetaPerformance>>>
+export type GetMetaPerformanceQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Meta Ads results (impressions, link clicks, spend) joined to studio creative
+ */
+
+export function useGetMetaPerformance<TData = Awaited<ReturnType<typeof getMetaPerformance>>, TError = ErrorType<unknown>>(
+ params?: GetMetaPerformanceParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getMetaPerformance>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetMetaPerformanceQueryOptions(params,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
+
+export const getSyncMetaPerformanceUrl = () => {
+
+
+
+
+  return `/api/performance/meta/sync`
+}
+
+/**
+ * @summary Pull the latest Meta Ads insights now (admin)
+ */
+export const syncMetaPerformance = async ( options?: RequestInit): Promise<MetaSyncResult> => {
+
+  return customFetch<MetaSyncResult>(getSyncMetaPerformanceUrl(),
+  {
+    ...options,
+    method: 'POST'
+
+
+  }
+);}
+
+
+
+
+export const getSyncMetaPerformanceMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof syncMetaPerformance>>, TError,void, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof syncMetaPerformance>>, TError,void, TContext> => {
+
+const mutationKey = ['syncMetaPerformance'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof syncMetaPerformance>>, void> = () => {
+
+
+          return  syncMetaPerformance(requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type SyncMetaPerformanceMutationResult = NonNullable<Awaited<ReturnType<typeof syncMetaPerformance>>>
+
+    export type SyncMetaPerformanceMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Pull the latest Meta Ads insights now (admin)
+ */
+export const useSyncMetaPerformance = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof syncMetaPerformance>>, TError,void, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof syncMetaPerformance>>,
+        TError,
+        void,
+        TContext
+      > => {
+      return useMutation(getSyncMetaPerformanceMutationOptions(options));
+    }
 

@@ -51,13 +51,14 @@ export default function EditBrief() {
   const updateBrief = useUpdateBrief();
   const { data: brands, isLoading: brandsLoading } = useListBrands();
   const { data: campaigns } = useListCampaigns();
-  const { data: customTemplates } = useListTemplates();
+  const { data: customTemplates } = useListTemplates({ include: "knowledge" });
   // Templates (custom formats and learned creatives) are reusable layouts that
   // aren't tied to a brand's supported sizes, so they stay selectable in any brief.
   const customKeys = new Set((customTemplates ?? []).map(t => t.key));
   const sizeOptions = [
     ...ALL_TEMPLATE_SIZES.map(k => ({ key: k, label: TEMPLATE_SIZE_LABELS[k] })),
-    ...(customTemplates ?? []).map(t => ({ key: t.key, label: `${t.name} (${t.dims})` })),
+    // WIP imports aren't offered until promoted to a real template.
+    ...(customTemplates ?? []).filter(t => t.category !== "wip").map(t => ({ key: t.key, label: `${t.name} (${t.dims})` })),
   ];
   const { data: brief, isLoading } = useGetBrief(briefId, {
     query: { enabled: !!briefId, queryKey: getGetBriefQueryKey(briefId) },
@@ -169,8 +170,8 @@ export default function EditBrief() {
           <ChevronLeft className="w-5 h-5" />
         </Link>
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Edit Brief</h1>
-          <p className="text-muted-foreground text-sm font-mono mt-1 uppercase tracking-widest">Update Your Campaign</p>
+          <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight">Edit campaign</h1>
+          <p className="text-muted-foreground mt-1.5">Update this campaign</p>
         </div>
       </div>
 

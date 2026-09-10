@@ -85,7 +85,7 @@ export default function CampaignDetail() {
             <ChevronLeft className="w-5 h-5" />
           </Link>
           <div>
-            <h1 className="text-3xl font-bold tracking-tight">{campaign.name}</h1>
+            <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight">{campaign.name}</h1>
             {campaign.description && <p className="text-muted-foreground text-sm mt-1">{campaign.description}</p>}
             {(start || end) && (
               <div className="flex items-center gap-1.5 text-xs text-muted-foreground font-mono mt-2">

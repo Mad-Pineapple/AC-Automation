@@ -181,3 +181,53 @@ export function loadNational2(): Promise<Record<400 | 700, LoadedFont>> {
 export function hasFontFamily(family: string): boolean {
   return GlobalFonts.has(family);
 }
+
+/** Family name from an sfnt's name table (nameID 16 preferred, then 1). */
+export function readSfntFamilyName(sfnt: Uint8Array): string | null {
+  try {
+    const buf = Buffer.from(sfnt.buffer, sfnt.byteOffset, sfnt.byteLength);
+    const numTables = buf.readUInt16BE(4);
+    let nameOff: number | null = null;
+    for (let i = 0; i < numTables; i++) {
+      const d = 12 + i * 16;
+      if (buf.toString("latin1", d, d + 4) === "name") nameOff = buf.readUInt32BE(d + 8);
+    }
+    if (nameOff == null) return null;
+    const count = buf.readUInt16BE(nameOff + 2);
+    const stringBase = nameOff + buf.readUInt16BE(nameOff + 4);
+    let family: string | null = null;
+    let preferred: string | null = null;
+    for (let i = 0; i < count; i++) {
+      const r = nameOff + 6 + i * 12;
+      const platformId = buf.readUInt16BE(r);
+      const nameId = buf.readUInt16BE(r + 6);
+      if (nameId !== 1 && nameId !== 16) continue;
+      const length = buf.readUInt16BE(r + 8);
+      const start = stringBase + buf.readUInt16BE(r + 10);
+      const raw = Buffer.from(buf.subarray(start, start + length));
+      // Windows/Unicode platforms store UTF-16BE; Mac stores single-byte.
+      const value = platformId === 3 || platformId === 0 ? raw.swap16().toString("utf16le") : raw.toString("latin1");
+      const clean = value.replace(/\0/g, "").trim();
+      if (!clean) continue;
+      if (nameId === 16) preferred = preferred ?? clean;
+      else family = family ?? clean;
+    }
+    return preferred ?? family;
+  } catch {
+    return null;
+  }
+}
+
+/** Register a font file (TTF/OTF/WOFF1) with the canvas under its own family
+ * name, returning that name. Safe to call repeatedly. */
+export function registerFontFromBytes(bytes: Uint8Array): string | null {
+  try {
+    const sfnt = woffToSfnt(bytes);
+    const family = readSfntFamilyName(sfnt);
+    if (!family) return null;
+    GlobalFonts.register(Buffer.from(sfnt.buffer, sfnt.byteOffset, sfnt.byteLength), family);
+    return family;
+  } catch {
+    return null;
+  }
+}

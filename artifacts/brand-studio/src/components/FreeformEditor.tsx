@@ -1,4 +1,5 @@
-import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
+import type React from "react";
+import { type ReactNode, useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { Brand, FreeformElement } from "@workspace/api-client-react";
 import { useUpload } from "@workspace/object-storage-web";
 import {
@@ -7,6 +8,7 @@ import {
   freeformImageStyle,
   freeformRectStyle,
   freeformTextStyle,
+  useFontsReady,
 } from "@/components/TemplateRenderer";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -28,6 +30,10 @@ import {
   Loader2,
   Undo2,
   Redo2,
+  Lock,
+  Unlock,
+  Ruler,
+  Maximize2,
 } from "lucide-react";
 
 const TEXT_ROLES = ["headline", "subhead", "body", "cta", "other"] as const;
@@ -49,6 +55,22 @@ const HANDLE_POS: Record<Handle, { left: string; top: string; cursor: string }> 
   sw: { left: "0%", top: "100%", cursor: "nesw-resize" },
   w: { left: "0%", top: "50%", cursor: "ew-resize" },
 };
+
+/** Keep the original aspect ratio while a CORNER handle is dragged: the
+ * larger of the two relative changes wins, and the opposite corner stays put.
+ * Edge handles resize one axis and are returned unchanged. */
+function constrainBox(orig: Box, handle: Handle, box: Box): Box {
+  if (handle.length !== 2 || orig.w <= 0 || orig.h <= 0) return box;
+  const s = Math.max(box.w / orig.w, box.h / orig.h);
+  const w = Math.max(MIN_SIZE, Math.round(orig.w * s));
+  const h = Math.max(MIN_SIZE, Math.round(orig.h * s));
+  return {
+    x: handle.includes("w") ? orig.x + orig.w - w : orig.x,
+    y: handle.includes("n") ? orig.y + orig.h - h : orig.y,
+    w,
+    h,
+  };
+}
 
 function resizeBox(orig: Box, handle: Handle, dx: number, dy: number): Box {
   let { x, y, w, h } = orig;
@@ -77,6 +99,17 @@ interface FreeformEditorProps {
   brand: Brand;
   initialElements: FreeformElement[];
   onChange: (elements: FreeformElement[]) => void;
+  /** Reviewer feedback hooks: verdicts on a specific element. */
+  onMarkWrong?: (el: FreeformElement) => void;
+  onMarkCorrect?: (el: FreeformElement) => void;
+  /** Extra controls rendered in the canvas toolbar, after Proportional and Guides. */
+  toolbarExtra?: ReactNode;
+}
+
+interface DragMember {
+  id: string;
+  orig: Box;
+  fontSize?: number;
 }
 
 interface DragState {
@@ -85,12 +118,30 @@ interface DragState {
   id: string;
   startX: number;
   startY: number;
+  /** Bounding box of everything being dragged (one element or a group). */
   orig: Box;
+  members: DragMember[];
 }
 
-export function FreeformEditor({ width, height, brand, initialElements, onChange }: FreeformEditorProps) {
+function unionBox(boxes: Box[]): Box {
+  const x1 = Math.min(...boxes.map((b) => b.x));
+  const y1 = Math.min(...boxes.map((b) => b.y));
+  const x2 = Math.max(...boxes.map((b) => b.x + b.w));
+  const y2 = Math.max(...boxes.map((b) => b.y + b.h));
+  return { x: x1, y: y1, w: x2 - x1, h: y2 - y1 };
+}
+
+export function FreeformEditor({ width, height, brand, initialElements, onChange, onMarkWrong, onMarkCorrect, toolbarExtra }: FreeformEditorProps) {
+  useFontsReady();
   const [els, setEls] = useState<FreeformElement[]>(initialElements);
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  // Extra members of a Shift-click group; selectedId stays the primary
+  // (the inspector edits it), the group moves and resizes together.
+  const [groupIds, setGroupIds] = useState<string[]>([]);
+  const [showGuides, setShowGuides] = useState(true);
+  // Corner-handle resizing keeps the aspect ratio while this is on; holding
+  // Shift during the drag flips it for that drag.
+  const [keepRatio, setKeepRatio] = useState(true);
   const [scale, setScale] = useState(1);
   const [, setHistTick] = useState(0);
 
@@ -106,6 +157,28 @@ export function FreeformEditor({ width, height, brand, initialElements, onChange
   }, [onChange]);
 
   const { uploadFile, isUploading } = useUpload();
+
+  const selectedIds = selectedId ? [selectedId, ...groupIds.filter((g) => g !== selectedId)] : [];
+  const selectedSet = new Set(selectedIds);
+  const selectOnly = (id: string | null) => {
+    setSelectedId(id);
+    setGroupIds([]);
+  };
+  /** Shift-click: add to or remove from the group. */
+  const toggleInSelection = (id: string) => {
+    if (!selectedId) {
+      setSelectedId(id);
+      return;
+    }
+    if (id === selectedId) {
+      // Dropping the primary promotes the next member, if any.
+      const [next, ...rest] = groupIds;
+      setSelectedId(next ?? null);
+      setGroupIds(rest);
+      return;
+    }
+    setGroupIds((g) => (g.includes(id) ? g.filter((x) => x !== id) : [...g, id]));
+  };
 
   // Fit the (width x height) canvas into the available column width AND the
   // viewport height, so tall masters (e.g. imported posters) don't force the
@@ -163,6 +236,7 @@ export function FreeformEditor({ width, height, brand, initialElements, onChange
     setEls(previous);
     onChangeRef.current(previous);
     setSelectedId(null);
+    setGroupIds([]);
     setHistTick((t) => t + 1);
   }, [els]);
 
@@ -174,6 +248,7 @@ export function FreeformEditor({ width, height, brand, initialElements, onChange
     setEls(next);
     onChangeRef.current(next);
     setSelectedId(null);
+    setGroupIds([]);
     setHistTick((t) => t + 1);
   }, [els]);
 
@@ -190,10 +265,20 @@ export function FreeformEditor({ width, height, brand, initialElements, onChange
   const beginDrag = (e: React.PointerEvent, el: FreeformElement, mode: "move" | "resize", handle?: Handle) => {
     if (e.button !== 0 || !el.id) return;
     e.stopPropagation();
-    setSelectedId(el.id);
-    // Locked elements stay selectable (so the panel can unlock them) but
-    // never drag or resize — that's the point of the lock.
-    if (el.locked) return;
+    // Shift-click builds a group instead of starting a drag.
+    if (e.shiftKey && mode === "move") {
+      toggleInSelection(el.id);
+      return;
+    }
+    const inSelection = selectedSet.has(el.id);
+    if (!inSelection) selectOnly(el.id);
+    // Dragging any member of the group drags the whole group; locked
+    // members stay selectable (so the panel can unlock them) but never move.
+    const ids = inSelection && selectedIds.length > 1 ? selectedIds : [el.id];
+    const members: DragMember[] = els
+      .filter((m) => m.id && ids.includes(m.id) && !m.locked)
+      .map((m) => ({ id: m.id!, orig: { x: m.x ?? 0, y: m.y ?? 0, w: m.w ?? 0, h: m.h ?? 0 }, ...(m.type === "text" ? { fontSize: m.fontSize } : {}) }));
+    if (members.length === 0) return;
     (e.currentTarget as Element).setPointerCapture(e.pointerId);
     dragStartElsRef.current = els;
     draggedRef.current = false;
@@ -203,7 +288,8 @@ export function FreeformEditor({ width, height, brand, initialElements, onChange
       id: el.id,
       startX: e.clientX,
       startY: e.clientY,
-      orig: { x: el.x ?? 0, y: el.y ?? 0, w: el.w ?? 0, h: el.h ?? 0 },
+      orig: unionBox(members.map((m) => m.orig)),
+      members,
     };
   };
 
@@ -213,13 +299,45 @@ export function FreeformEditor({ width, height, brand, initialElements, onChange
     draggedRef.current = true;
     const dx = (e.clientX - d.startX) / scale;
     const dy = (e.clientY - d.startY) / scale;
+    const byId = new Map(d.members.map((m) => [m.id, m]));
+    const group = d.members.length > 1;
+    // Resize: the group's bounding box follows the handle, every member is
+    // scaled inside it (text size follows the smaller axis scale).
+    const proportional = keepRatio !== e.shiftKey;
+    const fit = (orig: Box) => {
+      const box = resizeBox(orig, d.handle!, dx, dy);
+      return proportional ? constrainBox(orig, d.handle!, box) : box;
+    };
+    const nb = d.mode === "resize" ? fit(d.orig) : null;
+    const sx = nb ? nb.w / Math.max(1, d.orig.w) : 1;
+    const sy = nb ? nb.h / Math.max(1, d.orig.h) : 1;
     setEls((prev) =>
       prev.map((el) => {
-        if (el.id !== d.id) return el;
+        const m = el.id ? byId.get(el.id) : undefined;
+        if (!m) return el;
         if (d.mode === "move") {
-          return { ...el, x: Math.round(d.orig.x + dx), y: Math.round(d.orig.y + dy) };
+          return { ...el, x: Math.round(m.orig.x + dx), y: Math.round(m.orig.y + dy) };
         }
-        return { ...el, ...resizeBox(d.orig, d.handle!, dx, dy) };
+        if (!group) {
+          const box = fit(m.orig);
+          // Live copy scales with its box on a proportional corner drag, so
+          // the type grows or shrinks with the frame instead of reflowing.
+          if (el.type === "text" && m.fontSize && proportional && d.handle!.length === 2) {
+            const s = box.w / Math.max(1, m.orig.w);
+            return { ...el, ...box, fontSize: Math.max(6, Math.round(m.fontSize * s)) };
+          }
+          return { ...el, ...box };
+        }
+        const scaled = {
+          x: Math.round(nb!.x + (m.orig.x - d.orig.x) * sx),
+          y: Math.round(nb!.y + (m.orig.y - d.orig.y) * sy),
+          w: Math.max(1, Math.round(m.orig.w * sx)),
+          h: Math.max(1, Math.round(m.orig.h * sy)),
+        };
+        if (el.type === "text" && m.fontSize) {
+          return { ...el, ...scaled, fontSize: Math.max(6, Math.round(m.fontSize * Math.min(sx, sy))) };
+        }
+        return { ...el, ...scaled };
       }),
     );
   };
@@ -262,6 +380,10 @@ export function FreeformEditor({ width, height, brand, initialElements, onChange
       removeSelected();
       return;
     }
+    if (e.key === "Escape") {
+      selectOnly(null);
+      return;
+    }
     const step = e.shiftKey ? 10 : 1;
     const moves: Record<string, [number, number]> = {
       ArrowLeft: [-step, 0],
@@ -273,7 +395,7 @@ export function FreeformEditor({ width, height, brand, initialElements, onChange
     if (!m) return;
     e.preventDefault();
     mutate((prev) =>
-      prev.map((el) => (el.id === selectedId ? { ...el, x: (el.x ?? 0) + m[0], y: (el.y ?? 0) + m[1] } : el)),
+      prev.map((el) => (el.id && selectedSet.has(el.id) && !el.locked ? { ...el, x: (el.x ?? 0) + m[0], y: (el.y ?? 0) + m[1] } : el)),
     );
   };
 
@@ -290,18 +412,23 @@ export function FreeformEditor({ width, height, brand, initialElements, onChange
       el = { ...base, type: "image", role: "decoration", src: null };
     }
     mutate((prev) => [...prev, el]);
-    setSelectedId(el.id!);
+    selectOnly(el.id!);
   };
 
   const removeSelected = () => {
-    if (!selectedId) return;
+    if (selectedIds.length === 0) return;
     // Locked elements can't be deleted (incl. via the Del key) — unlock first.
-    if (els.find((e) => e.id === selectedId)?.locked) return;
-    mutate((prev) => prev.filter((e) => e.id !== selectedId));
-    setSelectedId(null);
+    const doomed = new Set(els.filter((e) => e.id && selectedSet.has(e.id) && !e.locked).map((e) => e.id!));
+    if (doomed.size === 0) return;
+    mutate((prev) => prev.filter((e) => !e.id || !doomed.has(e.id)));
+    selectOnly(null);
   };
 
   // Move an element one step in z-order (array order). dir +1 = forward (up).
+  const toggleLock = (id: string) => {
+    mutate((prev) => prev.map((e) => (e.id === id ? ({ ...e, locked: e.locked ? undefined : true } as FreeformElement) : e)));
+  };
+
   const reorder = (id: string, dir: 1 | -1) => {
     mutate((prev) => {
       const i = prev.findIndex((e) => e.id === id);
@@ -353,6 +480,28 @@ export function FreeformEditor({ width, height, brand, initialElements, onChange
           <Button type="button" size="sm" variant="outline" className="text-destructive" onClick={removeSelected} disabled={!selectedId} title="Delete selected (Del)" data-testid="button-delete-selected">
             <Trash2 className="w-4 h-4" />
           </Button>
+          <div className="w-px h-6 bg-border mx-1" aria-hidden />
+          <Button
+            type="button"
+            size="sm"
+            variant={keepRatio ? "secondary" : "outline"}
+            onClick={() => setKeepRatio((v) => !v)}
+            title="Keep proportions when dragging a corner handle (hold Shift while dragging to do the opposite)"
+            data-testid="button-toggle-ratio"
+          >
+            <Maximize2 className="w-4 h-4 mr-1.5" /> Proportional
+          </Button>
+          <Button
+            type="button"
+            size="sm"
+            variant={showGuides ? "secondary" : "outline"}
+            onClick={() => setShowGuides((v) => !v)}
+            title="Brand grid guides: page margin, tile grid, logo tile zone and centre lines"
+            data-testid="button-toggle-guides"
+          >
+            <Ruler className="w-4 h-4 mr-1.5" /> Guides
+          </Button>
+          {toolbarExtra}
           <span className="text-xs text-muted-foreground font-mono ml-auto">
             {width}×{height}px · {Math.round(scale * 100)}%
           </span>
@@ -361,7 +510,7 @@ export function FreeformEditor({ width, height, brand, initialElements, onChange
         <div ref={containerRef} className="bg-muted/30 rounded-lg p-3 overflow-auto">
           <div style={{ width: width * scale, height: height * scale, position: "relative", margin: "0 auto" }}>
             <div
-              onPointerDown={() => setSelectedId(null)}
+              onPointerDown={() => selectOnly(null)}
               style={{
                 width,
                 height,
@@ -379,8 +528,10 @@ export function FreeformEditor({ width, height, brand, initialElements, onChange
               }}
             >
               {els.map((el, i) => {
-                const isSel = el.id === selectedId;
-                const base = freeformBaseStyle(el, i + 1);
+                const isSel = !!el.id && selectedSet.has(el.id);
+                const single = isSel && selectedIds.length === 1;
+                // Match the renderer: copy layers always paint above imagery.
+                const base = freeformBaseStyle(el, el.type === "text" ? i + 1001 : i + 1);
                 return (
                   <div
                     key={el.id ?? i}
@@ -399,23 +550,9 @@ export function FreeformEditor({ width, height, brand, initialElements, onChange
                     {el.type === "rect" && (
                       <div style={{ width: "100%", height: "100%", ...freeformRectStyle(el) }} />
                     )}
-                    {el.type === "image" && el.focusBox && (
-                      <div
-                        aria-hidden
-                        title="Hero area — adapted sizes crop around this"
-                        style={{
-                          position: "absolute",
-                          left: `${(el.focusBox.x ?? 0) * 100}%`,
-                          top: `${(el.focusBox.y ?? 0) * 100}%`,
-                          width: `${(el.focusBox.w ?? 0.5) * 100}%`,
-                          height: `${(el.focusBox.h ?? 0.5) * 100}%`,
-                          border: `${2 / scale}px dashed #ffe104`,
-                          boxShadow: "0 0 0 9999px rgba(17,38,61,0.18)",
-                          pointerEvents: "none",
-                          zIndex: 2,
-                        }}
-                      />
-                    )}
+                    {/* The photo's hero area (focusBox) still steers adapted-size
+                        crops, but it is data on the element, not something the
+                        designer can drag — so it is no longer drawn over the art. */}
                     {el.type === "image" &&
                       (el.src ? (
                         <img src={el.src} alt="" draggable={false} style={{ width: "100%", height: "100%", ...freeformImageStyle(el) }} />
@@ -442,23 +579,31 @@ export function FreeformEditor({ width, height, brand, initialElements, onChange
                       </div>
                     )}
 
-                    {isSel && el.locked && (
+                    {el.locked && (
                       <div
                         style={{
                           position: "absolute",
-                          top: 2,
-                          right: 2,
-                          fontSize: 12,
-                          lineHeight: 1,
+                          top: 2 / scale,
+                          right: 2 / scale,
+                          width: 16 / scale,
+                          height: 16 / scale,
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          borderRadius: 3 / scale,
+                          background: isSel ? "#94a3b8" : "rgba(148,163,184,0.85)",
+                          color: "#fff",
                           zIndex: 9999,
+                          pointerEvents: "none",
                         }}
                         title="Locked"
+                        data-testid={`lock-badge-${el.id}`}
                       >
-                        🔒
+                        <Lock style={{ width: 10 / scale, height: 10 / scale }} />
                       </div>
                     )}
 
-                    {isSel &&
+                    {single &&
                       !el.locked &&
                       HANDLES.map((h) => (
                         <div
@@ -485,11 +630,52 @@ export function FreeformEditor({ width, height, brand, initialElements, onChange
                   </div>
                 );
               })}
+              {selectedIds.length > 1 && (() => {
+                const members = els.filter((m) => m.id && selectedSet.has(m.id));
+                const movable = members.filter((m) => !m.locked);
+                if (movable.length === 0) return null;
+                const bb = unionBox(movable.map((m) => ({ x: m.x ?? 0, y: m.y ?? 0, w: m.w ?? 0, h: m.h ?? 0 })));
+                const primary = els.find((m) => m.id === selectedId) ?? movable[0];
+                return (
+                  <div
+                    style={{ position: "absolute", left: bb.x, top: bb.y, width: bb.w, height: bb.h, outline: `${outline}px dashed #6366f1`, outlineOffset: 2 / scale, pointerEvents: "none", zIndex: 9998 }}
+                    data-testid="group-frame"
+                  >
+                    {HANDLES.map((h) => (
+                      <div
+                        key={h}
+                        onPointerDown={(e) => beginDrag(e, primary, "resize", h)}
+                        onPointerMove={onPointerMove}
+                        onPointerUp={onPointerUp}
+                        style={{
+                          position: "absolute",
+                          left: HANDLE_POS[h].left,
+                          top: HANDLE_POS[h].top,
+                          width: handleSize,
+                          height: handleSize,
+                          marginLeft: -handleSize / 2,
+                          marginTop: -handleSize / 2,
+                          background: "#fff",
+                          border: `${outline}px solid #6366f1`,
+                          borderRadius: 2,
+                          cursor: HANDLE_POS[h].cursor,
+                          pointerEvents: "auto",
+                          zIndex: 9999,
+                        }}
+                        data-testid={`group-handle-${h}`}
+                      />
+                    ))}
+                  </div>
+                );
+              })()}
+              {showGuides && <BrandGuides width={width} height={height} scale={scale} />}
             </div>
           </div>
         </div>
         <p className="text-xs text-muted-foreground">
-          Click to select · drag to move · drag handles to resize · arrow keys nudge (Shift = 10px) · Delete removes.
+          Click to select · Shift-click to add to a group · drag to move (a group moves together) · drag handles to resize (a group scales together; corners keep proportions while Proportional is on, Shift flips it) · arrow keys nudge (Shift = 10px) · Delete removes · Esc clears.
+          {selectedIds.length > 1 ? ` ${selectedIds.length} selected.` : ""}
+          {showGuides ? " Guides: page margin (dashed), tile grid, logo tile zone, centre lines." : ""}
         </p>
       </div>
 
@@ -502,12 +688,15 @@ export function FreeformEditor({ width, height, brand, initialElements, onChange
           onPatch={patchSelected}
           onReplaceImage={replaceImage}
           onDelete={removeSelected}
-        />
+            onMarkWrong={onMarkWrong}
+            onMarkCorrect={onMarkCorrect}
+          />
         <Layers
           els={els}
-          selectedId={selectedId}
-          onSelect={setSelectedId}
+          selectedIds={selectedIds}
+          onSelect={(id, additive) => (additive ? toggleInSelection(id) : selectOnly(id))}
           onReorder={reorder}
+          onToggleLock={toggleLock}
         />
       </div>
     </div>
@@ -576,6 +765,8 @@ function Inspector({
   onPatch,
   onReplaceImage,
   onDelete,
+  onMarkWrong,
+  onMarkCorrect,
 }: {
   selected: FreeformElement | null;
   brandFont: string;
@@ -583,6 +774,8 @@ function Inspector({
   onPatch: (patch: Partial<FreeformElement>) => void;
   onReplaceImage: (file: File) => void;
   onDelete: () => void;
+  onMarkWrong?: (el: FreeformElement) => void;
+  onMarkCorrect?: (el: FreeformElement) => void;
 }) {
   if (!selected) {
     return (
@@ -599,6 +792,32 @@ function Inspector({
       <div className="flex items-center justify-between">
         <span className="text-sm font-semibold capitalize">{el.type}</span>
         <div className="flex items-center gap-1">
+          {onMarkCorrect && (
+            <Button
+              type="button"
+              size="sm"
+              variant="ghost"
+              className="h-7 px-2 text-xs gap-1 text-[#5b9c33] hover:text-[#5b9c33]"
+              onClick={() => onMarkCorrect(el)}
+              title="This element is correct — teach the studio it got this right"
+              data-testid="button-mark-element-correct"
+            >
+              👍 Correct
+            </Button>
+          )}
+          {onMarkWrong && (
+            <Button
+              type="button"
+              size="sm"
+              variant="ghost"
+              className="h-7 px-2 text-xs gap-1 text-destructive hover:text-destructive"
+              onClick={() => onMarkWrong(el)}
+              title="This element is wrong — tell the studio what to fix"
+              data-testid="button-mark-element-wrong"
+            >
+              👎 Wrong
+            </Button>
+          )}
           <Button
             type="button"
             size="sm"
@@ -867,35 +1086,106 @@ function RoleSelect({
   );
 }
 
+/** Brand grid drawn over the page: margin, tile grid, logo tile zone,
+ * centre lines. Same numbers as the guidelines and lib/logoRules.ts —
+ * tile = shortest axis ÷ 6 (full height on strips), margin = tile ÷ 3. */
+function BrandGuides({ width, height, scale }: { width: number; height: number; scale: number }) {
+  const short = Math.min(width, height);
+  const isStrip = height <= 120;
+  const tile = isStrip ? height : Math.max(24, Math.round(short / 6));
+  const margin = isStrip ? Math.round((height - Math.round(height * 0.64)) / 2) : Math.max(8, Math.round(tile / 3));
+  const hair = 1 / scale;
+  const grid: React.ReactNode[] = [];
+  if (!isStrip && tile >= 12) {
+    for (let x = tile; x < width; x += tile) grid.push(<line key={`v${x}`} x1={x} y1={0} x2={x} y2={height} stroke="#0ea5e9" strokeOpacity={0.18} strokeWidth={hair} />);
+    for (let y = tile; y < height; y += tile) grid.push(<line key={`h${y}`} x1={0} y1={y} x2={width} y2={y} stroke="#0ea5e9" strokeOpacity={0.18} strokeWidth={hair} />);
+  }
+  return (
+    <svg
+      width={width}
+      height={height}
+      viewBox={`0 0 ${width} ${height}`}
+      style={{ position: "absolute", left: 0, top: 0, pointerEvents: "none", zIndex: 10000 }}
+      data-testid="brand-guides"
+    >
+      {grid}
+      <rect x={margin} y={margin} width={Math.max(0, width - margin * 2)} height={Math.max(0, height - margin * 2)} fill="none" stroke="#e11d48" strokeOpacity={0.7} strokeWidth={hair} strokeDasharray={`${6 / scale} ${4 / scale}`} />
+      <line x1={width / 2} y1={0} x2={width / 2} y2={height} stroke="#0ea5e9" strokeOpacity={0.45} strokeWidth={hair} strokeDasharray={`${3 / scale} ${3 / scale}`} />
+      <line x1={0} y1={height / 2} x2={width} y2={height / 2} stroke="#0ea5e9" strokeOpacity={0.45} strokeWidth={hair} strokeDasharray={`${3 / scale} ${3 / scale}`} />
+      <rect x={width - tile} y={isStrip ? 0 : height - tile} width={tile} height={tile} fill="#f59e0b" fillOpacity={0.08} stroke="#f59e0b" strokeOpacity={0.8} strokeWidth={hair} strokeDasharray={`${4 / scale} ${3 / scale}`} />
+      <text x={width - tile + 3 / scale} y={(isStrip ? 0 : height - tile) + 11 / scale} fontSize={10 / scale} fill="#b45309" fontFamily="ui-monospace, monospace">logo tile</text>
+      <text x={margin + 3 / scale} y={margin + 11 / scale} fontSize={10 / scale} fill="#be123c" fontFamily="ui-monospace, monospace">margin {margin}px · tile {tile}px</text>
+    </svg>
+  );
+}
+
 function Layers({
   els,
-  selectedId,
+  selectedIds,
   onSelect,
   onReorder,
+  onToggleLock,
 }: {
   els: FreeformElement[];
-  selectedId: string | null;
-  onSelect: (id: string) => void;
+  selectedIds: string[];
+  onSelect: (id: string, additive: boolean) => void;
   onReorder: (id: string, dir: 1 | -1) => void;
+  onToggleLock: (id: string) => void;
 }) {
+  const selectedRef = useRef<HTMLDivElement | null>(null);
+  const listRef = useRef<HTMLDivElement | null>(null);
+  // Keep the selected row visible by scrolling the LIST only. scrollIntoView
+  // would also scroll the page, yanking the designer away from the canvas.
+  useEffect(() => {
+    const row = selectedRef.current;
+    const list = listRef.current;
+    if (!row || !list) return;
+    const top = row.offsetTop - list.offsetTop;
+    const bottom = top + row.offsetHeight;
+    if (top < list.scrollTop) list.scrollTop = top;
+    else if (bottom > list.scrollTop + list.clientHeight) list.scrollTop = bottom - list.clientHeight;
+  }, [selectedIds[0]]);
+  const selectedId = selectedIds[0] ?? null;
+  const selectedSet = new Set(selectedIds);
+  const lockedCount = els.filter((e) => e.locked).length;
   return (
     <div className="rounded-lg border border-border/50 p-3 space-y-2">
-      <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Layers</span>
-      <div className="space-y-1 max-h-64 overflow-auto">
+      <div className="flex items-center justify-between">
+        <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Layers</span>
+        <span className="text-[10px] text-muted-foreground">{lockedCount} locked · {els.length - lockedCount} unlocked</span>
+      </div>
+      <div ref={listRef} className="space-y-1 max-h-64 overflow-auto relative">
         {[...els].reverse().map((el) => {
-          const isSel = el.id === selectedId;
+          const isSel = !!el.id && selectedSet.has(el.id);
           const label = el.type === "text" ? el.text || "Text" : el.type === "rect" ? "Shape" : "Image";
+          const slot = (el as { slot?: string }).slot;
           return (
             <div
               key={el.id}
-              className={`flex items-center gap-1.5 rounded px-2 py-1 text-xs cursor-pointer ${
-                isSel ? "bg-primary/10 text-primary" : "hover:bg-muted/50"
-              }`}
-              onClick={() => el.id && onSelect(el.id)}
+              ref={el.id === selectedId ? selectedRef : undefined}
+              className={`flex items-center gap-1.5 rounded px-2 py-1 text-xs cursor-pointer border-l-2 ${
+                isSel ? "bg-primary/15 text-primary border-primary font-medium" : "border-transparent hover:bg-muted/50"
+              } ${el.locked && !isSel ? "text-muted-foreground" : ""}`}
+              onClick={(e) => el.id && onSelect(el.id, e.shiftKey)}
               data-testid={`layer-${el.id}`}
+              aria-current={isSel ? "true" : undefined}
             >
+              <button
+                type="button"
+                className={`p-0.5 shrink-0 ${el.locked ? "text-amber-600" : "text-muted-foreground/60 hover:text-foreground"}`}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  el.id && onToggleLock(el.id);
+                }}
+                title={el.locked ? "Locked — click to unlock" : "Unlocked — click to lock"}
+                aria-label={el.locked ? "Unlock layer" : "Lock layer"}
+                data-testid={`layer-lock-${el.id}`}
+              >
+                {el.locked ? <Lock className="w-3.5 h-3.5" /> : <Unlock className="w-3.5 h-3.5" />}
+              </button>
               <span className="font-mono uppercase text-[10px] w-9 shrink-0 text-muted-foreground">{el.type}</span>
               <span className="truncate flex-1">{label}</span>
+              {slot && <span className="text-[10px] px-1 rounded bg-muted text-muted-foreground shrink-0">{slot}</span>}
               <button
                 type="button"
                 className="p-0.5 hover:text-foreground text-muted-foreground"

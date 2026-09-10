@@ -74,9 +74,12 @@ function itemBounds(
   const paths = asArray(item?.Properties?.PathGeometry?.GeometryPathType);
   for (const path of paths) {
     for (const pp of asArray(path?.PathPointArray?.PathPointType)) {
-      const a = typeof pp?.["@_Anchor"] === "string" ? pp["@_Anchor"].trim().split(/\s+/).map(Number) : null;
-      if (a && a.length === 2 && a.every(Number.isFinite)) {
-        anchors.push(apply(m, a[0], a[1]));
+      // Anchors alone under-estimate a curved path (koru masks, circles):
+      // the Bézier handles bound the curve, so include them. A slightly
+      // generous box is harmless; a tight one clips the crop.
+      for (const key of ["@_Anchor", "@_LeftDirection", "@_RightDirection"] as const) {
+        const a = typeof pp?.[key] === "string" ? pp[key].trim().split(/\s+/).map(Number) : null;
+        if (a && a.length === 2 && a.every(Number.isFinite)) anchors.push(apply(m, a[0], a[1]));
       }
     }
   }
@@ -112,6 +115,10 @@ interface ParaStyle {
   fontStyle?: string;
   pointSize?: number;
   justification?: string;
+  /** InDesign Capitalization attribute (AllCaps, SmallCaps, ...). */
+  capitalization?: string;
+  /** InDesign Tracking, in thousandths of an em (e.g. -25). */
+  tracking?: number;
   /** Style name — carries conventions like "N2B" (National 2 Bold). */
   name: string;
 }
@@ -154,6 +161,11 @@ function buildParaStyleTable(stylesXml: Record<string, any> | null): Map<string,
           : parent.fontStyle,
       pointSize: Number.isFinite(size) && size > 0 ? size : parent.pointSize,
       justification: typeof ps?.["@_Justification"] === "string" ? ps["@_Justification"] : parent.justification,
+      capitalization:
+        typeof ps?.["@_Capitalization"] === "string" && ps["@_Capitalization"] !== "Normal"
+          ? ps["@_Capitalization"]
+          : parent.capitalization,
+      tracking: Number.isFinite(Number(ps?.["@_Tracking"])) && ps?.["@_Tracking"] !== undefined ? Number(ps["@_Tracking"]) : parent.tracking,
     };
     table.set(self, style);
     return style;
@@ -165,6 +177,10 @@ function buildParaStyleTable(stylesXml: Record<string, any> | null): Map<string,
 /** Normalize font names to the families the app self-hosts. */
 function normalizeFontFamily(font: string | undefined): string | undefined {
   if (!font) return undefined;
+  // The condensed cut is a different family to the renderer and the browser
+  // (its own OTF in Document fonts/); collapsing it to "National 2" sets
+  // headlines in the wide face and they overflow their frames.
+  if (/national\s*2\s*cond/i.test(font)) return "National 2 Condensed";
   if (/national\s*2/i.test(font)) return "National 2";
   return font.replace(/[^\w\s,'-]/g, "").trim() || undefined;
 }
@@ -185,6 +201,10 @@ interface StoryText {
   text: string;
   fontSize: number;
   bold: boolean;
+  /** InDesign tracking in thousandths of an em (0 when unset). */
+  tracking: number;
+  /** Runs of different weights in one paragraph (rendered with one weight here). */
+  mixedWeights: boolean;
   color?: string;
   align: "left" | "center" | "right";
   fontFamily?: string;
@@ -203,7 +223,13 @@ function parseStory(
 
   let text = "";
   let align: "left" | "center" | "right" = "left";
-  let best = { len: 0, fontSize: 12, bold: false, color: undefined as string | undefined, font: undefined as string | undefined };
+  let best = { len: 0, fontSize: 12, bold: false, color: undefined as string | undefined, font: undefined as string | undefined, tracking: 0 };
+  // Across all runs: length-weighted tracking, and whether weights are mixed
+  // ("Search" regular + "layouts" bold) — a single element can only carry one
+  // weight, so such paragraphs measure wider here than in InDesign.
+  let trackSum = 0;
+  let trackLen = 0;
+  const weightsSeen = new Set<boolean>();
 
   const paragraphs = asArray(story.ParagraphStyleRange);
   paragraphs.forEach((para, pIdx) => {
@@ -216,8 +242,26 @@ function parseStory(
       // Content may be a string, an array (Br-separated), or absent.
       const contents = asArray(run?.Content).map((c: unknown) => (typeof c === "string" || typeof c === "number" ? String(c) : ""));
       let runText = contents.join("\n");
+      // All-caps is display styling in InDesign — the stored text keeps the
+      // typed case, so apply it here or the render loses the styling.
+      const cap = typeof run?.["@_Capitalization"] === "string" ? run["@_Capitalization"] : style?.capitalization;
+      if (cap && cap !== "Normal" && /caps/i.test(cap)) runText = runText.toUpperCase();
       text += runText;
       const len = runText.replace(/\s/g, "").length;
+      if (len > 0) {
+        const rt = Number(run?.["@_Tracking"]);
+        const t = Number.isFinite(rt) && run?.["@_Tracking"] !== undefined ? rt : (style?.tracking ?? 0);
+        trackSum += t * len;
+        trackLen += len;
+        // An explicit run FontStyle overrides its character style: "Search"
+        // can be Regular inside a paragraph whose character style is N2 Bold.
+        const runCharStyle = typeof run?.["@_AppliedCharacterStyle"] === "string" ? run["@_AppliedCharacterStyle"] : "";
+        const runBold =
+          typeof run?.["@_FontStyle"] === "string"
+            ? BOLD_HINT.test(run["@_FontStyle"])
+            : BOLD_HINT.test(runCharStyle) || BOLD_HINT.test(style?.fontStyle ?? "") || (!!style && BOLD_HINT.test(style.name));
+        weightsSeen.add(runBold);
+      }
       if (len > best.len) {
         const size = Number(run?.["@_PointSize"]);
         const fillRef = run?.["@_FillColor"];
@@ -225,10 +269,14 @@ function parseStory(
         const applied = run?.Properties?.AppliedFont;
         const appliedName = typeof applied === "object" ? applied?.["#text"] : applied;
         const effFontStyle = runFontStyle ?? style?.fontStyle ?? "";
+        const runTracking = Number(run?.["@_Tracking"]);
         best = {
           len,
           fontSize: Number.isFinite(size) && size > 0 ? size : (style?.pointSize ?? 12),
           bold: BOLD_HINT.test(effFontStyle) || (!!style && BOLD_HINT.test(style.name)),
+          // Tracking (thousandths of an em) decides whether a line fits the
+          // designer's frame: body copy at -25 is ~2.5% narrower than untracked.
+          tracking: Number.isFinite(runTracking) && run?.["@_Tracking"] !== undefined ? runTracking : (style?.tracking ?? 0),
           color: typeof fillRef === "string" ? colors.get(fillRef) : undefined,
           font: normalizeFontFamily(
             (typeof appliedName === "string" ? appliedName : undefined) ?? style?.font,
@@ -245,6 +293,8 @@ function parseStory(
     text: trimmed,
     fontSize: best.fontSize,
     bold: best.bold,
+    tracking: trackLen > 0 ? trackSum / trackLen : best.tracking,
+    mixedWeights: weightsSeen.size > 1,
     color: best.color,
     align,
     fontFamily: best.font,
@@ -343,13 +393,113 @@ function walkItems(
   }
 }
 
-export async function parseIdmlToLayout(
+/** One spread of a multi-variant document, parsed to a layout. */
+export interface IdmlSpreadLayout extends IdmlParseResult {
+  /** Variant label inferred from the spread's copy or main image (e.g. "Storms"). */
+  label: string | null;
+  /** 0-based index of the spread in the document — document PDF page = index + 1.
+   *  (Empty spreads are skipped from the results but still occupy a PDF page.) */
+  spreadIndex: number;
+}
+
+/** Hazard/variant words looked for in a spread's copy to name the variant.
+ * Copy is squashed to letters only first, so display-styled fragments like
+ * the digital-clock headline "St:OR:MS" still read as "storms". */
+const VARIANT_WORD_RE =
+  /(storms?|quakes?|earthquakes?|tsunamis?|floods?|flooding|volcano(?:es)?|wildfires?|fires?|drought|landslides?|pandemics?)/;
+
+/** Merge adjacent rasterRegion fragments (one per vector shape) into whole
+ * regions — a pattern band or logo lockup is hundreds of tiny shapes but ONE
+ * crop from the document PDF. Mutates `elements`: the first fragment of each
+ * cluster becomes the union box, the rest (and any plain rects living fully
+ * inside a cluster, which are fragments of the same art) are removed.
+ * Returns the number of merged regions. */
+function mergeRasterRegions(elements: Record<string, unknown>[], pad = 8): number {
+  const idx: number[] = [];
+  elements.forEach((e, i) => {
+    // Photo-frame fallbacks are whole regions already; merging one with the
+    // band or lockup fragments touching it would glue the slots together.
+    if (e.type === "rasterRegion" && !e.photoFallback) idx.push(i);
+  });
+  if (idx.length === 0) return 0;
+  const parent = idx.map((_, i) => i);
+  const find = (a: number): number => (parent[a] === a ? a : (parent[a] = find(parent[a])));
+  const box = (i: number) => elements[idx[i]] as { x: number; y: number; w: number; h: number };
+  for (let a = 0; a < idx.length; a++) {
+    for (let b = a + 1; b < idx.length; b++) {
+      const A = box(a);
+      const B = box(b);
+      if (
+        A.x - pad < B.x + B.w + pad &&
+        B.x - pad < A.x + A.w + pad &&
+        A.y - pad < B.y + B.h + pad &&
+        B.y - pad < A.y + A.h + pad
+      ) {
+        const ra = find(a);
+        const rb = find(b);
+        if (ra !== rb) parent[rb] = ra;
+      }
+    }
+  }
+  const clusters = new Map<number, number[]>();
+  for (let i = 0; i < idx.length; i++) {
+    const root = find(i);
+    const list = clusters.get(root) ?? [];
+    list.push(i);
+    clusters.set(root, list);
+  }
+  const remove = new Set<number>();
+  const unionBoxes: { x: number; y: number; w: number; h: number }[] = [];
+  for (const members of clusters.values()) {
+    const keep = Math.min(...members.map((m) => idx[m]));
+    let x1 = Infinity;
+    let y1 = Infinity;
+    let x2 = -Infinity;
+    let y2 = -Infinity;
+    for (const m of members) {
+      const b = box(m);
+      x1 = Math.min(x1, b.x);
+      y1 = Math.min(y1, b.y);
+      x2 = Math.max(x2, b.x + b.w);
+      y2 = Math.max(y2, b.y + b.h);
+      if (idx[m] !== keep) remove.add(idx[m]);
+    }
+    const union = { x: x1, y: y1, w: Math.max(1, x2 - x1), h: Math.max(1, y2 - y1) };
+    Object.assign(elements[keep], union);
+    unionBoxes.push(union);
+  }
+  // Plain rects wholly inside a merged region are fragments of the same
+  // vector art (the crop already contains them) — drawing them again on top
+  // would double the art.
+  elements.forEach((e, i) => {
+    if (e.type !== "rect" || remove.has(i)) return;
+    const r = e as unknown as { x: number; y: number; w: number; h: number };
+    for (const u of unionBoxes) {
+      if (r.x >= u.x - 1 && r.y >= u.y - 1 && r.x + r.w <= u.x + u.w + 1 && r.y + r.h <= u.y + u.h + 1) {
+        remove.add(i);
+        return;
+      }
+    }
+  });
+  for (let i = elements.length - 1; i >= 0; i--) {
+    if (remove.has(i)) elements.splice(i, 1);
+  }
+  return unionBoxes.length;
+}
+
+/**
+ * Parse EVERY spread of the document — real campaign masters carry one
+ * message variant per page (e.g. Storms / Quakes / Tsunami), and each
+ * becomes its own template.
+ */
+export async function parseIdmlToLayouts(
   idml: JSZip,
   linksByName: Map<string, { objectPath: string; kind: string }>,
   brandLogoUrl: string | null = null,
-): Promise<IdmlParseResult> {
-  const parser = new XMLParser({ ignoreAttributes: false, attributeNamePrefix: "@_" });
-  const warnings: string[] = [];
+): Promise<IdmlSpreadLayout[]> {
+  // trimValues:false — a run that starts with a space (" layouts" after a bold
+  // "Search") must keep it, or words fuse across style changes.
+  const parser = new XMLParser({ ignoreAttributes: false, attributeNamePrefix: "@_", trimValues: false });
 
   const readXml = async (path: string): Promise<Record<string, any> | null> => {
     const entry = idml.file(path);
@@ -365,7 +515,6 @@ export async function parseIdmlToLayout(
   const colors = buildColorTable(await readXml("Resources/Graphic.xml"));
   const paraStyles = buildParaStyleTable(await readXml("Resources/Styles.xml"));
 
-  // First spread listed in the design map.
   const designMap = await readXml("designmap.xml");
 
   // Layer visibility: items on hidden layers (guides, backups) are skipped.
@@ -379,26 +528,8 @@ export async function parseIdmlToLayout(
   if (spreadRefs.length === 0) {
     throw new Error("IDML has no spreads");
   }
-  const spreadXml = await readXml(spreadRefs[0]);
-  const spread = spreadXml?.["idPkg:Spread"]?.Spread ?? spreadXml?.Spread;
-  if (!spread) throw new Error("IDML spread could not be read");
 
-  // Page geometry: bounds are [top left bottom right] in page space; the
-  // page's ItemTransform maps them into spread space.
-  const pages = asArray(spread.Page);
-  if (pages.length === 0) throw new Error("IDML spread has no pages");
-  const page = pages[0];
-  if (pages.length > 1) warnings.push(`Document has ${pages.length} pages on the first spread; only the first was imported.`);
-  const gb = String(page?.["@_GeometricBounds"] ?? "").trim().split(/\s+/).map(Number);
-  if (gb.length !== 4 || !gb.every(Number.isFinite)) throw new Error("IDML page bounds unreadable");
-  const [top, left, bottom, right] = gb;
-  const pm = parseMatrix(page?.["@_ItemTransform"]);
-  const [pageX, pageY] = apply(pm, left, top);
-  const pageW = right - left;
-  const pageH = bottom - top;
-
-  // Preload stories for text frames.
-  const storyByFrame = new Map<string, StoryText>();
+  // Preload stories for text frames (document-wide, shared across spreads).
   const storyRefs = asArray(designMap?.Document?.["idPkg:Story"]).map((s: any) => s?.["@_src"]).filter(Boolean);
   const storyCache = new Map<string, StoryText | null>();
   for (const ref of storyRefs) {
@@ -410,13 +541,48 @@ export async function parseIdmlToLayout(
     }
   }
 
-  const elements: Record<string, unknown>[] = [];
+  const results: IdmlSpreadLayout[] = [];
+  const spreadErrors: string[] = [];
+
+  for (let spreadIdx = 0; spreadIdx < spreadRefs.length; spreadIdx++) {
+  const warnings: string[] = [];
+  const spreadXml = await readXml(spreadRefs[spreadIdx]);
+  const spread = spreadXml?.["idPkg:Spread"]?.Spread ?? spreadXml?.Spread;
+  if (!spread) {
+    spreadErrors.push(`Spread ${spreadIdx + 1} could not be read`);
+    continue;
+  }
+
+  // Page geometry: bounds are [top left bottom right] in page space; the
+  // page's ItemTransform maps them into spread space.
+  const pages = asArray(spread.Page);
+  if (pages.length === 0) {
+    spreadErrors.push(`Spread ${spreadIdx + 1} has no pages`);
+    continue;
+  }
+  const page = pages[0];
+  if (pages.length > 1) warnings.push(`Spread ${spreadIdx + 1} has ${pages.length} pages; only the first was imported.`);
+  const gb = String(page?.["@_GeometricBounds"] ?? "").trim().split(/\s+/).map(Number);
+  if (gb.length !== 4 || !gb.every(Number.isFinite)) {
+    spreadErrors.push(`Spread ${spreadIdx + 1} page bounds unreadable`);
+    continue;
+  }
+  const [top, left, bottom, right] = gb;
+  const pm = parseMatrix(page?.["@_ItemTransform"]);
+  const [pageX, pageY] = apply(pm, left, top);
+  const pageW = right - left;
+  const pageH = bottom - top;
+
+  let elements: Record<string, unknown>[] = [];
   let idCounter = 0;
   let unmatchedImages = 0;
   let rotatedItems = 0;
-  let strokeOnlySkipped = 0;
   let featheredItems = 0;
   let blendedItems = 0;
+  // Largest placed image's original link name, used to label the variant
+  // when the copy doesn't name it. (Object holder: assigned inside the
+  // walker closure, which TS's narrowing can't see.)
+  const mainImage: { name: string | null; area: number } = { name: null, area: 0 };
 
   walkItems(spread, colors, ({ kind, item, matrix, layer, logoTile }) => {
     if (layer && hiddenLayers.has(layer)) return;
@@ -463,17 +629,33 @@ export async function parseIdmlToLayout(
       const story = typeof storySelf === "string" ? storyCache.get(storySelf) : null;
       if (!story) return;
       const roleGuess = story.fontSize >= 30 ? "headline" : story.fontSize >= 18 ? "subhead" : "body";
+      // InDesign auto-sized frames hug the cap height: frame top = cap top,
+      // frame bottom = baseline. Flag them so the renderer sets the first
+      // baseline at the frame bottom instead of CSS line-box maths.
+      const capFit =
+        !story.text.includes("\n") &&
+        bounds.h > story.fontSize * 0.45 &&
+        bounds.h < story.fontSize * 1.05;
+      // Text boxes are layout guides, not clips. Our font metrics differ from
+      // InDesign's by a percent or two (mixed-weight runs collapse to one
+      // weight here), which is enough to wrap a line the designer set on one
+      // line. Give the box 2% grace on the side its alignment grows toward.
+      const grace = bounds.w * (story.mixedWeights ? 0.08 : 0.02);
+      const boxX = story.align === "center" ? x - grace / 2 : story.align === "right" ? x - grace : x;
+      const letterSpacing = story.tracking ? Math.round((story.tracking / 1000) * story.fontSize * 100) / 100 : 0;
       elements.push({
+        ...(capFit ? { baselineFit: "cap" } : {}),
         id: `idml_txt_${idCounter++}`,
         type: "text",
         role: roleGuess,
         text: story.text,
-        x,
+        x: boxX,
         y,
-        w: Math.max(1, bounds.w),
+        w: Math.max(1, bounds.w + grace),
         h: Math.max(1, bounds.h),
         fontSize: Math.round(story.fontSize),
         fontWeight: story.bold ? 700 : 400,
+        ...(letterSpacing ? { letterSpacing } : {}),
         color: story.color ?? "#111827",
         align: story.align,
         lineHeight: 1.2,
@@ -485,6 +667,23 @@ export async function parseIdmlToLayout(
 
     // Placed image inside a frame?
     const placed = [...asArray(item?.Image), ...asArray(item?.PDF), ...asArray(item?.EPS)];
+    if (placed.length > 0 && (kind === "Oval" || kind === "Polygon")) {
+      // A photo masked by a shaped frame (koru, circle, custom path) cannot be
+      // expressed as a rectangular image element — the render would show the
+      // square photo. Reproduce the frame from the document PDF instead.
+      elements.push({
+        id: `idml_img_${idCounter++}`,
+        type: "rasterRegion",
+        photoFallback: true,
+        maskedFrame: true,
+        x,
+        y,
+        w: Math.max(1, bounds.w),
+        h: Math.max(1, bounds.h),
+        ...(opacity !== undefined ? { opacity } : {}),
+      });
+      return;
+    }
     if (placed.length > 0) {
       const link = placed[0]?.Link;
       const name = linkBasename(link?.["@_LinkResourceURI"]);
@@ -494,6 +693,45 @@ export async function parseIdmlToLayout(
         (name &&
           [...linksByName.entries()].find(([k]) => k.replace(/\.[^.]+$/, "") === name.replace(/\.[^.]+$/, ""))?.[1]);
       if (match && match.kind === "image") {
+        if (name && bounds.w * bounds.h > mainImage.area) {
+          mainImage.area = bounds.w * bounds.h;
+          mainImage.name = name;
+        }
+        // The designer's crop inside the frame: the placed image's own
+        // transform says which window of the photo shows. Emit it as a
+        // fractional srcRect; the importer pre-crops the stored asset so
+        // every consumer (render, adapt, editor) sees exactly that window.
+        let srcRect: { x: number; y: number; w: number; h: number } | undefined;
+        const gbx = placed[0]?.Properties?.GraphicBounds;
+        const gL = Number(gbx?.["@_Left"]);
+        const gT = Number(gbx?.["@_Top"]);
+        const gR = Number(gbx?.["@_Right"]);
+        const gB = Number(gbx?.["@_Bottom"]);
+        if ([gL, gT, gR, gB].every(Number.isFinite) && gR > gL && gB > gT) {
+          const contentM = composeForBounds(
+            composeForBounds(matrix, parseMatrix(item["@_ItemTransform"])),
+            parseMatrix(placed[0]?.["@_ItemTransform"]),
+          );
+          const pts = [
+            apply(contentM, gL, gT),
+            apply(contentM, gR, gT),
+            apply(contentM, gL, gB),
+            apply(contentM, gR, gB),
+          ];
+          const cx = Math.min(...pts.map((p) => p[0])) - pageX;
+          const cy = Math.min(...pts.map((p) => p[1])) - pageY;
+          const cw = Math.max(...pts.map((p) => p[0])) - pageX - cx;
+          const ch = Math.max(...pts.map((p) => p[1])) - pageY - cy;
+          if (cw > 1 && ch > 1) {
+            const clamp01 = (v: number) => Math.max(0, Math.min(1, v));
+            const rx = clamp01((x - cx) / cw);
+            const ry = clamp01((y - cy) / ch);
+            const rw = clamp01(bounds.w / cw);
+            const rh = clamp01(bounds.h / ch);
+            // Only meaningful when the frame actually windows the image.
+            if (rw < 0.985 || rh < 0.985) srcRect = { x: rx, y: ry, w: Math.max(0.01, rw), h: Math.max(0.01, rh) };
+          }
+        }
         elements.push({
           id: `idml_img_${idCounter++}`,
           type: "image",
@@ -504,19 +742,58 @@ export async function parseIdmlToLayout(
           y,
           w: Math.max(1, bounds.w),
           h: Math.max(1, bounds.h),
+          ...(srcRect ? { srcRect } : {}),
           ...(opacity !== undefined ? { opacity } : {}),
         });
       } else {
+        // No usable Links file (missing, or too large to inflate): keep the
+        // frame as a region the importer crops from the document PDF — the
+        // designer's own pixels — instead of dropping the photo outright.
         unmatchedImages++;
+        if (name && bounds.w * bounds.h > mainImage.area) {
+          mainImage.area = bounds.w * bounds.h;
+          mainImage.name = name;
+        }
+        elements.push({
+          id: `idml_img_${idCounter++}`,
+          type: "rasterRegion",
+          photoFallback: true,
+          x,
+          y,
+          w: Math.max(1, bounds.w),
+          h: Math.max(1, bounds.h),
+          ...(opacity !== undefined ? { opacity } : {}),
+        });
+      }
+      return;
+    }
+
+    const fillRef = item?.["@_FillColor"];
+    const fill = typeof fillRef === "string" ? colors.get(fillRef) : undefined;
+    const strokeRefRaw = item?.["@_StrokeColor"];
+    const hasStroke =
+      typeof strokeRefRaw === "string" && !!colors.get(strokeRefRaw) && Number(item?.["@_StrokeWeight"]) > 0;
+
+    // Non-rectangular vector art (koru patterns, lockups, outlined type,
+    // the anther device) can't be recreated as live shapes — mark the region
+    // so the importer reproduces it from the original document PDF's pixels.
+    if (kind === "Polygon" || kind === "Oval" || kind === "GraphicLine") {
+      if (fill || hasStroke) {
+        elements.push({
+          id: `idml_raster_${idCounter++}`,
+          type: "rasterRegion",
+          x,
+          y,
+          w: Math.max(1, bounds.w),
+          h: Math.max(1, bounds.h),
+        });
       }
       return;
     }
 
     // Plain filled shape — with a real linear gradient when the design used
     // a gradient feather (e.g. a scrim fading over photography).
-    const fillRef = item?.["@_FillColor"];
-    const fill = typeof fillRef === "string" ? colors.get(fillRef) : undefined;
-    if (fill && kind !== "GraphicLine") {
+    if (fill) {
       const feather = item?.TransparencySetting?.GradientFeatherSetting;
       let gradient: { angle: number; stops: { color: string; alpha: number; at: number }[] } | undefined;
       if (feather) {
@@ -553,6 +830,19 @@ export async function parseIdmlToLayout(
           };
         }
       }
+      // Rounded corners (the search pill, buttons): uniform legacy attr or
+      // the per-corner options — use the smallest applied radius.
+      const corners = ["TopLeft", "TopRight", "BottomLeft", "BottomRight"].map((c) => {
+        const opt = item?.[`@_${c}CornerOption`];
+        const r = Number(item?.[`@_${c}CornerRadius`]);
+        return typeof opt === "string" && /rounded/i.test(opt) && Number.isFinite(r) && r > 0 ? r : 0;
+      });
+      let radius = corners.every((r) => r > 0) ? Math.min(...corners) : 0;
+      if (radius === 0) {
+        const uniOpt = item?.["@_CornerOption"];
+        const uniR = Number(item?.["@_CornerRadius"]);
+        if (typeof uniOpt === "string" && /rounded/i.test(uniOpt) && Number.isFinite(uniR) && uniR > 0) radius = uniR;
+      }
       elements.push({
         id: `idml_rect_${idCounter++}`,
         type: "rect",
@@ -561,37 +851,23 @@ export async function parseIdmlToLayout(
         y,
         w: Math.max(1, bounds.w),
         h: Math.max(1, bounds.h),
+        ...(radius > 0 ? { radius } : {}),
         ...(gradient ? { gradient } : opacity !== undefined ? { opacity } : {}),
       });
       return;
     }
-
-    // Stroke-only vector art (the anther device, rules) can't be recreated
-    // as live shapes yet; count it so the warning names what's missing.
-    const strokeRef = item?.["@_StrokeColor"];
-    const strokeW = Number(item?.["@_StrokeWeight"]);
-    if (
-      !fill &&
-      typeof strokeRef === "string" &&
-      colors.get(strokeRef) &&
-      Number.isFinite(strokeW) &&
-      strokeW > 0 &&
-      bounds.w * bounds.h > pageW * pageH * 0.02
-    ) {
-      strokeOnlySkipped++;
-    }
   });
 
   if (unmatchedImages > 0) {
-    warnings.push(`${unmatchedImages} placed image(s) had no matching Links file and were skipped.`);
+    warnings.push(`${unmatchedImages} placed image(s) had no usable Links file (missing or too large) and were reproduced from the document PDF instead.`);
   }
   if (rotatedItems > 0) {
     warnings.push(`${rotatedItems} rotated item(s) were imported axis-aligned (rotation is not yet supported).`);
   }
-  if (strokeOnlySkipped > 0) {
-    warnings.push(
-      `${strokeOnlySkipped} outlined vector shape(s) — likely the anther framing device — could not be recreated as live artwork. Use Recreate-artwork mode if the anther must be kept, or re-add it in the editor.`,
-    );
+  // Collapse the vector-art debris into whole regions to crop from the PDF.
+  const clusterCount = mergeRasterRegions(elements);
+  if (clusterCount > 0) {
+    warnings.push(`${clusterCount} vector-art region(s) reproduced from the original document's pixels.`);
   }
   if (featheredItems > 0 || blendedItems > 0) {
     warnings.push(
@@ -599,8 +875,48 @@ export async function parseIdmlToLayout(
     );
   }
   if (elements.length === 0) {
-    throw new Error("No importable items found on the first page");
+    spreadErrors.push(`Spread ${spreadIdx + 1} had no importable items`);
+    continue;
   }
 
-  return { width: Math.round(pageW), height: Math.round(pageH), elements, warnings };
+  // Variant label: hazard word hidden in the copy (letters-only squash catches
+  // display-styled fragments), else the main image's filename stem.
+  const squashed = elements
+    .filter((e) => e.type === "text")
+    .map((e) => String(e.text ?? ""))
+    .join(" ")
+    .toLowerCase()
+    .replace(/[^a-z]/g, "");
+  let label: string | null = null;
+  const wordHit = squashed.match(VARIANT_WORD_RE)?.[1];
+  if (wordHit) {
+    label = wordHit[0].toUpperCase() + wordHit.slice(1);
+  } else if (mainImage.name) {
+    const stem = mainImage.name
+      .replace(/\.[^.]+$/, "")
+      .replace(/[_\-()]+/g, " ")
+      .replace(/\s+/g, " ")
+      .trim();
+    label = stem ? stem.slice(0, 30) : null;
+  }
+  if (spreadRefs.length > 1 && !label) label = `Page ${spreadIdx + 1}`;
+
+  results.push({ width: Math.round(pageW), height: Math.round(pageH), elements, warnings, label, spreadIndex: spreadIdx });
+  }
+
+  if (results.length === 0) {
+    throw new Error(spreadErrors[0] ?? "No importable items found");
+  }
+  for (const err of spreadErrors) results[0].warnings.push(err);
+  return results;
+}
+
+/** Back-compat single-layout parse: the first spread of the document. */
+export async function parseIdmlToLayout(
+  idml: JSZip,
+  linksByName: Map<string, { objectPath: string; kind: string }>,
+  brandLogoUrl: string | null = null,
+): Promise<IdmlParseResult> {
+  const all = await parseIdmlToLayouts(idml, linksByName, brandLogoUrl);
+  return all[0];
 }

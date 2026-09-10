@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { ImportCollateralDialog } from "@/components/ImportCollateralDialog";
 import { useQuery } from "@tanstack/react-query";
-import { useListBriefs, useDuplicateBrief, getListBriefsQueryKey } from "@workspace/api-client-react";
+import { useListBriefs, useDuplicateBrief, useDeleteBrief, getListBriefsQueryKey } from "@workspace/api-client-react";
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -9,7 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Toggle } from "@/components/ui/toggle";
-import { Plus, Briefcase, FileImage, ChevronRight, Copy, ChevronLeft, ChevronRight as ChevronRightIcon, User } from "lucide-react";
+import { Plus, Briefcase, FileImage, ChevronRight, Copy, ChevronLeft, ChevronRight as ChevronRightIcon, User, Wand2 , Trash2 } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
@@ -95,6 +95,20 @@ export default function BriefList() {
   const totalPages = Math.max(1, Math.ceil(filteredBriefs.length / PAGE_SIZE));
   const paginatedBriefs = filteredBriefs.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
+  const deleteBrief = useDeleteBrief();
+  const handleDelete = (e: React.MouseEvent, briefId: number, name: string) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!confirm(`Delete campaign "${name}" and all its assets? This can't be undone.`)) return;
+    deleteBrief.mutate({ id: briefId }, {
+      onSuccess: () => {
+        toast({ title: "Campaign deleted" });
+        queryClient.invalidateQueries({ queryKey: getListBriefsQueryKey() });
+      },
+      onError: () => toast({ title: "Failed to delete campaign", variant: "destructive" }),
+    });
+  };
+
   const handleReopen = (e: React.MouseEvent, briefId: number) => {
     e.preventDefault();
     e.stopPropagation();
@@ -113,15 +127,23 @@ export default function BriefList() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-4xl font-bold tracking-tight font-sans">Campaigns</h1>
-          <p className="text-muted-foreground mt-2 font-mono text-sm uppercase tracking-widest">All Campaign Briefs</p>
+          <p className="text-muted-foreground mt-1.5">Every campaign, its assets and status</p>
         </div>
-        <ImportCollateralDialog />
-        <Link href="/briefs/new">
-          <Button data-testid="button-new-brief" className="font-mono uppercase text-xs tracking-wider">
-            <Plus className="w-4 h-4 mr-2" />
-            New Brief
-          </Button>
-        </Link>
+        <div className="flex flex-wrap items-center gap-2">
+          <ImportCollateralDialog />
+          <Link href="/campaigns/build">
+            <Button variant="outline" className="gap-2" data-testid="button-build-campaign">
+              <Wand2 className="w-4 h-4" />
+              Build from examples
+            </Button>
+          </Link>
+          <Link href="/briefs/new">
+            <Button data-testid="button-new-brief" className="font-mono uppercase text-xs tracking-wider">
+              <Plus className="w-4 h-4 mr-2" />
+              New campaign
+            </Button>
+          </Link>
+        </div>
       </div>
 
       <div className="flex items-center gap-3">
@@ -250,6 +272,17 @@ export default function BriefList() {
                             Duplicate
                           </Button>
                         )}
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={(e) => handleDelete(e, brief.id, brief.campaignName)}
+                          disabled={deleteBrief.isPending}
+                          className="h-8 px-2 opacity-0 group-hover:opacity-100 transition-opacity"
+                          data-testid={`button-delete-brief-${brief.id}`}
+                          title="Delete this campaign and its assets"
+                        >
+                          <Trash2 className="w-3.5 h-3.5 text-destructive" />
+                        </Button>
                         <ChevronRight className="w-4 h-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
                       </div>
                     </div>

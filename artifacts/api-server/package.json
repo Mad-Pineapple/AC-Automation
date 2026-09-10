@@ -8,9 +8,11 @@
     "build": "node ./build.mjs",
     "start": "node --enable-source-maps ./dist/index.mjs",
     "typecheck": "tsc -p tsconfig.json --noEmit",
-    "build:vercel": "node ./build.mjs --vercel"
+    "build:vercel": "node ./build.mjs --vercel",
+    "recompose:preview": "node scripts/recompose-preview.mjs"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.123.0",
     "@clerk/express": "^2.1.23",
     "@clerk/shared": "^4.15.0",
     "@napi-rs/canvas": "^1.0.6",
@@ -19,6 +21,7 @@
     "@workspace/api-zod": "workspace:*",
     "@workspace/db": "workspace:*",
     "@workspace/integrations-openai-ai-server": "workspace:*",
+    "ag-psd": "^31.0.2",
     "cookie-parser": "^1.4.7",
     "cors": "^2.8.6",
     "drizzle-orm": "catalog:",

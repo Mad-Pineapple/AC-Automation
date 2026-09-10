@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { useParams, useLocation, Link } from "wouter";
 import { useQueryClient } from "@tanstack/react-query";
 import {
@@ -15,7 +15,7 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { useMe } from "@/hooks/use-me";
 import { Link as WLink } from "wouter";
-import { ChevronLeft, Undo2, Layers } from "lucide-react";
+import { ChevronLeft, Undo2, Layers, ArrowUpRight, RefreshCw } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -29,13 +29,15 @@ import { FreeformEditor } from "@/components/FreeformEditor";
 import { ExportHtmlDialog } from "@/components/ExportHtmlDialog";
 import { LayoutOptions } from "@/components/TemplateRenderer";
 import { ExportStaticMenu } from "@/components/ExportStaticMenu";
+import { HtmlPreviewDialog } from "@/components/HtmlPreviewDialog";
+import { FeedbackButtons, postFeedback } from "@/components/FeedbackButtons";
 
 const CATEGORIES = ["social", "display", "print", "email", "custom"];
 
 export default function EditTemplate() {
   const params = useParams();
   const id = Number(params.id);
-  const [, setLocation] = useLocation();
+  const [location, setLocation] = useLocation();
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const { data: meData, isLoading: isLoadingMe } = useMe();
@@ -49,10 +51,19 @@ export default function EditTemplate() {
 
   useEffect(() => {
     if (!isLoadingMe && !isAdmin) {
-      toast({ title: "You don't have permission to edit templates", variant: "destructive" });
-      setLocation("/templates");
+      toast({ title: "You don't have permission to edit artwork", variant: "destructive" });
+      setLocation(location.startsWith("/wip") ? "/wip" : "/templates");
     }
-  }, [isLoadingMe, isAdmin, setLocation, toast]);
+  }, [isLoadingMe, isAdmin, setLocation, toast, location]);
+
+  // WIP work stays under /wip. Nothing in the WIP flow links into Templates
+  // until Make template sends the piece there.
+  const wantBase = template ? (template.category === "wip" ? "/wip" : "/templates") : null;
+  useEffect(() => {
+    if (!wantBase) return;
+    const onWip = location.startsWith("/wip/");
+    if ((wantBase === "/wip") !== onWip) setLocation(`${wantBase}/${id}`, { replace: true });
+  }, [wantBase, location, id, setLocation]);
 
   if (isLoadingMe || !isAdmin) {
     return null;
@@ -62,7 +73,7 @@ export default function EditTemplate() {
     toast({ title: "Template updated" });
     queryClient.invalidateQueries({ queryKey: getListTemplatesQueryKey() });
     queryClient.invalidateQueries({ queryKey: getGetTemplateQueryKey(id) });
-    setLocation("/templates");
+    setLocation(template?.category === "wip" ? "/wip" : "/templates");
   };
 
   const onSubmit = (values: TemplateFormValues) => {
@@ -99,34 +110,110 @@ export default function EditTemplate() {
     return (
       <div className="w-full text-center py-16">
         <p className="text-muted-foreground">Template not found.</p>
-        <WLink href="/templates" className="text-primary text-sm mt-3 inline-block">Back to templates</WLink>
+        <WLink href={location.startsWith("/wip") ? "/wip" : "/templates"} className="text-primary text-sm mt-3 inline-block">{location.startsWith("/wip") ? "Back to Work in progress" : "Back to templates"}</WLink>
       </div>
     );
   }
 
   const config = (template.config ?? {}) as LayoutOptions & { kind?: string; elements?: FreeformElement[] };
   const isFreeform = config.kind === "freeform";
+  // WIP artwork opens the same workspace but keeps its home base on /wip.
+  const isWip = template.category === "wip";
+  const backHref = isWip ? "/wip" : "/templates";
+
+  // The original HTML banner, when the piece came in as an HTML5 / GWD package.
+  const previewHtml = typeof (config as { previewHtml?: unknown }).previewHtml === "string" ? (config as { previewHtml: string }).previewHtml : null;
+  // Lives in the canvas toolbar next to Proportional and Guides.
+  const redoButton = template.sourceTemplateId ? (
+    <Button
+      type="button"
+      size="sm"
+      variant="outline"
+      className="gap-1.5"
+      data-testid="button-redo-artwork"
+      title="Rebuild this piece from its master with the current rules and feedback"
+      onClick={async () => {
+        if (!confirm("Rebuild this piece from its master with the current rules and feedback? Any manual edits on this piece will be replaced.")) return;
+        const res = await fetch(`/api/templates/${id}/redo`, { method: "POST", credentials: "include", headers: { "Content-Type": "application/json" }, body: "{}" });
+        if (res.ok) {
+          const body = await res.json().catch(() => ({}));
+          const ref = body?.redo?.reference as { name: string; width: number; height: number; scaled: boolean } | null | undefined;
+          const how = body?.redo?.method ? String(body.redo.method).replace(":", " ") : "rebuilt";
+          const description = ref
+            ? `${ref.scaled ? "Scaled from" : "Rebuilt to match"} the approved "${ref.name}" (${ref.width}×${ref.height}). Review it, then Right or Wrong as usual.`
+            : `${how}. No piece in this family is marked Right yet, so the generic rules were used. Correct one size, mark it Right, and Redo will follow it.`;
+          toast({ title: ref ? "Artwork redone from the approved piece" : "Artwork redone", description });
+          await queryClient.invalidateQueries({ queryKey: getGetTemplateQueryKey(id) });
+          await queryClient.refetchQueries({ queryKey: getGetTemplateQueryKey(id) });
+          queryClient.invalidateQueries({ queryKey: getListTemplatesQueryKey() });
+        } else {
+          const err = await res.json().catch(() => ({}));
+          toast({ title: `Could not redo the artwork (${res.status})`, description: err.error ?? "The server returned no reason. Refresh the page and try again.", variant: "destructive" });
+        }
+      }}
+    >
+      <RefreshCw className="w-4 h-4" />
+      Redo artwork
+    </Button>
+  ) : null;
+  const toolbarExtra = (
+    <>
+      {previewHtml && (
+        <HtmlPreviewDialog previewHtml={previewHtml} name={template.name} width={template.width} height={template.height} testId="button-preview-html-editor" />
+      )}
+      {redoButton}
+    </>
+  );
 
   return (
     <div className="space-y-8 w-full">
       <div className="flex items-center gap-4">
-        <Link href="/templates" className="p-2 hover:bg-muted rounded-full transition-colors">
+        <Link href={backHref} className="p-2 hover:bg-muted rounded-full transition-colors">
           <ChevronLeft className="w-5 h-5" />
         </Link>
         <div className="flex-1">
-          <h1 className="text-3xl font-bold tracking-tight">Edit Template</h1>
-          <p className="text-muted-foreground text-sm font-mono mt-1 uppercase tracking-widest">{template.dims}</p>
+          <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight">
+            {isWip ? "Work on artwork" : "Edit Template"}
+          </h1>
+          <p className="text-muted-foreground mt-1.5">
+            {template.dims}
+            {isWip ? " · work in progress — promote it to Templates when it's finished" : ""}
+          </p>
         </div>
+        <FeedbackButtons subjectType="template" subjectId={id} />
+        {isWip && (
+          <Button
+            className="gap-2"
+            data-testid="button-promote-from-editor"
+            disabled={updateTemplate.isPending}
+            onClick={() =>
+              updateTemplate.mutate(
+                { id, data: { category: "custom" } },
+                {
+                  onSuccess: () => {
+                    toast({ title: "Promoted to template", description: `"${template.name}" now lives under Templates and can be used in campaign briefs.` });
+                    queryClient.invalidateQueries();
+                    setLocation("/templates");
+                  },
+                  onError: () => toast({ title: "Failed to promote", variant: "destructive" }),
+                },
+              )
+            }
+          >
+            <ArrowUpRight className="w-4 h-4" />
+            Make template
+          </Button>
+        )}
         {isFreeform && (
           <div className="flex items-center gap-2">
-            <WLink href={`/templates/${id}/compare`}>
+            <WLink href={template.sourceTemplateId ? `${backHref}/${template.sourceTemplateId}/compare?focus=${id}` : `${backHref}/${id}/compare`}>
               <Button variant="outline" className="gap-2" data-testid="button-compare-sizes">
                 <Layers className="w-4 h-4" />
-                Compare sizes
+                Review against original
               </Button>
             </WLink>
             <ExportHtmlDialog templateId={id} templateName={template.name} />
-            <AdaptDialog templateId={id} templateName={template.name} />
+            <AdaptDialog templateId={id} templateName={template.name} base={backHref} />
             <ExportStaticMenu templateId={id} templateName={template.name} />
           </div>
         )}
@@ -138,6 +225,7 @@ export default function EditTemplate() {
           template={template}
           brand={previewBrand}
           submitting={updateTemplate.isPending}
+          toolbarExtra={toolbarExtra}
           onSave={(data) =>
             updateTemplate.mutate(
               { id, data },
@@ -158,8 +246,9 @@ export default function EditTemplate() {
 }
 
 import { ADAPT_PRESETS } from "@/lib/adaptPresets";
+import { SizePicker } from "@/components/SizePicker";
 
-function AdaptDialog({ templateId, templateName }: { templateId: number; templateName: string }) {
+function AdaptDialog({ templateId, templateName, base }: { templateId: number; templateName: string; base: string }) {
   const [open, setOpen] = useState(false);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [, setLocation] = useLocation();
@@ -187,13 +276,25 @@ function AdaptDialog({ templateId, templateName }: { templateId: number; templat
         onSuccess: (created) => {
           setOpen(false);
           toast({
-            title: `Created ${created.length} adapted template${created.length === 1 ? "" : "s"}`,
-            description: "Each adaptation is a normal template — fine-tune it in the editor.",
+            title: `Created ${created.length} size${created.length === 1 ? "" : "s"} in Work in progress`,
+            description: "Review them against the original, then press Make template on the ones you keep.",
           });
           queryClient.invalidateQueries({ queryKey: getListTemplatesQueryKey() });
-          setLocation("/templates");
+          setLocation(`${base}/${templateId}/compare`);
         },
-        onError: () => toast({ title: "Adaptation failed", variant: "destructive" }),
+        onError: (err) => {
+          // The server explains refusals (e.g. flat artwork can only scale to
+          // the same shape, and which sizes were blocked) — show that, not a
+          // bare failure.
+          const detail = (err as { data?: { error?: string } })?.data?.error
+            ?? (err instanceof Error && err.message ? err.message : undefined);
+          toast({
+            title: "Couldn't adapt to those sizes",
+            description: detail ?? "Something went wrong on the server. Try again, or pick fewer sizes.",
+            variant: "destructive",
+            duration: 15000,
+          });
+        },
       },
     );
   };
@@ -206,7 +307,7 @@ function AdaptDialog({ templateId, templateName }: { templateId: number; templat
           Adapt to other sizes
         </Button>
       </DialogTrigger>
-      <DialogContent className="max-w-md">
+      <DialogContent className="max-w-2xl">
         <DialogHeader>
           <DialogTitle>Adapt “{templateName}”</DialogTitle>
         </DialogHeader>
@@ -215,19 +316,18 @@ function AdaptDialog({ templateId, templateName }: { templateId: number; templat
           everything else keeps its size ratio and edge anchoring (a bottom-right logo
           stays bottom-right). Locked elements stay locked.
         </p>
-        <div className="flex flex-wrap gap-2">
-          {ADAPT_PRESETS.map((p) => (
-            <Button
-              key={p.key}
-              type="button"
-              size="sm"
-              variant={selected.has(p.key) ? "default" : "outline"}
-              onClick={() => toggle(p.key)}
-              data-testid={`adapt-target-${p.key}`}
-            >
-              {p.label} · {p.width}×{p.height}
-            </Button>
-          ))}
+        <div className="max-h-[55vh] overflow-y-auto pr-1">
+          <SizePicker
+            selected={selected}
+            onToggle={toggle}
+            onSetMany={(keys, on) =>
+              setSelected((prev) => {
+                const next = new Set(prev);
+                for (const k of keys) on ? next.add(k) : next.delete(k);
+                return next;
+              })
+            }
+          />
         </div>
         <Button
           onClick={submit}
@@ -269,11 +369,13 @@ function FreeformEditSection({
   template,
   brand,
   submitting,
+  toolbarExtra,
   onSave,
 }: {
   template: Template;
   brand: Brand | undefined;
   submitting: boolean;
+  toolbarExtra?: ReactNode;
   onSave: (data: FreeformSavePayload) => void;
 }) {
   const original = ((template.config as { elements?: FreeformElement[] })?.elements ?? []) as FreeformElement[];
@@ -284,13 +386,24 @@ function FreeformEditSection({
   const [height, setHeight] = useState(template.height);
   const [elements, setElements] = useState<FreeformElement[]>(original);
   const [draft, setDraft] = useState<FreeformElement[]>(original);
+  // Element-level reviewer feedback: "this specific element is wrong".
+  const { toast: toastFeedback } = useToast();
+  const [flagEl, setFlagEl] = useState<FreeformElement | null>(null);
+  const [flagNote, setFlagNote] = useState("");
+  const [flagBusy, setFlagBusy] = useState(false);
   const [editorKey, setEditorKey] = useState(0);
   // Alternative headline placements the layout engine scored for this size.
   type LayoutOption = { label: string; x: number; y: number; w: number; h: number; fontSize: number; align: string; color: string; score: number };
   const layoutOptions = ((template.config as { layoutOptions?: LayoutOption[] })?.layoutOptions ?? []) as LayoutOption[];
+  // What the adapt engine did to derive this size, and what to check.
+  const adaptMethod = (template.config as { adaptMethod?: string }).adaptMethod ?? null;
+  const adaptNotes = ((template.config as { adaptNotes?: string[] }).adaptNotes ?? []) as string[];
+  // The headline element the options move: key-visual adapt names it
+  // kv_headline, the recomposer rc_headline.
+  const HEADLINE_IDS = ["kv_headline", "rc_headline"];
   const applyLayoutOption = (opt: LayoutOption) => {
     const next = elements.map((el) =>
-      el.id === "kv_headline"
+      HEADLINE_IDS.includes(el.id ?? "")
         ? ({ ...el, x: opt.x, y: opt.y, w: opt.w, h: opt.h, fontSize: opt.fontSize, align: opt.align, color: opt.color } as FreeformElement)
         : el,
     );
@@ -340,7 +453,7 @@ function FreeformEditSection({
               <Undo2 className="w-4 h-4 mr-2" />
               Revert
             </Button>
-            <WLink href="/templates">
+            <WLink href={template.category === "wip" ? "/wip" : "/templates"}>
               <Button type="button" variant="outline" size="sm" disabled={submitting}>
                 Cancel
               </Button>
@@ -351,11 +464,33 @@ function FreeformEditSection({
           </div>
         </CardHeader>
         <CardContent>
+          {(adaptMethod || adaptNotes.length > 0) && (
+            <div className="mb-3 rounded-lg border border-border/60 bg-muted/30 px-3 py-2 text-xs" data-testid="adapt-notes">
+              {adaptMethod && (
+                <p className="font-medium">
+                  {adaptMethod.startsWith("recomposed:")
+                    ? `Rebuilt with the ${adaptMethod.split(":")[1]} recipe`
+                    : adaptMethod === "key-visual"
+                      ? "Key visual re-cropped and copy re-set"
+                      : adaptMethod === "panel"
+                        ? "Panel layout rebuilt"
+                        : "Scaled from the master"}
+                </p>
+              )}
+              {adaptNotes.length > 0 && (
+                <ul className="mt-1 space-y-0.5 list-disc pl-4 text-muted-foreground">
+                  {adaptNotes.map((n, i) => (
+                    <li key={i} className={n.startsWith("Check:") ? "text-amber-700" : undefined}>{n}</li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          )}
           {layoutOptions.length > 1 && (
             <div className="mb-3 flex flex-wrap items-center gap-2" data-testid="layout-options">
               <span className="text-xs text-muted-foreground mr-1">Layout options:</span>
               {layoutOptions.map((opt) => {
-                const current = elements.find((el) => el.id === "kv_headline");
+                const current = elements.find((el) => HEADLINE_IDS.includes(el.id ?? ""));
                 const active = !!current && Math.abs((current.x ?? 0) - opt.x) < 2 && Math.abs((current.y ?? 0) - opt.y) < 2;
                 return (
                   <Button
@@ -374,6 +509,7 @@ function FreeformEditSection({
             </div>
           )}
           {brand ? (
+            <>
             <FreeformEditor
               key={editorKey}
               width={width}
@@ -381,7 +517,69 @@ function FreeformEditSection({
               brand={brand}
               initialElements={draft}
               onChange={setElements}
+              toolbarExtra={toolbarExtra}
+              onMarkWrong={(el) => { setFlagEl(el); setFlagNote(""); }}
+              onMarkCorrect={async (el) => {
+                const label = `${el.type} element ${Math.round(el.w ?? 0)}×${Math.round(el.h ?? 0)} at (${Math.round(el.x ?? 0)},${Math.round(el.y ?? 0)}) in "${template.name}" ${template.width}×${template.height}`;
+                const ok = await postFeedback({ subjectType: "template", subjectId: template.id, verdict: "correct", elementId: el.id, elementLabel: label });
+                toastFeedback(ok ? { title: "Element marked correct" } : { title: "Sign in to leave feedback", variant: "destructive" });
+              }}
             />
+
+            <Dialog open={!!flagEl} onOpenChange={(o) => !o && setFlagEl(null)}>
+              <DialogContent className="max-w-md">
+                <DialogHeader>
+                  <DialogTitle>What's wrong with this element?</DialogTitle>
+                </DialogHeader>
+                <p className="text-sm text-muted-foreground -mt-2">
+                  {flagEl?.type === "image"
+                    ? "Image element"
+                    : flagEl?.type === "text"
+                      ? `Text element${(flagEl as { text?: string })?.text ? ` — "${(flagEl as { text?: string }).text?.slice(0, 40)}"` : ""}`
+                      : "Element"}{" "}
+                  at {Math.round(flagEl?.x ?? 0)},{Math.round(flagEl?.y ?? 0)} ({Math.round(flagEl?.w ?? 0)}×{Math.round(flagEl?.h ?? 0)}).
+                  Be specific — this becomes a rule the studio follows.
+                </p>
+                <Textarea
+                  value={flagNote}
+                  onChange={(e) => setFlagNote(e.target.value)}
+                  placeholder='e.g. "This button is twice the size it should be"'
+                  rows={4}
+                  data-testid="element-flag-note"
+                />
+                <div className="flex justify-end gap-2">
+                  <Button variant="outline" onClick={() => setFlagEl(null)}>Cancel</Button>
+                  <Button
+                    variant="destructive"
+                    disabled={flagBusy}
+                    data-testid="element-flag-submit"
+                    onClick={async () => {
+                      if (!flagEl) return;
+                      setFlagBusy(true);
+                      const label = `${flagEl.type} element ${Math.round(flagEl.w ?? 0)}×${Math.round(flagEl.h ?? 0)} at (${Math.round(flagEl.x ?? 0)},${Math.round(flagEl.y ?? 0)}) in "${template.name}" ${template.width}×${template.height}`;
+                      const ok = await postFeedback({
+                        subjectType: "template",
+                        subjectId: template.id,
+                        verdict: "incorrect",
+                        elementId: flagEl.id,
+                        elementLabel: label,
+                        note: flagNote,
+                      });
+                      setFlagBusy(false);
+                      setFlagEl(null);
+                      if (ok) {
+                        toastFeedback({ title: "Element marked wrong", description: "Noted — the studio will avoid repeating this." });
+                      } else {
+                        toastFeedback({ title: "Sign in to leave feedback", variant: "destructive" });
+                      }
+                    }}
+                  >
+                    Mark wrong
+                  </Button>
+                </div>
+              </DialogContent>
+            </Dialog>
+            </>
           ) : (
             <p className="text-sm text-muted-foreground text-center py-12">
               Create a brand first to edit and preview this layout.

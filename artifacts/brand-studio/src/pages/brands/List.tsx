@@ -17,7 +17,7 @@ export default function BrandList() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-4xl font-bold tracking-tight font-sans">Brands</h1>
-          <p className="text-muted-foreground mt-2 font-mono text-sm uppercase tracking-widest">Brand Guidelines & Profiles</p>
+          <p className="text-muted-foreground mt-1.5">Brand Guidelines & Profiles</p>
         </div>
         {isAdmin && (
           <Link href="/brands/new">

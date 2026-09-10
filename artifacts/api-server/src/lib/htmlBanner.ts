@@ -80,10 +80,12 @@ export function finalizeHtmlBanner(rawHtml: string, opts: FinalizeOptions): stri
   // 6-division tile of the shortest axis.
   if (opts.logoDataUri && !/id=["']ac-logo-tile["']/.test(html)) {
     const tile = Math.max(20, Math.round(Math.min(width, height) / 6));
-    // Flush to the bottom-right corner: the tile occupies the corner grid
-    // cell (the mark's clearspace is the 1/8 padding inside the white box);
-    // the 1/3-tile page margin applies to copy, not the tile itself.
-    const logoImg = `\n<img id="ac-logo-tile" src="${opts.logoDataUri}" alt="" style="position:absolute;right:0;bottom:0;width:${tile}px;height:${tile}px;object-fit:cover;z-index:2147483000;pointer-events:none">`;
+    // Flush to the bottom-right corner of the AD BOX: anchored from the
+    // top-left (left/top = ad size − tile) rather than right/bottom, so the
+    // tile stays inside the creative even when the hosting viewport or a
+    // scaled preview iframe is larger than the ad. The mark's clearspace is
+    // the 1/8 padding inside the white box.
+    const logoImg = `\n<img id="ac-logo-tile" src="${opts.logoDataUri}" alt="" style="position:absolute;left:${width - tile}px;top:${height - tile}px;width:${tile}px;height:${tile}px;object-fit:cover;z-index:2147483000;pointer-events:none">`;
     if (/<\/body>/i.test(html)) {
       html = html.replace(/<\/body>/i, `${logoImg}\n</body>`);
     } else {

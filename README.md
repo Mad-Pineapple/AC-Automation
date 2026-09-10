@@ -35,7 +35,9 @@ pnpm monorepo, Node.js 24, TypeScript.
 | `BLOB_STORE_BASE_URL` | no | Blob store public base URL; only needed if it can't be derived from the token |
 | `CRON_SECRET` | no | If set, `/api/cron/*` routes require `Authorization: Bearer <secret>` (Vercel Cron sends it automatically) |
 | `FRONTIFY_PORTAL_URL` | no | Public Frontify portal to sync the library from (defaults to the AC portal) |
-| `FRONTIFY_SYNC_MAX_NEW` | no | Max new assets fetched per `/api/cron/frontify-sync` run (default 40) |
+| `META_ACCESS_TOKEN` | no | Meta system-user token with `ads_read`; with `META_AD_ACCOUNT_ID` turns on the Meta Ads section of Performance |
+| `META_AD_ACCOUNT_ID` | no | Meta ad account (`act_…`) whose insights `/api/cron/meta-sync` pulls daily |
+| `FRONTIFY_SYNC_MAX_NEW` | no | Max new assets fetched per `/api/cron/frontify-sync` run (default 100; runs daily) |
 | `FRONTIFY_SYNC_SOURCES` | no | Comma-separated folder allowlist for the sync (e.g. `Logos,Illustrations`); default all |
 | `FRONTIFY_BRAND_NAME` | no | Brand whose library the sync targets (default `Auckland Council`) |
 | `STATIC_DIR` | no | Frontend build dir; defaults to `../brand-studio/dist/public` relative to the server bundle |

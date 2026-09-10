@@ -11,4 +11,7 @@ export const clerkConfigured = Boolean(
 );
 
 export const devAuthBypass =
-  !clerkConfigured && process.env.DEV_AUTH_BYPASS === "1";
+  !clerkConfigured &&
+  process.env.DEV_AUTH_BYPASS === "1" &&
+  !process.env.VERCEL &&
+  process.env.NODE_ENV !== "production";

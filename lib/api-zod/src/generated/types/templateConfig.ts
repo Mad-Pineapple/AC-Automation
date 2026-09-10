@@ -16,4 +16,8 @@ export interface TemplateConfig {
   /** preset | freeform (absent means preset) */
   kind?: string;
   elements?: FreeformElement[];
+  /** How an adapted template was derived: recomposed:<class> | key-visual | panel | scaled */
+  adaptMethod?: string;
+  /** What the adapt engine decided and what a designer should check */
+  adaptNotes?: string[];
 }

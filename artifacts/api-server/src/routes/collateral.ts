@@ -1,6 +1,12 @@
 import { Router } from "express";
+import { db } from "@workspace/db";
+import { templatesTable } from "@workspace/db";
+import { inArray } from "drizzle-orm";
 import { requireAuth } from "../middlewares/requireAuth";
 import { parseCollateralBrief } from "../lib/collateralBrief";
+import { planCampaignBuild, type SizeInput } from "../lib/campaignPlan";
+import { normalizeFreeformConfig } from "../lib/freeform";
+import { isFlatArtwork } from "../lib/slots";
 import { ObjectStorageService } from "../lib/objectStorage";
 
 const router = Router();
@@ -30,6 +36,56 @@ router.post("/briefs/collateral-plan", requireAuth, async (req, res): Promise<vo
       error: err instanceof Error ? err.message.slice(0, 200) : "Could not read that workbook.",
     });
   }
+});
+
+/**
+ * POST /campaigns/build-plan  { masterTemplateIds, sizes, campaignName? }
+ *
+ * Decide how to produce a brief from the example artwork supplied: every
+ * size is matched to the closest-shaped example, for every message variant
+ * the examples carry. Returns the work list the build then executes.
+ */
+router.post("/campaigns/build-plan", requireAuth, async (req, res): Promise<void> => {
+  const rawIds: unknown[] = Array.isArray(req.body?.masterTemplateIds) ? req.body.masterTemplateIds : [];
+  const ids = rawIds.map(Number).filter((n) => Number.isInteger(n) && n > 0).slice(0, 100);
+  const rawSizes: unknown[] = Array.isArray(req.body?.sizes) ? req.body.sizes : [];
+  const sizes: SizeInput[] = rawSizes
+    .filter((s): s is Record<string, unknown> => typeof s === "object" && s !== null)
+    .map((s) => ({
+      width: Number(s.width),
+      height: Number(s.height),
+      unit: typeof s.unit === "string" ? s.unit : "px",
+      names: Array.isArray(s.names) ? (s.names as unknown[]).filter((n): n is string => typeof n === "string") : [],
+    }))
+    .filter((s) => Number.isFinite(s.width) && Number.isFinite(s.height) && s.width > 0 && s.height > 0)
+    .slice(0, 200);
+
+  if (ids.length === 0 || sizes.length === 0) {
+    res.status(400).json({ error: "masterTemplateIds and sizes are both required" });
+    return;
+  }
+
+  const rows = await db
+    .select({ id: templatesTable.id, name: templatesTable.name, width: templatesTable.width, height: templatesTable.height, config: templatesTable.config })
+    .from(templatesTable)
+    .where(inArray(templatesTable.id, ids));
+  if (rows.length === 0) {
+    res.status(404).json({ error: "None of those example templates exist" });
+    return;
+  }
+
+  const campaignName = typeof req.body?.campaignName === "string" ? req.body.campaignName.trim().slice(0, 80) : "";
+  const masters = rows.map((r) => {
+    let flat = false;
+    try {
+      const raw = JSON.parse(r.config) as { kind?: string };
+      if (raw?.kind === "freeform") flat = isFlatArtwork(normalizeFreeformConfig(raw));
+    } catch {
+      flat = false;
+    }
+    return { id: r.id, name: r.name, width: r.width, height: r.height, flat };
+  });
+  res.json(planCampaignBuild(masters, sizes, { campaignName }));
 });
 
 export default router;

@@ -26,7 +26,7 @@ interface ExportStaticMenuProps {
   size?: "sm" | "default";
 }
 
-type ExportKind = "png1" | "png2" | "jpg" | "pdf" | "zip";
+type ExportKind = "png1" | "png2" | "jpg" | "pdf" | "zip" | "sheet";
 
 const LABELS: Record<ExportKind, string> = {
   png1: "PNG @1x",
@@ -34,6 +34,7 @@ const LABELS: Record<ExportKind, string> = {
   jpg: "JPG",
   pdf: "Print PDF (bleed + marks)",
   zip: "Whole family (zip)",
+  sheet: "Meta tracking sheet (CSV)",
 };
 
 function filenameFromDisposition(header: string | null, fallback: string): string {
@@ -83,6 +84,16 @@ export function ExportStaticMenu({ templateId, templateName, familyIds, size = "
             body: JSON.stringify(familyIds && familyIds.length > 0 ? { ids: familyIds } : {}),
           };
           break;
+        case "sheet": {
+          const campaign = window.prompt("Campaign name for the sheet (used in utm_campaign and file names):", templateName.split(" — ")[0]);
+          if (campaign === null) { setBusy(null); return; }
+          const clickUrl = window.prompt("Destination URL (optional — parameters are appended):", "") ?? "";
+          const q = new URLSearchParams({ campaign });
+          if (/^https?:\/\//i.test(clickUrl.trim())) q.set("clickUrl", clickUrl.trim());
+          if (familyIds && familyIds.length > 0) q.set("ids", familyIds.join(","));
+          url = `${base}/tracking-sheet.csv?${q.toString()}`;
+          break;
+        }
       }
 
       // Same auth as the generated API client: the Clerk session cookie, plus
@@ -109,7 +120,7 @@ export function ExportStaticMenu({ templateId, templateName, familyIds, size = "
       }
 
       const blob = await res.blob();
-      const ext = kind === "zip" ? "zip" : kind === "pdf" ? "pdf" : kind === "jpg" ? "jpg" : "png";
+      const ext = kind === "zip" ? "zip" : kind === "pdf" ? "pdf" : kind === "jpg" ? "jpg" : kind === "sheet" ? "csv" : "png";
       const fallback = `${templateName.replace(/[^\w.-]+/g, "-") || "template"}.${ext}`;
       const filename = filenameFromDisposition(res.headers.get("content-disposition"), fallback);
 
@@ -174,6 +185,11 @@ export function ExportStaticMenu({ templateId, templateName, familyIds, size = "
         <DropdownMenuSeparator />
         <DropdownMenuItem onSelect={() => void run("zip")} data-testid="export-family-zip">
           {LABELS.zip}
+        </DropdownMenuItem>
+        <DropdownMenuSeparator />
+        <DropdownMenuLabel>Paid social</DropdownMenuLabel>
+        <DropdownMenuItem onSelect={() => void run("sheet")} data-testid="export-tracking-sheet">
+          {LABELS.sheet}
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

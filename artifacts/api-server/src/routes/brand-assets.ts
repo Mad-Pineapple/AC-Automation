@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { db } from "@workspace/db";
 import { brandAssetsTable, brandAssetKindValues, brandsTable, templatesTable } from "@workspace/db";
-import { eq } from "drizzle-orm";
+import { eq, desc } from "drizzle-orm";
 import { optionalAuth, requireAuth, requireAdmin } from "../middlewares/requireAuth";
 import { importInDesignPackage } from "../lib/indesignPackage";
 import { normalizeFreeformConfig } from "../lib/freeform";
@@ -34,7 +34,7 @@ router.get("/brands/:brandId/assets", optionalAuth, async (req, res): Promise<vo
     .select()
     .from(brandAssetsTable)
     .where(eq(brandAssetsTable.brandId, brandId))
-    .orderBy(brandAssetsTable.id);
+    .orderBy(desc(brandAssetsTable.id)); // newest first
   res.json(assets.map(formatBrandAsset));
 });
 
@@ -104,29 +104,41 @@ router.post("/brands/:brandId/assets/import-package", requireAdmin, async (req, 
         contentType: asset.contentType,
       });
     }
-    // Stage 2: the IDML layout becomes a fully editable template — the
-    // designer's exact text, colours, frames and stacking order.
+    // Stage 2: every IDML spread becomes a fully editable template — one
+    // message variant per spread in real campaign masters.
     let idmlTemplateId: number | null = null;
+    const idmlTemplateIds: number[] = [];
     let idmlWarnings: string[] = [];
-    if (result.idmlLayout) {
-      const config = normalizeFreeformConfig({ kind: "freeform", elements: result.idmlLayout.elements });
-      const [brand] = await db.select().from(brandsTable).where(eq(brandsTable.id, brandId));
-      const snapped = brand ? snapConfigToPalette(config, collectBrandPaletteHexes(brand)) : 0;
-      idmlWarnings = [...result.idmlLayout.warnings];
-      if (snapped > 0) idmlWarnings.push(`${snapped} colour(s) snapped to exact brand values.`);
-      const [template] = await db
-        .insert(templatesTable)
-        .values({
-          name: packageName,
-          description: `Imported from InDesign package (IDML layout)`,
-          category: "custom",
-          width: result.idmlLayout.width,
-          height: result.idmlLayout.height,
-          config: JSON.stringify(config),
-          createdBy: (req as any).clerkUserId ?? null,
-        })
-        .returning();
-      idmlTemplateId = template.id;
+    if (result.idmlLayouts.length > 0) {
+      for (const layout of result.idmlLayouts) {
+        // No palette snapping here: IDML colours go through the same CMYK
+        // conversion pdf.js uses, so they already match the shipped artwork
+        // exactly — "correcting" them to digital brand values would visibly
+        // shift the design (and clash with PDF-cropped regions).
+        const config = normalizeFreeformConfig({ kind: "freeform", elements: layout.elements });
+        for (const w of layout.warnings) if (!idmlWarnings.includes(w)) idmlWarnings.push(w);
+        const name =
+          result.idmlLayouts.length > 1 && layout.label ? `${packageName} — ${layout.label}` : packageName;
+        const [template] = await db
+          .insert(templatesTable)
+          .values({
+            name,
+            description: `Imported from InDesign package (IDML layout)`,
+            category: "custom",
+            width: layout.width,
+            height: layout.height,
+            config: JSON.stringify(config),
+            createdBy: (req as any).clerkUserId ?? null,
+          })
+          .returning();
+        idmlTemplateIds.push(template.id);
+      }
+      idmlTemplateId = idmlTemplateIds[0] ?? null;
+      if (result.idmlLayouts.length > 1) {
+        idmlWarnings.push(
+          `Document has ${result.idmlLayouts.length} pages — each imported as its own template variant.`,
+        );
+      }
     } else if (result.idmlError) {
       idmlWarnings = [`IDML could not be parsed: ${result.idmlError}`];
     }
@@ -139,6 +151,7 @@ router.post("/brands/:brandId/assets/import-package", requireAdmin, async (req, 
       idmlFound: result.idmlFound,
       fontsSkipped: result.fontsSkipped,
       idmlTemplateId,
+      idmlTemplateIds,
       idmlWarnings,
     });
   } catch (err) {

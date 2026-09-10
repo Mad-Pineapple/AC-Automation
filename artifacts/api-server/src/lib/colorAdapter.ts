@@ -55,18 +55,36 @@ export function rgbToHex({ r, g, b }: Rgb): string {
   return `#${to(r)}${to(g)}${to(b)}`;
 }
 
-/** Accepts components in 0-1 or 0-100 (values > 1 are treated as percent). */
+/** Accepts components in 0-1 or 0-100 (values > 1 are treated as percent).
+ * Uses pdf.js's DeviceCMYK polynomial (not the naive formula) so live shapes
+ * converted from InDesign CMYK match the pixels pdf.js renders from the same
+ * document — imported rects sit seamlessly beside PDF-cropped artwork. */
 export function cmykToRgb(c: number, m: number, y: number, k: number): Rgb {
   const unit = (v: number) => {
     const n = Number.isFinite(v) ? (v > 1 ? v / 100 : v) : 0;
     return Math.max(0, Math.min(1, n));
   };
   const [C, M, Y, K] = [unit(c), unit(m), unit(y), unit(k)];
-  return {
-    r: 255 * (1 - C) * (1 - K),
-    g: 255 * (1 - M) * (1 - K),
-    b: 255 * (1 - Y) * (1 - K),
-  };
+  const r =
+    255 +
+    C * (-4.387332384609988 * C + 54.48615194189176 * M + 18.82290502165302 * Y + 212.25662451639585 * K - 285.2331026137004) +
+    M * (1.7149763477362134 * M - 5.6096736904047315 * Y - 17.873870861415444 * K - 5.497006427196366) +
+    Y * (-2.5217340131683033 * Y - 21.248923337353073 * K + 17.5119270841813) +
+    K * (-21.86122147463605 * K - 189.48180835922747);
+  const g =
+    255 +
+    C * (8.841041422036149 * C + 60.118027045597366 * M + 6.871425592049007 * Y + 31.159100130055922 * K - 79.2970844816548) +
+    M * (-15.310361306967817 * M + 17.575251261109482 * Y + 131.35250912493976 * K - 190.9453302588951) +
+    Y * (4.444339102852739 * Y + 9.8632861493405 * K - 24.86741582555878) +
+    K * (-20.737325471181034 * K - 187.80453709719578);
+  const b =
+    255 +
+    C * (0.8842522430003296 * C + 8.078677503112928 * M + 30.89978309703729 * Y - 0.23883238689178934 * K - 14.183576799673286) +
+    M * (10.49593273432072 * M + 63.02378494754052 * Y + 50.606957656360734 * K - 112.23884253719248) +
+    Y * (0.03296041114873217 * Y + 115.60384449646641 * K - 193.58209356861505) +
+    K * (-22.33816807309886 * K - 180.12613974708367);
+  const clamp = (v: number) => Math.max(0, Math.min(255, v));
+  return { r: clamp(r), g: clamp(g), b: clamp(b) };
 }
 
 export function cmykToHex(c: number, m: number, y: number, k: number): string {

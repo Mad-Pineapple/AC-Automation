@@ -47,7 +47,7 @@ export default function NewBrand() {
           <ChevronLeft className="w-5 h-5" />
         </Link>
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">New Brand Profile</h1>
+          <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight">New Brand Profile</h1>
           <p className="text-muted-foreground text-sm font-mono mt-1">Configure brand identity and AI context</p>
         </div>
       </div>

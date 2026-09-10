@@ -176,39 +176,50 @@ export default function DispatchScreen() {
       );
 
       const assetFolder = zip.folder("assets");
+      // One file per asset: size + variant + id, so copy options and feed
+      // variants never overwrite each other. Count what actually landed.
+      let written = 0;
+      const skipped: string[] = [];
+      const nameFor = (asset: (typeof shippableAssets)[number]) =>
+        `${asset.templateSize}${asset.variantLabel ? "_" + asset.variantLabel.replace(/[^a-zA-Z0-9]+/g, "-") : ""}_${asset.id}`;
       for (const asset of shippableAssets) {
         if (asset.isAnimated && asset.htmlContent) {
           // Animated banners are self-contained animated HTML; ship the .html so
           // the motion is preserved (a flat GIF/PNG would lose it).
           if (assetFolder) {
-            assetFolder.file(`${asset.templateSize}.html`, asset.htmlContent);
+            assetFolder.file(`${nameFor(asset)}.html`, asset.htmlContent);
+            written++;
           }
         } else if (asset.isAnimated) {
           const gifBlob = await captureAnimatedAssetAsGif(asset, brief.brand);
           if (gifBlob && assetFolder) {
-            assetFolder.file(`${asset.templateSize}.gif`, gifBlob);
-          }
+            assetFolder.file(`${nameFor(asset)}.gif`, gifBlob);
+            written++;
+          } else skipped.push(nameFor(asset));
         } else if (asset.templateSize === "html_banner") {
           // Ship the real HTML5 creative (clickTag + ad.size intact) the way ad
           // servers expect it, plus a static PNG fallback — mirroring how agency
           // HTML5 display ads are dispatched.
           if (asset.htmlContent && assetFolder) {
-            assetFolder.file(`${asset.templateSize}.html`, asset.htmlContent);
+            assetFolder.file(`${nameFor(asset)}.html`, asset.htmlContent);
+            written++;
           }
           const blob = await captureHtmlBannerAsPng(asset.htmlContent ?? "");
           if (blob && assetFolder) {
-            assetFolder.file(`${asset.templateSize}_static.png`, blob);
-          }
+            assetFolder.file(`${nameFor(asset)}_static.png`, blob);
+          } else skipped.push(`${nameFor(asset)}_static`);
         } else if (exportFormat === "jpg") {
           const blob = await captureAssetAsJpg(asset, brief.brand);
           if (blob && assetFolder) {
-            assetFolder.file(`${asset.templateSize}.jpg`, blob);
-          }
+            assetFolder.file(`${nameFor(asset)}.jpg`, blob);
+            written++;
+          } else skipped.push(nameFor(asset));
         } else {
           const blob = await captureAssetAsPng(asset, brief.brand);
           if (blob && assetFolder) {
-            assetFolder.file(`${asset.templateSize}.png`, blob);
-          }
+            assetFolder.file(`${nameFor(asset)}.png`, blob);
+            written++;
+          } else skipped.push(nameFor(asset));
         }
       }
 
@@ -219,13 +230,11 @@ export default function DispatchScreen() {
       a.download = `${brief.campaignName.replace(/[^a-zA-Z0-9]/g, "-")}-assets.zip`;
       a.click();
       URL.revokeObjectURL(url);
-      const stillCount = shippableAssets.filter(a => !a.isAnimated).length;
-      const htmlAnimCount = shippableAssets.filter(a => a.isAnimated && a.htmlContent).length;
-      const gifAnimCount = shippableAssets.filter(a => a.isAnimated && !a.htmlContent).length;
       toast({
-        title: `ZIP downloaded - ${stillCount} ${ext.toUpperCase()}`
-          + (htmlAnimCount ? ` + ${htmlAnimCount} HTML` : "")
-          + (gifAnimCount ? ` + ${gifAnimCount} GIF` : ""),
+        title: `ZIP downloaded — ${written} of ${shippableAssets.length} files`,
+        description: skipped.length ? `Could not render: ${skipped.slice(0, 5).join(", ")}${skipped.length > 5 ? ", …" : ""}. Open the review screen and regenerate those.` : undefined,
+        variant: skipped.length ? "destructive" : undefined,
+        duration: skipped.length ? 15000 : undefined,
       });
     } catch (err) {
       toast({ title: "Download failed - check browser console", variant: "destructive" });
@@ -245,7 +254,7 @@ export default function DispatchScreen() {
           <ChevronLeft className="w-5 h-5" />
         </Link>
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Dispatch Assets</h1>
+          <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight">Dispatch Assets</h1>
           <p className="text-muted-foreground text-sm font-mono mt-1">
             {brief.campaignName} · {shippableAssets?.length ?? 0} asset{(shippableAssets?.length ?? 0) !== 1 ? "s" : ""} to dispatch
             {rejectedCount > 0 && <> · {rejectedCount} rejected excluded</>}
@@ -368,7 +377,7 @@ export default function DispatchScreen() {
               </div>
             </label>
             <label className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-colors ${methods.includes("email") ? "border-primary bg-primary/5" : "border-border hover:border-muted-foreground"}`}>
-              <Checkbox checked={methods.includes("email")} onCheckedChange={() => toggleMethod("email")} data-testid="checkbox-email" />
+              <Checkbox checked={false} disabled data-testid="checkbox-email" />
               <Mail className="w-4 h-4 text-muted-foreground" />
               <div>
                 <p className="text-sm font-medium">Email</p>

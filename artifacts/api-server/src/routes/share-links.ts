@@ -34,9 +34,13 @@ router.post("/briefs/:id/share-links", requireAuth, async (req: any, res): Promi
     res.status(400).json({ error: "Invalid brief id" });
     return;
   }
-  const [brief] = await db.select({ id: briefsTable.id }).from(briefsTable).where(eq(briefsTable.id, briefId));
+  const [brief] = await db.select({ id: briefsTable.id, createdBy: briefsTable.createdBy }).from(briefsTable).where(eq(briefsTable.id, briefId));
   if (!brief) {
     res.status(404).json({ error: "Brief not found" });
+    return;
+  }
+  if (req.user?.role !== "admin" && brief.createdBy && brief.createdBy !== req.clerkUserId) {
+    res.status(403).json({ error: "Only the campaign's owner or an admin can share it" });
     return;
   }
   const rawDays = req.body?.expiresInDays;
@@ -141,7 +145,8 @@ router.get("/share/:token", async (req, res): Promise<void> => {
     brandLogoUrl: relativizeStorageUrl(brand?.logoUrl ?? null),
     expiresAt: link.expiresAt ? link.expiresAt.toISOString() : null,
     assets: assets
-      .filter((a) => a.status !== "generating")
+      // Stakeholders see only what could ship: never rejected or non-compliant pieces.
+      .filter((a) => a.status !== "generating" && a.status !== "rejected" && a.complianceStatus !== "failed")
       .map((a) => ({
         id: a.id,
         templateSize: a.templateSize,

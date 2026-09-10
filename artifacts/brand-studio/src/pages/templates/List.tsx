@@ -6,13 +6,13 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Plus, Pencil, Trash2, LayoutTemplate, FileUp, FileText, Folder } from "lucide-react";
+import { Plus, Pencil, Trash2, LayoutTemplate, FileUp, FileText, Folder, ArrowUpRight } from "lucide-react";
 import { isTemplateFolder } from "@/lib/templateFolders";
 import { TemplateThumbnail, LayoutOptions } from "@/components/TemplateRenderer";
 import { useToast } from "@/hooks/use-toast";
 import { useMe } from "@/hooks/use-me";
 
-function TemplateCard({ template, isAdmin, onDelete }: { template: Template; isAdmin: boolean; onDelete: (t: Template) => void }) {
+function TemplateCard({ template, isAdmin, onDelete, onPromote }: { template: Template; isAdmin: boolean; onDelete: (t: Template) => void; onPromote?: (t: Template) => void }) {
   const { data: brands } = useListBrands();
   const brand = brands?.[0];
   // Measure the preview box so the thumbnail fits inside it entirely.
@@ -75,6 +75,11 @@ function TemplateCard({ template, isAdmin, onDelete }: { template: Template; isA
                 <Pencil className="w-3.5 h-3.5 mr-2" />Edit
               </Button>
             </Link>
+            {onPromote && (
+              <Button size="sm" onClick={() => onPromote(template)} data-testid={`button-promote-template-${template.id}`}>
+                <ArrowUpRight className="w-3.5 h-3.5 mr-1.5" />Make template
+              </Button>
+            )}
             <Button variant="ghost" size="sm" onClick={() => onDelete(template)} data-testid={`button-delete-template-${template.id}`}>
               <Trash2 className="w-3.5 h-3.5 text-destructive" />
             </Button>
@@ -168,7 +173,9 @@ function BrandTemplateFiles() {
 
 export default function TemplateList() {
   const { data: allTemplates, isLoading } = useListTemplates();
-  const templates = allTemplates?.filter(t => t.category !== "knowledge");
+  // Work-in-progress imports live on their own page (/wip) and are not
+  // selectable in briefs until promoted to a real template.
+  const templates = allTemplates?.filter(t => t.category !== "knowledge" && t.category !== "wip");
   const { data: meData } = useMe();
   const isAdmin = meData?.role === "admin";
   const queryClient = useQueryClient();
@@ -190,8 +197,8 @@ export default function TemplateList() {
     <div className="space-y-8">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Templates</h1>
-          <p className="text-muted-foreground text-sm font-mono mt-1 uppercase tracking-widest">Custom Creative Formats</p>
+          <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight">Templates</h1>
+          <p className="text-muted-foreground mt-1.5">Custom Creative Formats</p>
         </div>
         {isAdmin && (
           <div className="flex gap-2">

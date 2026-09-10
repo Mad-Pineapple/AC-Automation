@@ -88,15 +88,17 @@ export default function NewBrief() {
   const { uploadFile, isUploading } = useUpload();
   const { data: brands, isLoading: brandsLoading } = useListBrands();
   const { data: campaigns } = useListCampaigns();
-  const { data: customTemplates } = useListTemplates();
+  const { data: customTemplates } = useListTemplates({ include: "knowledge" });
   const builtinOptions = ALL_TEMPLATE_SIZES.map(k => ({ key: k, label: TEMPLATE_SIZE_LABELS[k] }));
   // Templates (custom formats and learned creatives) are reusable layouts that
   // aren't tied to a brand's supported sizes, so they stay selectable in any brief.
-  const templateOptions = (customTemplates ?? []).map(t => ({
-    key: t.key,
-    label: `${t.name} (${t.dims})`,
-    category: t.category,
-  }));
+  const templateOptions = (customTemplates ?? [])
+    .filter(t => t.category !== "wip") // WIP imports aren't offered until promoted
+    .map(t => ({
+      key: t.key,
+      label: `${t.name} (${t.dims})`,
+      category: t.category,
+    }));
   const customKeys = new Set(templateOptions.map(o => o.key));
   const sizeOptions = [...builtinOptions, ...templateOptions];
   const [presetApplied, setPresetApplied] = useState(false);
@@ -126,6 +128,27 @@ export default function NewBrief() {
   const useAiCopy = form.watch("useAiCopy");
   const selectedBrandId = form.watch("brandId");
   const selectedSizes = form.watch("templateSizes");
+
+  // Prefill from a campaign idea handed over by the Dashboard's ideas panel.
+  useEffect(() => {
+    const raw = sessionStorage.getItem("pendingCampaignIdea");
+    if (!raw) return;
+    sessionStorage.removeItem("pendingCampaignIdea");
+    try {
+      const idea = JSON.parse(raw) as { title?: string; notes?: string; sizes?: string[] };
+      if (idea.title) form.setValue("campaignName", idea.title, { shouldValidate: true });
+      if (idea.notes) form.setValue("notes", idea.notes);
+      if (Array.isArray(idea.sizes) && idea.sizes.length > 0) {
+        form.setValue("templateSizes", idea.sizes, { shouldValidate: true });
+        setSizesTouched(true); // the idea chose sizes deliberately — don't re-suggest over them
+        setSuggestReason("Sizes chosen by the campaign idea — adjust as needed.");
+      }
+      toast({ title: "Brief pre-filled from campaign idea", description: "Review, pick a brand, then create." });
+    } catch {
+      // malformed handoff — ignore
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Auto-suggest sizes from whatever the user has typed (or imported from a
   // brief document). Debounced; stops the moment the user picks sizes by hand.
@@ -343,8 +366,8 @@ export default function NewBrief() {
           <ChevronLeft className="w-5 h-5" />
         </Link>
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">New Campaign Brief</h1>
-          <p className="text-muted-foreground text-sm font-mono mt-1 uppercase tracking-widest">Configure Your Campaign</p>
+          <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight">New campaign</h1>
+          <p className="text-muted-foreground mt-1.5">Set up your campaign and pick its formats</p>
         </div>
       </div>
 

@@ -1,6 +1,9 @@
 import { ReactNode, useState } from "react";
 import { Link, useLocation } from "wouter";
+import { StanBubbles } from "@/components/StanBubbles";
+import { UpdateNotifier } from "@/components/UpdateNotifier";
 import {
+  Hammer,
   LayoutDashboard,
   Briefcase,
   Palette,
@@ -14,8 +17,7 @@ import {
   ImageIcon,
   Images,
   AlertTriangle,
-  ExternalLink,
-} from "lucide-react";
+  ExternalLink } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useClerk, useUser } from "@clerk/react";
 import { useListBrands } from "@workspace/api-client-react";
@@ -65,10 +67,11 @@ export function Layout({ children }: LayoutProps) {
 
   const navigation = [
     { name: "Dashboard", href: "/", icon: LayoutDashboard, show: true },
-    { name: "Briefs", href: "/briefs", icon: Briefcase, show: true },
+    { name: "Campaigns", href: "/briefs", icon: Briefcase, show: true },
     { name: "Brands", href: "/brands", icon: Palette, show: true },
     { name: "Library", href: "/library", icon: Images, show: true },
     { name: "Templates", href: "/templates", icon: LayoutTemplate, show: true },
+    { name: "WIP", href: "/wip", icon: Hammer, show: true },
     { name: "Performance", href: "/performance", icon: BarChart3, show: true },
     { name: "Team", href: "/team", icon: Users, show: isAdmin },
   ].filter((n) => n.show);
@@ -190,7 +193,7 @@ export function Layout({ children }: LayoutProps) {
             <span className="text-base font-extrabold tracking-tight">Brand Studio</span>
           </div>
         </Link>
-        <span className="hidden md:block text-xs font-mono font-semibold uppercase tracking-[0.2em] text-muted-foreground">
+        <span className="hidden md:block text-[15px] font-bold tracking-tight text-foreground">
           {activeName}
         </span>
 
@@ -213,7 +216,7 @@ export function Layout({ children }: LayoutProps) {
                   data-testid="button-new-brief"
                 >
                   <Plus className="w-4 h-4" />
-                  <span className="hidden sm:inline">New brief</span>
+                  <span className="hidden sm:inline">New campaign</span>
                 </Button>
               </Link>
 
@@ -323,7 +326,11 @@ export function Layout({ children }: LayoutProps) {
 
       {/* Main content */}
       <main className="flex-1 overflow-y-auto">
-        <div className="px-4 py-4 md:px-8 md:py-6 w-full">{children}</div>
+        {/* key={location}: re-runs the entrance animation on each navigation
+            so pages arrive rather than snapping in. */}
+        <div key={location} className="px-4 py-4 md:px-8 md:py-6 w-full page-enter">{children}</div>
+          <StanBubbles />
+          <UpdateNotifier />
       </main>
       </div>
 

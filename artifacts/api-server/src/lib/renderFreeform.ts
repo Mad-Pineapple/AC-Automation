@@ -42,6 +42,7 @@ import sharp from "sharp";
 import type { FreeformConfig, FreeformElement, FreeformImage, FreeformRect, FreeformText } from "./freeform";
 import { rgbToCmyk } from "./colorAdapter";
 import { loadNational2, hasFontFamily, NATIONAL2_FAMILY, type LoadedFont } from "./freeformFonts";
+import { ensureBrandFontsRegistered } from "./brandFonts";
 
 // ---------------------------------------------------------------------------
 // Public types
@@ -250,6 +251,14 @@ function layoutText(el: FreeformText, fonts: Record<400 | 700, LoadedFont>, bran
       lines.push({ text: line, width, dx, baseline: lines.length * lineHeightPx + halfLeading + ascentPx });
     }
   }
+  // InDesign auto-sized frames hug the cap height: the frame bottom IS the
+  // first baseline. Shift the whole block so imported text sits exactly
+  // where the designer put it, whatever the substituted metrics say.
+  // (Only while it still fits one line — once adaptation re-wraps the copy,
+  // the frame no longer hugs a single cap row and CSS layout is safer.)
+  if (el.baselineFit === "cap" && lines.length === 1 && (el.h ?? 0) > 0) {
+    lines[0].baseline = el.h as number;
+  }
   return { lines, family, weight, italic, fontSize, letterSpacing, lineHeightPx };
 }
 
@@ -439,6 +448,7 @@ function drawTextCanvas(ctx: SKRSContext2D, el: FreeformText, layout: TextLayout
 
 async function renderToCanvas(config: FreeformConfig, width: number, height: number, opts: RasterOptions) {
   const fonts = await loadNational2();
+  await ensureBrandFontsRegistered();
   const scale = Math.max(0.05, Math.min(8, opts.scale ?? 1));
   const canvas = createCanvas(Math.max(1, Math.round(width * scale)), Math.max(1, Math.round(height * scale)));
   const ctx = canvas.getContext("2d");
@@ -728,6 +738,7 @@ function drawCropMarks(ctx: PdfCtx, trim: { x: number; y: number; w: number; h: 
 
 export async function renderFreeformToPdf(config: FreeformConfig, width: number, height: number, opts: PdfOptions): Promise<PdfResult> {
   const fonts = await loadNational2();
+  await ensureBrandFontsRegistered();
   const doc = await PDFDocument.create();
   doc.registerFontkit(fontkit);
   if (opts.title) doc.setTitle(opts.title);

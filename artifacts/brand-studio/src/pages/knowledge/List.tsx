@@ -96,7 +96,7 @@ function GuidelineCard({ brand }: { brand: Brand }) {
 }
 
 export default function KnowledgeList() {
-  const { data: templates, isLoading } = useListTemplates();
+  const { data: templates, isLoading } = useListTemplates({ include: "knowledge" });
   const { data: brands, isLoading: brandsLoading } = useListBrands();
   const { data: meData } = useMe();
   const isAdmin = meData?.role === "admin";
@@ -122,8 +122,8 @@ export default function KnowledgeList() {
     <div className="space-y-10">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Knowledge</h1>
-          <p className="text-muted-foreground text-sm font-mono mt-1 uppercase tracking-widest">Brand guidelines &amp; learned creatives</p>
+          <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight">Knowledge</h1>
+          <p className="text-muted-foreground mt-1.5">Brand guidelines &amp; learned creatives</p>
         </div>
         {isAdmin && (
           <div className="flex gap-2">

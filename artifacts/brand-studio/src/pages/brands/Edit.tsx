@@ -3,6 +3,7 @@ import {
   useGetBrand, useUpdateBrand, getListBrandsQueryKey, getGetBrandQueryKey,
   useListBrandStyles, useDeleteBrandStyle, useCreateBrandStyle, getListBrandStylesQueryKey,
   useAnalyzeBrandGuideline,
+  useAnalyzeBrandUrl,
   useCreateBrandAsset, getListBrandAssetsQueryKey,
   type Brand, type BrandInput, type AnalyzeGuidelineResponse, type GuidelineSuggestions, type ExtractedImage,
 } from "@workspace/api-client-react";
@@ -16,11 +17,12 @@ import { useLocation, useParams, useSearch } from "wouter";
 import { useUser } from "@clerk/react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
-import { ChevronLeft, Trash2, Palette, Settings, Image as ImageIcon, Upload, Loader2, Sparkles, Check, X } from "lucide-react";
+import { ChevronLeft, Trash2, Palette, Settings, Image as ImageIcon, Upload, Loader2, Sparkles, Check, X, Globe } from "lucide-react";
 import { Link } from "wouter";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { useMe } from "@/hooks/use-me";
 
@@ -340,7 +342,28 @@ function BrandDetailsTab({
   const { toast } = useToast();
   const { uploadFile, isUploading } = useUpload();
   const analyzeGuideline = useAnalyzeBrandGuideline();
+  const analyzeUrl = useAnalyzeBrandUrl();
+  const [siteUrl, setSiteUrl] = useState("");
   const [result, setResult] = useState<AnalyzeGuidelineResponse | null>(null);
+
+  const handleAnalyzeUrl = async () => {
+    const url = siteUrl.trim();
+    if (url.length < 4) return;
+    setResult(null);
+    try {
+      const res = await analyzeUrl.mutateAsync({ data: { url } });
+      setResult(res);
+      const found = Object.keys(res.suggestions).length;
+      toast(
+        found > 0
+          ? { title: `Found ${found} field${found !== 1 ? "s" : ""} from the site`, description: "Review below, then apply what you want to keep." }
+          : { title: "Nothing detected", description: "We couldn't infer brand fields from that site." },
+      );
+    } catch (err) {
+      const data = (err as { data?: { error?: string } } | null)?.data;
+      toast({ title: "Site analysis failed", description: data?.error ?? "Could not analyse that website.", variant: "destructive" });
+    }
+  };
   const [appliedSuggestions, setAppliedSuggestions] = useState<GuidelineSuggestions | null>(null);
   const [appliedGuidelines, setAppliedGuidelines] = useState<string | null>(null);
   const [appliedLogoUrl, setAppliedLogoUrl] = useState<{ value: string; nonce: number } | null>(null);
@@ -495,6 +518,36 @@ function BrandDetailsTab({
                 ? "Analyzing..."
                 : "Upload PDF"}
           </label>
+        </CardContent>
+        {/* Business-DNA style: build the same suggestions from a live website */}
+        <CardContent className="pt-0">
+          <div className="flex items-center gap-2 border-t pt-4">
+            <Globe className="w-4 h-4 text-muted-foreground shrink-0" />
+            <Input
+              value={siteUrl}
+              onChange={(e) => setSiteUrl(e.target.value)}
+              placeholder="or analyse a website — e.g. aucklandcouncil.govt.nz"
+              className="h-8 text-sm"
+              disabled={analyzeUrl.isPending}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  e.preventDefault();
+                  handleAnalyzeUrl();
+                }
+              }}
+            />
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              className="gap-1.5 shrink-0"
+              disabled={analyzeUrl.isPending || siteUrl.trim().length < 4}
+              onClick={handleAnalyzeUrl}
+            >
+              {analyzeUrl.isPending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Sparkles className="w-3.5 h-3.5" />}
+              {analyzeUrl.isPending ? "Analysing…" : "Analyse site"}
+            </Button>
+          </div>
         </CardContent>
       </Card>
 
@@ -718,7 +771,7 @@ export default function EditBrand() {
           <ChevronLeft className="w-5 h-5" />
         </Link>
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">
+          <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight">
             {isAdmin ? "Edit Brand Profile" : "Brand Profile"}
           </h1>
           <p className="text-muted-foreground text-sm font-mono mt-1">{brand?.name}</p>

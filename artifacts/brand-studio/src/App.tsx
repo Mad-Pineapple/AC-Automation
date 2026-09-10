@@ -28,8 +28,10 @@ import CampaignDetail from "@/pages/campaigns/Detail";
 import Performance from "@/pages/Performance";
 import TeamPage from "@/pages/team";
 import TemplateList from "@/pages/templates/List";
+import WipList from "@/pages/wip/List";
 import NewTemplate from "@/pages/templates/New";
 import ImportPdf from "@/pages/templates/ImportPdf";
+import CampaignBuild from "@/pages/campaigns/Build";
 import EditTemplate from "@/pages/templates/Edit";
 import CompareTemplates from "@/pages/templates/Compare";
 import KnowledgeList from "@/pages/knowledge/List";
@@ -165,6 +167,10 @@ function AppRoutes() {
       <Switch>
         <Route path="/" component={Dashboard} />
         <Route path="/templates" component={TemplateList} />
+        <Route path="/wip" component={WipList} />
+        <Route path="/wip/import" component={ImportPdf} />
+        <Route path="/wip/:id/compare" component={CompareTemplates} />
+        <Route path="/wip/:id" component={EditTemplate} />
         <Route path="/templates/new" component={NewTemplate} />
         <Route path="/templates/import" component={ImportPdf} />
         <Route path="/templates/:id/compare" component={CompareTemplates} />
@@ -183,6 +189,7 @@ function AppRoutes() {
         <Route path="/briefs/:id/dispatch" component={DispatchScreen} />
         <Route path="/briefs/:id" component={BriefDetail} />
         <Route path="/campaigns" component={CampaignList} />
+        <Route path="/campaigns/build" component={CampaignBuild} />
         <Route path="/campaigns/new" component={NewCampaign} />
         <Route path="/campaigns/:id" component={CampaignDetail} />
         <Route path="/performance" component={Performance} />

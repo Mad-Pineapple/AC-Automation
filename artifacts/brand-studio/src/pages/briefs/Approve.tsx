@@ -1,6 +1,7 @@
+import { FeedbackButtons } from "@/components/FeedbackButtons";
 import { useState, useCallback, useEffect, useMemo, useRef } from "react";
 import {
-  useGetBrief, useListAssets, useUpdateAsset, useRegenerateAsset, useDeleteAsset, useApproveBrief,
+  useGetBrief, useListAssets, useUpdateAsset, useRegenerateAsset, useDeleteAsset, useApproveBrief, useEditAssetImage,
   useGetReviewProgress, useSaveReviewProgress, useCreateBriefAdTags, useExportAssetVideo,
   getGetBriefQueryKey, getListAssetsQueryKey, getListBriefsQueryKey, getGetReviewProgressQueryKey,
   getGetAdTagQueryKey,
@@ -17,7 +18,7 @@ import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { ChevronLeft, CheckCircle, RefreshCw, Edit2, X, Check, Maximize2, Columns2, Eye, XCircle, Clock, Trash2, Tag, ShieldCheck, ShieldAlert, Link2 } from "lucide-react";
+import { ChevronLeft, CheckCircle, RefreshCw, Edit2, X, Check, Maximize2, Columns2, Eye, XCircle, Clock, Trash2, Tag, ShieldCheck, ShieldAlert, Link2, Wand2 } from "lucide-react";
 import ShareLinkDialog from "@/components/ShareLinkDialog";
 import { TemplateThumbnail, getTemplateLabel, getTemplateConfig } from "@/components/TemplateRenderer";
 import HtmlBannerEditor from "@/components/HtmlBannerEditor";
@@ -383,6 +384,29 @@ export default function ApproveScreen() {
 
   const updateAsset = useUpdateAsset();
   const regenerateAsset = useRegenerateAsset();
+  const editAssetImage = useEditAssetImage();
+  // Prompt-based artwork edit ("make the sky dusk"). Generated art only —
+  // the server refuses library/imported artwork with a clear message.
+  const [editImageAssetId, setEditImageAssetId] = useState<number | null>(null);
+  const [editImageInstruction, setEditImageInstruction] = useState("");
+  const submitImageEdit = () => {
+    if (editImageAssetId == null || editImageInstruction.trim().length < 3) return;
+    editAssetImage.mutate(
+      { id: editImageAssetId, data: { instruction: editImageInstruction.trim() } },
+      {
+        onSuccess: () => {
+          toast({ title: "Artwork updated", description: "Compliance was re-checked on the edited image." });
+          setEditImageAssetId(null);
+          setEditImageInstruction("");
+          queryClient.invalidateQueries({ queryKey: getListAssetsQueryKey({ briefId }) });
+        },
+        onError: (err) => {
+          const data = (err as { data?: { error?: string } } | null)?.data;
+          toast({ title: "Image edit not applied", description: data?.error ?? "The edit failed — try rewording it.", variant: "destructive" });
+        },
+      },
+    );
+  };
   const approveBrief = useApproveBrief();
 
   const handleStartEdit = (asset: any) => {
@@ -646,7 +670,7 @@ export default function ApproveScreen() {
           <ChevronLeft className="w-5 h-5" />
         </Link>
         <div className="flex-1">
-          <h1 className="text-3xl font-bold tracking-tight">Review Assets</h1>
+          <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight">Review Assets</h1>
           <p className="text-muted-foreground text-sm font-mono mt-1">
             {brief?.campaignName} · {visibleAssets.length} assets
             {brief?.createdByName && <> · by {brief.createdByName}</>}
@@ -926,6 +950,7 @@ export default function ApproveScreen() {
                           <div className="flex flex-wrap items-center gap-1.5 mt-1">
                             <AssetStatusBadge status={asset.status} assetId={asset.id} />
                             <ComplianceBadge status={asset.complianceStatus} score={asset.complianceScore} assetId={asset.id} />
+                            <FeedbackButtons subjectType="asset" subjectId={asset.id} />
                             {asset.isAnimated && <Badge variant="outline" className="text-xs">Animated</Badge>}
                           </div>
                         </div>
@@ -953,6 +978,18 @@ export default function ApproveScreen() {
                           >
                             <RefreshCw className={`w-3.5 h-3.5 ${asset.status === "generating" ? "animate-spin" : ""}`} />
                           </Button>
+                          {asset.imageUrl && (
+                            <Button
+                              variant="ghost" size="sm"
+                              onClick={e => { e.stopPropagation(); setEditImageAssetId(asset.id); setEditImageInstruction(""); }}
+                              disabled={editAssetImage.isPending}
+                              title="Edit artwork with a prompt (generated art only)"
+                              data-testid={`button-edit-image-${asset.id}`}
+                              className="h-7 px-2"
+                            >
+                              <Wand2 className="w-3.5 h-3.5" />
+                            </Button>
+                          )}
                           {asset.htmlContent && (
                             <>
                               <Button
@@ -1177,6 +1214,18 @@ export default function ApproveScreen() {
                           >
                             <RefreshCw className={`w-3.5 h-3.5 ${asset.status === "generating" ? "animate-spin" : ""}`} />
                           </Button>
+                          {asset.imageUrl && (
+                            <Button
+                              variant="ghost" size="sm"
+                              onClick={e => { e.stopPropagation(); setEditImageAssetId(asset.id); setEditImageInstruction(""); }}
+                              disabled={editAssetImage.isPending}
+                              title="Edit artwork with a prompt (generated art only)"
+                              data-testid={`button-edit-image-${asset.id}`}
+                              className="h-7 px-2"
+                            >
+                              <Wand2 className="w-3.5 h-3.5" />
+                            </Button>
+                          )}
                           <Button
                             variant="ghost" size="sm"
                             onClick={e => { e.stopPropagation(); handleDeleteAsset(asset.id); }}
@@ -1387,6 +1436,41 @@ export default function ApproveScreen() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <Dialog open={editImageAssetId != null} onOpenChange={(open) => { if (!open) setEditImageAssetId(null); }}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Wand2 className="w-4 h-4 text-primary" />
+              Edit artwork
+            </DialogTitle>
+            <DialogDescription>
+              Describe the change in plain words. Works on generated artwork only — library and
+              uploaded imagery is never modified. Costs one image generation.
+            </DialogDescription>
+          </DialogHeader>
+          <Textarea
+            value={editImageInstruction}
+            onChange={(e) => setEditImageInstruction(e.target.value)}
+            placeholder={'e.g. "make the sky dusk purple", "remove the van", "add more stars"'}
+            rows={3}
+            disabled={editAssetImage.isPending}
+          />
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setEditImageAssetId(null)} disabled={editAssetImage.isPending}>
+              Cancel
+            </Button>
+            <Button
+              onClick={submitImageEdit}
+              disabled={editAssetImage.isPending || editImageInstruction.trim().length < 3}
+              className="gap-1.5"
+            >
+              {editAssetImage.isPending ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <Wand2 className="w-3.5 h-3.5" />}
+              {editAssetImage.isPending ? "Editing…" : "Apply edit"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

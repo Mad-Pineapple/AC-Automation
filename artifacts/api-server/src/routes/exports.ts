@@ -29,6 +29,7 @@ import {
   type ImageLoader,
 } from "../lib/renderFreeform";
 import { logger } from "../lib/logger";
+import { buildTrackingRows, trackingRowsToCsv } from "../lib/trackingSheet";
 
 const router = Router();
 const objectStorage = new ObjectStorageService();
@@ -261,28 +262,70 @@ router.get("/templates/:id/export.pdf", requireAuth, async (req, res) => {
  * PDF with 3mm bleed and crop marks. A manifest.json lists what was
  * rendered and any prepress warnings.
  */
-router.post("/templates/:id/export-family.zip", requireAuth, async (req, res) => {
-  const t = await loadTemplate(req, res);
-  if (!t) return;
-  const body = (req.body ?? {}) as { ids?: unknown };
-  const explicitIds = Array.isArray(body.ids)
-    ? body.ids.map((v) => Number(v)).filter((n) => Number.isInteger(n) && n > 0).slice(0, 100)
-    : null;
-
+/** The master plus everything adapted from it: by the sourceTemplateId link
+ * first, then the older description prefix, or an explicit id list. */
+async function loadFamily(master: TemplateRow, explicitIds: number[] | null): Promise<TemplateRow[]> {
   let family: TemplateRow[];
   if (explicitIds && explicitIds.length > 0) {
-    const ids = Array.from(new Set([t.row.id, ...explicitIds]));
+    const ids = Array.from(new Set([master.id, ...explicitIds]));
     const rows = await db.select().from(templatesTable);
     family = rows.filter((r) => ids.includes(r.id));
   } else {
-    const prefix = `Adapted from "${t.row.name}"`;
+    const prefix = `Adapted from "${master.name}"`;
+    const linked = await db.select().from(templatesTable).where(eq(templatesTable.sourceTemplateId, master.id));
     const adapted = await db
       .select()
       .from(templatesTable)
       .where(like(templatesTable.description, `${prefix.replace(/[%_\\]/g, (c) => `\\${c}`)}%`));
-    family = [t.row, ...adapted.filter((r) => r.id !== t.row.id && (r.description ?? "").startsWith(prefix))];
+    const seen = new Set<number>([master.id]);
+    family = [master];
+    for (const r of [...linked, ...adapted]) {
+      if (seen.has(r.id) || (!linked.includes(r) && !(r.description ?? "").startsWith(prefix))) continue;
+      seen.add(r.id);
+      family.push(r);
+    }
   }
-  family.sort((a, b) => (a.id === t.row.id ? -1 : b.id === t.row.id ? 1 : a.width * a.height - b.width * b.height));
+  family.sort((a, b) => (a.id === master.id ? -1 : b.id === master.id ? 1 : a.width * a.height - b.width * b.height));
+  return family;
+}
+
+function parseIdList(v: unknown): number[] | null {
+  const arr = Array.isArray(v) ? v : typeof v === "string" ? v.split(",") : null;
+  if (!arr) return null;
+  return arr.map((x) => Number(x)).filter((n) => Number.isInteger(n) && n > 0).slice(0, 100);
+}
+
+/**
+ * GET /templates/:id/tracking-sheet.csv?campaign=&clickUrl=&ids=
+ *
+ * Meta tracking sheet for the family: one row per piece with the file name
+ * convention, the Meta placement it fits, and the URL parameters that line
+ * up with the HTML5 banners' UTM scheme (lib/trackingSheet.ts).
+ */
+router.get("/templates/:id/tracking-sheet.csv", requireAuth, async (req, res) => {
+  const t = await loadTemplate(req, res);
+  if (!t) return;
+  const family = await loadFamily(t.row, parseIdList(req.query.ids));
+  const rows = buildTrackingRows(t.row, family, {
+    campaign: typeof req.query.campaign === "string" ? req.query.campaign.slice(0, 120) : null,
+    clickUrl: typeof req.query.clickUrl === "string" && /^https?:\/\//i.test(req.query.clickUrl) ? req.query.clickUrl.slice(0, 500) : null,
+    source: typeof req.query.source === "string" ? req.query.source.slice(0, 40) : null,
+  });
+  sendFile(res, Buffer.from(trackingRowsToCsv(rows), "utf8"), "text/csv; charset=utf-8", safeFilename(t.row.name, "-meta-tracking.csv"));
+});
+
+router.post("/templates/:id/export-family.zip", requireAuth, async (req, res) => {
+  const t = await loadTemplate(req, res);
+  if (!t) return;
+  const body = (req.body ?? {}) as { ids?: unknown; campaign?: unknown; clickUrl?: unknown };
+  const family = await loadFamily(t.row, parseIdList(body.ids));
+  // Files are named by the tracking convention (campaign_variant_format_WxH)
+  // so what lands in Ads Manager matches the sheet row for row.
+  const tracking = buildTrackingRows(t.row, family, {
+    campaign: typeof body.campaign === "string" ? body.campaign.slice(0, 120) : null,
+    clickUrl: typeof body.clickUrl === "string" && /^https?:\/\//i.test(body.clickUrl) ? body.clickUrl.slice(0, 500) : null,
+  });
+  const fileNameFor = new Map(tracking.map((r) => [r.templateId, r.fileName]));
 
   const loadImage = makeImageLoader(req);
   const zip = new JSZip();
@@ -308,7 +351,7 @@ router.post("/templates/:id/export-family.zip", requireAuth, async (req, res) =>
       continue;
     }
     try {
-      const pngName = unique(safeFilename(row.name, `-${row.width}x${row.height}.png`));
+      const pngName = unique(fileNameFor.get(row.id) ?? safeFilename(row.name, `-${row.width}x${row.height}.png`));
       zip.file(pngName, await renderFreeformToPng(config, row.width, row.height, { scale: 1, loadImage }));
       entry.files.push(pngName);
       if (isPrintTemplate(row.width, row.height)) {
@@ -319,7 +362,7 @@ router.post("/templates/:id/export-family.zip", requireAuth, async (req, res) =>
           title: row.name,
           loadImage,
         });
-        const pdfName = unique(safeFilename(row.name, `-${row.width}x${row.height}-print.pdf`));
+        const pdfName = unique((fileNameFor.get(row.id) ?? safeFilename(row.name, `-${row.width}x${row.height}.png`)).replace(/\.png$/, "-print.pdf"));
         zip.file(pdfName, result.pdf);
         entry.files.push(pdfName);
         entry.warnings.push(...result.warnings);
@@ -331,6 +374,7 @@ router.post("/templates/:id/export-family.zip", requireAuth, async (req, res) =>
   }
 
   zip.file("manifest.json", JSON.stringify({ master: t.row.id, generatedAt: new Date().toISOString(), templates: manifest }, null, 2));
+  zip.file("meta-tracking-sheet.csv", trackingRowsToCsv(tracking));
   try {
     const bytes = await zip.generateAsync({ type: "nodebuffer", compression: "DEFLATE", compressionOptions: { level: 6 } });
     sendFile(res, bytes, "application/zip", safeFilename(t.row.name, "-family.zip"));

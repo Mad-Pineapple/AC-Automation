@@ -37,6 +37,43 @@ export interface ExtractedImage {
   height: number;
 }
 
+export interface GenerateBriefRequest {
+  /** Replace an existing approved/dispatched set without asking again */
+  force?: boolean;
+  /**
+     * AI copy options to generate per size (artwork is shared)
+     * @minimum 1
+     * @maximum 3
+     */
+  variants?: number;
+}
+
+export interface CampaignIdeasRequest {
+  brandId: number;
+}
+
+export interface CampaignIdea {
+  title: string;
+  objective?: string;
+  keyMessage?: string;
+  notes: string;
+  sizes: string[];
+  rationale?: string;
+}
+
+export interface CampaignIdeasResponse {
+  ideas: CampaignIdea[];
+}
+
+export interface AnalyzeUrlRequest {
+  url: string;
+}
+
+export interface EditAssetImageRequest {
+  /** Plain-language description of the artwork change */
+  instruction: string;
+}
+
 export interface AnalyzeGuidelineResponse {
   suggestions: GuidelineSuggestions;
   guidelines: string;
@@ -143,6 +180,8 @@ export interface FreeformElement {
   y?: number;
   w?: number;
   h?: number;
+  /** Composition slot: photo | cutout | scrim | panel | band | headline | subheadline | message | cta | ctaLabel | ctaIcon | lockup | logo */
+  slot?: string;
   role?: string;
   text?: string;
   fontSize?: number;
@@ -186,6 +225,10 @@ export interface TemplateConfig {
   /** preset | freeform (absent means preset) */
   kind?: string;
   elements?: FreeformElement[];
+  /** How an adapted template was derived: recomposed:<class> | key-visual | panel | scaled */
+  adaptMethod?: string;
+  /** What the adapt engine decided and what a designer should check */
+  adaptNotes?: string[];
 }
 
 export interface Template {
@@ -201,6 +244,11 @@ export interface Template {
   config: TemplateConfig;
   /** @nullable */
   sourceImageUrl?: string | null;
+  /**
+     * The master this template was adapted from
+     * @nullable
+     */
+  sourceTemplateId?: number | null;
   /** @nullable */
   createdBy?: string | null;
   createdAt: string;
@@ -419,6 +467,79 @@ export interface CollateralPlan {
   warnings: string[];
 }
 
+export interface ImportExampleRequest {
+  /** @minLength 1 */
+  objectPath: string;
+  /** @minLength 1 */
+  fileName: string;
+  brandId?: number;
+}
+
+export type ImportExampleResultKind = typeof ImportExampleResultKind[keyof typeof ImportExampleResultKind];
+
+
+export const ImportExampleResultKind = {
+  package: 'package',
+  idml: 'idml',
+  pdf: 'pdf',
+  psd: 'psd',
+  image: 'image',
+} as const;
+
+export interface ImportExampleResult {
+  kind: ImportExampleResultKind;
+  templates: Template[];
+  warnings: string[];
+  assetsImported: number;
+}
+
+export type CampaignBuildPlanRequestSizesItem = {
+  width: number;
+  height: number;
+  unit?: string;
+  names?: string[];
+};
+
+export interface CampaignBuildPlanRequest {
+  masterTemplateIds: number[];
+  sizes: CampaignBuildPlanRequestSizesItem[];
+  campaignName?: string;
+}
+
+export type CampaignBuildPlanJobsItem = {
+  masterId: number;
+  masterName: string;
+  width: number;
+  height: number;
+  name: string;
+  /** @nullable */
+  variant?: string | null;
+  sourceLabel: string;
+  aspectDistance: number;
+  recomposed: boolean;
+  /** tower | portrait | square | landscape | wide | strip */
+  formatClass?: string;
+  /** Catalog or brief deliverable name for the size */
+  formatLabel?: string;
+  /** scale | recompose */
+  method?: string;
+  /** No example shares the target's shape class; rebuilt from the recipe alone */
+  needsReview?: boolean;
+};
+
+export type CampaignBuildPlanSkippedItem = {
+  width: number;
+  height: number;
+  reason: string;
+};
+
+export interface CampaignBuildPlan {
+  jobs: CampaignBuildPlanJobsItem[];
+  variants: string[];
+  skipped: CampaignBuildPlanSkippedItem[];
+  warnings: string[];
+}
+
 export interface ImportPackageRequest {
   /** @minLength 1 */
   objectPath: string;
@@ -440,6 +561,7 @@ export interface ImportPackageResult {
   fontsSkipped: number;
   /** @nullable */
   idmlTemplateId?: number | null;
+  idmlTemplateIds?: number[];
   idmlWarnings: string[];
 }
 
@@ -887,6 +1009,68 @@ export interface BulkAdTagResult {
   tags: AdTag[];
 }
 
+export type MetaPerformanceTotals = {
+  impressions: number;
+  reach: number;
+  clicks: number;
+  linkClicks: number;
+  spend: number;
+  ctr: number;
+  cpm: number;
+  cpc: number;
+};
+
+export type MetaPerformanceTimeseriesItem = {
+  day: string;
+  impressions: number;
+  linkClicks: number;
+  spend: number;
+};
+
+export type MetaPerformanceAdsItem = {
+  adId: string;
+  adName: string;
+  /** @nullable */
+  campaignName?: string | null;
+  /** @nullable */
+  adsetName?: string | null;
+  impressions: number;
+  reach: number;
+  linkClicks: number;
+  spend: number;
+  ctr: number;
+  cpm: number;
+  /** @nullable */
+  templateId?: number | null;
+  /** @nullable */
+  templateName?: string | null;
+  /** @nullable */
+  briefId?: number | null;
+  /** @nullable */
+  briefCampaignName?: string | null;
+};
+
+export interface MetaPerformance {
+  configured: boolean;
+  /** @nullable */
+  lastSyncedAt: string | null;
+  days: number;
+  /** @nullable */
+  currency: string | null;
+  totals: MetaPerformanceTotals;
+  timeseries: MetaPerformanceTimeseriesItem[];
+  ads: MetaPerformanceAdsItem[];
+}
+
+export interface MetaSyncResult {
+  ok: boolean;
+  configured: boolean;
+  days: number;
+  fetched: number;
+  upserted: number;
+  errors: string[];
+}
+
 export type PerformanceStatsTopAssetsItem = {
   assetId: number;
   /** @nullable */
@@ -913,6 +1097,23 @@ export interface PerformanceStats {
   timeseries: PerformanceStatsTimeseriesItem[];
 }
 
+export type ListTemplatesParams = {
+include?: ListTemplatesInclude;
+};
+
+export type ListTemplatesInclude = typeof ListTemplatesInclude[keyof typeof ListTemplatesInclude];
+
+
+export const ListTemplatesInclude = {
+  knowledge: 'knowledge',
+  all: 'all',
+} as const;
+
+export type ClearWipTemplates200 = {
+  deleted: number;
+  kept: number;
+};
+
 export type ListComparisonNotesParams = {
 assetA: number;
 assetB: number;
@@ -929,5 +1130,9 @@ briefId?: number;
 
 export type GetRecentActivityParams = {
 limit?: number;
+};
+
+export type GetMetaPerformanceParams = {
+days?: number;
 };
 

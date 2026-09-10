@@ -40,7 +40,27 @@ app.use(
 
 app.use(CLERK_PROXY_PATH, clerkProxyMiddleware());
 
-app.use(cors({ credentials: true, origin: true }));
+// Same-origin app: browsers never need CORS for it. Allow only our own
+// origins (plus localhost in development) so a foreign site can't ride the
+// session cookie into the API.
+const allowedOrigins = new Set(
+  [
+    process.env.PUBLIC_BASE_URL,
+    process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : null,
+    process.env.VERCEL_PROJECT_PRODUCTION_URL ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}` : null,
+    ...(process.env.CORS_ORIGINS ?? "").split(",").map((s) => s.trim()),
+  ].filter((s): s is string => !!s),
+);
+app.use(
+  cors({
+    credentials: true,
+    origin: (origin, cb) => {
+      if (!origin) return cb(null, true); // same-origin / non-browser
+      if (allowedOrigins.has(origin) || /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin)) return cb(null, true);
+      return cb(null, false);
+    },
+  }),
+);
 app.use(express.json({ limit: "1mb" }));
 app.use(express.urlencoded({ extended: true, limit: "1mb" }));
 

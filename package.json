@@ -24,5 +24,5 @@
     "pdfjs-dist": "^6.0.227",
     "sharp": "^0.34.5"
   },
-  "packageManager": "pnpm@11.9.0"
+  "packageManager": "pnpm@11.22.0"
 }

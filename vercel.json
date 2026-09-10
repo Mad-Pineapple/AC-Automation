@@ -7,6 +7,7 @@
   "functions": {
     "api/index.mjs": {
       "maxDuration": 300,
+      "memory": 3009,
       "includeFiles": "{node_modules/.pnpm/{pdfjs-dist@,@napi-rs+canvas}*/**,artifacts/brand-studio/public/fonts/**}"
     }
   },
@@ -29,6 +30,7 @@
   ],
   "crons": [
     { "path": "/api/cron/dispatch", "schedule": "0 2 * * *" },
-    { "path": "/api/cron/frontify-sync", "schedule": "0 3 * * 1" }
+    { "path": "/api/cron/frontify-sync", "schedule": "0 3 * * *" },
+    { "path": "/api/cron/meta-sync", "schedule": "30 16 * * *" }
   ]
 }

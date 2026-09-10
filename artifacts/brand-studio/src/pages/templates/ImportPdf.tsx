@@ -6,6 +6,7 @@ import {
   useAdaptTemplate,
   useDissectPdf,
   useImportBrandPackage,
+  useImportExampleArtwork,
   useListBrands,
   getListTemplatesQueryKey,
   getListBrandAssetsQueryKey,
@@ -14,6 +15,7 @@ import {
   FreeformElement,
 } from "@workspace/api-client-react";
 import { ADAPT_PRESETS } from "@/lib/adaptPresets";
+import { SizePicker } from "@/components/SizePicker";
 import { useUpload } from "@workspace/object-storage-web";
 import { useToast } from "@/hooks/use-toast";
 import { useMe } from "@/hooks/use-me";
@@ -24,10 +26,8 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { FreeformEditor } from "@/components/FreeformEditor";
 
-const CATEGORIES = ["social", "display", "print", "email", "custom"];
 
 export default function ImportPdf() {
   const [, setLocation] = useLocation();
@@ -52,16 +52,21 @@ export default function ImportPdf() {
   );
   const adaptTemplate = useAdaptTemplate();
   const importPackage = useImportBrandPackage();
+  const importExample = useImportExampleArtwork();
   const [editedElements, setEditedElements] = useState<FreeformElement[]>([]);
   const [editorKey, setEditorKey] = useState(0);
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
-  const [category, setCategory] = useState("custom");
+  // Imports default to Work-in-progress; promote from the Templates page
+  // once the artwork is finished and a reusable template is wanted.
+  // Everything imported lands in Work-in-progress; "Make template" is the
+  // only way into Templates.
+  const category = "wip";
 
   useEffect(() => {
     if (!isLoadingMe && !isAdmin) {
-      toast({ title: "You don't have permission to import templates", variant: "destructive" });
-      setLocation("/templates");
+      toast({ title: "You don't have permission to import artwork", variant: "destructive" });
+      setLocation("/wip");
     }
   }, [isLoadingMe, isAdmin, setLocation, toast]);
 
@@ -78,7 +83,7 @@ export default function ImportPdf() {
 
   if (isLoadingMe || !isAdmin) return null;
 
-  const busy = isUploading || dissect.isPending || importPackage.isPending;
+  const busy = isUploading || dissect.isPending || importPackage.isPending || importExample.isPending;
 
   const runDissect = (objectPath: string, friendlyName: string) => {
     dissect.mutate(
@@ -90,7 +95,6 @@ export default function ImportPdf() {
           setEditorKey((k) => k + 1);
           setName(friendlyName || res.name);
           setDescription("");
-          setCategory("custom");
         },
         onError: () =>
           toast({
@@ -107,50 +111,40 @@ export default function ImportPdf() {
     e.target.value = "";
     if (!file) return;
     const lower = file.name.toLowerCase();
-    const isZip = lower.endsWith(".zip");
     const isPdf = file.type === "application/pdf" || lower.endsWith(".pdf");
-    if (!isPdf && !isZip) {
-      toast({ title: "Please choose a PDF or a zipped InDesign package", variant: "destructive" });
+    const isArtwork = /\.(zip|idml|psd|png|jpe?g|webp|tiff?)$/i.test(lower);
+    if (!isPdf && !isArtwork) {
+      toast({ title: "Unsupported file", description: "Use PDF, ZIP, IDML, PSD or a flat image (PNG/JPG/WebP/TIFF).", variant: "destructive" });
       return;
     }
-    const friendlyName = file.name.replace(/\.(pdf|zip)$/i, "").trim();
+    const friendlyName = file.name.replace(/\.[^.]+$/i, "").trim();
     const uploaded = await uploadFile(file);
     if (!uploaded) {
       toast({ title: "Upload failed", description: "Could not upload the file.", variant: "destructive" });
       return;
     }
 
-    if (isZip) {
-      if (!previewBrand) {
-        toast({ title: "Create a brand first", variant: "destructive" });
-        return;
-      }
-      importPackage.mutate(
-        { brandId: previewBrand.id, data: { objectPath: uploaded.objectPath, packageName: file.name } },
+    if (isArtwork) {
+      // Everything except plain PDFs goes through the artwork importer: it
+      // reconstructs GWD banner zips, InDesign packages, PSDs and flat art
+      // as complete WIP pieces (no library flooding — that's a sign-off
+      // choice on promote).
+      importExample.mutate(
+        { data: { objectPath: uploaded.objectPath, fileName: file.name, brandId: previewBrand?.id } },
         {
           onSuccess: (res) => {
-            queryClient.invalidateQueries({ queryKey: getListBrandAssetsQueryKey(previewBrand.id) });
             queryClient.invalidateQueries({ queryKey: getListTemplatesQueryKey() });
-            const idml = res.idmlTemplateId != null;
+            const n = res.templates?.length ?? 0;
             toast({
-              title: idml
-                ? `Editable layout imported + ${res.importedCount} asset${res.importedCount === 1 ? "" : "s"} to the Library`
-                : `${res.importedCount} asset${res.importedCount === 1 ? "" : "s"} imported to the Library`,
-              description: idml
-                ? `The IDML layout became a template — opening it now.${res.idmlWarnings.length ? ` (${res.idmlWarnings.length} note${res.idmlWarnings.length === 1 ? "" : "s"})` : ""}`
-                : `Folder "${res.folder}"${res.skipped.length ? ` · ${res.skipped.length} skipped` : ""}${
-                    res.documentPdfPath ? " · opening the document PDF…" : ""
-                  }`,
+              title: n > 0 ? `${n} artwork piece${n === 1 ? "" : "s"} added to WIP` : "Nothing importable found",
+              description: (res.warnings ?? []).slice(0, 2).join(" "),
             });
-            // The IDML layout is the designer's exact structure — prefer it;
-            // fall back to the flattened document PDF when there is none.
-            if (res.idmlTemplateId != null) setLocation(`/templates/${res.idmlTemplateId}`);
-            else if (res.documentPdfPath) runDissect(res.documentPdfPath, friendlyName);
+            setLocation("/wip");
           },
-          onError: () =>
+          onError: (err: unknown) =>
             toast({
-              title: "Could not read that package",
-              description: "Zip the whole InDesign package folder (with its Links folder) and try again.",
+              title: "Could not import that file",
+              description: err instanceof Error ? err.message.slice(0, 140) : "Try a different file.",
               variant: "destructive",
             }),
         },
@@ -167,7 +161,6 @@ export default function ImportPdf() {
           setEditorKey((k) => k + 1);
           setName(friendlyName || res.name);
           setDescription("");
-          setCategory("custom");
         },
         onError: () =>
           toast({
@@ -213,8 +206,8 @@ export default function ImportPdf() {
         onSuccess: (created) => {
           queryClient.invalidateQueries({ queryKey: getListTemplatesQueryKey() });
           if (targets.length === 0) {
-            toast({ title: "Template created from PDF" });
-            setLocation("/templates");
+            toast({ title: category === "wip" ? "Artwork imported to Work in progress" : "Template created from PDF" });
+            setLocation(category === "wip" ? "/wip" : "/templates");
             return;
           }
           adaptTemplate.mutate(
@@ -224,9 +217,9 @@ export default function ImportPdf() {
                 queryClient.invalidateQueries({ queryKey: getListTemplatesQueryKey() });
                 toast({
                   title: `Master + ${adapted.length} size${adapted.length === 1 ? "" : "s"} created`,
-                  description: "Each size is a normal template — fine-tune any of them in the editor.",
+                  description: category === "wip" ? "All in Work in progress — review them, then Make template on the ones you keep." : "Each size is a normal template — fine-tune any of them in the editor.",
                 });
-                setLocation("/templates");
+                setLocation(category === "wip" ? "/wip" : "/templates");
               },
               onError: () => {
                 toast({
@@ -234,7 +227,7 @@ export default function ImportPdf() {
                   description: "Open the template and use Adapt to other sizes.",
                   variant: "destructive",
                 });
-                setLocation("/templates");
+                setLocation(category === "wip" ? "/wip" : "/templates");
               },
             },
           );
@@ -247,12 +240,12 @@ export default function ImportPdf() {
   return (
     <div className="space-y-8 w-full">
       <div className="flex items-center gap-4">
-        <Link href="/templates" className="p-2 hover:bg-muted rounded-full transition-colors">
+        <Link href="/wip" className="p-2 hover:bg-muted rounded-full transition-colors">
           <ChevronLeft className="w-5 h-5" />
         </Link>
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Import From PDF</h1>
-          <p className="text-muted-foreground text-sm font-mono mt-1 uppercase tracking-widest">
+          <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight">Import From PDF</h1>
+          <p className="text-muted-foreground mt-1.5">
             Dissect A Design Into An Editable Template
           </p>
         </div>
@@ -299,7 +292,7 @@ export default function ImportPdf() {
             >
               <input
                 type="file"
-                accept="application/pdf,.pdf,application/zip,.zip"
+                accept="application/pdf,.pdf,application/zip,.zip,.idml,.psd,image/png,.png,image/jpeg,.jpg,.jpeg,image/webp,.webp,image/tiff,.tif,.tiff"
                 className="hidden"
                 onChange={handleFile}
                 disabled={busy}
@@ -362,19 +355,8 @@ export default function ImportPdf() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label>Category</Label>
-                  <Select value={category} onValueChange={setCategory}>
-                    <SelectTrigger data-testid="select-import-category">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {CATEGORIES.map((c) => (
-                        <SelectItem key={c} value={c} className="capitalize">
-                          {c}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <Label>Where it goes</Label>
+                  <p className="text-sm text-muted-foreground h-10 flex items-center">Work in progress — promote it with Make template when finished.</p>
                 </div>
               </div>
               <div className="space-y-2">
@@ -408,34 +390,26 @@ export default function ImportPdf() {
                 Saving creates the master plus an adapted template for every ticked size — artwork
                 re-crops, text re-anchors. Untick everything to save just the master.
               </p>
-              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2">
-                {ADAPT_PRESETS.map((p) => {
-                  const on = outputSizes.has(p.key);
-                  return (
-                    <button
-                      key={p.key}
-                      type="button"
-                      onClick={() =>
-                        setOutputSizes((prev) => {
-                          const next = new Set(prev);
-                          if (next.has(p.key)) next.delete(p.key);
-                          else next.add(p.key);
-                          return next;
-                        })
-                      }
-                      className={`rounded-lg border-2 px-3 py-2 text-left transition-colors ${
-                        on ? "border-primary bg-primary/5" : "border-border/60 hover:border-primary/40"
-                      }`}
-                      data-testid={`output-size-${p.key}`}
-                    >
-                      <p className="text-sm font-medium">{p.label}</p>
-                      <p className="text-[11px] text-muted-foreground font-mono">
-                        {p.width}×{p.height}
-                      </p>
-                    </button>
-                  );
-                })}
-              </div>
+              <SizePicker
+                selected={outputSizes}
+                onToggle={(key) =>
+                  setOutputSizes((prev) => {
+                    const next = new Set(prev);
+                    if (next.has(key)) next.delete(key);
+                    else next.add(key);
+                    return next;
+                  })
+                }
+                onSetMany={(keys, on) =>
+                  setOutputSizes((prev) => {
+                    const next = new Set(prev);
+                    for (const k of keys) on ? next.add(k) : next.delete(k);
+                    return next;
+                  })
+                }
+                testPrefix="output-size"
+                columns="grid-cols-1 sm:grid-cols-2 lg:grid-cols-3"
+              />
             </CardContent>
           </Card>
 

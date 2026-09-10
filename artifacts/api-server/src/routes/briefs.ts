@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { db } from "@workspace/db";
 import { briefsTable, brandsTable, assetsTable, usersTable, templatesTable } from "@workspace/db";
-import { eq, and, ne, sql } from "drizzle-orm";
+import { eq, and, ne, sql, inArray } from "drizzle-orm";
 import { alias } from "drizzle-orm/pg-core";
 import { generateCopy, generateProductImage, generateHtmlBanner, extractBriefFromText, suggestTemplateSizes, type ProductImageSize } from "../lib/openai";
 import { extractPdfText } from "../lib/pdf";
@@ -14,6 +14,7 @@ import { ObjectStorageService } from "../lib/objectStorage";
 import { imageSizeForDims, dimsForSize, collectBrandReferences, pickLibraryImage } from "../lib/assetImages";
 import { fetchLogoDataUri } from "../lib/htmlBanner";
 import { checkAssetCompliance, serializeIssues, type ComplianceVerdict } from "../lib/brandCompliance";
+import { recentIncorrectNotes } from "./feedback";
 
 const router = Router();
 const objectStorageService = new ObjectStorageService();
@@ -103,6 +104,20 @@ function canMutate(brief: typeof briefsTable.$inferSelect, req: any): boolean {
  * string for the AI generators. When AI copy is on, user-entered copy fields
  * double as creative direction rather than being ignored.
  */
+/** Reviewer-flagged mistakes, phrased as a standing DO-NOT-REPEAT block for
+ *  every generator prompt — the app's learned "things not to do". */
+async function doNotRepeatBlock(): Promise<string> {
+  try {
+    const notes = await recentIncorrectNotes(10);
+    if (notes.length === 0) return "";
+    return `\nREVIEWER FEEDBACK — mistakes flagged on previous work. Do NOT repeat any of these:\n${notes
+      .map((n) => `- ${n}`)
+      .join("\n")}`;
+  } catch {
+    return "";
+  }
+}
+
 function briefContextOf(brief: typeof briefsTable.$inferSelect): string | null {
   const parts: string[] = [];
   if (brief.notes) parts.push(brief.notes);
@@ -130,13 +145,13 @@ async function validateTemplateSizes(
   const supported: string[] = JSON.parse(
     (brand as any).supportedTemplateSizes || '["social_square","story","banner","print_a4","animated_social"]',
   );
-  const knowledgeRows = await db
-    .select({ id: templatesTable.id })
-    .from(templatesTable)
-    .where(eq(templatesTable.category, "knowledge"));
-  const knowledgeKeys = new Set(knowledgeRows.map((t) => `tpl_${t.id}`));
+  // ANY saved template (custom formats as well as learned creatives) is
+  // brand-agnostic and selectable — the brief forms offer all of them, so the
+  // API must accept all of them or the UI can build a brief the API rejects.
+  const templateRows = await db.select({ id: templatesTable.id }).from(templatesTable);
+  const templateKeys = new Set(templateRows.map((t) => `tpl_${t.id}`));
 
-  const invalid = templateSizes.filter((s) => !supported.includes(s) && !knowledgeKeys.has(s));
+  const invalid = templateSizes.filter((s) => !supported.includes(s) && !templateKeys.has(s));
   if (invalid.length > 0) {
     return {
       ok: false,
@@ -148,6 +163,7 @@ async function validateTemplateSizes(
 }
 
 router.get("/briefs", optionalAuth, async (req, res): Promise<void> => {
+  await healEmptyPendingBriefs();
   const { status, brandId, mine } = req.query;
 
   const conditions = [];
@@ -175,6 +191,7 @@ router.get("/briefs", optionalAuth, async (req, res): Promise<void> => {
     const counts = await db
       .select({ briefId: assetsTable.briefId, count: sql<number>`cast(count(*) as int)` })
       .from(assetsTable)
+      .where(inArray(assetsTable.briefId, briefIds))
       .groupBy(assetsTable.briefId);
     assetCounts = Object.fromEntries(counts.map((c) => [c.briefId, c.count]));
   }
@@ -315,7 +332,8 @@ router.post("/briefs/suggest-sizes", requireAuth, async (req, res): Promise<void
     res.status(400).json({ error: "Provide at least a sentence of brief text" });
     return;
   }
-  const custom = await db.select().from(templatesTable);
+  // WIP imports are unfinished artwork — never offered as sizes.
+  const custom = (await db.select().from(templatesTable)).filter((t) => t.category !== "wip");
   const options = [
     ...BUILTIN_SIZE_OPTIONS,
     ...custom.map((t) => ({
@@ -332,7 +350,27 @@ router.post("/briefs/suggest-sizes", requireAuth, async (req, res): Promise<void
   }
 });
 
+
+/**
+ * Self-healing on reads, at most once a minute per instance: a brief "pending
+ * approval" with no assets is a finished no-op generate (back to draft), and a
+ * brief "generating" for over 15 minutes was killed by the platform (back to
+ * draft, so Generate is offered again instead of a spinner for a day).
+ */
+let lastHealAt = 0;
+async function healEmptyPendingBriefs(): Promise<void> {
+  if (Date.now() - lastHealAt < 60_000) return;
+  lastHealAt = Date.now();
+  try {
+    await db.execute(sql`UPDATE briefs SET status = 'draft', updated_at = now()
+      WHERE status = 'pending_approval' AND NOT EXISTS (SELECT 1 FROM assets a WHERE a.brief_id = briefs.id)`);
+    await db.execute(sql`UPDATE briefs SET status = 'draft', updated_at = now()
+      WHERE status = 'generating' AND updated_at < now() - interval '15 minutes'`);
+  } catch { /* never block a read */ }
+}
+
 router.get("/briefs/:id", optionalAuth, async (req, res): Promise<void> => {
+  await healEmptyPendingBriefs();
   const id = Number(req.params.id);
   const creator = alias(usersTable, "creator");
   const approver = alias(usersTable, "approver");
@@ -427,6 +465,31 @@ router.post("/briefs/:id/generate", requireAuth, async (req, res): Promise<void>
   const brief = row.briefs;
   const brand = row.brands;
   const sizes: string[] = JSON.parse(brief.templateSizes || "[]");
+  if ((brief.status === "approved" || brief.status === "dispatched") && req.body?.force !== true) {
+    const [existingCount] = await db.select({ count: sql<number>`cast(count(*) as int)` }).from(assetsTable).where(eq(assetsTable.briefId, id));
+    if ((existingCount?.count ?? 0) > 0) {
+      res.status(409).json({
+        code: "confirm_replace",
+        error: `This campaign already has ${existingCount!.count} ${brief.status} asset${existingCount!.count === 1 ? "" : "s"}. Generating again replaces them and cannot be undone.`,
+      });
+      return;
+    }
+  }
+  if (sizes.length === 0) {
+    // Nothing to build: a collateral-sheet brief carries its deliverables in
+    // the notes but no ticked sizes. Say so instead of "finishing" with nothing.
+    await db.update(briefsTable).set({ status: "draft", updatedAt: new Date() }).where(eq(briefsTable.id, id));
+    res.status(400).json({
+      error:
+        "This campaign has no sizes ticked, so there is nothing to generate. Press Edit and tick the sizes to produce. " +
+        "If it came from a collateral spreadsheet, the artwork is built in Work in progress instead: use Build from examples, " +
+        "press Make template on the pieces you keep, then tick those templates here.",
+    });
+    return;
+  }
+  // AI options per size ("browse and pick"): 1-3 takes. Only meaningful with
+  // AI copy on, and feed-driven variant rows (brief.variants) take precedence.
+  const aiVariantCount = Math.min(3, Math.max(1, Math.round(Number(req.body?.variants)) || 1));
 
   // Atomically claim the brief for generation: only transition when it is NOT already
   // generating. This guards against concurrent generate calls (e.g. two tabs) racing,
@@ -443,6 +506,14 @@ router.post("/briefs/:id/generate", requireAuth, async (req, res): Promise<void>
   await db.delete(assetsTable).where(eq(assetsTable.briefId, id));
 
   res.json(formatBrief({ ...brief, status: "generating" }, brand, 0));
+
+  // An image size that ends up with no artwork is a failed generation, not a
+  // finished asset: mark it non-compliant with the reason so it is blocked
+  // from approve/dispatch and shown on the review screen.
+  const failedImageFields = (size: string, imageUrl: string | null) =>
+    !imageUrl && size !== "html_banner" && size !== "animated_social"
+      ? { complianceStatus: "failed", complianceScore: 0, complianceIssues: JSON.stringify(["Image generation failed — press Regenerate on this asset"]), complianceCheckedAt: new Date() }
+      : {};
 
   runInBackground(async () => {
     try {
@@ -472,7 +543,10 @@ router.post("/briefs/:id/generate", requireAuth, async (req, res): Promise<void>
       }
 
       const useAiImage = !brief.productImageUrl && brief.useAiCopy;
-      const briefContext = briefContextOf(brief);
+      // Reviewer-flagged mistakes ride along with the brief context so every
+      // generator (copy, banners, imagery) sees the standing do-not-repeat list.
+      const avoidBlock = await doNotRepeatBlock();
+      const briefContext = [briefContextOf(brief), avoidBlock].filter(Boolean).join("\n") || null;
       // Set when imagery is reused from the brand library instead of generated;
       // library artwork is pre-approved brand material, so the AI-image vision
       // gate (calibrated for generated backgrounds) doesn't apply to it.
@@ -667,7 +741,36 @@ router.post("/briefs/:id/generate", requireAuth, async (req, res): Promise<void>
       // variant row yields its own asset with row-specific copy. Missing row
       // fields fall back to the size's base copy. No rows = one base take.
       const variantRows = parseVariants(brief.variants);
-      const takes: (VariantRow | null)[] = variantRows.length > 0 ? variantRows : [null];
+
+      // AI option variants (Pomelli-style "browse options"): when requested and
+      // no feed rows exist, generate N-1 additional distinct copy takes per
+      // size. Artwork is shared across options (copy + banner layout vary), so
+      // extra options cost copy/banner calls only — no extra image spend.
+      const altCopiesBySize = new Map<string, { headline: string; bodyText: string; callToAction: string }[]>();
+      if (brief.useAiCopy && variantRows.length === 0 && aiVariantCount > 1) {
+        for (let v = 0; v < aiVariantCount - 1; v++) {
+          const alts = await Promise.all(
+            sizes.map((size, i) =>
+              generateCopy({
+                campaignName: brief.campaignName,
+                brandName: brand.name,
+                toneOfVoice: brand.toneOfVoice,
+                industry: brand.industry,
+                guidelines: brand.guidelines,
+                briefContext,
+                templateSize: size,
+                sizeDescription: templateDescriptions.get(size),
+                userPrompt: `Produce a DISTINCTLY different creative angle from the existing option (headline "${copies[i].headline}") — a different hook and phrasing, same campaign facts.`,
+              }),
+            ),
+          );
+          sizes.forEach((size, i) => {
+            const list = altCopiesBySize.get(size) ?? [];
+            list.push(alts[i]);
+            altCopiesBySize.set(size, list);
+          });
+        }
+      }
 
       for (let i = 0; i < sizes.length; i++) {
         const size = sizes[i];
@@ -676,6 +779,22 @@ router.post("/briefs/:id/generate", requireAuth, async (req, res): Promise<void>
         const baseHeadline = brief.useAiCopy ? copy.headline : (brief.headline ?? null);
         const baseBodyText = brief.useAiCopy ? copy.bodyText : (brief.bodyText ?? null);
         const baseCallToAction = (brief.useAiCopy ? copy.callToAction : brief.callToAction) ?? "Find out more";
+
+        const aiAlts = altCopiesBySize.get(size) ?? [];
+        const takes: (VariantRow | null)[] =
+          variantRows.length > 0
+            ? variantRows
+            : aiAlts.length > 0
+              ? [
+                  { label: "Option A", headline: null, bodyText: null, callToAction: null },
+                  ...aiAlts.map((c, vi) => ({
+                    label: `Option ${String.fromCharCode(66 + vi)}`,
+                    headline: c.headline,
+                    bodyText: c.bodyText,
+                    callToAction: c.callToAction,
+                  })),
+                ]
+              : [null];
 
         for (const take of takes) {
           const headline = take?.headline ?? baseHeadline;
@@ -706,12 +825,14 @@ router.post("/briefs/:id/generate", requireAuth, async (req, res): Promise<void>
               bodyText,
               callToAction,
               imageUrl: sizeImageUrl ?? null,
+            ...failedImageFields(size, sizeImageUrl ?? null),
               styleHints,
               // Always pass the real canvas dims so the generated document and its
               // ad.size meta match the size being dispatched.
               dimensions: dimsForSize(size, tplById),
               animated: isAnimatedSize,
-              logoDataUri,
+              // 1080 social squares carry no logo (the profile picture brands the post).
+              logoDataUri: isAnimatedSize ? undefined : logoDataUri,
             };
             let htmlContent = await generateHtmlBanner(htmlParams);
             // AFTER-generation compliance gate (deterministic color/font parse);
@@ -737,6 +858,7 @@ router.post("/briefs/:id/generate", requireAuth, async (req, res): Promise<void>
               bodyText,
               callToAction,
               imageUrl: sizeImageUrl ?? null,
+            ...failedImageFields(size, sizeImageUrl ?? null),
               isAnimated: isAnimatedSize,
               htmlContent,
               status: "ready",
@@ -757,6 +879,7 @@ router.post("/briefs/:id/generate", requireAuth, async (req, res): Promise<void>
             bodyText,
             callToAction,
             imageUrl: sizeImageUrl ?? null,
+            ...failedImageFields(size, sizeImageUrl ?? null),
             isAnimated: false,
             status: "ready",
             ...complianceFields(imageVerdict),
@@ -805,6 +928,9 @@ router.post("/briefs/:id/duplicate", requireAuth, async (req, res): Promise<void
       templateSizes: original.templateSizes,
       useAiCopy: original.useAiCopy,
       brandId: original.brandId,
+      notes: original.notes,
+      variants: original.variants,
+      campaignId: original.campaignId,
       status: "draft",
       createdBy: req.clerkUserId,
     })
@@ -821,7 +947,18 @@ router.post("/briefs/:id/dispatch", requireAuth, async (req, res): Promise<void>
   if (!canMutate(existing, req)) { res.status(403).json({ error: "Forbidden: you do not own this brief" }); return; }
 
   const body = req.body;
-  const methods: string[] = body.methods ?? [];
+  // Only methods the studio can actually deliver. Email and social are not
+  // built yet — never let them into the log as if they happened.
+  const requested: string[] = Array.isArray(body.methods) ? body.methods : [];
+  const methods = requested.filter((m) => m === "download");
+  if (requested.some((m) => m === "email" || m === "social")) {
+    res.status(400).json({ error: "Email and social dispatch aren't available yet. Use Download ZIP, or a share link for stakeholders." });
+    return;
+  }
+  if (existing.status !== "approved" && existing.status !== "dispatched") {
+    res.status(400).json({ error: "Approve the campaign before dispatching it." });
+    return;
+  }
 
   const scheduledAtRaw = body.scheduledAt;
   if (scheduledAtRaw) {

@@ -31,7 +31,7 @@ export interface CreativeTags {
   layoutLabel?: string | null;
 }
 
-export type AnimationPreset = "none" | "entrance" | "kenburns" | "frames" | "reveal";
+export type AnimationPreset = "none" | "entrance" | "kenburns" | "frames" | "reveal" | "getready";
 /** Canva-style motion library: artwork and copy move independently. */
 export type ArtworkMotion = "none" | "kenburns" | "drift" | "zoomout" | "breathe" | "wipe";
 export type CopyMotion = "none" | "fade" | "rise" | "pan" | "pop" | "wipe" | "baseline" | "tumble" | "typewriter" | "block";
@@ -53,6 +53,10 @@ export interface HtmlExportOptions {
   /** Motion preset. All CSS, spec-checked: ends within durationSec, loops ≤ 3,
    * reduced-motion respected, clickTag layer untouched. */
   animation?: AnimationPreset;
+  /** Replay the motion captured from the HTML key visual the artwork came
+   *  from, when its layers carry motion tracks (default true). The preset
+   *  and motion library apply only to artwork without captured motion. */
+  matchKeyVisual?: boolean;
   /** Motion library (takes precedence over `animation` when given). */
   artworkMotion?: ArtworkMotion;
   copyMotion?: CopyMotion;
@@ -70,6 +74,9 @@ export interface HtmlExportOptions {
   /** Preview mode: inline fonts/images as data URIs (single self-contained
    * HTML for an iframe srcdoc) and send no analytics beacons. */
   inline?: boolean;
+  /** Campaign fonts available for embedding (only families the creative's
+   * copy references are packaged). */
+  customFonts?: { family: string; src: string; format: "truetype" | "opentype" }[];
   /** Fetch bytes for a src (storage object, public file, absolute URL). */
   loadAsset: (src: string) => Promise<{ bytes: Buffer; contentType: string } | null>;
 }
@@ -206,10 +213,62 @@ export async function buildHtmlPackage(opts: HtmlExportOptions): Promise<HtmlPac
     }
   }
 
+  // Campaign fonts (from imported InDesign packages) that the creative's
+  // copy actually uses — e.g. the Get Ready digital-clock face.
+  const usedFamilies = new Set(
+    config.elements
+      .filter((e): e is FreeformText => e.type === "text" && !!e.fontFamily)
+      .map((e) => String(e.fontFamily)),
+  );
+  let customIdx = 0;
+  for (const f of opts.customFonts ?? []) {
+    if (!usedFamilies.has(f.family) || f.family === "National 2") continue;
+    const asset = await opts.loadAsset(f.src);
+    if (!asset) continue;
+    const ext = f.format === "opentype" ? "otf" : "ttf";
+    const fileName = `fonts/custom-${customIdx++}.${ext}`;
+    let ref = fileName;
+    if (opts.inline) {
+      ref = `data:font/${ext};base64,${asset.bytes.toString("base64")}`;
+    } else {
+      zip.file(fileName, asset.bytes);
+      files.push(fileName);
+    }
+    const fam = f.family.replace(/"/g, "");
+    fontFaces.push(
+      `@font-face{font-family:"${fam}";font-weight:100 900;font-style:normal;src:url("${ref}") format("${f.format}");font-display:block}`,
+    );
+  }
+
   // Motion preset + spec guards (IAB display: ≤15s, ≤3 loops).
   const preset: AnimationPreset = opts.animate === false ? "none" : (opts.animation ?? "entrance");
-  const D = Math.min(15, Math.max(2, opts.durationSec ?? (preset === "frames" ? 12 : preset === "kenburns" ? 8 : 3)));
   const L = Math.min(3, Math.max(1, Math.round(opts.loops ?? 1)));
+  // Key-visual motion: layers that came from an HTML example carry their
+  // own choreography. Replay it, scaled to each layer's size here, instead
+  // of a studio preset — the brief is that motion matches the key visual.
+  const kvLayers = config.elements.filter((e): e is FreeformImage => e.type === "image" && !!e.motion && e.motion.frames.length >= 2);
+  const useKv = opts.animate !== false && opts.matchKeyVisual !== false && kvLayers.length > 0;
+  const kvDur = useKv ? Math.max(...kvLayers.map((e) => e.motion!.dur)) : 0;
+  const D = useKv
+    ? Math.min(15, Math.max(1, kvDur))
+    : Math.min(15, Math.max(2, opts.durationSec ?? (preset === "frames" ? 12 : preset === "getready" ? 11.5 : preset === "kenburns" ? 8 : 3)));
+  const kvKeyframes: string[] = [];
+  const kvAnimFor = (el: FreeformImage, idx: number): string => {
+    const m = el.motion!;
+    const kx = el.w / Math.max(1, m.w0), ky = el.h / Math.max(1, m.h0);
+    const fr = (v: number) => Math.round(v * 100) / 100;
+    const stops = m.frames.map((f) => {
+      const pct = fr((f.t * m.dur / Math.max(0.01, kvDur)) * 100);
+      return `${pct}%{transform:translate(${fr(f.dx * kx)}px,${fr(f.dy * ky)}px) scale(${fr(f.sx)},${fr(f.sy)});opacity:${fr(f.o)}}`;
+    });
+    // A layer whose own timeline ends before the banner's holds its last state.
+    if (m.dur < kvDur - 0.01) {
+      const last = m.frames[m.frames.length - 1];
+      stops.push(`100%{transform:translate(${fr(last.dx * kx)}px,${fr(last.dy * ky)}px) scale(${fr(last.sx)},${fr(last.sy)});opacity:${fr(last.o)}}`);
+    }
+    kvKeyframes.push(`@keyframes kv${idx}{${stops.join("")}}`);
+    return `animation:kv${idx} ${D}s linear 0s ${L} normal forwards;transform-origin:0 0`;
+  };
   const bgImage = config.elements.find((e): e is FreeformImage => e.type === "image" && e.role !== "logo");
   const kbOrigin = `${Math.round((bgImage?.focusX ?? 0.5) * 100)}% ${Math.round((bgImage?.focusY ?? 0.5) * 100)}%`;
 
@@ -238,6 +297,9 @@ export async function buildHtmlPackage(opts: HtmlExportOptions): Promise<HtmlPac
     : preset === "kenburns" ? { art: "kenburns", copy: "rise", frames: false }
     : preset === "frames" ? { art: "none", copy: "rise", frames: true }
     : preset === "reveal" ? { art: "wipe", copy: "rise", frames: false }
+    // "Get Ready" choreography, measured off the shipped AEM GWD banners:
+    // background drifts for the whole spot, copy types on, CTA lands last.
+    : preset === "getready" ? { art: "drift", copy: "typewriter", frames: false }
     : { art: "none", copy: "rise", frames: false };
   const artMotion: ArtworkMotion = opts.artworkMotion ?? legacy.art;
   const copyMotion: CopyMotion = opts.copyMotion ?? legacy.copy;
@@ -247,6 +309,13 @@ export async function buildHtmlPackage(opts: HtmlExportOptions): Promise<HtmlPac
   const isCopy = (el: FreeformElement) => el.type === "text" || (el.type === "image" && el.role === "logo");
 
   const animFor = (el: FreeformElement): string => {
+    // Key-visual choreography replaces every preset for this artwork: layers
+    // with a track replay it; furniture added by the adapter (panel ground,
+    // logo tile) stays still, as the original's static layers do.
+    if (useKv) {
+      if (el.type === "image" && el.motion && el.motion.frames.length >= 2) return kvAnimFor(el, kvLayers.indexOf(el));
+      return "";
+    }
     // Artwork layer.
     if (isArt(el)) {
       switch (artMotion) {
@@ -263,6 +332,11 @@ export async function buildHtmlPackage(opts: HtmlExportOptions): Promise<HtmlPac
     if (storyFrames) {
       const f = frameOf(el);
       return f === 0 ? "" : `animation:frame${f} ${D}s ease-in-out ${L} both`;
+    }
+    // Get Ready choreography: the CTA is the finale — it pops in near the
+    // end of the spot rather than with the rest of the copy.
+    if (preset === "getready" && el.type === "text" && el.role === "cta") {
+      return `animation:pop .5s cubic-bezier(.34,1.56,.64,1) ${(D * 0.8).toFixed(2)}s both`;
     }
     const d = (copyLead + delayFor(el)).toFixed(2);
     switch (copyMotion) {
@@ -302,6 +376,39 @@ export async function buildHtmlPackage(opts: HtmlExportOptions): Promise<HtmlPac
         }
       }
       const dyn = el.role === "product" ? ` data-dynamic="image"` : "";
+      if (useKv && el.motionParts && el.motionParts.length >= 2) {
+        // A merged glyph headline: play each glyph's own reveal inside a
+        // group box that carries the group's motion.
+        const parts: string[] = [];
+        for (const [pi, part] of el.motionParts.entries()) {
+          const pw = Math.max(1, Math.round(part.fw * el.w)), ph = Math.max(1, Math.round(part.fh * el.h));
+          let psrc = "";
+          const praw = await opts.loadAsset(part.src);
+          const passet = praw ? await optimizeForExport(praw.bytes, praw.contentType, pw, ph) : null;
+          if (passet) {
+            if (opts.inline) psrc = `data:${passet.contentType};base64,${passet.bytes.toString("base64")}`;
+            else {
+              const pname = safeFileName(part.src, imgIndex++, passet.contentType);
+              zip.file(pname, passet.bytes);
+              files.push(pname);
+              psrc = pname;
+            }
+          }
+          let panim = "";
+          if (part.motion && part.motion.frames.length >= 2) {
+            const m = part.motion;
+            const kx = pw / Math.max(1, m.w0), ky = ph / Math.max(1, m.h0);
+            const fr = (v: number) => Math.round(v * 100) / 100;
+            const stops = m.frames.map((f) => `${fr((f.t * m.dur / Math.max(0.01, kvDur)) * 100)}%{transform:translate(${fr(f.dx * kx)}px,${fr(f.dy * ky)}px) scale(${fr(f.sx)},${fr(f.sy)});opacity:${fr(f.o)}}`);
+            const name = `kvp${kvLayers.indexOf(el)}_${pi}`;
+            kvKeyframes.push(`@keyframes ${name}{${stops.join("")}}`);
+            panim = `animation:${name} ${D}s linear 0s ${L} normal forwards;transform-origin:0 0`;
+          }
+          parts.push(`<img class="el img part" src="${esc(psrc)}" alt="" style="position:absolute;left:${Math.round(part.fx * el.w)}px;top:${Math.round(part.fy * el.h)}px;width:${pw}px;height:${ph}px;object-fit:fill;${panim}">`);
+        }
+        body.push(`<div class="el group ${el.role}" style="${base};${anim}">\n${parts.join("\n")}\n</div>`);
+        continue;
+      }
       body.push(
         `<img class="el img ${el.role}" src="${esc(src)}" alt=""${dyn} style="${base};${imageStyle(el)};${anim}">`,
       );
@@ -361,7 +468,7 @@ html,body{margin:0;padding:0;background:transparent}
 @keyframes frame1{0%{opacity:0;transform:translateY(12px)}6%{opacity:1;transform:none}36%{opacity:1}42%{opacity:0;transform:translateY(-8px)}100%{opacity:0}}
 @keyframes frame2{0%{opacity:0}40%{opacity:0;transform:translateY(12px)}46%{opacity:1;transform:none}66%{opacity:1}72%{opacity:0;transform:translateY(-8px)}100%{opacity:0}}
 @keyframes frame3{0%{opacity:0}70%{opacity:0;transform:translateY(12px)}76%{opacity:1;transform:none}100%{opacity:1}}
-${artMotion === "wipe" ? `#stage{animation:wipe .9s cubic-bezier(.4,0,.2,1) both}` : ""}
+${useKv ? kvKeyframes.join("\n") : artMotion === "wipe" ? `#stage{animation:wipe .9s cubic-bezier(.4,0,.2,1) both}` : ""}
 @media (prefers-reduced-motion:reduce){.el,#stage{animation:none!important;clip-path:none!important}}
 #clicktag-layer{position:absolute;left:0;top:0;width:${width}px;height:${height}px;z-index:2147483647;display:block;text-decoration:none;background:transparent;cursor:pointer}
 </style>
@@ -376,7 +483,7 @@ ${artMotion === "wipe" ? `#stage{animation:wipe .9s cubic-bezier(.4,0,.2,1) both
   data-format="${esc(tags.format)}"
   data-variant="${esc(tags.variant ?? "")}"
   data-layout="${esc(tags.layoutLabel ?? "")}"
-  data-animation="${preset}" data-artwork-motion="${artMotion}" data-copy-motion="${copyMotion}" data-story-frames="${storyFrames}" data-duration="${D}" data-loops="${L}">
+  data-animation="${useKv ? "key-visual" : preset}" data-motion-source="${useKv ? "key-visual" : "studio"}" data-artwork-motion="${artMotion}" data-copy-motion="${copyMotion}" data-story-frames="${storyFrames}" data-duration="${D}" data-loops="${L}">
 ${body.join("\n")}
 ${(opts.pixelUrls ?? [])
   .filter((u) => /^https:\/\//i.test(u))

@@ -86,7 +86,7 @@ export default function KnowledgeGuidelines() {
           <Link href="/knowledge" className="p-2 hover:bg-muted rounded-full transition-colors">
             <ChevronLeft className="w-5 h-5" />
           </Link>
-          <h1 className="text-3xl font-bold tracking-tight">Brand Guidelines</h1>
+          <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight">Brand Guidelines</h1>
         </div>
         <Card className="border-dashed">
           <CardContent className="py-12 text-center text-sm text-muted-foreground">
@@ -176,8 +176,8 @@ export default function KnowledgeGuidelines() {
           <ChevronLeft className="w-5 h-5" />
         </Link>
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Add Brand Guidelines</h1>
-          <p className="text-muted-foreground text-sm font-mono mt-1 uppercase tracking-widest">
+          <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight">Add Brand Guidelines</h1>
+          <p className="text-muted-foreground mt-1.5">
             Ingest a guideline PDF into a brand
           </p>
         </div>

@@ -29,3 +29,4 @@
 - [toast-undo duration](toast-undo-duration.md) — deferred/undo toasts need explicit duration matching the commit timer; shadcn toast otherwise persists ~16min so Undo outlives the grace window.
 - [Wide-banner strip layout](strip-banner-layout.md) — flatten to one flex row; only the headline flexes/ellipsizes (wordmark+CTA rigid), else brand name truncates mid-word.
 - [Out-of-band brief generation](oob-brief-generation.md) — recover a killed in-flight gen by esbuild-bundling a one-off that reuses lib/openai+assetImages and writes the asset via bash.
+- [Recomposer (slots · classes · recipes)](recomposer.md) — masters rebuilt for towers/portraits/wides/strips from slots + class recipes with real text measurement; ONE aspect threshold in formatCatalog.ts; adapt route order; build-plan picks same-class examples first.

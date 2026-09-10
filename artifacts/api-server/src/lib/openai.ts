@@ -1,6 +1,6 @@
 import { openai, editImageBuffers } from "@workspace/integrations-openai-ai-server";
 import { finalizeHtmlBanner } from "./htmlBanner";
-import { getBrandRules } from "./brandRules";
+import { getBrandRules, AC_CIVIC_CALENDAR } from "./brandRules";
 
 /** gpt-image-1 output sizes, chosen to match a target canvas orientation. */
 export type ProductImageSize = "1024x1024" | "1536x1024" | "1024x1536";
@@ -329,6 +329,7 @@ ${animationRequirement}
 - Do NOT add clickTag wiring or <a> tags around the ad — click handling is injected downstream.
 - Professional, production-ready design matching the brand palette.
 ${getBrandRules(params.brandName).bannerRules(params.animated ? "animated_social" : "html_banner").map((r) => `- ${r}`).join("\n")}
+${getBrandRules(params.brandName).layoutRules(width, height).map((r) => `- ${r}`).join("\n")}
 Output ONLY the raw HTML, no markdown code fences.`;
 
   const response = await openai.chat.completions.create({
@@ -506,6 +507,154 @@ const GUIDELINE_FIELDS: (keyof GuidelineSuggestions)[] = [
  * Returns ONLY fields the model could find evidence for; everything is optional
  * so the caller can present non-destructive suggestions for user review.
  */
+/**
+ * "Business DNA" from a live website: analyse a site's visible text plus the
+ * colours/fonts extracted from its markup and suggest brand fields, in the
+ * same shape as the PDF guideline analysis so the UI is shared.
+ */
+export async function analyzeWebsiteContent(params: {
+  url: string;
+  text: string;
+  cssColors: string[];
+  cssFonts: string[];
+}): Promise<{ suggestions: GuidelineSuggestions; guidelines: string; notes: string[] }> {
+  const prompt = `You are a brand identity analyst building a brand profile ("business DNA") from a company's live website.
+
+Website: ${params.url}
+Colours found in the site's markup/styles (ordered by frequency): ${params.cssColors.slice(0, 15).join(", ") || "none extracted"}
+Font families found in the site's styles: ${params.cssFonts.slice(0, 8).join("; ") || "none extracted"}
+
+Visible page text:
+"""
+${params.text.slice(0, 12000)}
+"""
+
+Infer the brand's identity. Prefer colours from the extracted list (they come from the real site); ignore obvious framework defaults (pure #000000/#ffffff belong in backgroundColor/textColor only).
+
+Return ONLY a JSON object with this exact shape:
+{
+  "suggestions": {
+    "primaryColor": "#RRGGBB",
+    "secondaryColor": "#RRGGBB",
+    "accentColor": "#RRGGBB",
+    "backgroundColor": "#RRGGBB",
+    "textColor": "#RRGGBB",
+    "fontFamily": "string",
+    "toneOfVoice": "string (one sentence describing how the brand writes)",
+    "industry": "string"
+  },
+  "guidelines": "string - a concise VISUAL DIRECTION + TONE OF VOICE brief (max ~1500 chars) a designer could follow to make on-brand creative for this business; put visual/colour rules first",
+  "notes": ["strings - anything you could not determine or guessed at"]
+}
+Omit any suggestion field you have no evidence for. No explanation, just the JSON.`;
+
+  const response = await openai.chat.completions.create({
+    model: "gpt-4o-mini",
+    messages: [{ role: "user", content: prompt }],
+    max_tokens: 1400,
+    response_format: { type: "json_object" },
+  });
+
+  try {
+    const parsed = JSON.parse(response.choices[0]?.message?.content ?? "{}");
+    const suggestions: GuidelineSuggestions = {};
+    for (const f of GUIDELINE_FIELDS) {
+      const v = parsed?.suggestions?.[f];
+      if (typeof v === "string" && v.trim()) suggestions[f] = v.trim();
+    }
+    return {
+      suggestions,
+      guidelines: typeof parsed.guidelines === "string" ? parsed.guidelines.slice(0, 4000) : "",
+      notes: Array.isArray(parsed.notes)
+        ? parsed.notes.filter((n: unknown): n is string => typeof n === "string")
+        : [],
+    };
+  } catch {
+    return { suggestions: {}, guidelines: "", notes: ["Could not analyse the website content."] };
+  }
+}
+
+export interface CampaignIdea {
+  title: string;
+  objective: string;
+  keyMessage: string;
+  notes: string;
+  sizes: string[];
+  rationale: string;
+}
+
+/**
+ * Proactive campaign ideation: suggest timely campaign briefs grounded in the
+ * brand, the time of year (NZ seasons + the council civic calendar for AC),
+ * what imagery the library actually holds, recent campaigns (to avoid
+ * repeats), and live ad performance where it exists.
+ */
+export async function generateCampaignIdeas(params: {
+  brandName: string;
+  guidelines?: string | null;
+  month: number;
+  monthName: string;
+  existingCampaigns: string[];
+  libraryFolders: { folder: string; count: number; sampleNames: string[] }[];
+  performanceSummary: string[];
+  sizeOptions: { key: string; label: string }[];
+}): Promise<CampaignIdea[]> {
+  const isAC = getBrandRules(params.brandName).isAucklandCouncil;
+  const calendar = isAC
+    ? AC_CIVIC_CALENDAR.filter((c) => c.months.includes(params.month)).map((c) => `- ${c.topic}`).join("\n")
+    : "";
+
+  const prompt = `You are a senior campaign strategist for ${params.brandName}. Suggest 5 timely, distinct campaign ideas ready to brief.
+
+Current month: ${params.monthName} (New Zealand — seasons are opposite the northern hemisphere).
+${calendar ? `\nCivic/seasonal calendar topics relevant right now:\n${calendar}\n` : ""}
+${params.guidelines ? `Brand direction:\n${params.guidelines.slice(0, 1200)}\n` : ""}
+Recent campaigns (do NOT repeat these): ${params.existingCampaigns.join("; ") || "none yet"}
+
+Imagery available in the brand library (campaigns that can reuse real imagery are cheaper and more authentic — say so in the rationale when an idea matches):
+${params.libraryFolders.map((f) => `- ${f.folder} (${f.count}): e.g. ${f.sampleNames.slice(0, 4).join(", ")}`).join("\n")}
+
+${params.performanceSummary.length ? `Live ad performance so far (consider refreshing what works):\n${params.performanceSummary.map((l) => `- ${l}`).join("\n")}\n` : ""}
+Available formats (pick 1-3 per idea, by key):
+${params.sizeOptions.map((o) => `- ${o.key}: ${o.label}`).join("\n")}
+
+Return ONLY a JSON object: {"ideas": [{
+  "title": "campaign name (max 8 words)",
+  "objective": "one sentence",
+  "keyMessage": "one sentence in the brand voice",
+  "notes": "brief notes in short markdown bullets: objective, audience, key message, timing, suggested landing/search phrase",
+  "sizes": ["format keys"],
+  "rationale": "one sentence: why now, and whether library imagery covers it"
+}]}
+No explanation, just the JSON.`;
+
+  const response = await openai.chat.completions.create({
+    model: "gpt-4o-mini",
+    messages: [{ role: "user", content: prompt }],
+    max_tokens: 2200,
+    response_format: { type: "json_object" },
+  });
+
+  const validKeys = new Set(params.sizeOptions.map((o) => o.key));
+  try {
+    const parsed = JSON.parse(response.choices[0]?.message?.content ?? "{}");
+    const ideas = Array.isArray(parsed.ideas) ? parsed.ideas : [];
+    return ideas
+      .filter((i: Record<string, unknown>) => typeof i?.title === "string" && typeof i?.notes === "string")
+      .slice(0, 6)
+      .map((i: Record<string, unknown>) => ({
+        title: String(i.title).slice(0, 120),
+        objective: typeof i.objective === "string" ? i.objective : "",
+        keyMessage: typeof i.keyMessage === "string" ? i.keyMessage : "",
+        notes: String(i.notes).slice(0, 3000),
+        sizes: Array.isArray(i.sizes) ? i.sizes.filter((s: unknown): s is string => typeof s === "string" && validKeys.has(s)) : [],
+        rationale: typeof i.rationale === "string" ? i.rationale : "",
+      }));
+  } catch {
+    return [];
+  }
+}
+
 export async function analyzeGuidelineText(params: {
   text: string;
 }): Promise<{ suggestions: GuidelineSuggestions; guidelines: string; notes: string[] }> {

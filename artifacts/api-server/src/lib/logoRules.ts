@@ -16,6 +16,8 @@
  * drift between features.
  */
 
+import { STRIP_MAX_HEIGHT } from "./formatCatalog";
+
 export interface LogoPlacement {
   /** Tile geometry (flush to the corner). The brand's logoUrl asset IS the
    * master tile — colour mark on its white square with the 1/8 clearspace
@@ -23,8 +25,6 @@ export interface LogoPlacement {
    * in another box or inset again. */
   tile: { x: number; y: number; w: number; h: number };
 }
-
-const STRIP_MAX_HEIGHT = 120;
 
 export function isSocialSquare(w: number, h: number): boolean {
   return Math.abs(w - h) < 2 && w >= 600;

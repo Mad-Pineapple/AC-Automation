@@ -34,6 +34,9 @@ export function ImportCollateralDialog() {
   const [open, setOpen] = useState(false);
   const [plan, setPlan] = useState<CollateralPlan | null>(null);
   const [masterId, setMasterId] = useState<string>("none");
+  // Which unique sizes to build (keys `${w}x${h}${unit}`); everything ticked by default.
+  const [picked, setPicked] = useState<Set<string>>(new Set());
+  const sizeKey = (s: { width: number; height: number; unit: string }) => `${s.width}x${s.height}${s.unit}`;
   const [busy, setBusy] = useState<string | null>(null);
   const parsePlan = useParseCollateralPlan();
   const createBrief = useCreateBrief();
@@ -61,7 +64,7 @@ export function ImportCollateralDialog() {
     parsePlan.mutate(
       { data: { objectPath: uploaded.objectPath } },
       {
-        onSuccess: (p) => { setPlan(p); setBusy(null); },
+        onSuccess: (p) => { setPlan(p); setPicked(new Set(p.uniqueSizes.map(sizeKey))); setBusy(null); },
         onError: (err) => {
           setBusy(null);
           toast({ title: "Could not read that workbook", description: err instanceof Error ? err.message.slice(0, 160) : undefined, variant: "destructive" });
@@ -101,7 +104,7 @@ export function ImportCollateralDialog() {
 
       let created = 0;
       if (masterId !== "none") {
-        const targets = plan.uniqueSizes.map((s) => ({
+        const targets = plan.uniqueSizes.filter((s) => picked.has(sizeKey(s))).map((s) => ({
           width: s.unit === "mm" ? mmToPx(s.width) : s.width,
           height: s.unit === "mm" ? mmToPx(s.height) : s.height,
           name: `${plan.projectNumbers[0] ?? plan.campaignName} — ${s.names[0]} ${s.width}x${s.height}${s.unit === "mm" ? "mm" : ""}`,
@@ -168,13 +171,24 @@ export function ImportCollateralDialog() {
                 <Badge key={c.channel} variant="secondary">{c.channel} · {c.count}</Badge>
               ))}
             </div>
-            <div className="max-h-40 overflow-y-auto rounded-lg border border-border/60 p-3 text-xs space-y-1">
-              {plan.uniqueSizes.map((s) => (
-                <div key={`${s.width}x${s.height}${s.unit}`} className="flex justify-between gap-3">
-                  <span className="font-mono">{s.width}×{s.height}{s.unit === "mm" ? "mm" : ""}</span>
-                  <span className="text-muted-foreground truncate">{s.names.join(", ")}{s.count > 1 ? ` ×${s.count}` : ""}</span>
-                </div>
-              ))}
+            <div className="flex items-center justify-between text-xs">
+              <span className="text-muted-foreground">{picked.size} of {plan.uniqueSizes.length} sizes ticked</span>
+              <span className="flex gap-3">
+                <button type="button" className="text-primary hover:underline" onClick={() => setPicked(new Set(plan.uniqueSizes.map(sizeKey)))}>All</button>
+                <button type="button" className="text-primary hover:underline" onClick={() => setPicked(new Set())}>None</button>
+              </span>
+            </div>
+            <div className="max-h-48 overflow-y-auto rounded-lg border border-border/60 p-3 text-xs space-y-1">
+              {plan.uniqueSizes.map((s) => {
+                const k = sizeKey(s);
+                return (
+                  <label key={k} className="flex items-center gap-2 cursor-pointer">
+                    <input type="checkbox" checked={picked.has(k)} onChange={(e) => setPicked((prev) => { const n = new Set(prev); if (e.target.checked) n.add(k); else n.delete(k); return n; })} data-testid={`collateral-size-${k}`} />
+                    <span className="font-mono w-28 shrink-0">{s.width}×{s.height}{s.unit === "mm" ? "mm" : ""}</span>
+                    <span className="text-muted-foreground truncate">{s.names.join(", ")}{s.count > 1 ? ` ×${s.count}` : ""}</span>
+                  </label>
+                );
+              })}
             </div>
             {plan.warnings.length > 0 && (
               <div className="text-xs text-amber-700 bg-amber-50 rounded-lg p-3 space-y-1">
@@ -193,14 +207,14 @@ export function ImportCollateralDialog() {
                 </SelectContent>
               </Select>
               <p className="text-[10px] text-muted-foreground">
-                Every unique size becomes a template composed from the master (print sizes at 300dpi).
+                Each ticked size becomes a piece in Work in progress, built from the master (print sizes at 300dpi). Press Make template on the ones you keep, then tick those templates on the campaign to generate copy for them.
               </p>
             </div>
             <div className="flex justify-end gap-2">
               <Button type="button" variant="ghost" onClick={() => setPlan(null)} disabled={!!busy}>Back</Button>
-              <Button type="button" onClick={create} disabled={!!busy} data-testid="button-collateral-create">
+              <Button type="button" onClick={create} disabled={!!busy || (masterId !== "none" && picked.size === 0)} data-testid="button-collateral-create">
                 {busy ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
-                {busy ?? (masterId === "none" ? "Create brief" : `Create brief + ${plan.uniqueSizes.length} templates`)}
+                {busy ?? (masterId === "none" ? "Create brief" : `Create brief + ${picked.size} piece${picked.size === 1 ? "" : "s"}`)}
               </Button>
             </div>
           </div>

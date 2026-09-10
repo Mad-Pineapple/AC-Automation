@@ -14,6 +14,29 @@
 export type TextRole = "headline" | "subhead" | "body" | "cta" | "other";
 export type ImageRole = "product" | "logo" | "decoration";
 
+/** What a rectangle is FOR in the composition (see lib/slots.ts). Set by
+ * importers or designers; inferred from geometry when absent. */
+export type SlotRole =
+  | "photo"
+  | "cutout"
+  | "scrim"
+  | "panel"
+  | "band"
+  | "headline"
+  | "subheadline"
+  | "message"
+  | "cta"
+  | "ctaLabel"
+  | "ctaIcon"
+  | "lockup"
+  | "logo"
+  | "other";
+
+export const SLOT_ROLES: SlotRole[] = [
+  "photo", "cutout", "scrim", "panel", "band", "headline", "subheadline", "message",
+  "cta", "ctaLabel", "ctaIcon", "lockup", "logo", "other",
+];
+
 export interface FreeformBase {
   id: string;
   x: number;
@@ -27,6 +50,8 @@ export interface FreeformBase {
    * implicitly admin-gated.
    */
   locked?: boolean;
+  /** Composition slot (photo, panel, cta, …) — drives recomposition. */
+  slot?: SlotRole;
 }
 
 export interface FreeformText extends FreeformBase {
@@ -42,6 +67,9 @@ export interface FreeformText extends FreeformBase {
   fontStyle?: "normal" | "italic";
   letterSpacing?: number;
   opacity?: number;
+  /** "cap": the box hugs the cap height (InDesign auto-sized frame) — the
+   * first baseline sits at the box bottom, not at CSS line-box position. */
+  baselineFit?: "cap";
 }
 
 /** A baked-in text block captured from an imported key visual: carried as
@@ -58,10 +86,32 @@ export interface KvTextBlock {
   role?: string;
 }
 
+/** One sample of a layer's motion, relative to its resting box. */
+export interface MotionFrame { t: number; dx: number; dy: number; sx: number; sy: number; o: number }
+/** A layer's choreography captured from an HTML key visual: offsets in the
+ * master's px relative to the resting size (w0×h0), so a piece built at
+ * another size replays the same motion scaled to its own layer. */
+export interface MotionTrack { dur: number; w0: number; h0: number; frames: MotionFrame[] }
+export interface MotionPart { src: string; fx: number; fy: number; fw: number; fh: number; motion?: MotionTrack }
+
 export interface FreeformImage extends FreeformBase {
   type: "image";
   role: ImageRole;
+  /** Motion from the imported HTML example (see MotionTrack). */
+  motion?: MotionTrack;
+  /** The motion shared by this layer's group (its animated ancestors only);
+   * a merged glyph headline inherits this rather than one glyph's flicker. */
+  groupMotion?: MotionTrack;
+  /** The layer's own animation only (its reveal inside the group). */
+  ownMotion?: MotionTrack;
+  /** For a merged glyph headline: the glyphs it was built from, each with
+   * its own image and reveal, as fractions of this box. The HTML export
+   * plays them so a letter-by-letter reveal survives the merge. */
+  motionParts?: MotionPart[];
   src: string | null;
+  /** The photo was reproduced from a flat document PDF and carries the
+   *  original copy in its pixels — size builds refuse such masters. */
+  bakedCopy?: boolean;
   fit?: "cover" | "contain";
   radius?: number;
   opacity?: number;
@@ -103,10 +153,29 @@ export interface LayoutOption {
   score: number;
 }
 
+export interface SourceAsset {
+  name: string;
+  objectPath: string;
+  contentType: string;
+  kind: string;
+}
+
 export interface FreeformConfig {
   kind: "freeform";
   elements: FreeformElement[];
   layoutOptions?: LayoutOption[];
+  /** Files that arrived with an imported package. Not shown anywhere until
+   *  the user chooses "add to library" at sign-off. */
+  sourceFolder?: string;
+  sourceAssets?: SourceAsset[];
+  /** A runnable copy of the original HTML banner (animation intact), stored
+   *  at import for the WIP "Preview" option. */
+  previewHtml?: string;
+  /** How this layout was derived from its master ("recomposed:portrait",
+   *  "scaled", "key-visual"). */
+  adaptMethod?: string;
+  /** What the adapt engine decided and what a designer should check. */
+  adaptNotes?: string[];
 }
 
 const MAX_ELEMENTS = 200;
@@ -243,6 +312,33 @@ export function adaptFreeformConfig(
  * dropped rather than throwing, so a partially-bad payload still yields a
  * usable template.
  */
+const MAX_MOTION_FRAMES = 200;
+function sanitizeMotion(raw: unknown): MotionTrack | undefined {
+  if (typeof raw !== "object" || raw === null) return undefined;
+  const m = raw as Record<string, unknown>;
+  const dur = num(m.dur);
+  const w0 = num(m.w0), h0 = num(m.h0);
+  if (!(dur > 0) || dur > 60 || !(w0 > 0) || !(h0 > 0) || !Array.isArray(m.frames)) return undefined;
+  const frames: MotionFrame[] = [];
+  for (const f of (m.frames as unknown[]).slice(0, MAX_MOTION_FRAMES)) {
+    if (typeof f !== "object" || f === null) continue;
+    const r = f as Record<string, unknown>;
+    const t = num(r.t);
+    if (!(t >= 0 && t <= 1)) continue;
+    frames.push({
+      t: Math.round(t * 10000) / 10000,
+      dx: Math.max(-20000, Math.min(20000, num(r.dx))),
+      dy: Math.max(-20000, Math.min(20000, num(r.dy))),
+      sx: Math.max(0, Math.min(50, num(r.sx, 1))),
+      sy: Math.max(0, Math.min(50, num(r.sy, 1))),
+      o: Math.max(0, Math.min(1, num(r.o, 1))),
+    });
+  }
+  if (frames.length < 2) return undefined;
+  frames.sort((a, b) => a.t - b.t);
+  return { dur: Math.round(dur * 100) / 100, w0: Math.round(w0), h0: Math.round(h0), frames };
+}
+
 export function normalizeFreeformConfig(raw: unknown): FreeformConfig {
   const rawElements: unknown[] = isFreeformConfigShape(raw) && Array.isArray(raw.elements) ? raw.elements : [];
   const elements: FreeformElement[] = [];
@@ -257,6 +353,7 @@ export function normalizeFreeformConfig(raw: unknown): FreeformConfig {
       w: Math.max(0, num(el.w)),
       h: Math.max(0, num(el.h)),
       ...(el.locked === true ? { locked: true } : {}),
+      ...(SLOT_ROLES.includes(el.slot as SlotRole) && el.slot !== "other" ? { slot: el.slot as SlotRole } : {}),
     };
 
     if (el.type === "text") {
@@ -278,6 +375,7 @@ export function normalizeFreeformConfig(raw: unknown): FreeformConfig {
         ...(fontFamily ? { fontFamily } : {}),
         ...(el.fontStyle === "italic" ? { fontStyle: "italic" as const } : {}),
         ...(el.letterSpacing !== undefined ? { letterSpacing: num(el.letterSpacing, 0) } : {}),
+        ...(el.baselineFit === "cap" ? { baselineFit: "cap" as const } : {}),
         ...(opacity !== undefined ? { opacity } : {}),
       });
     } else if (el.type === "image") {
@@ -285,6 +383,20 @@ export function normalizeFreeformConfig(raw: unknown): FreeformConfig {
       const opacity = clampOpacity(el.opacity);
       const focusX = clampOpacity(el.focusX);
       const focusY = clampOpacity(el.focusY);
+      const motion = sanitizeMotion(el.motion);
+      const groupMotion = sanitizeMotion(el.groupMotion);
+      const ownMotion = sanitizeMotion(el.ownMotion);
+      const motionParts = Array.isArray(el.motionParts)
+        ? (el.motionParts as unknown[])
+            .slice(0, 40)
+            .filter((p): p is Record<string, unknown> => typeof p === "object" && p !== null)
+            .map((p) => {
+              const src = sanitizeSrc(p.src);
+              const pm = sanitizeMotion(p.motion);
+              return src ? { src, fx: num(p.fx), fy: num(p.fy), fw: Math.max(0, num(p.fw)), fh: Math.max(0, num(p.fh)), ...(pm ? { motion: pm } : {}) } : null;
+            })
+            .filter((p): p is MotionPart => p !== null)
+        : [];
       const fbRaw = el.focusBox as Record<string, unknown> | undefined;
       const focusBox =
         fbRaw && typeof fbRaw === "object"
@@ -324,7 +436,12 @@ export function normalizeFreeformConfig(raw: unknown): FreeformConfig {
         ...(focusX !== undefined ? { focusX } : {}),
         ...(focusY !== undefined ? { focusY } : {}),
         ...(focusBox ? { focusBox } : {}),
+        ...(el.bakedCopy === true ? { bakedCopy: true } : {}),
         ...(kvText && kvText.length > 0 ? { kvText } : {}),
+        ...(motion ? { motion } : {}),
+        ...(groupMotion ? { groupMotion } : {}),
+        ...(ownMotion ? { ownMotion } : {}),
+        ...(motionParts.length > 0 ? { motionParts } : {}),
       });
     } else if (el.type === "rect") {
       const opacity = clampOpacity(el.opacity);
@@ -370,5 +487,40 @@ export function normalizeFreeformConfig(raw: unknown): FreeformConfig {
           score: num(o.score),
         }))
     : [];
-  return { kind: "freeform", elements, ...(layoutOptions.length > 0 ? { layoutOptions } : {}) };
+  // Preserve the imported-package manifest (used by the add-to-library
+  // choice at sign-off) — bounded and string-only.
+  const rawSrc = (raw as { sourceAssets?: unknown }).sourceAssets;
+  const sourceAssets: SourceAsset[] = Array.isArray(rawSrc)
+    ? (rawSrc as unknown[])
+        .slice(0, 500)
+        .filter((a): a is Record<string, unknown> => typeof a === "object" && a !== null)
+        .map((a) => ({
+          name: String(a.name ?? "").slice(0, 300),
+          objectPath: String(a.objectPath ?? "").slice(0, 500),
+          contentType: String(a.contentType ?? "").slice(0, 100),
+          kind: String(a.kind ?? "image").slice(0, 40),
+        }))
+        .filter((a) => a.name && a.objectPath)
+    : [];
+  const rawFolder = (raw as { sourceFolder?: unknown }).sourceFolder;
+  const sourceFolder = typeof rawFolder === "string" ? rawFolder.slice(0, 200) : undefined;
+  const rawPrev = (raw as { previewHtml?: unknown }).previewHtml;
+  const previewHtml =
+    typeof rawPrev === "string" && rawPrev.startsWith("/api/storage/") ? rawPrev.slice(0, 500) : undefined;
+  const rawMethod = (raw as { adaptMethod?: unknown }).adaptMethod;
+  const adaptMethod = typeof rawMethod === "string" && /^[\w:-]{1,40}$/.test(rawMethod) ? rawMethod : undefined;
+  const rawNotes = (raw as { adaptNotes?: unknown }).adaptNotes;
+  const adaptNotes = Array.isArray(rawNotes)
+    ? (rawNotes as unknown[]).filter((n): n is string => typeof n === "string" && n.trim().length > 0).slice(0, 16).map((n) => n.slice(0, 240))
+    : [];
+  return {
+    kind: "freeform",
+    elements,
+    ...(layoutOptions.length > 0 ? { layoutOptions } : {}),
+    ...(sourceFolder ? { sourceFolder } : {}),
+    ...(sourceAssets.length > 0 ? { sourceAssets } : {}),
+    ...(previewHtml ? { previewHtml } : {}),
+    ...(adaptMethod ? { adaptMethod } : {}),
+    ...(adaptNotes.length > 0 ? { adaptNotes } : {}),
+  };
 }

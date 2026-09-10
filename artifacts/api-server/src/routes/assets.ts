@@ -1,10 +1,12 @@
 import { Router } from "express";
 import { randomUUID } from "crypto";
 import { db } from "@workspace/db";
-import { assetsTable, briefsTable, brandsTable, adTagsTable, adEventsTable, brandStylesTable, usersTable } from "@workspace/db";
+import { assetsTable, briefsTable, brandsTable, adTagsTable, adEventsTable, brandStylesTable, usersTable, brandAssetsTable } from "@workspace/db";
 import { eq, sql } from "drizzle-orm";
 import { alias } from "drizzle-orm/pg-core";
 import { generateCopy, generateProductImage, generateHtmlBanner } from "../lib/openai";
+import { getBrandRules } from "../lib/brandRules";
+import { editImageBuffers } from "@workspace/integrations-openai-ai-server";
 import { requireAuth, optionalAuth } from "../middlewares/requireAuth";
 import { logger } from "../lib/logger";
 import { runInBackground } from "../lib/background";
@@ -15,6 +17,7 @@ import {
   imageSizeForDims,
   collectBrandReferences,
   pickLibraryImage,
+  toObjectEntityPath,
 } from "../lib/assetImages";
 import { checkAssetCompliance, checkHtmlCompliance, isHtmlAsset, serializeIssues, type ComplianceVerdict } from "../lib/brandCompliance";
 import { fetchLogoDataUri } from "../lib/htmlBanner";
@@ -555,6 +558,100 @@ router.post("/assets/:id/export-video", requireAuth, async (req, res): Promise<v
     }
     req.log.error({ err: error }, "Video export failed");
     res.status(500).json({ error: "Video export failed" });
+  }
+});
+
+/**
+ * Prompt-based edit of an asset's GENERATED artwork ("make the sky dusk",
+ * "remove the van"). Hard rule: imported artwork — anything that lives in the
+ * brand library or was uploaded as the brief's product image — is never
+ * modified; those get a 403 telling the user to regenerate instead.
+ */
+router.post("/assets/:id/edit-image", requireAuth, async (req, res): Promise<void> => {
+  const id = Number(req.params.id);
+  if (!await canMutateAsset(id, req)) {
+    res.status(403).json({ error: "Forbidden: you do not own this asset's brief" });
+    return;
+  }
+  const instruction = typeof req.body?.instruction === "string" ? req.body.instruction.trim() : "";
+  if (instruction.length < 3) {
+    res.status(400).json({ error: "Describe the change you want, e.g. \"make the sky dusk purple\"." });
+    return;
+  }
+
+  const [asset] = await db.select().from(assetsTable).where(eq(assetsTable.id, id));
+  if (!asset) { res.status(404).json({ error: "Asset not found" }); return; }
+  if (!asset.imageUrl) { res.status(400).json({ error: "This asset has no artwork to edit." }); return; }
+
+  const objectPath = toObjectEntityPath(asset.imageUrl);
+  if (!objectPath) {
+    res.status(400).json({ error: "This asset's image is external and can't be edited here." });
+    return;
+  }
+
+  const [briefRow] = await db
+    .select()
+    .from(briefsTable)
+    .leftJoin(brandsTable, eq(briefsTable.brandId, brandsTable.id))
+    .where(eq(briefsTable.id, asset.briefId));
+  if (!briefRow?.brands) { res.status(404).json({ error: "Brief not found" }); return; }
+  const brand = briefRow.brands;
+
+  // Imported creative is reproduced verbatim, never inpainted or erased.
+  const [libraryMatch] = await db
+    .select({ id: brandAssetsTable.id, name: brandAssetsTable.name })
+    .from(brandAssetsTable)
+    .where(eq(brandAssetsTable.objectPath, objectPath));
+  if (libraryMatch) {
+    res.status(403).json({
+      error: `This artwork is "${libraryMatch.name}" from the brand library — imported creative is never modified. Regenerate the asset for new artwork instead.`,
+    });
+    return;
+  }
+  if (briefRow.briefs.productImageUrl && toObjectEntityPath(briefRow.briefs.productImageUrl) === objectPath) {
+    res.status(403).json({ error: "This is the brief's uploaded product image — imported creative is never modified." });
+    return;
+  }
+
+  try {
+    const file = await objectStorageService.getObjectEntityFile(objectPath);
+    const [raw] = await file.download();
+    const tplById = await loadTemplateMap();
+    const { width, height } = dimsForSize(asset.templateSize, tplById);
+    const size = imageSizeForDims(width, height);
+    const rules = getBrandRules(brand.name);
+    const editPrompt = `Apply this edit to the advertising artwork, changing ONLY what the instruction asks and preserving the existing art style, composition and colour treatment everywhere else: ${instruction}. Keep every colour within the brand palette (${[brand.primaryColor, brand.secondaryColor, brand.accentColor, brand.backgroundColor].filter(Boolean).join(", ")}). ${rules.imageryRules().join(" ")}`;
+    const buffer = await editImageBuffers([{ buffer: raw, mimeType: "image/png" }], editPrompt, size);
+    if (!buffer.length) throw new Error("empty edit result");
+
+    const newObjectPath = await objectStorageService.uploadDataUrl(
+      `data:image/png;base64,${buffer.toString("base64")}`,
+    );
+    const newUrl = `${baseUrl(req)}/api/storage${newObjectPath}`;
+
+    // Keep rendered HTML in sync when it embeds the old artwork URL.
+    let htmlContent = asset.htmlContent;
+    if (htmlContent && asset.imageUrl && htmlContent.includes(asset.imageUrl)) {
+      htmlContent = htmlContent.split(asset.imageUrl).join(newUrl);
+    }
+
+    const verdict = await checkAssetCompliance(
+      { templateSize: asset.templateSize, htmlContent, imageUrl: newUrl },
+      brandComplianceInput(brand),
+    );
+    const [updated] = await db.update(assetsTable).set({
+      imageUrl: newUrl,
+      htmlContent,
+      complianceStatus: verdict.status,
+      complianceScore: verdict.status === "skipped" ? null : verdict.score,
+      complianceIssues: serializeIssues(verdict.issues),
+      complianceCheckedAt: new Date(),
+      updatedAt: new Date(),
+    }).where(eq(assetsTable.id, id)).returning();
+    res.json(await formatAsset(updated));
+  } catch (err) {
+    req.log.error({ err, assetId: id }, "Image edit failed");
+    res.status(502).json({ error: "The image edit failed. Try rewording the instruction or regenerate instead." });
   }
 });
 

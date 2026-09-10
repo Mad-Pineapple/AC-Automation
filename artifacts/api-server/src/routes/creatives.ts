@@ -1,14 +1,15 @@
 import { Router } from "express";
 import { randomBytes } from "node:crypto";
 import { db } from "@workspace/db";
-import { templatesTable, brandsTable, creativesTable, creativeEventsTable } from "@workspace/db";
+import { templatesTable, brandsTable, brandAssetsTable, creativesTable, creativeEventsTable } from "@workspace/db";
 import { eq, sql, desc } from "drizzle-orm";
 import { requireAdmin, requireAuth } from "../middlewares/requireAuth";
 import { normalizeFreeformConfig, isFreeformConfig } from "../lib/freeform";
 import { buildHtmlPackage, ARTWORK_MOTIONS, COPY_MOTIONS, type ArtworkMotion, type CopyMotion } from "../lib/htmlExport";
 
-function motionFromBody(body: any): { artworkMotion?: ArtworkMotion; copyMotion?: CopyMotion; storyFrames?: boolean } {
-  const out: { artworkMotion?: ArtworkMotion; copyMotion?: CopyMotion; storyFrames?: boolean } = {};
+function motionFromBody(body: any): { artworkMotion?: ArtworkMotion; copyMotion?: CopyMotion; storyFrames?: boolean; matchKeyVisual?: boolean } {
+  const out: { artworkMotion?: ArtworkMotion; copyMotion?: CopyMotion; storyFrames?: boolean; matchKeyVisual?: boolean } = {};
+  if (typeof body?.matchKeyVisual === "boolean") out.matchKeyVisual = body.matchKeyVisual;
   if (ARTWORK_MOTIONS.includes(body?.artworkMotion)) out.artworkMotion = body.artworkMotion;
   if (COPY_MOTIONS.includes(body?.copyMotion)) out.copyMotion = body.copyMotion;
   if (typeof body?.storyFrames === "boolean") out.storyFrames = body.storyFrames;
@@ -42,6 +43,30 @@ function assetLoader(base: string) {
       return null;
     }
   };
+}
+
+
+/** Campaign fonts stored by package import, as embeddable references. The
+ * exporter packages only families the creative's copy actually uses. */
+async function customFontRefs(): Promise<{ family: string; src: string; format: "truetype" | "opentype" }[]> {
+  try {
+    const rows = await db.select().from(brandAssetsTable).where(eq(brandAssetsTable.kind, "font"));
+    const seen = new Set<string>();
+    const out: { family: string; src: string; format: "truetype" | "opentype" }[] = [];
+    for (const r of rows) {
+      const family = r.name.split(" (")[0].trim();
+      if (!family || seen.has(family)) continue;
+      seen.add(family);
+      out.push({
+        family,
+        src: `/api/storage${r.objectPath}`,
+        format: r.contentType === "font/otf" ? "opentype" : "truetype",
+      });
+    }
+    return out;
+  } catch {
+    return [];
+  }
 }
 
 /**
@@ -113,6 +138,7 @@ router.post("/templates/:id/export-html", requireAdmin, async (req, res): Promis
     loops,
     fluid,
     pixelUrls,
+    customFonts: await customFontRefs(),
     loadAsset: assetLoader(base),
   });
 
@@ -159,6 +185,7 @@ router.post("/templates/:id/preview-html", requireAuth, async (req, res): Promis
     loops: Number.isFinite(Number(body.loops)) ? Number(body.loops) : undefined,
     fluid: body.fluid === true,
     inline: true,
+    customFonts: await customFontRefs(),
     loadAsset: assetLoader(base),
   });
   res.set("Content-Type", "text/html; charset=utf-8");

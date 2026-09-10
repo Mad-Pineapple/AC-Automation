@@ -1,6 +1,7 @@
 import app from "./app";
 import { logger } from "./lib/logger";
 import { seedDemoData } from "./lib/seed";
+import { ensureSchemaAdditions } from "./lib/schemaGuard";
 import { startScheduler, resetStuckBriefs } from "./lib/scheduler";
 import { ensureStorageDirs } from "./lib/objectStorage";
 
@@ -18,6 +19,7 @@ app.listen(port, async (err) => {
 
   logger.info({ port }, "Server listening");
   await ensureStorageDirs();
+  await ensureSchemaAdditions();
   await seedDemoData();
 
   // Generation is an in-process async task; if the server restarts mid-generation,

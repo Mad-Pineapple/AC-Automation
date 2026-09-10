@@ -19,6 +19,8 @@ export interface FreeformElement {
   y?: number;
   w?: number;
   h?: number;
+  /** Composition slot: photo | cutout | scrim | panel | band | headline | subheadline | message | cta | ctaLabel | ctaIcon | lockup | logo */
+  slot?: string;
   role?: string;
   text?: string;
   fontSize?: number;

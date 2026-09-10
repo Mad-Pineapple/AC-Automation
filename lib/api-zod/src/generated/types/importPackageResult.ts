@@ -17,5 +17,6 @@ export interface ImportPackageResult {
   fontsSkipped: number;
   /** @nullable */
   idmlTemplateId?: number | null;
+  idmlTemplateIds?: number[];
   idmlWarnings: string[];
 }

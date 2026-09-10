@@ -1,5 +1,9 @@
 import { useState, useCallback } from "react";
 import type { UppyFile } from "@uppy/core";
+// Imported statically on purpose: a lazy chunk here breaks uploads for any
+// tab still open across a deployment (the old chunk name no longer exists
+// and the SPA rewrite hands back index.html instead of JavaScript).
+import { upload as blobUpload } from "@vercel/blob/client";
 
 interface UploadMetadata {
   name: string;
@@ -114,9 +118,7 @@ export function useUpload(options: UseUploadOptions = {}) {
       file: File,
       clientUpload: NonNullable<UploadResponse["clientUpload"]>,
     ): Promise<void> => {
-      // Loaded on demand: only blob-backed deployments ever take this path.
-      const { upload } = await import("@vercel/blob/client");
-      await upload(clientUpload.pathname, file, {
+      await blobUpload(clientUpload.pathname, file, {
         access: "public",
         handleUploadUrl: clientUpload.handleUploadUrl,
         contentType: file.type || "application/octet-stream",

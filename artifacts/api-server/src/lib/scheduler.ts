@@ -34,7 +34,7 @@ export async function runDispatchTick(): Promise<number> {
     const log = `Auto-dispatched (scheduled) ${shippableCount} asset${shippableCount !== 1 ? "s" : ""} via ${methods.join(", ") || "download"} on ${new Date().toISOString()}${schedExclusionNote}`;
     await db
       .update(briefsTable)
-      .set({ status: "dispatched", dispatchLog: log, dispatchedAt: new Date(), updatedAt: new Date() })
+      .set({ status: "dispatched", dispatchLog: log, dispatchedAt: new Date(), scheduledAt: null, scheduledMethods: null, updatedAt: new Date() })
       .where(eq(briefsTable.id, brief.id));
     logger.info({ briefId: brief.id, methods }, "Scheduled brief auto-dispatched");
   }

@@ -26,8 +26,11 @@ export function ExportHtmlDialog({ templateId, templateName }: { templateId: num
   const [artworkMotion, setArtworkMotion] = useState<"none" | "kenburns" | "drift" | "zoomout" | "breathe" | "wipe">("kenburns");
   const [copyMotion, setCopyMotion] = useState<"none" | "fade" | "rise" | "pan" | "pop" | "wipe" | "baseline" | "tumble" | "typewriter" | "block">("rise");
   const [storyFrames, setStoryFrames] = useState(false);
+  const [matchKeyVisual, setMatchKeyVisual] = useState(true);
+  const [motionSource, setMotionSource] = useState<"key-visual" | "studio" | null>(null);
   const motionBody = () => ({
     animate,
+    matchKeyVisual,
     animation: animate ? animation : "none",
     artworkMotion: animate ? artworkMotion : "none",
     copyMotion: animate ? copyMotion : "none",
@@ -60,6 +63,8 @@ export function ExportHtmlDialog({ templateId, templateName }: { templateId: num
       const html = await res.text();
       const m = /name="ad\.size" content="width=(\d+),height=(\d+)"/.exec(html);
       if (m) setDims({ w: Number(m[1]), h: Number(m[2]) });
+      const src = /data-motion-source="(key-visual|studio)"/.exec(html);
+      setMotionSource(src ? (src[1] as "key-visual" | "studio") : null);
       setPreviewHtml(html);
       setReplayKey((k) => k + 1);
     } catch (err) {
@@ -152,6 +157,34 @@ export function ExportHtmlDialog({ templateId, templateName }: { templateId: num
             </div>
             {animate && (
               <>
+                <label className="flex items-start gap-2 text-xs">
+                  <input type="checkbox" className="mt-0.5" checked={matchKeyVisual} onChange={(e) => setMatchKeyVisual(e.target.checked)} data-testid="check-match-key-visual" />
+                  <span>
+                    <span className="font-medium">Same motion as the key visual.</span>{" "}
+                    <span className="text-muted-foreground">Artwork built from an HTML example replays its choreography, scaled to this size. The presets below apply only when the artwork carries no key-visual motion.</span>
+                    {motionSource === "key-visual" && <span className="block text-emerald-700 dark:text-emerald-400 mt-0.5">Preview is using the key visual's motion.</span>}
+                    {motionSource === "studio" && matchKeyVisual && <span className="block text-muted-foreground mt-0.5">This artwork carries no key-visual motion; the preview uses the preset below.</span>}
+                  </span>
+                </label>
+                <div className="space-y-1">
+                  <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Motion templates</p>
+                  <div className="flex flex-wrap gap-1.5">
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant={artworkMotion === "drift" && copyMotion === "typewriter" && !storyFrames ? "default" : "outline"}
+                      className="h-7 text-xs"
+                      onClick={() => { setArtworkMotion("drift"); setCopyMotion("typewriter"); setStoryFrames(false); }}
+                      title="The shipped AEM Get Ready choreography: slow background drift for the whole spot, copy typing on, CTA landing last"
+                      data-testid="button-motion-getready"
+                    >
+                      Get Ready (campaign)
+                    </Button>
+                  </div>
+                  <p className="text-[10px] text-muted-foreground leading-tight">
+                    Templated from the shipped Get Ready GWD banners — drift artwork, type-on copy, late CTA pop.
+                  </p>
+                </div>
                 <div className="space-y-1">
                   <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Artwork</p>
                   <div className="flex flex-wrap gap-1.5">

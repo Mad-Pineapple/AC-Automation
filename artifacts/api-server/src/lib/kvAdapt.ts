@@ -20,6 +20,7 @@
 import sharp from "sharp";
 import { ObjectStorageService } from "./objectStorage";
 import { guidelineLogoPlacement } from "./logoRules";
+import { STRIP_MAX_HEIGHT } from "./formatCatalog";
 import type { FreeformConfig, FreeformElement, FreeformImage, FreeformRect, FreeformText, KvTextBlock } from "./freeform";
 
 const objectStorageService = new ObjectStorageService();
@@ -29,7 +30,6 @@ export interface KvBrandInfo {
   strapline: string | null;
 }
 
-const STRIP_MAX_HEIGHT = 120;
 const MIN_HEADLINE_PX = 13;
 /** White copy needs a treatment when the artwork behind it is lighter than
  * this (0-255 luminance) — same threshold the compliance checker uses. */
@@ -79,6 +79,39 @@ async function sampleLuminanceBehind(
     const stats = await sharp(buffer).extract({ left: cl, top: ct, width: cw, height: ch }).stats();
     const [r, g, b] = stats.channels;
     return 0.299 * r.mean + 0.587 * g.mean + 0.114 * b.mean;
+  } catch {
+    return null;
+  }
+}
+
+/** Average colour of the artwork's outer border, as a hex string. Used as the
+ * field colour when whole artwork has to be shown on a canvas of a different
+ * shape — sampled from the design itself, never invented. */
+async function sampleEdgeColor(src: string, imgW: number, imgH: number): Promise<string | null> {
+  const buffer = await loadArtwork(src);
+  if (!buffer) return null;
+  const band = Math.max(1, Math.round(Math.min(imgW, imgH) * 0.04));
+  const strips = [
+    { left: 0, top: 0, width: imgW, height: Math.min(band, imgH) },
+    { left: 0, top: Math.max(0, imgH - band), width: imgW, height: Math.min(band, imgH) },
+    { left: 0, top: 0, width: Math.min(band, imgW), height: imgH },
+    { left: Math.max(0, imgW - band), top: 0, width: Math.min(band, imgW), height: imgH },
+  ];
+  try {
+    let r = 0;
+    let g = 0;
+    let b = 0;
+    let n = 0;
+    for (const s of strips) {
+      const stats = await sharp(buffer).extract(s).stats();
+      r += stats.channels[0].mean;
+      g += stats.channels[1].mean;
+      b += stats.channels[2].mean;
+      n++;
+    }
+    if (n === 0) return null;
+    const hex = (v: number) => Math.max(0, Math.min(255, Math.round(v / n))).toString(16).padStart(2, "0");
+    return `#${hex(r)}${hex(g)}${hex(b)}`;
   } catch {
     return null;
   }
@@ -192,6 +225,46 @@ export async function composeKeyVisualAdaptation(
   const srcXOffset = Math.min(Math.max(0, heroCentreX - visibleCols / 2), Math.max(0, srcW - visibleCols));
   const artX = -Math.round(srcXOffset * s);
   const artY = -Math.round(srcYOffset * s);
+
+  // Flat artwork carries its copy in the pixels: there is nothing to re-set,
+  // so a crop at a materially different shape would slice through the
+  // headline. Show the whole design instead, on a field sampled from its own
+  // edges — the safe automated answer when the source has no structure.
+  const hasResettableCopy =
+    kvTextAll.length > 0 || master.elements.some((el) => el.type === "text");
+  const shapeShift = Math.abs(Math.log(dstW / dstH / (srcW / srcH)));
+  if (!hasResettableCopy && shapeShift > 0.22) {
+    const fit = Math.min(dstW / srcW, dstH / srcH);
+    const fitW = Math.round(srcW * fit);
+    const fitH = Math.round(srcH * fit);
+    const field = (bg.src ? await sampleEdgeColor(bg.src, srcW, srcH) : null) ?? "#11263d";
+    elements.push({
+      id: "kv_field",
+      type: "rect",
+      fill: field,
+      x: 0,
+      y: 0,
+      w: dstW,
+      h: dstH,
+      locked: true,
+    } as FreeformElement);
+    elements.push({
+      ...bg,
+      id: "kv_background",
+      x: Math.round((dstW - fitW) / 2),
+      y: Math.round((dstH - fitH) / 2),
+      w: fitW,
+      h: fitH,
+      fit: "contain",
+      locked: true,
+    });
+    return {
+      kind: "freeform",
+      elements,
+      ...(layoutOptions ? { layoutOptions } : {}),
+    };
+  }
+
   elements.push({
     ...bg,
     id: "kv_background",
@@ -264,6 +337,30 @@ export async function composeKeyVisualAdaptation(
     Math.max(...text.split("\n").map((l) => l.trim().length), 1);
   // Lines the copy will actually occupy once wrapped into a box of width w
   // (avg glyph ≈ 0.58em for National 2 Bold), so boxes snap to the copy's end.
+  // Copy boxes hug their words: after wrapping, shrink the box to the widest
+  // actual line (keeping alignment anchored) instead of leaving zone-wide
+  // boxes around short copy. Boxes stay full-size only when the text needs it.
+  const fitTextBox = (el: { text: string; x: number; y: number; w: number; fontSize: number; align: string }) => {
+    const CHAR = 0.52; // average glyph advance as a fraction of font size
+    const words = el.text.split(/\s+/).filter(Boolean);
+    if (words.length === 0) return;
+    // Re-wrap at the current width, measure the widest produced line.
+    let line = ""; let widest = 0;
+    for (const word of words) {
+      const cand = line ? `${line} ${word}` : word;
+      if (cand.length * el.fontSize * CHAR > el.w && line) {
+        widest = Math.max(widest, line.length);
+        line = word;
+      } else line = cand;
+    }
+    widest = Math.max(widest, line.length);
+    const fitted = Math.min(el.w, Math.ceil(widest * el.fontSize * CHAR) + Math.ceil(el.fontSize * 0.3));
+    if (fitted >= el.w) return;
+    if (el.align === "center") el.x += Math.round((el.w - fitted) / 2);
+    else if (el.align === "right") el.x += el.w - fitted;
+    el.w = fitted;
+  };
+
   const wrappedLines = (text: string, fontSize: number, w: number) =>
     text
       .split("\n")
@@ -280,14 +377,16 @@ export async function composeKeyVisualAdaptation(
     const wStrap = Math.max(40, dstW - (showLogo ? tile + margin : 0) - margin * 2);
     const estH = boxHeight(lines.join("\n"), fontSize, wStrap, 1.3);
     straplineTopY = dstH - margin - estH;
+    const strapBox = { text: lines.join("\n"), x: margin, y: straplineTopY, w: wStrap, fontSize, align: "left" };
+    fitTextBox(strapBox);
     elements.push({
       id: "kv_strapline",
       type: "text",
       role: "other",
       text: lines.join("\n"),
-      x: margin,
+      x: strapBox.x,
       y: straplineTopY,
-      w: wStrap,
+      w: strapBox.w,
       h: estH,
       fontSize,
       fontWeight: subhead?.fontWeight ?? 700,
@@ -310,7 +409,11 @@ export async function composeKeyVisualAdaptation(
     const lines = text.split("\n").length;
     const designSize = headlineRatio * short;
     const tileReserve = showLogo ? tile + margin : 0;
-    const bottomLimit = showStrapline ? straplineTopY - margin : dstH - (showLogo ? tile : margin) - margin;
+    // Strips carry the tile at full height on the RIGHT (reserved
+    // horizontally via tileReserve), so it must not also eat the row's
+    // height — that used to push bottomLimit negative and clamp every
+    // strip headline to the floor size.
+    const bottomLimit = showStrapline ? straplineTopY - margin : dstH - (showLogo && !isStrip ? tile : margin) - margin;
 
     // Hero box projected into the output canvas (art placement known).
     const fb = bg.focusBox ?? { x: Math.max(0, inferredFocusX - 0.25), y: 0.15, w: 0.5, h: 0.7 };
@@ -407,7 +510,9 @@ export async function composeKeyVisualAdaptation(
     }
     candidates.sort((a, b) => b.score - a.score);
     const best = candidates[0];
-    const x = best.x, y = best.y, w = best.w, estH = best.h, fontSize = best.fontSize;
+    const hlBox = { text, x: best.x, y: best.y, w: best.w, fontSize: best.fontSize, align: best.align };
+    fitTextBox(hlBox);
+    const x = hlBox.x, y = best.y, w = hlBox.w, estH = best.h, fontSize = best.fontSize;
 
     elements.push({
       id: "kv_headline",

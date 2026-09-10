@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ChevronLeft, Zap, Copy, Trash2, CheckCircle, Send, Pencil } from "lucide-react";
 import { getTemplateLabel } from "@/components/TemplateRenderer";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 
 const STATUS_COLORS: Record<string, string> = {
   draft: "secondary",
@@ -52,15 +52,37 @@ export default function BriefDetail() {
     }
   }, [brief?.status, briefId, setLocation]);
 
-  const handleGenerate = () => {
-    generateAssets.mutate({ id: briefId }, {
+  const [variantCount, setVariantCount] = useState(1);
+  const handleGenerate = (force = false) => {
+    generateAssets.mutate({ id: briefId, data: { variants: variantCount, ...(force ? { force: true } : {}) } }, {
       onSuccess: () => {
-        toast({ title: "Generation started", description: "AI is creating your assets..." });
+        toast({
+          title: "Generation started",
+          description: variantCount > 1 ? `AI is creating ${variantCount} copy options per size...` : "AI is creating your assets...",
+        });
         queryClient.invalidateQueries({ queryKey: getGetBriefQueryKey(briefId) });
       },
-      onError: () => toast({ title: "Generation failed", variant: "destructive" }),
+      onError: (err) => {
+        const data = (err as { data?: { error?: string; code?: string } })?.data;
+        if (data?.code === "confirm_replace") {
+          if (window.confirm(`${data.error}\n\nReplace them?`)) handleGenerate(true);
+          return;
+        }
+        const detail = data?.error ?? (err instanceof Error ? err.message : undefined);
+        toast({ title: "Nothing was generated", description: detail, variant: "destructive", duration: 15000 });
+      },
     });
   };
+  // A generation that has run for over 15 minutes was killed by the platform.
+  const stalled = brief?.status === "generating" && brief.updatedAt && Date.now() - new Date(brief.updatedAt).getTime() > 15 * 60_000;
+  const sizeCount = brief?.templateSizes?.length ?? 0;
+  const variantRows = (() => {
+    const v = (brief as { variants?: unknown } | undefined)?.variants;
+    if (typeof v === "string") return v.split(/\r?\n/).filter((l) => l.trim()).length;
+    if (Array.isArray(v)) return v.length;
+    return 0;
+  })();
+  const expectedAssets = sizeCount * Math.max(1, variantRows || (brief?.useAiCopy ? variantCount : 1));
 
   const handleDuplicate = () => {
     duplicateBrief.mutate({ id: briefId }, {
@@ -91,7 +113,7 @@ export default function BriefDetail() {
     );
   }
 
-  if (!brief) return <div className="text-muted-foreground p-8">Brief not found.</div>;
+  if (!brief) return <div className="text-muted-foreground p-8">Campaign not found.</div>;
 
   return (
     <div className="space-y-8 w-full">
@@ -101,7 +123,7 @@ export default function BriefDetail() {
         </Link>
         <div className="flex-1">
           <div className="flex items-center gap-3 flex-wrap">
-            <h1 className="text-3xl font-bold tracking-tight">{brief.campaignName}</h1>
+            <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight">{brief.campaignName}</h1>
             <Badge variant={(STATUS_COLORS[brief.status] as any) ?? "secondary"} className="capitalize">
               {brief.status.replace(/_/g, " ")}
             </Badge>
@@ -117,11 +139,26 @@ export default function BriefDetail() {
               </Button>
             </Link>
           )}
-          {(brief.status === "draft" || brief.status === "approved" || brief.status === "dispatched") && (
-            <Button onClick={handleGenerate} disabled={generateAssets.isPending} data-testid="button-generate">
-              <Zap className="w-4 h-4 mr-2" />
-              {generateAssets.isPending ? "Starting..." : "Generate Assets"}
-            </Button>
+          {(brief.status === "draft" || brief.status === "approved" || brief.status === "dispatched" || stalled) && (
+            <div className="flex items-center gap-2">
+              {brief.useAiCopy && (
+                <select
+                  value={variantCount}
+                  onChange={(e) => setVariantCount(Number(e.target.value))}
+                  className="h-9 rounded-md border bg-background px-2 text-xs text-muted-foreground"
+                  title="Copy options generated per size — browse and keep the best"
+                  data-testid="select-variants"
+                >
+                  <option value={1}>1 option</option>
+                  <option value={2}>2 options</option>
+                  <option value={3}>3 options</option>
+                </select>
+              )}
+              <Button onClick={() => handleGenerate()} disabled={generateAssets.isPending} data-testid="button-generate" title={`Creates ${expectedAssets} asset${expectedAssets === 1 ? "" : "s"}: ${sizeCount} size${sizeCount === 1 ? "" : "s"} × ${Math.max(1, variantRows || (brief.useAiCopy ? variantCount : 1))}`}>
+                <Zap className="w-4 h-4 mr-2" />
+                {generateAssets.isPending ? "Starting..." : `Generate ${expectedAssets} asset${expectedAssets === 1 ? "" : "s"}`}
+              </Button>
+            </div>
           )}
           {brief.status === "pending_approval" && (
             <Link href={`/briefs/${briefId}/approve`}>
@@ -148,7 +185,7 @@ export default function BriefDetail() {
             <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin flex-shrink-0" />
             <div>
               <p className="font-semibold">AI is generating your assets</p>
-              <p className="text-sm text-muted-foreground mt-0.5">This usually takes 20-60 seconds depending on the number of sizes selected.</p>
+              <p className="text-sm text-muted-foreground mt-0.5">{stalled ? "Generation stalled — the platform cut it off. Press Retry." : "This usually takes"} 20-60 seconds depending on the number of sizes selected.</p>
             </div>
           </CardContent>
         </Card>

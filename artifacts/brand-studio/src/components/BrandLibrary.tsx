@@ -70,7 +70,7 @@ export function BrandLibrary({
 
   const dissectImage = useDissectImage();
   const createTemplate = useCreateTemplate();
-  const { data: templates } = useListTemplates();
+  const { data: templates } = useListTemplates({ include: "knowledge" });
   const [learning, setLearning] = useState(false);
   const [learnProgress, setLearnProgress] = useState<{
     done: number;
