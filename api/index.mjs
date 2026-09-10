@@ -232626,7 +232626,7 @@ function adaptLayered(master, srcW, srcH, dstW, dstH, opts = {}) {
     const visible = overlap(box, photoZone) / Math.max(1, area2(box));
     const tall = photoZone.w / Math.max(1, photoZone.h) < 0.7;
     const photoIdx = out.findIndex((e) => e.id === "ly_photo");
-    if (tall && box.w > photoZone.w * 0.96) {
+    if (recipe.axis === "stacked" && box.w > photoZone.w * 0.96) {
       const cx0 = (cutout.x - photo.x) * sx, cx1 = cx0 + cutout.w * sx;
       const slackX = Math.max(0, rw - photoZone.w);
       const overlapAt = (p) => Math.max(0, Math.min(p + photoZone.w, cx1) - Math.max(p, cx0));
@@ -232636,7 +232636,8 @@ function adaptLayered(master, srcW, srcH, dstW, dstH, opts = {}) {
       const candidates = [leftOf, rightOf].map((p) => ({ p, o: overlapAt(p) })).filter((c) => c.o <= (cx1 - cx0) * 0.12).sort((a, b) => Math.abs(a.p - cur) - Math.abs(b.p - cur));
       const best = candidates[0];
       if (best && slackX > 0) {
-        const cw = photoZone.w * 0.94, chh = cw * (cutout.h / Math.max(1, cutout.w));
+        const share = tall ? 0.94 : 0.8;
+        const cw = photoZone.w * share, chh = cw * (cutout.h / Math.max(1, cutout.w));
         cutoutBox = { x: r2(photoZone.x + (photoZone.w - cw) / 2), y: r2(photoZone.y + photoZone.h - chh - margin / 2), w: r2(cw), h: r2(chh) };
         cutoutFloating = true;
         if (photoIdx >= 0) out[photoIdx].focusX = Math.round(best.p / slackX * 1e3) / 1e3;

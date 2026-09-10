@@ -570,11 +570,12 @@ export function adaptLayered(master: FreeformConfig, srcW: number, srcH: number,
     const visible = overlap(box, photoZone) / Math.max(1, area(box));
     const tall = photoZone.w / Math.max(1, photoZone.h) < 0.7;
     const photoIdx = out.findIndex((e) => e.id === "ly_photo");
-    if (tall && box.w > photoZone.w * 0.96) {
-      // Tall, narrow column: the car at cover scale is wider than the column.
-      // Show the WHOLE car as big as the column allows — the cut-out at the
-      // column's width, bottom of the zone — and pan the photo to the side
-      // that keeps its own car out of frame, so there is only one car.
+    if (recipe.axis === "stacked" && box.w > photoZone.w * 0.96) {
+      // Stacked zone where the car at cover scale is wider than the zone.
+      // Show the WHOLE car — at the family's share of the width (80% on a
+      // portrait, as the shipped 300×600; the full column on a narrow one)
+      // — and pan the photo to the nearest window that keeps its own car
+      // out of frame, so there is only one car.
       const cx0 = (cutout.x - photo.x) * sx, cx1 = cx0 + cutout.w * sx;
       const slackX = Math.max(0, rw - photoZone.w);
       const overlapAt = (p: number) => Math.max(0, Math.min(p + photoZone.w, cx1) - Math.max(p, cx0));
@@ -586,7 +587,8 @@ export function adaptLayered(master: FreeformConfig, srcW: number, srcH: number,
       const candidates = [leftOf, rightOf].map((p) => ({ p, o: overlapAt(p) })).filter((c) => c.o <= (cx1 - cx0) * 0.12).sort((a, b) => Math.abs(a.p - cur) - Math.abs(b.p - cur));
       const best = candidates[0];
       if (best && slackX > 0) {
-        const cw = photoZone.w * 0.94, chh = cw * (cutout.h / Math.max(1, cutout.w));
+        const share = tall ? 0.94 : 0.8;
+        const cw = photoZone.w * share, chh = cw * (cutout.h / Math.max(1, cutout.w));
         // Provisional: bottom of the zone. Once the copy is sized, car and
         // copy move up together to the family's headline height.
         cutoutBox = { x: r(photoZone.x + (photoZone.w - cw) / 2), y: r(photoZone.y + photoZone.h - chh - margin / 2), w: r(cw), h: r(chh) };
