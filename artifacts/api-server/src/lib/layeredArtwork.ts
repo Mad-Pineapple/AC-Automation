@@ -548,6 +548,9 @@ export function adaptLayered(master: FreeformConfig, srcW: number, srcH: number,
   // The anchoring cut-out is the largest one (the car), never a stray thin layer.
   const cutout = [...by("cutout")].sort((a, b) => area(b) - area(a))[0];
   let cutoutBox: Box | null = null;
+  /** True when the cut-out was placed free of the photo's own car and may
+   *  move up with the copy to the family's headline height. */
+  let cutoutFloating = false;
   if (cutout && photo && !isStrip) {
     // The cut-out (the car) is a pop-out of the subject already in the photo,
     // so it must land exactly where the photo's own subject lands. The master's
@@ -565,8 +568,50 @@ export function adaptLayered(master: FreeformConfig, srcW: number, srcH: number,
     const sx = rw / Math.max(1, photo.w), sy = rh / Math.max(1, photo.h);
     const box: Box = { x: rx + (cutout.x - photo.x) * sx, y: ry + (cutout.y - photo.y) * sy, w: cutout.w * sx, h: cutout.h * sy };
     const visible = overlap(box, photoZone) / Math.max(1, area(box));
-    if (visible >= 0.6 && box.h <= photoZone.h * 0.6) {
-      cutoutBox = { x: r(box.x), y: r(box.y), w: r(box.w), h: r(box.h) };
+    const tall = photoZone.w / Math.max(1, photoZone.h) < 0.7;
+    const photoIdx = out.findIndex((e) => e.id === "ly_photo");
+    if (tall && box.w > photoZone.w * 0.96) {
+      // Tall, narrow column: the car at cover scale is wider than the column.
+      // Show the WHOLE car as big as the column allows — the cut-out at the
+      // column's width, bottom of the zone — and pan the photo to the side
+      // that keeps its own car out of frame, so there is only one car.
+      const cx0 = (cutout.x - photo.x) * sx, cx1 = cx0 + cutout.w * sx;
+      const slackX = Math.max(0, rw - photoZone.w);
+      const overlapAt = (p: number) => Math.max(0, Math.min(p + photoZone.w, cx1) - Math.max(p, cx0));
+      // The nearest window to the master's own framing that leaves its car
+      // out: just left of the car or just right of it, whichever is closer.
+      const cur = panX * slackX;
+      const leftOf = Math.min(slackX, Math.max(0, cx0 - photoZone.w - photoZone.w * 0.04));
+      const rightOf = Math.min(slackX, Math.max(0, cx1 + photoZone.w * 0.04));
+      const candidates = [leftOf, rightOf].map((p) => ({ p, o: overlapAt(p) })).filter((c) => c.o <= (cx1 - cx0) * 0.12).sort((a, b) => Math.abs(a.p - cur) - Math.abs(b.p - cur));
+      const best = candidates[0];
+      if (best && slackX > 0) {
+        const cw = photoZone.w * 0.94, chh = cw * (cutout.h / Math.max(1, cutout.w));
+        // Provisional: bottom of the zone. Once the copy is sized, car and
+        // copy move up together to the family's headline height.
+        cutoutBox = { x: r(photoZone.x + (photoZone.w - cw) / 2), y: r(photoZone.y + photoZone.h - chh - margin / 2), w: r(cw), h: r(chh) };
+        cutoutFloating = true;
+        if (photoIdx >= 0) (out[photoIdx] as Img).focusX = Math.round((best.p / slackX) * 1000) / 1000;
+        notes.push("Cut-out placed whole at the column's width; the photo's crop window moved just off its own car.");
+      } else {
+        notes.push("Cut-out dropped: the column cannot show the whole car without a second car behind it.");
+      }
+    } else if (visible >= 0.6 && box.h <= photoZone.h * 0.6) {
+      let placed: Box = { x: box.x, y: box.y, w: box.w, h: box.h };
+      if (tall) {
+        // Room to spare: grow the cut-out to the column's width (it covers
+        // the photo's own car, which sits beneath it), never past 1.35×.
+        const k = Math.min(1.35, (photoZone.w * 0.94) / Math.max(1, box.w));
+        if (k > 1.02) {
+          const w = box.w * k, h = box.h * k;
+          let x = box.x + box.w / 2 - w / 2, y = box.y + box.h / 2 - h / 2;
+          x = Math.max(photoZone.x + 2, Math.min(photoZone.x + photoZone.w - w - 2, x));
+          y = Math.min(photoZone.y + photoZone.h - h - 2, y);
+          placed = { x, y, w, h };
+          notes.push("Cut-out enlarged to the column's width so the whole car reads.");
+        }
+      }
+      cutoutBox = { x: r(placed.x), y: r(placed.y), w: r(placed.w), h: r(placed.h) };
     } else {
       notes.push("Cut-out dropped: at this crop it would not sit over the photo's own subject.");
     }
@@ -578,11 +623,18 @@ export function adaptLayered(master: FreeformConfig, srcW: number, srcH: number,
   const hBox: Box = { x: hx0, y: hy0, w: Math.max(...headlineParts.map((i) => i.x + i.w)) - hx0, h: Math.max(...headlineParts.map((i) => i.y + i.h)) - hy0 };
   const sub = by("subheadline")[0];
   const groupH = sub ? Math.max(hBox.y + hBox.h, sub.y + sub.h) - hBox.y : hBox.h;
+  // The designer's copy-to-car relationship: the cut-out is drawn over the
+  // bottom of the copy (a slight overlap that reads as the copy sitting
+  // behind the car). Measure it on the master as a fraction of the last
+  // line's height and reproduce it at every size — never replace it with a gap.
+  const masterCopyBottom = sub ? Math.max(hBox.y + hBox.h, sub.y + sub.h) : hBox.y + hBox.h;
+  const lastLineH = sub ? sub.h : hBox.h;
+  const copyOverCutoutFrac = cutout ? (masterCopyBottom - cutout.y) / Math.max(1, lastLineH) : null;
   const groupW = Math.max(hBox.w, sub ? sub.x + sub.w - hBox.x : 0);
   const rowLike = isStrip || recipe.axis === "row";
   const copyBand: Box = rowLike
     ? { x: panelZone.x + margin, y: panelZone.y + margin, w: r(isStrip ? Math.max(40, panelZone.w - margin * 2 - stripReserve) : panelZone.w * 0.55), h: panelZone.h - margin * 2 }
-    : { x: photoZone.x + margin, y: photoZone.y + margin, w: photoZone.w - margin * 2, h: (cutoutBox ? cutoutBox.y : photoZone.y + photoZone.h) - photoZone.y - margin * 2 };
+    : { x: photoZone.x + margin, y: photoZone.y + margin, w: photoZone.w - margin * 2, h: (cutoutBox ? cutoutBox.y + Math.max(0, (copyOverCutoutFrac ?? 0) * lastLineH) : photoZone.y + photoZone.h) - photoZone.y - margin * 2 };
   const target = fitInto({ ...copyBand, w: r(copyBand.w * (rowLike ? 1 : recipe.headlineWidthFrac)), h: rowLike ? copyBand.h : r(Math.min(copyBand.h, photoZone.h * recipe.headlineMaxHeightFrac * 1.5)) }, groupW / Math.max(1, groupH), 2.2);
   let s = target.w / Math.max(1, groupW);
   // Schema: a display glyph headline is 19% of the short side tall; never
@@ -601,9 +653,21 @@ export function adaptLayered(master: FreeformConfig, srcW: number, srcH: number,
   // height on wide), kept inside the band above the cut-out.
   let gy = r(copyBand.y + (copyBand.h - groupH * s) / 2);
   if (!rowLike && cutoutBox) {
-    // With a cut-out the copy block sits directly on top of it (as in the
-    // master: sub-line touching the car), never floating in the band above.
-    gy = r(Math.max(copyBand.y, cutoutBox.y - margin / 2 - groupH * s));
+    // With a cut-out the copy block sits on it exactly as in the master: the
+    // measured overlap (or touch) between the last line and the car's top,
+    // scaled with the copy — the car is drawn after the copy, so it reads
+    // in front.
+    const ov = copyOverCutoutFrac != null ? copyOverCutoutFrac * lastLineH * s : -margin / 2;
+    gy = r(Math.max(copyBand.y, cutoutBox.y + ov - groupH * s));
+    if (cutoutFloating) {
+      // Copy block centre at the family's headline anchor (45% of the photo
+      // zone), the car riding up with it; never above the top margin.
+      const anchorY = spec?.parts.headline?.anchor.y ?? 0.45;
+      const wantGy = r(photoZone.y + photoZone.h * anchorY - (groupH * s) / 2);
+      const shift = Math.min(0, Math.max(copyBand.y, wantGy) - gy);
+      if (shift < 0) { gy += shift; cutoutBox = { ...cutoutBox, y: r(cutoutBox.y + shift) }; }
+    }
+    if (copyOverCutoutFrac != null && copyOverCutoutFrac > 0.02) notes.push("Car cut-out overlaps the copy as in the master (copy reads behind the car).");
   } else if (specHeadline && !rowLike) {
     const anchor = recipe.axis === "stacked" ? photoZone.y + photoZone.h * (specHeadline.anchor.y ?? 0.45) : dstH * 0.36;
     gy = r(Math.max(copyBand.y, Math.min(copyBand.y + copyBand.h - groupH * s, anchor - (groupH * s) / 2)));

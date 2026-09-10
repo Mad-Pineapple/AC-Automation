@@ -153,13 +153,22 @@ export function checkMandatory(master: FreeformConfig, adapted: FreeformConfig, 
   }
 
   // Collisions: copy over copy, or copy over the cut-out subject.
-  const copyish = adapted.elements.filter((e) => (e.type === "text" && e.text.trim().length > 0) || (e.type === "image" && ["headline", "subheadline", "message", "cta", "lockup"].includes(e.slot ?? "")));
+  const isCopy = (e: FreeformConfig["elements"][number]) => (e.type === "text" && e.text.trim().length > 0) || (e.type === "image" && ["headline", "subheadline", "message", "cta", "lockup"].includes(e.slot ?? ""));
+  const copyish = adapted.elements.filter(isCopy);
   const cutouts = adapted.elements.filter((e) => e.type === "image" && e.slot === "cutout");
   const overlapFrac = (a: { x: number; y: number; w: number; h: number }, b: { x: number; y: number; w: number; h: number }) => {
     const ix = Math.max(0, Math.min(a.x + a.w, b.x + b.w) - Math.max(a.x, b.x));
     const iy = Math.max(0, Math.min(a.y + a.h, b.y + b.h) - Math.max(a.y, b.y));
     return (ix * iy) / Math.max(1, Math.min(a.w * a.h, b.w * b.h));
   };
+  // A cut-out drawn over the copy is a designed detail (the copy reads
+  // behind the car). Whatever overlap the master carries is allowed, plus a
+  // little; only more than that is a collision.
+  const masterCopy = master.elements.filter(isCopy);
+  const masterCutouts = master.elements.filter((e) => e.type === "image" && e.slot === "cutout");
+  let designedOverlap = 0;
+  for (const c of masterCopy) for (const k of masterCutouts) designedOverlap = Math.max(designedOverlap, overlapFrac(c, k));
+  const cutoutTolerance = Math.max(0.15, designedOverlap + 0.1);
   for (let i = 0; i < copyish.length; i++) {
     for (let j = i + 1; j < copyish.length; j++) {
       const f = overlapFrac(copyish[i], copyish[j]);
@@ -167,7 +176,7 @@ export function checkMandatory(master: FreeformConfig, adapted: FreeformConfig, 
     }
     for (const c of cutouts) {
       const f = overlapFrac(copyish[i], c);
-      if (f > 0.15) reasons.push(`"${label(copyish[i])}" runs over the cut-out imagery by ${Math.round(f * 100)}%.`);
+      if (f > cutoutTolerance) reasons.push(`"${label(copyish[i])}" runs over the cut-out imagery by ${Math.round(f * 100)}% (the master allows ${Math.round(designedOverlap * 100)}%).`);
     }
   }
   for (const el of adapted.elements) {

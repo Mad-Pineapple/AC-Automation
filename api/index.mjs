@@ -232142,13 +232142,19 @@ function checkMandatory(master, adapted, width, height) {
       if (el.h < lockupMin) reasons.push(`Lockup is ${Math.round(el.h)}px tall \u2014 under the ${lockupMin}px minimum for this canvas.`);
     }
   }
-  const copyish = adapted.elements.filter((e) => e.type === "text" && e.text.trim().length > 0 || e.type === "image" && ["headline", "subheadline", "message", "cta", "lockup"].includes(e.slot ?? ""));
+  const isCopy = (e) => e.type === "text" && e.text.trim().length > 0 || e.type === "image" && ["headline", "subheadline", "message", "cta", "lockup"].includes(e.slot ?? "");
+  const copyish = adapted.elements.filter(isCopy);
   const cutouts = adapted.elements.filter((e) => e.type === "image" && e.slot === "cutout");
   const overlapFrac2 = (a, b) => {
     const ix = Math.max(0, Math.min(a.x + a.w, b.x + b.w) - Math.max(a.x, b.x));
     const iy = Math.max(0, Math.min(a.y + a.h, b.y + b.h) - Math.max(a.y, b.y));
     return ix * iy / Math.max(1, Math.min(a.w * a.h, b.w * b.h));
   };
+  const masterCopy = master.elements.filter(isCopy);
+  const masterCutouts = master.elements.filter((e) => e.type === "image" && e.slot === "cutout");
+  let designedOverlap = 0;
+  for (const c of masterCopy) for (const k of masterCutouts) designedOverlap = Math.max(designedOverlap, overlapFrac2(c, k));
+  const cutoutTolerance = Math.max(0.15, designedOverlap + 0.1);
   for (let i = 0; i < copyish.length; i++) {
     for (let j = i + 1; j < copyish.length; j++) {
       const f = overlapFrac2(copyish[i], copyish[j]);
@@ -232156,7 +232162,7 @@ function checkMandatory(master, adapted, width, height) {
     }
     for (const c of cutouts) {
       const f = overlapFrac2(copyish[i], c);
-      if (f > 0.15) reasons.push(`"${label(copyish[i])}" runs over the cut-out imagery by ${Math.round(f * 100)}%.`);
+      if (f > cutoutTolerance) reasons.push(`"${label(copyish[i])}" runs over the cut-out imagery by ${Math.round(f * 100)}% (the master allows ${Math.round(designedOverlap * 100)}%).`);
     }
   }
   for (const el of adapted.elements) {
@@ -232603,6 +232609,7 @@ function adaptLayered(master, srcW, srcH, dstW, dstH, opts = {}) {
   if (photo) out.push({ ...photo, id: "ly_photo", fit: "cover", focusX: Math.round(panX * 1e3) / 1e3, focusY: Math.round(panY * 1e3) / 1e3, x: photoZone.x, y: photoZone.y, w: photoZone.w, h: photoZone.h });
   const cutout = [...by("cutout")].sort((a, b) => area2(b) - area2(a))[0];
   let cutoutBox = null;
+  let cutoutFloating = false;
   if (cutout && photo && !isStrip) {
     const photoAspect = photo.w / Math.max(1, photo.h);
     let rw = photoZone.w, rh = rw / photoAspect;
@@ -232617,8 +232624,40 @@ function adaptLayered(master, srcW, srcH, dstW, dstH, opts = {}) {
     const sx = rw / Math.max(1, photo.w), sy = rh / Math.max(1, photo.h);
     const box = { x: rx + (cutout.x - photo.x) * sx, y: ry + (cutout.y - photo.y) * sy, w: cutout.w * sx, h: cutout.h * sy };
     const visible = overlap(box, photoZone) / Math.max(1, area2(box));
-    if (visible >= 0.6 && box.h <= photoZone.h * 0.6) {
-      cutoutBox = { x: r2(box.x), y: r2(box.y), w: r2(box.w), h: r2(box.h) };
+    const tall = photoZone.w / Math.max(1, photoZone.h) < 0.7;
+    const photoIdx = out.findIndex((e) => e.id === "ly_photo");
+    if (tall && box.w > photoZone.w * 0.96) {
+      const cx0 = (cutout.x - photo.x) * sx, cx1 = cx0 + cutout.w * sx;
+      const slackX = Math.max(0, rw - photoZone.w);
+      const overlapAt = (p) => Math.max(0, Math.min(p + photoZone.w, cx1) - Math.max(p, cx0));
+      const cur = panX * slackX;
+      const leftOf = Math.min(slackX, Math.max(0, cx0 - photoZone.w - photoZone.w * 0.04));
+      const rightOf = Math.min(slackX, Math.max(0, cx1 + photoZone.w * 0.04));
+      const candidates = [leftOf, rightOf].map((p) => ({ p, o: overlapAt(p) })).filter((c) => c.o <= (cx1 - cx0) * 0.12).sort((a, b) => Math.abs(a.p - cur) - Math.abs(b.p - cur));
+      const best = candidates[0];
+      if (best && slackX > 0) {
+        const cw = photoZone.w * 0.94, chh = cw * (cutout.h / Math.max(1, cutout.w));
+        cutoutBox = { x: r2(photoZone.x + (photoZone.w - cw) / 2), y: r2(photoZone.y + photoZone.h - chh - margin / 2), w: r2(cw), h: r2(chh) };
+        cutoutFloating = true;
+        if (photoIdx >= 0) out[photoIdx].focusX = Math.round(best.p / slackX * 1e3) / 1e3;
+        notes.push("Cut-out placed whole at the column's width; the photo's crop window moved just off its own car.");
+      } else {
+        notes.push("Cut-out dropped: the column cannot show the whole car without a second car behind it.");
+      }
+    } else if (visible >= 0.6 && box.h <= photoZone.h * 0.6) {
+      let placed2 = { x: box.x, y: box.y, w: box.w, h: box.h };
+      if (tall) {
+        const k = Math.min(1.35, photoZone.w * 0.94 / Math.max(1, box.w));
+        if (k > 1.02) {
+          const w = box.w * k, h = box.h * k;
+          let x = box.x + box.w / 2 - w / 2, y = box.y + box.h / 2 - h / 2;
+          x = Math.max(photoZone.x + 2, Math.min(photoZone.x + photoZone.w - w - 2, x));
+          y = Math.min(photoZone.y + photoZone.h - h - 2, y);
+          placed2 = { x, y, w, h };
+          notes.push("Cut-out enlarged to the column's width so the whole car reads.");
+        }
+      }
+      cutoutBox = { x: r2(placed2.x), y: r2(placed2.y), w: r2(placed2.w), h: r2(placed2.h) };
     } else {
       notes.push("Cut-out dropped: at this crop it would not sit over the photo's own subject.");
     }
@@ -232627,9 +232666,12 @@ function adaptLayered(master, srcW, srcH, dstW, dstH, opts = {}) {
   const hBox = { x: hx0, y: hy0, w: Math.max(...headlineParts.map((i) => i.x + i.w)) - hx0, h: Math.max(...headlineParts.map((i) => i.y + i.h)) - hy0 };
   const sub = by("subheadline")[0];
   const groupH = sub ? Math.max(hBox.y + hBox.h, sub.y + sub.h) - hBox.y : hBox.h;
+  const masterCopyBottom = sub ? Math.max(hBox.y + hBox.h, sub.y + sub.h) : hBox.y + hBox.h;
+  const lastLineH = sub ? sub.h : hBox.h;
+  const copyOverCutoutFrac = cutout ? (masterCopyBottom - cutout.y) / Math.max(1, lastLineH) : null;
   const groupW = Math.max(hBox.w, sub ? sub.x + sub.w - hBox.x : 0);
   const rowLike = isStrip || recipe.axis === "row";
-  const copyBand = rowLike ? { x: panelZone.x + margin, y: panelZone.y + margin, w: r2(isStrip ? Math.max(40, panelZone.w - margin * 2 - stripReserve) : panelZone.w * 0.55), h: panelZone.h - margin * 2 } : { x: photoZone.x + margin, y: photoZone.y + margin, w: photoZone.w - margin * 2, h: (cutoutBox ? cutoutBox.y : photoZone.y + photoZone.h) - photoZone.y - margin * 2 };
+  const copyBand = rowLike ? { x: panelZone.x + margin, y: panelZone.y + margin, w: r2(isStrip ? Math.max(40, panelZone.w - margin * 2 - stripReserve) : panelZone.w * 0.55), h: panelZone.h - margin * 2 } : { x: photoZone.x + margin, y: photoZone.y + margin, w: photoZone.w - margin * 2, h: (cutoutBox ? cutoutBox.y + Math.max(0, (copyOverCutoutFrac ?? 0) * lastLineH) : photoZone.y + photoZone.h) - photoZone.y - margin * 2 };
   const target = fitInto({ ...copyBand, w: r2(copyBand.w * (rowLike ? 1 : recipe.headlineWidthFrac)), h: rowLike ? copyBand.h : r2(Math.min(copyBand.h, photoZone.h * recipe.headlineMaxHeightFrac * 1.5)) }, groupW / Math.max(1, groupH), 2.2);
   let s2 = target.w / Math.max(1, groupW);
   const specHeadline = spec?.parts.headline;
@@ -232641,7 +232683,18 @@ function adaptLayered(master, srcW, srcH, dstW, dstH, opts = {}) {
   const gx = rowLike ? copyBand.x : r2(copyBand.x + (copyBand.w - groupW * s2) / 2);
   let gy = r2(copyBand.y + (copyBand.h - groupH * s2) / 2);
   if (!rowLike && cutoutBox) {
-    gy = r2(Math.max(copyBand.y, cutoutBox.y - margin / 2 - groupH * s2));
+    const ov = copyOverCutoutFrac != null ? copyOverCutoutFrac * lastLineH * s2 : -margin / 2;
+    gy = r2(Math.max(copyBand.y, cutoutBox.y + ov - groupH * s2));
+    if (cutoutFloating) {
+      const anchorY = spec?.parts.headline?.anchor.y ?? 0.45;
+      const wantGy = r2(photoZone.y + photoZone.h * anchorY - groupH * s2 / 2);
+      const shift = Math.min(0, Math.max(copyBand.y, wantGy) - gy);
+      if (shift < 0) {
+        gy += shift;
+        cutoutBox = { ...cutoutBox, y: r2(cutoutBox.y + shift) };
+      }
+    }
+    if (copyOverCutoutFrac != null && copyOverCutoutFrac > 0.02) notes.push("Car cut-out overlaps the copy as in the master (copy reads behind the car).");
   } else if (specHeadline && !rowLike) {
     const anchor = recipe.axis === "stacked" ? photoZone.y + photoZone.h * (specHeadline.anchor.y ?? 0.45) : dstH * 0.36;
     gy = r2(Math.max(copyBand.y, Math.min(copyBand.y + copyBand.h - groupH * s2, anchor - groupH * s2 / 2)));
