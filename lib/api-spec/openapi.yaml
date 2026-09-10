@@ -2056,6 +2056,10 @@ components:
         adaptMethod:
           type: string
           description: "How an adapted template was derived: recomposed:<class> | key-visual | panel | scaled"
+        rejected:
+          type: array
+          items: { type: string }
+          description: Reasons the automated layout failed the mandatory-element gate; empty or absent when it passed
         adaptNotes:
           type: array
           items: { type: string }
@@ -2310,6 +2314,12 @@ components:
           type: integer
         name:
           type: string
+        formatName:
+          type: string
+          description: The brief's deliverable name for the size (decides the format class with the channel)
+        channel:
+          type: string
+          description: Brief channel section (DISPLAY, OOH …)
       required:
         - width
         - height
@@ -2453,6 +2463,10 @@ components:
               names:
                 type: array
                 items: { type: string }
+              channels:
+                type: array
+                items: { type: string }
+              messageType: { type: ["string", "null"] }
             required: [width, height, unit, count, names]
         warnings:
           type: array
@@ -2506,6 +2520,8 @@ components:
               names:
                 type: array
                 items: { type: string }
+              channel: { type: ["string", "null"], description: "Brief channel section the size sits under (DISPLAY, OOH …)" }
+              messageType: { type: ["string", "null"], description: "Message type the brief row asks for (phase 1 | countdown …)" }
             required: [width, height]
         campaignName:
           type: string
@@ -2525,6 +2541,8 @@ components:
               height: { type: integer }
               name: { type: string }
               variant: { type: ["string", "null"] }
+              channel: { type: ["string", "null"] }
+              messageType: { type: ["string", "null"] }
               sourceLabel: { type: string }
               aspectDistance: { type: number }
               recomposed: { type: boolean }

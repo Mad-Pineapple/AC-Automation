@@ -14,6 +14,10 @@ export type CampaignBuildPlanJobsItem = {
   name: string;
   /** @nullable */
   variant?: string | null;
+  /** @nullable */
+  channel?: string | null;
+  /** @nullable */
+  messageType?: string | null;
   sourceLabel: string;
   aspectDistance: number;
   recomposed: boolean;

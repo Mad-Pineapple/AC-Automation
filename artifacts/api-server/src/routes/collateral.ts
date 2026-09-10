@@ -4,7 +4,7 @@ import { templatesTable } from "@workspace/db";
 import { inArray } from "drizzle-orm";
 import { requireAuth } from "../middlewares/requireAuth";
 import { parseCollateralBrief } from "../lib/collateralBrief";
-import { planCampaignBuild, type SizeInput } from "../lib/campaignPlan";
+import { planCampaignBuild, messageTypeOf, type SizeInput } from "../lib/campaignPlan";
 import { normalizeFreeformConfig } from "../lib/freeform";
 import { isFlatArtwork } from "../lib/slots";
 import { ObjectStorageService } from "../lib/objectStorage";
@@ -56,6 +56,8 @@ router.post("/campaigns/build-plan", requireAuth, async (req, res): Promise<void
       height: Number(s.height),
       unit: typeof s.unit === "string" ? s.unit : "px",
       names: Array.isArray(s.names) ? (s.names as unknown[]).filter((n): n is string => typeof n === "string") : [],
+      channel: typeof s.channel === "string" ? s.channel.slice(0, 60) : Array.isArray(s.channels) && typeof (s.channels as unknown[])[0] === "string" ? String((s.channels as unknown[])[0]).slice(0, 60) : null,
+      messageType: typeof s.messageType === "string" ? s.messageType.slice(0, 40) : null,
     }))
     .filter((s) => Number.isFinite(s.width) && Number.isFinite(s.height) && s.width > 0 && s.height > 0)
     .slice(0, 200);
@@ -83,7 +85,12 @@ router.post("/campaigns/build-plan", requireAuth, async (req, res): Promise<void
     } catch {
       flat = false;
     }
-    return { id: r.id, name: r.name, width: r.width, height: r.height, flat };
+    let copy: string[] = [];
+    try {
+      const raw = JSON.parse(r.config) as { elements?: { type?: string; text?: string }[] };
+      copy = (raw.elements ?? []).filter((e) => e.type === "text" && typeof e.text === "string").map((e) => e.text as string);
+    } catch { copy = []; }
+    return { id: r.id, name: r.name, width: r.width, height: r.height, flat, messageType: messageTypeOf(r.name, copy) };
   });
   res.json(planCampaignBuild(masters, sizes, { campaignName }));
 });

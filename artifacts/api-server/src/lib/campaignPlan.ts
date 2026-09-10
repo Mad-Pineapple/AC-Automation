@@ -17,7 +17,7 @@
  * every variant gets every size, always built from an example of its own
  * variant. The brief's own deliverable names travel with each job.
  */
-import { aspectDistance, ASPECT_REBUILD_THRESHOLD, classifyAspect, describeFormat, type FormatClass } from "./formatCatalog";
+import { aspectDistance, ASPECT_REBUILD_THRESHOLD, classifyAspect, classifyFormat, describeFormat, FORMAT_CATALOG, type FormatClass, type FormatHints } from "./formatCatalog";
 
 export interface MasterInput {
   id: number;
@@ -28,6 +28,31 @@ export interface MasterInput {
    * near-identical shapes, never rebuilt. Designers rejected re-cropped flat
    * art outright ("just the image, no brand collateral"). */
   flat?: boolean;
+  /** Message type the example carries (campaign phase / message line), from
+   * `messageTypeOf`. Sizes are matched to examples of their own message. */
+  messageType?: string | null;
+}
+
+/**
+ * The message type a piece carries, read from its name and any copy on it:
+ * a campaign phase ("Phase 2"), a countdown, or a known message line. Two
+ * pieces with the same message type are interchangeable examples; a size
+ * whose brief row names a message is built from an example of that message.
+ */
+export function messageTypeOf(name: string, copy: string[] = []): string | null {
+  const text = [name, ...copy].join(" \n ");
+  const phase = /(?<![a-z])phase\s*([1-9])(?![0-9])/i.exec(text);
+  if (phase) return `phase ${phase[1]}`;
+  if (/\b\d{1,2}:\d{2}:\d{2}\b/.test(text) || /\bcountdown\b/i.test(text)) return "countdown";
+  const lines: [RegExp, string][] = [
+    [/time to talk/i, "phase 1"],
+    [/running out/i, "phase 2"],
+    [/strike suddenly|make a plan today/i, "phase 3"],
+  ];
+  for (const [re, type] of lines) if (re.test(text)) return type;
+  const v = /\bV(\d{1,2})\b/.exec(name);
+  if (v) return `v${v[1]}`;
+  return null;
 }
 
 /** Shapes closer than this are "the same" for a flat master. */
@@ -38,6 +63,10 @@ export interface SizeInput {
   height: number;
   unit?: string;
   names?: string[];
+  /** Channel section the size sits under in the brief (DISPLAY, OOH …). */
+  channel?: string | null;
+  /** Message type the brief row asks for, when it names one. */
+  messageType?: string | null;
 }
 
 export type BuildMethod = "scale" | "recompose";
@@ -50,6 +79,9 @@ export interface BuildJob {
   height: number;
   name: string;
   variant: string | null;
+  /** Brief channel section and message type the job was matched on. */
+  channel: string | null;
+  messageType: string | null;
   /** Source size label, for the review table (e.g. "190×274mm"). */
   sourceLabel: string;
   /** How far the target's shape is from the master's, 0 = identical. */
@@ -83,12 +115,24 @@ export function mmToPx(mm: number, dpi = PRINT_DPI): number {
 
 /** The variant a master carries, by convention "<package> — <Variant>" from
  * multi-spread import. Masters with no suffix belong to a single unnamed set. */
+const FORMAT_WORDS = new RegExp(
+  `\\b(${[...new Set(FORMAT_CATALOG.map((f) => f.label))].map((l) => l.replace(/[.*+?^${}()|[\\]\\\\]/g, "\\$&")).join("|")}|tower|portrait|square|landscape|wide|strip|skyscraper|banner|billboard|mrec|half page|leaderboard)\\b`,
+  "gi",
+);
+
 export function variantOf(name: string): string | null {
   const idx = name.lastIndexOf(" — ");
   if (idx < 0) return null;
   // Strip a size token ("STORMS 300x600" → "STORMS") so the same hazard at two
   // sizes forms ONE variant group with two shapes, not two variants.
-  const tail = name.slice(idx + 3).replace(/\b\d{2,4}\s*[x×]\s*\d{2,4}(px)?\b/gi, "").replace(/\s{2,}/g, " ").trim();
+  // Also strip format labels and class words ("Billboard", "MREC", "strip")
+  // so a piece built from a master doesn't read as a variant of its own.
+  const tail = name
+    .slice(idx + 3)
+    .replace(/\b\d{2,4}\s*[x×]\s*\d{2,4}(px)?\b/gi, "")
+    .replace(FORMAT_WORDS, "")
+    .replace(/\s{2,}/g, " ")
+    .trim();
   // Guard against a dash used for something long-winded rather than a label.
   return tail.length > 0 && tail.length <= 40 ? tail : null;
 }
@@ -105,15 +149,24 @@ export function chooseMaster(
   masters: MasterInput[],
   width: number,
   height: number,
-): { master: MasterInput; distance: number; sameClass: boolean } | null {
-  const cls = classifyAspect(width, height);
-  const scored = masters
+  hints: FormatHints & { messageType?: string | null } = {},
+): { master: MasterInput; distance: number; sameClass: boolean; sameMessage: boolean } | null {
+  const cls = classifyFormat(width, height, hints);
+  // Message type first: when the brief row names a message and an example
+  // of that message exists, only those examples are candidates.
+  const wanted = hints.messageType ?? null;
+  const pool = wanted && masters.some((m) => m.messageType === wanted) ? masters.filter((m) => m.messageType === wanted) : masters;
+  const scored = pool
     .filter((m) => !m.flat || aspectDistance(width, height, m.width, m.height) <= FLAT_SCALE_TOLERANCE)
     .map((m) => ({
-    master: m,
-    distance: aspectDistance(width, height, m.width, m.height),
-    sameClass: classifyAspect(m.width, m.height) === cls,
-  }));
+      master: m,
+      distance: aspectDistance(width, height, m.width, m.height),
+      sameClass: classifyFormat(m.width, m.height, { name: m.name }) === cls,
+      sameMessage: !wanted || m.messageType === wanted,
+    }));
+  // Same shape class wins; within it the closest ratio. Only when no example
+  // shares the class does the closest of any shape stand in (and the job is
+  // flagged for a rebuild).
   const same = scored.filter((s) => s.sameClass).sort((a, b) => a.distance - b.distance)[0];
   if (same) return same;
   return scored.sort((a, b) => a.distance - b.distance)[0] ?? null;
@@ -163,17 +216,19 @@ export function planCampaignBuild(
       continue;
     }
     const briefName = (size.names ?? []).find((n) => n && n.trim().length > 0) ?? null;
-    const spec = describeFormat(width, height, briefName);
+    const spec = describeFormat(width, height, briefName, size.channel ?? null);
     const hasName = !!(spec.entry || briefName);
 
     for (const [variantKey, groupMasters] of groups) {
-      const pick = chooseMaster(groupMasters, width, height);
+      const pick = chooseMaster(groupMasters, width, height, { name: briefName, channel: size.channel ?? null, messageType: size.messageType ?? null });
       if (!pick) {
         skipped.push({ width: size.width, height: size.height, reason: `${spec.label}: only flat artwork available (copy baked in) — import the InDesign package or working files to build this shape` });
         continue;
       }
+      // Recompose only when no example of this shape exists; a same-class
+      // example is scaled even when its ratio differs somewhat.
       const recomposed = !pick.sameClass || pick.distance > RECOMPOSE_THRESHOLD;
-      const needsReview = !pick.sameClass;
+      const needsReview = !pick.sameClass || !pick.sameMessage;
       if (needsReview) reviewLabels.add(spec.label);
       const variant = variantKey || null;
       const namePieces = [prefix, hasName ? spec.label : null, `${width}×${height}`].filter(Boolean).join(" ");
@@ -184,6 +239,8 @@ export function planCampaignBuild(
         height,
         name: variant ? `${namePieces} — ${variant}` : namePieces,
         variant,
+        channel: size.channel ?? null,
+        messageType: size.messageType ?? pick.master.messageType ?? null,
         sourceLabel,
         aspectDistance: Math.round(pick.distance * 1000) / 1000,
         recomposed,

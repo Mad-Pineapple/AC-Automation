@@ -8,8 +8,8 @@ import { recomposePanelLayout } from "../lib/panelRecompose";
 import { collectBrandPaletteHexes } from "../lib/colorAdapter";
 import { composeKeyVisualAdaptation } from "../lib/kvAdapt";
 import { recomposeToFormat, shouldRecompose } from "../lib/recompose";
-import { checkLayout } from "../lib/layoutCheck";
-import { isImageOnly, hasLayeredSlots, enrichLayeredArtwork, adaptLayered, edgeColour, storageImageLoader } from "../lib/layeredArtwork";
+import { checkLayout, checkMandatory } from "../lib/layoutCheck";
+import { isImageOnly, hasLayeredSlots, hasPanelParts, splitPanelGraphic, enrichLayeredArtwork, adaptLayered, edgeColour, storageImageLoader } from "../lib/layeredArtwork";
 import { analyseGwdHtml, motionForElements, type GwdLeaf } from "../lib/gwdMotion";
 import { visibleBounds } from "../lib/gwdImport";
 
@@ -52,7 +52,7 @@ import { makeImageLoader } from "./exports";
 import { classifyAspect } from "../lib/formatCatalog";
 import { reviewPiece, reviewAndFix, isClaudeReviewConfigured, type ClaudeReview } from "../lib/claudeReview";
 import { ensureBrandFontsRegistered } from "../lib/brandFonts";
-import { describeFormat, aspectDistance } from "../lib/formatCatalog";
+import { describeFormat, aspectDistance, type FormatHints } from "../lib/formatCatalog";
 import { isFlatArtwork } from "../lib/slots";
 import { FLAT_SCALE_TOLERANCE } from "../lib/campaignPlan";
 import { feedbackForFormat, describeFormatFeedback } from "../lib/feedbackLearning";
@@ -211,10 +211,14 @@ async function adaptOne(
   log?: { warn: (obj: unknown, msg: string) => void },
   exemplars: Exemplar[] = [],
   excludeId?: number,
-): Promise<{ config: FreeformConfig; method: string; spec: ReturnType<typeof describeFormat>; reference: Reference | null }> {
+  hints: FormatHints = {},
+): Promise<{ config: FreeformConfig; method: string; spec: ReturnType<typeof describeFormat>; reference: Reference | null; rejected: string[] }> {
   let adapted: FreeformConfig | null = null;
   let method = "scaled";
   const notes: string[] = [];
+  // The brief's format name and channel decide the class (a leaderboard is a
+  // strip whatever its ratio; a 3:1 billboard is wide, never a strip).
+  const spec = describeFormat(width, height, hints.name ?? null, hints.channel ?? null);
   // 0. An approved piece in the family is the reference: scale it when the
   //    shape is near-identical, otherwise rebuild with its measured
   //    proportions overriding the class recipe.
@@ -229,7 +233,7 @@ async function adaptOne(
   const hasTextHeadline = masterConfig.elements.some((e) => e.type === "text" && e.text.trim().length > 0);
   const styleSpec = styleSchemaFor(master.name);
   if (!adapted && !hasTextHeadline && hasLayeredSlots(masterConfig)) {
-    const ly = adaptLayered(masterConfig, master.width, master.height, width, height, { panelFill: brandInfo.panelFill ?? null, logoUrl: brandInfo.logoUrl, spec: styleSpec });
+    const ly = adaptLayered(masterConfig, master.width, master.height, width, height, { panelFill: brandInfo.panelFill ?? null, logoUrl: brandInfo.logoUrl, spec: styleSpec, formatClass: spec.formatClass });
     if (ly) {
       adapted = ly.config;
       method = "layered";
@@ -239,9 +243,10 @@ async function adaptOne(
   // 1. Different shape class: rebuild from slots with the class recipe.
   if (!adapted && shouldRecompose(masterConfig, master.width, master.height, width, height)) {
     try {
-      const specZone = styleSpec?.zones[describeFormat(width, height, null).formatClass];
+      const specZone = styleSpec?.zones[spec.formatClass];
       const rc = await recomposeToFormat(masterConfig, master.width, master.height, width, height, {
         brand: brandInfo,
+        formatClass: spec.formatClass,
         // An approved piece's measurements lead; else the campaign schema's zones; else the class recipe.
         ...(reference
           ? { recipeOverrides: reference.exemplar.measured }
@@ -281,8 +286,10 @@ async function adaptOne(
       method = "scaled";
     }
   }
-  const spec = describeFormat(width, height, null);
   const issues = checkLayout(adapted, width, height);
+  // The hard gate: an automated layout that lost a mandatory element,
+  // undersized the logo or let copy collide is rejected, not merely noted.
+  const rejected = checkMandatory(masterConfig, adapted, width, height);
   // What designers have said about pieces of this shape so far rides on
   // every new one, so the lesson is in front of whoever reviews it.
   let feedbackLine: string | null = null;
@@ -295,13 +302,15 @@ async function adaptOne(
     ...adapted,
     adaptMethod: adapted.adaptMethod ?? method,
     adaptNotes: [
+      ...rejected.map((r) => `Rejected: ${r}`),
       ...(adapted.adaptNotes ?? []),
       ...notes,
       ...issues.map((i) => `${i.severity === "error" ? "Check" : "Note"}: ${i.message}`),
       ...(feedbackLine ? [feedbackLine] : []),
     ],
+    ...(rejected.length > 0 ? { rejected } : {}),
   });
-  return { config, method, spec, reference };
+  return { config, method, spec, reference, rejected };
 }
 
 router.post("/templates/:id/adapt", requireAdmin, async (req, res): Promise<void> => {
@@ -335,6 +344,23 @@ router.post("/templates/:id/adapt", requireAdmin, async (req, res): Promise<void
     }
   } catch (err) {
     (req as any).log?.warn?.({ err, templateId: master.id }, "key-visual motion backfill failed; continuing");
+  }
+
+  // A master whose baked panel has not been cut into parts yet gets that
+  // done now (masters imported before the panel split existed).
+  if (hasLayeredSlots(masterConfig) && !hasPanelParts(masterConfig) && masterConfig.elements.some((e) => e.type === "image" && e.slot === "panel")) {
+    try {
+      const storage = new LayerStorage();
+      const split = await splitPanelGraphic(masterConfig, { loadImage: makeImageLoader(req), uploadBytes: (bytes, ct) => storage.uploadBytes(bytes, ct) });
+      if (hasPanelParts(split.config)) {
+        masterConfig = normalizeFreeformConfig({ ...(parsed as Record<string, unknown>), elements: split.config.elements });
+        parsed = { ...(parsed as Record<string, unknown>), elements: masterConfig.elements };
+        await db.update(templatesTable).set({ config: JSON.stringify(parsed), updatedAt: new Date() }).where(eq(templatesTable.id, master.id));
+        (req as any).log?.info?.({ templateId: master.id, notes: split.notes }, "panel graphic cut into parts");
+      }
+    } catch (err) {
+      (req as any).log?.warn?.({ err, templateId: master.id }, "panel split failed; continuing");
+    }
   }
 
   // An image-only stack (HTML5 export) gets its layers recognised once —
@@ -405,6 +431,7 @@ router.post("/templates/:id/adapt", requireAdmin, async (req, res): Promise<void
     }
   }
   const created: (typeof templatesTable.$inferSelect)[] = [];
+  let rejectedCount = 0;
   for (const raw of rawTargets) {
     if (typeof raw !== "object" || raw === null) continue;
     const t = raw as Record<string, unknown>;
@@ -424,7 +451,12 @@ router.post("/templates/:id/adapt", requireAdmin, async (req, res): Promise<void
     if (!Number.isInteger(width) || !Number.isInteger(height) || width < 16 || height < 16 || width > 8000 || height > 8000) {
       continue;
     }
-    const { config: merged, method, spec } = await adaptOne(master, masterConfig, width, height, brandInfo, (req as any).log, exemplars);
+    const hints: FormatHints = {
+      name: typeof t.formatName === "string" ? t.formatName : typeof t.name === "string" ? t.name : null,
+      channel: typeof t.channel === "string" ? t.channel : null,
+    };
+    const { config: merged, method, spec, rejected } = await adaptOne(master, masterConfig, width, height, brandInfo, (req as any).log, exemplars, undefined, hints);
+    if (rejected.length > 0) rejectedCount++;
     const name =
       typeof t.name === "string" && t.name.trim()
         ? t.name.trim().slice(0, 120)
@@ -433,7 +465,7 @@ router.post("/templates/:id/adapt", requireAdmin, async (req, res): Promise<void
       .insert(templatesTable)
       .values({
         name,
-        description: `Adapted from "${master.name}" (${master.width}×${master.height}) · ${method.replace(":", " ")} · ${spec.formatClass}`,
+        description: `${rejected.length > 0 ? "REJECTED · " : ""}Adapted from "${master.name}" (${master.width}×${master.height}) · ${method.replace(":", " ")} · ${spec.formatClass}`,
         // Created pieces always land in Work-in-progress, whatever the master
         // is; only "Make template" moves a piece into Templates.
         category: "wip",
@@ -451,6 +483,7 @@ router.post("/templates/:id/adapt", requireAdmin, async (req, res): Promise<void
     res.status(400).json({ error: "No valid adaptation targets supplied" });
     return;
   }
+  if (rejectedCount > 0) res.setHeader("X-Adapt-Rejected", String(rejectedCount));
   res.status(201).json(created.map(formatTemplate));
 });
 
@@ -984,7 +1017,7 @@ router.post("/templates/:id/redo", requireAdmin, async (req, res): Promise<void>
     // The corrected, approved pieces of this family are the reference — never
     // the piece being redone itself.
     const exemplars = await approvedExemplars(master.id);
-    const { config, method, spec, reference } = await adaptOne(master, masterConfig, piece.width, piece.height, brandInfo, (req as any).log, exemplars, piece.id);
+    const { config, method, spec, reference } = await adaptOne(master, masterConfig, piece.width, piece.height, brandInfo, (req as any).log, exemplars, piece.id, { name: piece.name });
     const [updated] = await db
       .update(templatesTable)
       .set({

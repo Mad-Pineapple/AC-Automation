@@ -40,6 +40,9 @@ export interface RecomposeOptions {
   /** Recipe fields measured off an approved piece of the same family
    * (lib/exemplars.ts); they win over the class recipe. */
   recipeOverrides?: Partial<Recipe>;
+  /** Format class decided from the brief's name/channel; overrides the
+   * dimensions-only classification. */
+  formatClass?: FormatClass;
 }
 
 export interface RecomposeResult {
@@ -183,7 +186,7 @@ export async function recomposeToFormat(
   await prepareMeasurement();
   const loadSize = opts.loadImageSize ?? defaultImageSize;
 
-  const formatClass = classifyAspect(dstW, dstH);
+  const formatClass = opts.formatClass ?? classifyAspect(dstW, dstH);
   const budget = classifyBudget(dstW, dstH);
   const base = recipeFor(formatClass, budget);
   const ov = opts.recipeOverrides ?? {};

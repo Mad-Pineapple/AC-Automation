@@ -164,7 +164,7 @@ export default function CampaignBuild() {
           {
             data: {
               masterTemplateIds: examples.map((e) => e.id),
-              sizes: plan.uniqueSizes.map((s) => ({ width: s.width, height: s.height, unit: s.unit, names: s.names })),
+              sizes: plan.uniqueSizes.map((s) => ({ width: s.width, height: s.height, unit: s.unit, names: s.names, channel: s.channels?.[0] ?? null, messageType: s.messageType ?? null })),
               campaignName: plan.campaignName,
             },
           },
@@ -213,14 +213,21 @@ export default function CampaignBuild() {
         byMaster.set(job.masterId, list);
       }
       let done = 0;
+      let rejected = 0;
       for (const [masterId, masterJobs] of byMaster) {
         for (let i = 0; i < masterJobs.length; i += ADAPT_BATCH) {
           const slice = masterJobs.slice(i, i + ADAPT_BATCH);
           setBusy(`Producing artwork ${done + 1}–${done + slice.length} of ${jobs.length}…`);
           await new Promise<void>((resolve, reject) =>
             adaptTemplate.mutate(
-              { id: masterId, data: { targets: slice.map((j) => ({ width: j.width, height: j.height, name: j.name })) } },
-              { onSuccess: () => resolve(), onError: reject },
+              { id: masterId, data: { targets: slice.map((j) => ({ width: j.width, height: j.height, name: j.name, formatName: j.formatLabel, channel: j.channel ?? undefined })) } },
+              {
+                onSuccess: (made) => {
+                  for (const t of made ?? []) if (((t.config as { rejected?: string[] } | undefined)?.rejected?.length ?? 0) > 0) rejected++;
+                  resolve();
+                },
+                onError: reject,
+              },
             ),
           );
           done += slice.length;
@@ -231,11 +238,12 @@ export default function CampaignBuild() {
       queryClient.invalidateQueries({ queryKey: getListBriefsQueryKey() });
       const variantCount = Math.max(1, build.variants.length);
       toast({
-        title: `${done} piece${done === 1 ? "" : "s"} of artwork produced in Work in progress`,
+        title: `${done} piece${done === 1 ? "" : "s"} of artwork produced in Work in progress${rejected > 0 ? ` · ${rejected} rejected` : ""}`,
         description:
-          variantCount > 1
+          (variantCount > 1
             ? `${plan.campaignName}: every size in the brief, across ${variantCount} variants. Review, then Make template on the ones you keep.`
-            : `${plan.campaignName}: every size in the brief. Review, then Make template on the ones you keep.`,
+            : `${plan.campaignName}: every size in the brief. Review, then Make template on the ones you keep.`) +
+          (rejected > 0 ? ` ${rejected} automated layout${rejected === 1 ? "" : "s"} failed the mandatory-element check and carry a red Rejected badge with the reasons.` : ""),
       });
       setLocation("/wip");
     } catch (err) {

@@ -243,6 +243,7 @@ export const ListTemplatesResponseItem = zod.object({
   "locked": zod.boolean().optional().describe('Locked elements are pinned brand furniture: brief copy\/imagery is never poured into them (their captured content always renders), and editors treat them as read-only.\n')
 }).describe('A single positioned element in a freeform template layout.')).optional(),
   "adaptMethod": zod.string().optional().describe('How an adapted template was derived: recomposed:<class> | key-visual | panel | scaled'),
+  "rejected": zod.array(zod.string()).optional().describe('Reasons the automated layout failed the mandatory-element gate; empty or absent when it passed'),
   "adaptNotes": zod.array(zod.string()).optional().describe('What the adapt engine decided and what a designer should check')
 }),
   "sourceImageUrl": zod.string().nullish(),
@@ -314,6 +315,7 @@ export const CreateTemplateBody = zod.object({
   "locked": zod.boolean().optional().describe('Locked elements are pinned brand furniture: brief copy\/imagery is never poured into them (their captured content always renders), and editors treat them as read-only.\n')
 }).describe('A single positioned element in a freeform template layout.')).optional(),
   "adaptMethod": zod.string().optional().describe('How an adapted template was derived: recomposed:<class> | key-visual | panel | scaled'),
+  "rejected": zod.array(zod.string()).optional().describe('Reasons the automated layout failed the mandatory-element gate; empty or absent when it passed'),
   "adaptNotes": zod.array(zod.string()).optional().describe('What the adapt engine decided and what a designer should check')
 }).optional(),
   "sourceImageUrl": zod.string().nullish()
@@ -387,6 +389,7 @@ export const GetTemplateResponse = zod.object({
   "locked": zod.boolean().optional().describe('Locked elements are pinned brand furniture: brief copy\/imagery is never poured into them (their captured content always renders), and editors treat them as read-only.\n')
 }).describe('A single positioned element in a freeform template layout.')).optional(),
   "adaptMethod": zod.string().optional().describe('How an adapted template was derived: recomposed:<class> | key-visual | panel | scaled'),
+  "rejected": zod.array(zod.string()).optional().describe('Reasons the automated layout failed the mandatory-element gate; empty or absent when it passed'),
   "adaptNotes": zod.array(zod.string()).optional().describe('What the adapt engine decided and what a designer should check')
 }),
   "sourceImageUrl": zod.string().nullish(),
@@ -461,6 +464,7 @@ export const UpdateTemplateBody = zod.object({
   "locked": zod.boolean().optional().describe('Locked elements are pinned brand furniture: brief copy\/imagery is never poured into them (their captured content always renders), and editors treat them as read-only.\n')
 }).describe('A single positioned element in a freeform template layout.')).optional(),
   "adaptMethod": zod.string().optional().describe('How an adapted template was derived: recomposed:<class> | key-visual | panel | scaled'),
+  "rejected": zod.array(zod.string()).optional().describe('Reasons the automated layout failed the mandatory-element gate; empty or absent when it passed'),
   "adaptNotes": zod.array(zod.string()).optional().describe('What the adapt engine decided and what a designer should check')
 }).optional(),
   "sourceImageUrl": zod.string().nullish()
@@ -526,6 +530,7 @@ export const UpdateTemplateResponse = zod.object({
   "locked": zod.boolean().optional().describe('Locked elements are pinned brand furniture: brief copy\/imagery is never poured into them (their captured content always renders), and editors treat them as read-only.\n')
 }).describe('A single positioned element in a freeform template layout.')).optional(),
   "adaptMethod": zod.string().optional().describe('How an adapted template was derived: recomposed:<class> | key-visual | panel | scaled'),
+  "rejected": zod.array(zod.string()).optional().describe('Reasons the automated layout failed the mandatory-element gate; empty or absent when it passed'),
   "adaptNotes": zod.array(zod.string()).optional().describe('What the adapt engine decided and what a designer should check')
 }),
   "sourceImageUrl": zod.string().nullish(),
@@ -564,7 +569,9 @@ export const AdaptTemplateBody = zod.object({
   "targets": zod.array(zod.object({
   "width": zod.number(),
   "height": zod.number(),
-  "name": zod.string().optional()
+  "name": zod.string().optional(),
+  "formatName": zod.string().optional().describe('The brief\'s deliverable name for the size (decides the format class with the channel)'),
+  "channel": zod.string().optional().describe('Brief channel section (DISPLAY, OOH …)')
 }))
 })
 
@@ -637,6 +644,7 @@ export const DissectPdfResponse = zod.object({
   "locked": zod.boolean().optional().describe('Locked elements are pinned brand furniture: brief copy\/imagery is never poured into them (their captured content always renders), and editors treat them as read-only.\n')
 }).describe('A single positioned element in a freeform template layout.')).optional(),
   "adaptMethod": zod.string().optional().describe('How an adapted template was derived: recomposed:<class> | key-visual | panel | scaled'),
+  "rejected": zod.array(zod.string()).optional().describe('Reasons the automated layout failed the mandatory-element gate; empty or absent when it passed'),
   "adaptNotes": zod.array(zod.string()).optional().describe('What the adapt engine decided and what a designer should check')
 }),
   "warnings": zod.array(zod.string())
@@ -708,6 +716,7 @@ export const DissectImageResponse = zod.object({
   "locked": zod.boolean().optional().describe('Locked elements are pinned brand furniture: brief copy\/imagery is never poured into them (their captured content always renders), and editors treat them as read-only.\n')
 }).describe('A single positioned element in a freeform template layout.')).optional(),
   "adaptMethod": zod.string().optional().describe('How an adapted template was derived: recomposed:<class> | key-visual | panel | scaled'),
+  "rejected": zod.array(zod.string()).optional().describe('Reasons the automated layout failed the mandatory-element gate; empty or absent when it passed'),
   "adaptNotes": zod.array(zod.string()).optional().describe('What the adapt engine decided and what a designer should check')
 }),
   "warnings": zod.array(zod.string())
@@ -821,7 +830,9 @@ export const ParseCollateralPlanResponse = zod.object({
   "height": zod.number(),
   "unit": zod.string(),
   "count": zod.number(),
-  "names": zod.array(zod.string())
+  "names": zod.array(zod.string()),
+  "channels": zod.array(zod.string()).optional(),
+  "messageType": zod.string().nullish()
 })),
   "warnings": zod.array(zod.string())
 })
@@ -850,7 +861,9 @@ export const PlanCampaignBuildBody = zod.object({
   "width": zod.number(),
   "height": zod.number(),
   "unit": zod.string().optional(),
-  "names": zod.array(zod.string()).optional()
+  "names": zod.array(zod.string()).optional(),
+  "channel": zod.string().nullish().describe('Brief channel section the size sits under (DISPLAY, OOH …)'),
+  "messageType": zod.string().nullish().describe('Message type the brief row asks for (phase 1 | countdown …)')
 })),
   "campaignName": zod.string().optional()
 })
@@ -863,6 +876,8 @@ export const PlanCampaignBuildResponse = zod.object({
   "height": zod.number(),
   "name": zod.string(),
   "variant": zod.string().nullish(),
+  "channel": zod.string().nullish(),
+  "messageType": zod.string().nullish(),
   "sourceLabel": zod.string(),
   "aspectDistance": zod.number(),
   "recomposed": zod.boolean(),
@@ -2235,6 +2250,7 @@ export const ClaudeReviewTemplateResponse = zod.object({
   "locked": zod.boolean().optional().describe('Locked elements are pinned brand furniture: brief copy\/imagery is never poured into them (their captured content always renders), and editors treat them as read-only.\n')
 }).describe('A single positioned element in a freeform template layout.')).optional(),
   "adaptMethod": zod.string().optional().describe('How an adapted template was derived: recomposed:<class> | key-visual | panel | scaled'),
+  "rejected": zod.array(zod.string()).optional().describe('Reasons the automated layout failed the mandatory-element gate; empty or absent when it passed'),
   "adaptNotes": zod.array(zod.string()).optional().describe('What the adapt engine decided and what a designer should check')
 }),
   "sourceImageUrl": zod.string().nullish(),
@@ -2312,6 +2328,7 @@ export const UndoClaudeReviewTemplateResponse = zod.object({
   "locked": zod.boolean().optional().describe('Locked elements are pinned brand furniture: brief copy\/imagery is never poured into them (their captured content always renders), and editors treat them as read-only.\n')
 }).describe('A single positioned element in a freeform template layout.')).optional(),
   "adaptMethod": zod.string().optional().describe('How an adapted template was derived: recomposed:<class> | key-visual | panel | scaled'),
+  "rejected": zod.array(zod.string()).optional().describe('Reasons the automated layout failed the mandatory-element gate; empty or absent when it passed'),
   "adaptNotes": zod.array(zod.string()).optional().describe('What the adapt engine decided and what a designer should check')
 }),
   "sourceImageUrl": zod.string().nullish(),

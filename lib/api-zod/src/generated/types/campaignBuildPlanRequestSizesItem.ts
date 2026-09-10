@@ -11,4 +11,14 @@ export type CampaignBuildPlanRequestSizesItem = {
   height: number;
   unit?: string;
   names?: string[];
+  /**
+     * Brief channel section the size sits under (DISPLAY, OOH …)
+     * @nullable
+     */
+  channel?: string | null;
+  /**
+     * Message type the brief row asks for (phase 1 | countdown …)
+     * @nullable
+     */
+  messageType?: string | null;
 };

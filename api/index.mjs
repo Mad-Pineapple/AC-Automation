@@ -194848,6 +194848,7 @@ var ListTemplatesResponseItem = objectType({
       "locked": booleanType().optional().describe("Locked elements are pinned brand furniture: brief copy/imagery is never poured into them (their captured content always renders), and editors treat them as read-only.\n")
     }).describe("A single positioned element in a freeform template layout.")).optional(),
     "adaptMethod": stringType().optional().describe("How an adapted template was derived: recomposed:<class> | key-visual | panel | scaled"),
+    "rejected": arrayType(stringType()).optional().describe("Reasons the automated layout failed the mandatory-element gate; empty or absent when it passed"),
     "adaptNotes": arrayType(stringType()).optional().describe("What the adapt engine decided and what a designer should check")
   }),
   "sourceImageUrl": stringType().nullish(),
@@ -194914,6 +194915,7 @@ var CreateTemplateBody = objectType({
       "locked": booleanType().optional().describe("Locked elements are pinned brand furniture: brief copy/imagery is never poured into them (their captured content always renders), and editors treat them as read-only.\n")
     }).describe("A single positioned element in a freeform template layout.")).optional(),
     "adaptMethod": stringType().optional().describe("How an adapted template was derived: recomposed:<class> | key-visual | panel | scaled"),
+    "rejected": arrayType(stringType()).optional().describe("Reasons the automated layout failed the mandatory-element gate; empty or absent when it passed"),
     "adaptNotes": arrayType(stringType()).optional().describe("What the adapt engine decided and what a designer should check")
   }).optional(),
   "sourceImageUrl": stringType().nullish()
@@ -194981,6 +194983,7 @@ var GetTemplateResponse = objectType({
       "locked": booleanType().optional().describe("Locked elements are pinned brand furniture: brief copy/imagery is never poured into them (their captured content always renders), and editors treat them as read-only.\n")
     }).describe("A single positioned element in a freeform template layout.")).optional(),
     "adaptMethod": stringType().optional().describe("How an adapted template was derived: recomposed:<class> | key-visual | panel | scaled"),
+    "rejected": arrayType(stringType()).optional().describe("Reasons the automated layout failed the mandatory-element gate; empty or absent when it passed"),
     "adaptNotes": arrayType(stringType()).optional().describe("What the adapt engine decided and what a designer should check")
   }),
   "sourceImageUrl": stringType().nullish(),
@@ -195049,6 +195052,7 @@ var UpdateTemplateBody = objectType({
       "locked": booleanType().optional().describe("Locked elements are pinned brand furniture: brief copy/imagery is never poured into them (their captured content always renders), and editors treat them as read-only.\n")
     }).describe("A single positioned element in a freeform template layout.")).optional(),
     "adaptMethod": stringType().optional().describe("How an adapted template was derived: recomposed:<class> | key-visual | panel | scaled"),
+    "rejected": arrayType(stringType()).optional().describe("Reasons the automated layout failed the mandatory-element gate; empty or absent when it passed"),
     "adaptNotes": arrayType(stringType()).optional().describe("What the adapt engine decided and what a designer should check")
   }).optional(),
   "sourceImageUrl": stringType().nullish()
@@ -195113,6 +195117,7 @@ var UpdateTemplateResponse = objectType({
       "locked": booleanType().optional().describe("Locked elements are pinned brand furniture: brief copy/imagery is never poured into them (their captured content always renders), and editors treat them as read-only.\n")
     }).describe("A single positioned element in a freeform template layout.")).optional(),
     "adaptMethod": stringType().optional().describe("How an adapted template was derived: recomposed:<class> | key-visual | panel | scaled"),
+    "rejected": arrayType(stringType()).optional().describe("Reasons the automated layout failed the mandatory-element gate; empty or absent when it passed"),
     "adaptNotes": arrayType(stringType()).optional().describe("What the adapt engine decided and what a designer should check")
   }),
   "sourceImageUrl": stringType().nullish(),
@@ -195135,7 +195140,9 @@ var AdaptTemplateBody = objectType({
   "targets": arrayType(objectType({
     "width": numberType(),
     "height": numberType(),
-    "name": stringType().optional()
+    "name": stringType().optional(),
+    "formatName": stringType().optional().describe("The brief's deliverable name for the size (decides the format class with the channel)"),
+    "channel": stringType().optional().describe("Brief channel section (DISPLAY, OOH \u2026)")
   }))
 });
 var DissectPdfBody = objectType({
@@ -195198,6 +195205,7 @@ var DissectPdfResponse = objectType({
       "locked": booleanType().optional().describe("Locked elements are pinned brand furniture: brief copy/imagery is never poured into them (their captured content always renders), and editors treat them as read-only.\n")
     }).describe("A single positioned element in a freeform template layout.")).optional(),
     "adaptMethod": stringType().optional().describe("How an adapted template was derived: recomposed:<class> | key-visual | panel | scaled"),
+    "rejected": arrayType(stringType()).optional().describe("Reasons the automated layout failed the mandatory-element gate; empty or absent when it passed"),
     "adaptNotes": arrayType(stringType()).optional().describe("What the adapt engine decided and what a designer should check")
   }),
   "warnings": arrayType(stringType())
@@ -195260,6 +195268,7 @@ var DissectImageResponse = objectType({
       "locked": booleanType().optional().describe("Locked elements are pinned brand furniture: brief copy/imagery is never poured into them (their captured content always renders), and editors treat them as read-only.\n")
     }).describe("A single positioned element in a freeform template layout.")).optional(),
     "adaptMethod": stringType().optional().describe("How an adapted template was derived: recomposed:<class> | key-visual | panel | scaled"),
+    "rejected": arrayType(stringType()).optional().describe("Reasons the automated layout failed the mandatory-element gate; empty or absent when it passed"),
     "adaptNotes": arrayType(stringType()).optional().describe("What the adapt engine decided and what a designer should check")
   }),
   "warnings": arrayType(stringType())
@@ -195333,7 +195342,9 @@ var ParseCollateralPlanResponse = objectType({
     "height": numberType(),
     "unit": stringType(),
     "count": numberType(),
-    "names": arrayType(stringType())
+    "names": arrayType(stringType()),
+    "channels": arrayType(stringType()).optional(),
+    "messageType": stringType().nullish()
   })),
   "warnings": arrayType(stringType())
 });
@@ -195348,7 +195359,9 @@ var PlanCampaignBuildBody = objectType({
     "width": numberType(),
     "height": numberType(),
     "unit": stringType().optional(),
-    "names": arrayType(stringType()).optional()
+    "names": arrayType(stringType()).optional(),
+    "channel": stringType().nullish().describe("Brief channel section the size sits under (DISPLAY, OOH \u2026)"),
+    "messageType": stringType().nullish().describe("Message type the brief row asks for (phase 1 | countdown \u2026)")
   })),
   "campaignName": stringType().optional()
 });
@@ -195360,6 +195373,8 @@ var PlanCampaignBuildResponse = objectType({
     "height": numberType(),
     "name": stringType(),
     "variant": stringType().nullish(),
+    "channel": stringType().nullish(),
+    "messageType": stringType().nullish(),
     "sourceLabel": stringType(),
     "aspectDistance": numberType(),
     "recomposed": booleanType(),
@@ -196417,6 +196432,7 @@ var ClaudeReviewTemplateResponse = objectType({
       "locked": booleanType().optional().describe("Locked elements are pinned brand furniture: brief copy/imagery is never poured into them (their captured content always renders), and editors treat them as read-only.\n")
     }).describe("A single positioned element in a freeform template layout.")).optional(),
     "adaptMethod": stringType().optional().describe("How an adapted template was derived: recomposed:<class> | key-visual | panel | scaled"),
+    "rejected": arrayType(stringType()).optional().describe("Reasons the automated layout failed the mandatory-element gate; empty or absent when it passed"),
     "adaptNotes": arrayType(stringType()).optional().describe("What the adapt engine decided and what a designer should check")
   }),
   "sourceImageUrl": stringType().nullish(),
@@ -196488,6 +196504,7 @@ var UndoClaudeReviewTemplateResponse = objectType({
       "locked": booleanType().optional().describe("Locked elements are pinned brand furniture: brief copy/imagery is never poured into them (their captured content always renders), and editors treat them as read-only.\n")
     }).describe("A single positioned element in a freeform template layout.")).optional(),
     "adaptMethod": stringType().optional().describe("How an adapted template was derived: recomposed:<class> | key-visual | panel | scaled"),
+    "rejected": arrayType(stringType()).optional().describe("Reasons the automated layout failed the mandatory-element gate; empty or absent when it passed"),
     "adaptNotes": arrayType(stringType()).optional().describe("What the adapt engine decided and what a designer should check")
   }),
   "sourceImageUrl": stringType().nullish(),
@@ -215488,6 +215505,32 @@ function aspectDistance(w1, h1, w2, h2) {
 }
 var ASPECT_REBUILD_THRESHOLD = 0.3;
 var STRIP_MAX_HEIGHT = 120;
+var STRIP_NAME = /\b(leaderboard|mobile banner|smartphone banner|super ?banner|big banner|banner strip|strip|companion|top banner|footer banner|sticky)\b/i;
+var OOH_CHANNEL = /\b(ooh|out[- ]of[- ]home|digital billboard|digi billboard|digital screen|screen|print|press|poster|adshel|jcdecaux|street|transit|bus|rail)\b/i;
+function channelOf(hint) {
+  const h = (hint ?? "").trim();
+  if (!h) return null;
+  if (/\b(social|facebook|instagram|meta|linkedin|tiktok|youtube)\b/i.test(h)) return "social";
+  if (/\b(print|press|poster|flyer|newspaper|magazine)\b/i.test(h)) return "print";
+  if (/\b(ooh|out[- ]of[- ]home|billboard|adshel|jcdecaux|street|transit|bus|rail)\b/i.test(h)) return "ooh";
+  if (/\b(screen|kiosk|digital screen|in[- ]store)\b/i.test(h)) return "screen";
+  if (/\b(native)\b/i.test(h)) return "native";
+  if (/\b(web|website|hero|landing|email|edm)\b/i.test(h)) return "web";
+  if (/\b(display|dv360|gdn|programmatic|html5?|banner|digital)\b/i.test(h)) return "display";
+  return null;
+}
+function classifyFormat(width, height, hints = {}) {
+  const ratio = width / height;
+  const name = (hints.name ?? "").trim();
+  const channel = (hints.channel ?? "").trim();
+  const entry = lookupFormat(width, height);
+  if (STRIP_NAME.test(name) || entry && STRIP_NAME.test(entry.label)) return "strip";
+  if (OOH_CHANNEL.test(channel) || OOH_CHANNEL.test(name) || entry && (entry.channel === "ooh" || entry.channel === "print" || entry.channel === "screen")) {
+    if (ratio >= 6) return "strip";
+    return classifyAspect(width, Math.max(height, STRIP_MAX_HEIGHT + 1));
+  }
+  return classifyAspect(width, height);
+}
 function classifyAspect(width, height) {
   const ratio = width / height;
   if (ratio >= 5 || height <= STRIP_MAX_HEIGHT && ratio >= 2.5) return "strip";
@@ -215601,7 +215644,7 @@ for (const e of FORMAT_CATALOG) {
 function lookupFormat(width, height) {
   return byDims.get(`${Math.round(width)}x${Math.round(height)}`) ?? null;
 }
-function describeFormat(width, height, labelHint) {
+function describeFormat(width, height, labelHint, channelHint) {
   const entry = lookupFormat(width, height);
   const hint = (labelHint ?? "").trim();
   return {
@@ -215610,10 +215653,11 @@ function describeFormat(width, height, labelHint) {
     ratio: width / height,
     short: Math.min(width, height),
     long: Math.max(width, height),
-    formatClass: classifyAspect(width, height),
+    formatClass: classifyFormat(width, height, { name: hint, channel: channelHint }),
     budget: classifyBudget(width, height),
     entry,
-    label: hint || entry?.label || `${width}\xD7${height}`
+    label: hint || entry?.label || `${width}\xD7${height}`,
+    channel: channelOf(channelHint) ?? entry?.channel ?? null
   };
 }
 function needsRebuild(srcW, srcH, dstW, dstH) {
@@ -215626,24 +215670,46 @@ function needsRebuild(srcW, srcH, dstW, dstH) {
 }
 
 // src/lib/campaignPlan.ts
+function messageTypeOf(name, copy = []) {
+  const text3 = [name, ...copy].join(" \n ");
+  const phase = /(?<![a-z])phase\s*([1-9])(?![0-9])/i.exec(text3);
+  if (phase) return `phase ${phase[1]}`;
+  if (/\b\d{1,2}:\d{2}:\d{2}\b/.test(text3) || /\bcountdown\b/i.test(text3)) return "countdown";
+  const lines = [
+    [/time to talk/i, "phase 1"],
+    [/running out/i, "phase 2"],
+    [/strike suddenly|make a plan today/i, "phase 3"]
+  ];
+  for (const [re, type] of lines) if (re.test(text3)) return type;
+  const v = /\bV(\d{1,2})\b/.exec(name);
+  if (v) return `v${v[1]}`;
+  return null;
+}
 var FLAT_SCALE_TOLERANCE = 0.08;
 var PRINT_DPI = 300;
 function mmToPx(mm, dpi = PRINT_DPI) {
   return Math.round(mm / 25.4 * dpi);
 }
+var FORMAT_WORDS = new RegExp(
+  `\\b(${[...new Set(FORMAT_CATALOG.map((f) => f.label))].map((l) => l.replace(/[.*+?^${}()|[\\]\\\\]/g, "\\$&")).join("|")}|tower|portrait|square|landscape|wide|strip|skyscraper|banner|billboard|mrec|half page|leaderboard)\\b`,
+  "gi"
+);
 function variantOf(name) {
   const idx = name.lastIndexOf(" \u2014 ");
   if (idx < 0) return null;
-  const tail = name.slice(idx + 3).replace(/\b\d{2,4}\s*[x×]\s*\d{2,4}(px)?\b/gi, "").replace(/\s{2,}/g, " ").trim();
+  const tail = name.slice(idx + 3).replace(/\b\d{2,4}\s*[x×]\s*\d{2,4}(px)?\b/gi, "").replace(FORMAT_WORDS, "").replace(/\s{2,}/g, " ").trim();
   return tail.length > 0 && tail.length <= 40 ? tail : null;
 }
 var RECOMPOSE_THRESHOLD = ASPECT_REBUILD_THRESHOLD;
-function chooseMaster(masters, width, height) {
-  const cls = classifyAspect(width, height);
-  const scored = masters.filter((m) => !m.flat || aspectDistance(width, height, m.width, m.height) <= FLAT_SCALE_TOLERANCE).map((m) => ({
+function chooseMaster(masters, width, height, hints = {}) {
+  const cls = classifyFormat(width, height, hints);
+  const wanted = hints.messageType ?? null;
+  const pool2 = wanted && masters.some((m) => m.messageType === wanted) ? masters.filter((m) => m.messageType === wanted) : masters;
+  const scored = pool2.filter((m) => !m.flat || aspectDistance(width, height, m.width, m.height) <= FLAT_SCALE_TOLERANCE).map((m) => ({
     master: m,
     distance: aspectDistance(width, height, m.width, m.height),
-    sameClass: classifyAspect(m.width, m.height) === cls
+    sameClass: classifyFormat(m.width, m.height, { name: m.name }) === cls,
+    sameMessage: !wanted || m.messageType === wanted
   }));
   const same = scored.filter((s2) => s2.sameClass).sort((a, b) => a.distance - b.distance)[0];
   if (same) return same;
@@ -215679,16 +215745,16 @@ function planCampaignBuild(masters, sizes, opts = {}) {
       continue;
     }
     const briefName = (size.names ?? []).find((n) => n && n.trim().length > 0) ?? null;
-    const spec = describeFormat(width, height, briefName);
+    const spec = describeFormat(width, height, briefName, size.channel ?? null);
     const hasName = !!(spec.entry || briefName);
     for (const [variantKey, groupMasters] of groups) {
-      const pick2 = chooseMaster(groupMasters, width, height);
+      const pick2 = chooseMaster(groupMasters, width, height, { name: briefName, channel: size.channel ?? null, messageType: size.messageType ?? null });
       if (!pick2) {
         skipped.push({ width: size.width, height: size.height, reason: `${spec.label}: only flat artwork available (copy baked in) \u2014 import the InDesign package or working files to build this shape` });
         continue;
       }
       const recomposed = !pick2.sameClass || pick2.distance > RECOMPOSE_THRESHOLD;
-      const needsReview = !pick2.sameClass;
+      const needsReview = !pick2.sameClass || !pick2.sameMessage;
       if (needsReview) reviewLabels.add(spec.label);
       const variant = variantKey || null;
       const namePieces = [prefix, hasName ? spec.label : null, `${width}\xD7${height}`].filter(Boolean).join(" ");
@@ -215699,6 +215765,8 @@ function planCampaignBuild(masters, sizes, opts = {}) {
         height,
         name: variant ? `${namePieces} \u2014 ${variant}` : namePieces,
         variant,
+        channel: size.channel ?? null,
+        messageType: size.messageType ?? pick2.master.messageType ?? null,
         sourceLabel,
         aspectDistance: Math.round(pick2.distance * 1e3) / 1e3,
         recomposed,
@@ -227396,6 +227464,7 @@ function normalizeFreeformConfig(raw) {
         ...focusY !== void 0 ? { focusY } : {},
         ...focusBox ? { focusBox } : {},
         ...el.bakedCopy === true ? { bakedCopy: true } : {},
+        ...el.panelPart === true ? { panelPart: true } : {},
         ...kvText && kvText.length > 0 ? { kvText } : {},
         ...motion ? { motion } : {},
         ...groupMotion ? { groupMotion } : {},
@@ -227450,6 +227519,7 @@ function normalizeFreeformConfig(raw) {
   const adaptMethod = typeof rawMethod === "string" && /^[\w:-]{1,40}$/.test(rawMethod) ? rawMethod : void 0;
   const rawNotes = raw.adaptNotes;
   const adaptNotes = Array.isArray(rawNotes) ? rawNotes.filter((n) => typeof n === "string" && n.trim().length > 0).slice(0, 16).map((n) => n.slice(0, 240)) : [];
+  const rejected = Array.isArray(raw.rejected) ? raw.rejected.filter((r3) => typeof r3 === "string" && r3.trim().length > 0).map((r3) => r3.slice(0, 300)).slice(0, 20) : [];
   return {
     kind: "freeform",
     elements,
@@ -227458,7 +227528,8 @@ function normalizeFreeformConfig(raw) {
     ...sourceAssets.length > 0 ? { sourceAssets } : {},
     ...previewHtml ? { previewHtml } : {},
     ...adaptMethod ? { adaptMethod } : {},
-    ...adaptNotes.length > 0 ? { adaptNotes } : {}
+    ...adaptNotes.length > 0 ? { adaptNotes } : {},
+    ...rejected.length > 0 ? { rejected } : {}
   };
 }
 
@@ -231631,7 +231702,7 @@ async function recomposeToFormat(master, srcW, srcH, dstW, dstH, opts) {
   if (!sem.headline) return null;
   await prepareMeasurement();
   const loadSize = opts.loadImageSize ?? defaultImageSize;
-  const formatClass = classifyAspect(dstW, dstH);
+  const formatClass = opts.formatClass ?? classifyAspect(dstW, dstH);
   const budget = classifyBudget(dstW, dstH);
   const base = recipeFor(formatClass, budget);
   const ov = opts.recipeOverrides ?? {};
@@ -232050,6 +232121,50 @@ function checkMarkRules(config2, width, height) {
   }
   return issues;
 }
+function checkMandatory(master, adapted, width, height) {
+  const reasons = [];
+  const short = Math.min(width, height);
+  const isStrip = height <= 120 && width / height >= 2.5;
+  const present = (cfg, slot) => cfg.elements.some((e) => (e.slot === slot || e.type === "text" && e.role === slot || e.type === "image" && e.role === slot) && (e.type !== "text" || e.text.trim().length > 0) && e.w > 0 && e.h > 0);
+  const hadLogo = present(master, "logo") || present(master, "lockup");
+  const hasLogo = present(adapted, "logo") || present(adapted, "lockup");
+  if (present(master, "headline") && !present(adapted, "headline")) reasons.push("The headline is missing.");
+  if (present(master, "cta") && !present(adapted, "cta")) reasons.push("The call-to-action is missing.");
+  if (hadLogo && !hasLogo) reasons.push("The logo tile / lockup is missing.");
+  if (!isStrip && present(master, "message") && !present(adapted, "message")) reasons.push("The message line is missing.");
+  const logoMin = Math.max(24, Math.round(short / 8));
+  for (const el of adapted.elements) {
+    if (el.type !== "image") continue;
+    if (el.slot === "logo" || el.role === "logo") {
+      if (Math.min(el.w, el.h) < logoMin) reasons.push(`Logo tile is ${Math.round(el.w)}\xD7${Math.round(el.h)}px \u2014 under the ${logoMin}px minimum for this canvas.`);
+    } else if (el.slot === "lockup") {
+      const lockupMin = isStrip ? 14 : Math.max(16, Math.round(short * 0.05));
+      if (el.h < lockupMin) reasons.push(`Lockup is ${Math.round(el.h)}px tall \u2014 under the ${lockupMin}px minimum for this canvas.`);
+    }
+  }
+  const copyish = adapted.elements.filter((e) => e.type === "text" && e.text.trim().length > 0 || e.type === "image" && ["headline", "subheadline", "message", "cta", "lockup"].includes(e.slot ?? ""));
+  const cutouts = adapted.elements.filter((e) => e.type === "image" && e.slot === "cutout");
+  const overlapFrac2 = (a, b) => {
+    const ix = Math.max(0, Math.min(a.x + a.w, b.x + b.w) - Math.max(a.x, b.x));
+    const iy = Math.max(0, Math.min(a.y + a.h, b.y + b.h) - Math.max(a.y, b.y));
+    return ix * iy / Math.max(1, Math.min(a.w * a.h, b.w * b.h));
+  };
+  for (let i = 0; i < copyish.length; i++) {
+    for (let j = i + 1; j < copyish.length; j++) {
+      const f = overlapFrac2(copyish[i], copyish[j]);
+      if (f > 0.15) reasons.push(`"${label(copyish[i])}" and "${label(copyish[j])}" overlap by ${Math.round(f * 100)}%.`);
+    }
+    for (const c of cutouts) {
+      const f = overlapFrac2(copyish[i], c);
+      if (f > 0.15) reasons.push(`"${label(copyish[i])}" runs over the cut-out imagery by ${Math.round(f * 100)}%.`);
+    }
+  }
+  for (const el of adapted.elements) {
+    if (!["headline", "cta", "logo", "lockup"].includes(el.slot ?? (el.type === "image" ? el.role : el.type === "text" ? el.role : ""))) continue;
+    if (el.x < -0.5 || el.y < -0.5 || el.x + el.w > width + 0.5 || el.y + el.h > height + 0.5) reasons.push(`"${label(el)}" sits partly outside the canvas.`);
+  }
+  return [...new Set(reasons)];
+}
 function label(el) {
   if (el.type === "text" && el.text) return el.text.replace(/\s+/g, " ").slice(0, 28);
   return el.slot ?? el.id;
@@ -232242,7 +232357,149 @@ async function enrichLayeredArtwork(config2, W2, H2, io) {
       logger2.warn({ err }, "layered artwork: glyph merge failed; keeping separate glyph layers");
     }
   }
+  if (next.elements.some((e) => e.type === "image" && e.slot === "panel")) {
+    try {
+      const split2 = await splitPanelGraphic(next, io);
+      next = split2.config;
+      inferred.notes.push(...split2.notes);
+    } catch (err) {
+      logger2.warn({ err }, "layered artwork: panel split failed; keeping the baked panel");
+    }
+  }
   return { config: next, changed: hasLayeredSlots(next), notes: inferred.notes };
+}
+function hasPanelParts(config2) {
+  return config2.elements.some((e) => e.type === "image" && e.panelPart === true);
+}
+async function splitPanelGraphic(config2, io) {
+  const notes = [];
+  if (hasPanelParts(config2)) return { config: config2, notes };
+  const panel = config2.elements.find((e) => e.type === "image" && e.slot === "panel" && !!e.src);
+  if (!panel) return { config: config2, notes };
+  const bytes2 = await io.loadImage(panel.src);
+  if (!bytes2) return { config: config2, notes };
+  const meta = await sharp6(bytes2).metadata();
+  if (!meta.width || !meta.height) return { config: config2, notes };
+  const W2 = meta.width, H2 = meta.height;
+  const raw = await sharp6(bytes2).ensureAlpha().raw().toBuffer();
+  const px = (x, y) => {
+    const i = (y * W2 + x) * 4;
+    return [raw[i], raw[i + 1], raw[i + 2], raw[i + 3]];
+  };
+  const tally = /* @__PURE__ */ new Map();
+  const bump = (x, y) => {
+    const [r3, g, b, a] = px(x, y);
+    if (a < 200) return;
+    const k = `${r3 >> 3},${g >> 3},${b >> 3}`;
+    tally.set(k, (tally.get(k) ?? 0) + 1);
+  };
+  for (let x = 0; x < W2; x++) {
+    bump(x, 0);
+    bump(x, H2 - 1);
+    bump(x, Math.floor(H2 / 2));
+  }
+  for (let y = 0; y < H2; y++) {
+    bump(0, y);
+    bump(W2 - 1, y);
+  }
+  const top = [...tally.entries()].sort((a, b) => b[1] - a[1])[0];
+  if (!top) return { config: config2, notes };
+  const [gr, gg, gb] = top[0].split(",").map((v) => (Number(v) << 3) + 4);
+  const classify = (r3, g, b, a) => {
+    if (a < 40) return "none";
+    if (Math.abs(r3 - gr) + Math.abs(g - gg) + Math.abs(b - gb) < 72) return "ground";
+    if (r3 > 185 && g > 165 && b < 140 && r3 - b > 80) return "yellow";
+    if (r3 > 210 && g > 210 && b > 210) return "white";
+    return "other";
+  };
+  const rows = [];
+  for (let y = 0; y < H2; y++) {
+    const st = { content: 0, yellow: 0, white: 0, other: 0, x0: W2, x1: -1 };
+    for (let x = 0; x < W2; x++) {
+      const [r3, g, b, a] = px(x, y);
+      const c = classify(r3, g, b, a);
+      if (c === "ground" || c === "none") continue;
+      st.content++;
+      if (c === "yellow") st.yellow++;
+      else if (c === "white") st.white++;
+      else st.other++;
+      if (x < st.x0) st.x0 = x;
+      if (x > st.x1) st.x1 = x;
+    }
+    rows.push(st);
+  }
+  const segs = [];
+  let cur = null;
+  let gap = 0;
+  for (let y = 0; y < H2; y++) {
+    const st = rows[y];
+    if (st.content >= 2) {
+      if (!cur) cur = { y0: y, y1: y, x0: st.x0, x1: st.x1, content: 0, yellow: 0, white: 0, other: 0 };
+      cur.y1 = y;
+      cur.x0 = Math.min(cur.x0, st.x0);
+      cur.x1 = Math.max(cur.x1, st.x1);
+      cur.content += st.content;
+      cur.yellow += st.yellow;
+      cur.white += st.white;
+      cur.other += st.other;
+      gap = 0;
+    } else if (cur) {
+      gap++;
+      if (gap > 4) {
+        segs.push(cur);
+        cur = null;
+        gap = 0;
+      }
+    }
+  }
+  if (cur) segs.push(cur);
+  const isBand = (s2) => s2.other >= s2.content * 0.2 && s2.yellow >= s2.content * 0.05 && s2.x1 - s2.x0 >= W2 * 0.6 && s2.y0 < H2 * 0.35;
+  const isMessage = (s2) => !isBand(s2) && s2.yellow >= s2.content * 0.55 && s2.y1 - s2.y0 >= 6;
+  const isLockup = (s2) => !isBand(s2) && !isMessage(s2) && s2.white >= s2.content * 0.3 && s2.white + s2.other >= s2.content * 0.6 && s2.y0 > H2 * 0.35 && s2.y1 - s2.y0 >= 8;
+  const band = segs.find(isBand) ?? null;
+  const message = segs.filter(isMessage).sort((a, b) => b.content - a.content)[0] ?? null;
+  const lockup = [...segs.filter(isLockup)].pop() ?? null;
+  if (!message && !lockup) {
+    notes.push("Panel graphic kept whole: no message or lockup could be told apart in it.");
+    return { config: config2, notes };
+  }
+  const sx = panel.w / W2, sy = panel.h / H2;
+  const parts = [];
+  const cut = async (seg, slot, id) => {
+    const pad = 2;
+    const x0 = Math.max(0, seg.x0 - pad), y0 = Math.max(0, seg.y0 - pad);
+    const x1 = Math.min(W2 - 1, seg.x1 + pad), y1 = Math.min(H2 - 1, seg.y1 + pad);
+    const cw = x1 - x0 + 1, ch = y1 - y0 + 1;
+    const buf = await sharp6(bytes2).extract({ left: x0, top: y0, width: cw, height: ch }).png().toBuffer();
+    const stored = await io.uploadBytes(buf, "image/png");
+    const w = cw * sx, h = ch * sy;
+    const el = {
+      id,
+      type: "image",
+      role: "decoration",
+      slot,
+      src: `/api/storage${stored}`,
+      fit: "contain",
+      x: r2(panel.x + x0 * sx),
+      y: r2(panel.y + y0 * sy),
+      w: r2(w),
+      h: r2(h),
+      panelPart: true,
+      ...panel.motion ? { motion: { ...panel.motion, w0: r2(w), h0: r2(h) } } : {}
+    };
+    parts.push(el);
+  };
+  if (band) await cut(band, "band", "layer_band");
+  if (message) await cut(message, "message", "layer_message");
+  if (lockup) await cut(lockup, "lockup", "layer_lockup");
+  const idx = config2.elements.findIndex((e) => e.id === panel.id);
+  const elements = [...config2.elements];
+  elements.splice(idx + 1, 0, ...parts);
+  notes.push(`Panel graphic cut into ${parts.map((p) => p.slot).join(", ")} so the panel can be re-stacked at any size.`);
+  return { config: { ...config2, elements }, notes };
+}
+function recipeCtaFloor(recipe) {
+  return recipe.ctaFloorPx;
 }
 function fitInto(box, aspect, maxScaleUp = 1.6, natural) {
   let w = box.w, h = w / aspect;
@@ -232265,12 +232522,14 @@ function adaptLayered(master, srcW, srcH, dstW, dstH, opts = {}) {
   const headlineParts = by("headline");
   if (!headlineParts.length) return null;
   const notes = [];
-  const cls = classifyAspect(dstW, dstH);
+  const cls = opts.formatClass ?? classifyAspect(dstW, dstH);
   const base = RECIPES[cls];
+  const short = Math.min(dstW, dstH);
+  const isDisplayCanvas = short <= 400;
   const spec = opts.spec ?? null;
   const zone = spec?.zones[cls];
-  const recipe = zone ? { ...base, axis: zone.axis === "row" ? "row" : zone.axis === "side" ? "side" : "stacked", photoFrac: zone.photoFrac, bandFrac: zone.bandFrac, bandAt: zone.bandAt } : base;
-  const short = Math.min(dstW, dstH);
+  const zonePhotoFrac = zone ? isDisplayCanvas && zone.displayPhotoFrac != null ? zone.displayPhotoFrac : zone.photoFrac : base.photoFrac;
+  const recipe = zone ? { ...base, axis: zone.axis === "row" ? "row" : zone.axis === "side" ? "side" : "stacked", photoFrac: zonePhotoFrac, bandFrac: zone.bandFrac, bandAt: zone.bandAt } : base;
   const margin = r2(short / 18);
   const isStrip = cls === "strip";
   if (spec) notes.push(`Laid out to the ${spec.name} schema.`);
@@ -232284,12 +232543,64 @@ function adaptLayered(master, srcW, srcH, dstW, dstH, opts = {}) {
     photoZone = { x: 0, y: 0, w: pw, h: dstH };
     panelZone = { x: pw, y: 0, w: dstW - pw, h: dstH };
   }
-  const tile = opts.logoUrl ? guidelineLogoPlacement(dstW, dstH) : null;
+  const tile = opts.logoUrl && by("logo").length > 0 ? guidelineLogoPlacement(dstW, dstH) : null;
   if (tile && recipe.axis !== "stacked") panelZone = { ...panelZone, w: Math.max(40, tile.tile.x - panelZone.x - margin) };
+  const panelInnerEarly = { x: panelZone.x + margin, y: panelZone.y + margin, w: panelZone.w - margin * 2, h: panelZone.h - margin * 2 };
+  const stripCta0 = by("cta")[0];
+  const stripLockup0 = by("lockup").find((i) => i.panelPart) ?? null;
+  const stripGap = Math.max(6, margin);
+  let stripCtaBox = null;
+  let stripLockupBox = null;
+  let stripReserve = 0;
+  if (isStrip) {
+    if (stripCta0) {
+      let h = Math.min(panelInnerEarly.h * 0.6, Math.max(recipeCtaFloor(base), stripCta0.h));
+      let w = h * (stripCta0.w / Math.max(1, stripCta0.h));
+      if (w > panelInnerEarly.w * 0.26) {
+        w = panelInnerEarly.w * 0.26;
+        h = w * (stripCta0.h / Math.max(1, stripCta0.w));
+      }
+      stripCtaBox = { w, h };
+      stripReserve += w + stripGap;
+    }
+    if (stripLockup0) {
+      let h = Math.min(panelInnerEarly.h * 0.5, stripLockup0.h);
+      let w = h * (stripLockup0.w / Math.max(1, stripLockup0.h));
+      if (w > panelInnerEarly.w * 0.26) {
+        w = panelInnerEarly.w * 0.26;
+        h = w * (stripLockup0.h / Math.max(1, stripLockup0.w));
+      }
+      stripLockupBox = { w, h };
+      stripReserve += w + stripGap;
+    }
+  }
   const out = [];
   if (opts.panelFill) out.push({ id: "ly_panel_ground", type: "rect", slot: "panel", fill: opts.panelFill, x: panelZone.x, y: panelZone.y, w: panelZone.w, h: panelZone.h, locked: true });
   const photo = by("photo")[0];
-  if (photo) out.push({ ...photo, id: "ly_photo", fit: "cover", x: photoZone.x, y: photoZone.y, w: photoZone.w, h: photoZone.h });
+  const cutoutForPan = [...by("cutout")].sort((a, b) => area2(b) - area2(a))[0];
+  let panX = typeof photo?.focusX === "number" ? photo.focusX : 0.5;
+  let panY = typeof photo?.focusY === "number" ? photo.focusY : 0.5;
+  if (photo && cutoutForPan && !isStrip) {
+    const photoAspect = photo.w / Math.max(1, photo.h);
+    let rw = photoZone.w, rh = rw / photoAspect;
+    if (rh < photoZone.h) {
+      rh = photoZone.h;
+      rw = rh * photoAspect;
+    }
+    const sx = rw / Math.max(1, photo.w), sy = rh / Math.max(1, photo.h);
+    const bx0 = (cutoutForPan.x - photo.x) * sx - photoZone.w * 0.03, bx1 = (cutoutForPan.x + cutoutForPan.w - photo.x) * sx + photoZone.w * 0.03;
+    const by0 = (cutoutForPan.y - photo.y) * sy - photoZone.h * 0.05, by1 = (cutoutForPan.y + cutoutForPan.h - photo.y) * sy + photoZone.h * 0.05;
+    const slackX = rw - photoZone.w, slackY = rh - photoZone.h;
+    const fit = (b0, b1, win, slack, cur, copyRoom) => {
+      if (slack <= 0) return cur;
+      const lo = Math.max(0, b1 - win), hi = Math.min(slack, b0 - win * copyRoom);
+      if (lo <= hi) return Math.min(1, Math.max(0, Math.min(Math.max(cur * slack, lo), hi) / slack));
+      return cur;
+    };
+    panX = fit(bx0, bx1, photoZone.w, slackX, panX, 0);
+    panY = fit(by0, by1, photoZone.h, slackY, panY, 0.45);
+  }
+  if (photo) out.push({ ...photo, id: "ly_photo", fit: "cover", focusX: Math.round(panX * 1e3) / 1e3, focusY: Math.round(panY * 1e3) / 1e3, x: photoZone.x, y: photoZone.y, w: photoZone.w, h: photoZone.h });
   const cutout = [...by("cutout")].sort((a, b) => area2(b) - area2(a))[0];
   let cutoutBox = null;
   if (cutout && photo && !isStrip) {
@@ -232299,8 +232610,8 @@ function adaptLayered(master, srcW, srcH, dstW, dstH, opts = {}) {
       rh = photoZone.h;
       rw = rh * photoAspect;
     }
-    const fx = typeof photo.focusX === "number" ? photo.focusX : 0.5;
-    const fy = typeof photo.focusY === "number" ? photo.focusY : 0.5;
+    const fx = panX;
+    const fy = panY;
     const rx = photoZone.x - (rw - photoZone.w) * fx;
     const ry = photoZone.y - (rh - photoZone.h) * fy;
     const sx = rw / Math.max(1, photo.w), sy = rh / Math.max(1, photo.h);
@@ -232318,7 +232629,7 @@ function adaptLayered(master, srcW, srcH, dstW, dstH, opts = {}) {
   const groupH = sub ? Math.max(hBox.y + hBox.h, sub.y + sub.h) - hBox.y : hBox.h;
   const groupW = Math.max(hBox.w, sub ? sub.x + sub.w - hBox.x : 0);
   const rowLike = isStrip || recipe.axis === "row";
-  const copyBand = rowLike ? { x: panelZone.x + margin, y: panelZone.y + margin, w: r2(panelZone.w * 0.55), h: panelZone.h - margin * 2 } : { x: photoZone.x + margin, y: photoZone.y + margin, w: photoZone.w - margin * 2, h: (cutoutBox ? cutoutBox.y : photoZone.y + photoZone.h) - photoZone.y - margin * 2 };
+  const copyBand = rowLike ? { x: panelZone.x + margin, y: panelZone.y + margin, w: r2(isStrip ? Math.max(40, panelZone.w - margin * 2 - stripReserve) : panelZone.w * 0.55), h: panelZone.h - margin * 2 } : { x: photoZone.x + margin, y: photoZone.y + margin, w: photoZone.w - margin * 2, h: (cutoutBox ? cutoutBox.y : photoZone.y + photoZone.h) - photoZone.y - margin * 2 };
   const target = fitInto({ ...copyBand, w: r2(copyBand.w * (rowLike ? 1 : recipe.headlineWidthFrac)), h: rowLike ? copyBand.h : r2(Math.min(copyBand.h, photoZone.h * recipe.headlineMaxHeightFrac * 1.5)) }, groupW / Math.max(1, groupH), 2.2);
   let s2 = target.w / Math.max(1, groupW);
   const specHeadline = spec?.parts.headline;
@@ -232345,47 +232656,148 @@ function adaptLayered(master, srcW, srcH, dstW, dstH, opts = {}) {
   const panelImg = by("panel")[0];
   const cta = by("cta")[0];
   const panelInner = { x: panelZone.x + margin, y: panelZone.y + margin, w: panelZone.w - margin * 2, h: panelZone.h - margin * 2 };
-  const panelFit = panelImg && !isStrip ? fitInto(panelInner, panelImg.w / Math.max(1, panelImg.h), 1.4) : null;
-  const keepPanelImg = !!(panelImg && panelFit && panelFit.h >= panelImg.h * 0.5);
-  if (panelImg && !isStrip && !keepPanelImg) notes.push("Panel graphic dropped: it would render too small to read at this size; the CTA sits on the brand panel.");
-  if (panelImg && keepPanelImg && panelFit) {
-    const aspect = panelImg.w / Math.max(1, panelImg.h);
-    let pw = panelZone.w, ph = pw / aspect;
-    if (ph > panelZone.h) {
-      ph = panelZone.h;
-      pw = ph * aspect;
+  const partBand = by("band").find((i) => i.panelPart) ?? null;
+  const partMessage = by("message").find((i) => i.panelPart) ?? null;
+  const partLockup = by("lockup").find((i) => i.panelPart) ?? null;
+  const fixedCta = spec?.parts.cta?.fixedPx ?? null;
+  const ctaLooksFixed = !!(cta && fixedCta && Math.abs(cta.h - fixedCta.h) <= 3 && Math.abs(cta.w - fixedCta.w) <= 6);
+  if ((partMessage || partLockup) && !isStrip) {
+    const ps = panelImg ? panelZone.w / Math.max(1, panelImg.w) : 1;
+    const shallow = panelZone.h < 200;
+    let stackTop = panelZone.y + (shallow ? margin / 2 : margin);
+    if (partBand && recipe.bandAt !== "none") {
+      let bw = panelZone.w, bh = bw * (partBand.h / Math.max(1, partBand.w));
+      const capH = panelZone.h * (shallow ? 0.2 : 0.25);
+      if (bh > capH) {
+        bh = capH;
+        bw = bh * (partBand.w / Math.max(1, partBand.h));
+      }
+      out.push({ ...partBand, id: "ly_band", fit: "contain", x: r2(panelZone.x + (panelZone.w - bw) / 2), y: r2(panelZone.y), w: r2(bw), h: r2(bh) });
+      stackTop = panelZone.y + bh + margin / 2;
     }
-    const pb = { x: panelZone.x + (panelZone.w - pw) / 2, y: 0, w: pw, h: ph };
-    const y = panelZone.y + panelZone.h - pb.h;
-    out.push({ ...panelImg, id: "ly_panel", fit: "contain", x: r2(pb.x), y: r2(y), w: r2(pb.w), h: r2(pb.h) });
+    const stackBottom = panelZone.y + panelZone.h - (shallow ? margin / 2 : margin);
+    const avail = Math.max(10, stackBottom - stackTop);
+    const gapPx = Math.max(4, margin / 2);
+    const items = [];
+    if (partMessage) items.push({ el: partMessage, w: partMessage.w * ps, h: partMessage.h * ps, minH: 11, fixed: false });
     if (cta) {
-      const ps = pb.w / Math.max(1, panelImg.w);
-      const fixed = spec?.parts.cta?.fixedPx;
-      const looksFixed = !!fixed && Math.abs(cta.h - fixed.h) <= 3 && Math.abs(cta.w - fixed.w) <= 6;
-      const isDisplayCanvas = short <= 400;
       const oohShare = recipe.axis === "stacked" ? 0.075 : 0.125;
-      const ctaH = looksFixed && isDisplayCanvas ? fixed.h : looksFixed ? r2(short * oohShare) : Math.max(recipe.ctaFloorPx, r2(cta.h * ps));
-      const ctaW = looksFixed && isDisplayCanvas ? fixed.w : r2(ctaH * (cta.w / Math.max(1, cta.h)));
-      const relX = (cta.x + cta.w / 2 - panelImg.x) / Math.max(1, panelImg.w);
-      const relY = (cta.y + cta.h / 2 - panelImg.y) / Math.max(1, panelImg.h);
-      out.push({ ...cta, id: "ly_cta", fit: "contain", x: r2(pb.x + relX * pb.w - ctaW / 2), y: r2(y + relY * pb.h - ctaH / 2), w: ctaW, h: ctaH });
+      const wantFixed = ctaLooksFixed && isDisplayCanvas && !shallow && fixedCta.w <= panelInner.w * 0.9;
+      const fitFixed = ctaLooksFixed && isDisplayCanvas && !wantFixed;
+      const ctaH = wantFixed ? fixedCta.h : fitFixed ? r2(panelInner.w * 0.85 * (fixedCta.h / fixedCta.w)) : ctaLooksFixed ? r2(short * oohShare) : Math.max(recipe.ctaFloorPx, r2(cta.h * ps));
+      const ctaW = wantFixed ? fixedCta.w : Math.min(panelInner.w * 0.85, r2(ctaH * (cta.w / Math.max(1, cta.h))));
+      items.push({ el: cta, w: ctaW, h: wantFixed ? ctaH : ctaW * (cta.h / Math.max(1, cta.w)), minH: recipe.ctaFloorPx, fixed: wantFixed });
     }
+    if (partLockup) items.push({ el: partLockup, w: partLockup.w * ps, h: partLockup.h * ps, minH: 14, fixed: false });
+    const capW = (it) => it.el === partMessage ? panelInner.w * 0.9 : it.el === partLockup ? panelInner.w * 0.7 : panelInner.w * 0.85;
+    for (const it of items) {
+      if (it.w > capW(it)) {
+        const k = capW(it) / it.w;
+        it.w *= k;
+        it.h *= k;
+      }
+    }
+    const total = () => items.reduce((a, it) => a + it.h, 0) + gapPx * (items.length - 1);
+    if (total() > avail) {
+      const flexible = items.filter((it) => !it.fixed);
+      const fixedH = items.filter((it) => it.fixed).reduce((a, it) => a + it.h, 0);
+      const room = avail - gapPx * (items.length - 1) - fixedH;
+      const flexH = flexible.reduce((a, it) => a + it.h, 0);
+      const k = Math.max(0.2, room / Math.max(1, flexH));
+      for (const it of flexible) {
+        const h = Math.max(it.minH, it.h * k);
+        it.w *= h / it.h;
+        it.h = h;
+      }
+      if (total() > avail) {
+        const k2 = avail / total();
+        for (const it of items) {
+          it.w *= k2;
+          it.h = Math.max(it.minH, it.h * k2);
+        }
+        notes.push("Panel column compressed to fit this zone; check the message and lockup are legible.");
+      }
+    }
+    const anchorOf = (it) => {
+      const part = it.el === partMessage ? spec?.parts.message : it.el === partLockup ? spec?.parts.lockup : spec?.parts.cta;
+      return part?.anchor.y ?? null;
+    };
+    let anchored = spec && !shallow ? items.map((it) => {
+      const a = anchorOf(it);
+      if (a == null) return NaN;
+      const centre = panelZone.y + a * panelZone.h;
+      return Math.max(stackTop, Math.min(stackBottom - it.h, centre - it.h / 2));
+    }) : null;
+    if (anchored && anchored.some((v) => Number.isNaN(v))) anchored = null;
+    if (anchored) {
+      for (let i = 1; i < items.length; i++) if (anchored[i] < anchored[i - 1] + items[i - 1].h + gapPx) {
+        anchored = null;
+        break;
+      }
+    }
+    let y = stackTop + Math.max(0, (avail - total()) / 2);
+    for (const [i, it] of items.entries()) {
+      const id = it.el === partMessage ? "ly_message" : it.el === partLockup ? "ly_lockup" : "ly_cta";
+      const yy = anchored ? anchored[i] : y;
+      out.push({ ...it.el, id, fit: "contain", x: r2(panelZone.x + (panelZone.w - it.w) / 2), y: r2(yy), w: r2(it.w), h: r2(it.h) });
+      y += it.h + gapPx;
+    }
+    if (panelImg) notes.push("Panel re-stacked from its parts (band, message, button, lockup) for this zone.");
   } else {
-    if (panelImg && isStrip) notes.push("Panel graphic dropped for the strip; the CTA sits on the brand panel.");
-    if (cta) {
-      const fixed = spec?.parts.cta?.fixedPx;
-      const looksFixed = !!fixed && Math.abs(cta.h - fixed.h) <= 3 && Math.abs(cta.w - fixed.w) <= 6;
-      const isFixedAsset = looksFixed && short <= 400 && fixed.h <= panelInner.h && fixed.w <= panelInner.w;
-      const oohShare = recipe.axis === "stacked" ? 0.075 : 0.125;
-      const ctaH = isFixedAsset ? fixed.h : looksFixed ? r2(Math.min(panelInner.h * 0.6, short * oohShare)) : Math.max(recipe.ctaFloorPx, r2(Math.min(panelInner.h * 0.6, short * recipe.ctaHeightFrac)));
-      const ctaW = isFixedAsset ? fixed.w : r2(Math.min(ctaH * (cta.w / Math.max(1, cta.h)), panelInner.w * recipe.ctaMaxWidthFrac));
-      const cx = isStrip || recipe.axis === "row" ? panelInner.x + panelInner.w - ctaW : panelInner.x + (panelInner.w - ctaW) / 2;
-      out.push({ ...cta, id: "ly_cta", fit: "contain", x: r2(cx), y: r2(panelInner.y + (panelInner.h - ctaH) / 2), w: ctaW, h: ctaH });
+    const partsAlreadyPlaced = false;
+    void partsAlreadyPlaced;
+    const panelFit = panelImg && !isStrip ? fitInto(panelInner, panelImg.w / Math.max(1, panelImg.h), 1.4) : null;
+    const keepPanelImg = !!(panelImg && panelFit && panelFit.h >= panelImg.h * 0.5);
+    if (panelImg && !isStrip && !keepPanelImg) notes.push("Panel graphic dropped: it would render too small to read at this size; the CTA sits on the brand panel.");
+    if (panelImg && keepPanelImg && panelFit) {
+      const aspect = panelImg.w / Math.max(1, panelImg.h);
+      let pw = panelZone.w, ph = pw / aspect;
+      if (ph > panelZone.h) {
+        ph = panelZone.h;
+        pw = ph * aspect;
+      }
+      const pb = { x: panelZone.x + (panelZone.w - pw) / 2, y: 0, w: pw, h: ph };
+      const y = panelZone.y + panelZone.h - pb.h;
+      out.push({ ...panelImg, id: "ly_panel", fit: "contain", x: r2(pb.x), y: r2(y), w: r2(pb.w), h: r2(pb.h) });
+      if (cta) {
+        const ps = pb.w / Math.max(1, panelImg.w);
+        const fixed = spec?.parts.cta?.fixedPx;
+        const looksFixed = !!fixed && Math.abs(cta.h - fixed.h) <= 3 && Math.abs(cta.w - fixed.w) <= 6;
+        const isDisplayCanvas2 = short <= 400;
+        const oohShare = recipe.axis === "stacked" ? 0.075 : 0.125;
+        const ctaH = looksFixed && isDisplayCanvas2 ? fixed.h : looksFixed ? r2(short * oohShare) : Math.max(recipe.ctaFloorPx, r2(cta.h * ps));
+        const ctaW = looksFixed && isDisplayCanvas2 ? fixed.w : r2(ctaH * (cta.w / Math.max(1, cta.h)));
+        const relX = (cta.x + cta.w / 2 - panelImg.x) / Math.max(1, panelImg.w);
+        const relY = (cta.y + cta.h / 2 - panelImg.y) / Math.max(1, panelImg.h);
+        out.push({ ...cta, id: "ly_cta", fit: "contain", x: r2(pb.x + relX * pb.w - ctaW / 2), y: r2(y + relY * pb.h - ctaH / 2), w: ctaW, h: ctaH });
+      }
+    } else {
+      if (panelImg && isStrip) notes.push("Panel graphic dropped for the strip; the CTA sits on the brand panel.");
+      if (cta) {
+        const fixed = spec?.parts.cta?.fixedPx;
+        const looksFixed = !!fixed && Math.abs(cta.h - fixed.h) <= 3 && Math.abs(cta.w - fixed.w) <= 6;
+        const isFixedAsset = looksFixed && short <= 400 && fixed.h <= panelInner.h && fixed.w <= panelInner.w;
+        const fitFixed = looksFixed && short <= 400 && !isFixedAsset;
+        const oohShare = recipe.axis === "stacked" ? 0.075 : 0.125;
+        const ctaH = isFixedAsset ? fixed.h : fitFixed ? r2(Math.min(panelInner.h * 0.6, panelInner.w * 0.85 * (fixed.h / fixed.w))) : looksFixed ? r2(Math.min(panelInner.h * 0.6, short * oohShare)) : Math.max(recipe.ctaFloorPx, r2(Math.min(panelInner.h * 0.6, short * recipe.ctaHeightFrac)));
+        const ctaW = isFixedAsset ? fixed.w : r2(Math.min(ctaH * (cta.w / Math.max(1, cta.h)), panelInner.w * recipe.ctaMaxWidthFrac));
+        let rightEdge = panelInner.x + panelInner.w;
+        if (isStrip && partLockup && stripLockupBox) {
+          out.push({ ...partLockup, id: "ly_lockup", fit: "contain", x: r2(rightEdge - stripLockupBox.w), y: r2(panelInner.y + (panelInner.h - stripLockupBox.h) / 2), w: r2(stripLockupBox.w), h: r2(stripLockupBox.h) });
+          rightEdge -= stripLockupBox.w + stripGap;
+        }
+        const cw = isStrip && stripCtaBox ? r2(stripCtaBox.w) : ctaW;
+        const ch = isStrip && stripCtaBox ? r2(stripCtaBox.h) : ctaH;
+        const cx = isStrip || recipe.axis === "row" ? rightEdge - cw : panelInner.x + (panelInner.w - cw) / 2;
+        out.push({ ...cta, id: "ly_cta", fit: "contain", x: r2(cx), y: r2(panelInner.y + (panelInner.h - ch) / 2), w: cw, h: ch });
+      } else if (isStrip && partLockup && stripLockupBox) {
+        out.push({ ...partLockup, id: "ly_lockup", fit: "contain", x: r2(panelInner.x + panelInner.w - stripLockupBox.w), y: r2(panelInner.y + (panelInner.h - stripLockupBox.h) / 2), w: r2(stripLockupBox.w), h: r2(stripLockupBox.h) });
+      }
     }
   }
   const logo = by("logo")[0];
   if (logo && tile) out.push({ ...logo, id: "ly_logo", role: "logo", fit: "contain", locked: true, x: tile.tile.x, y: tile.tile.y, w: tile.tile.w, h: tile.tile.h });
-  const dropped = imgs.filter((i) => !i.slot || i.slot === "other").length;
+  const dropped = imgs.filter((i) => (!i.slot || i.slot === "other") && !i.panelPart).length;
   if (dropped) notes.push(`${dropped} unrecognised decoration layer${dropped === 1 ? "" : "s"} not carried to this size.`);
   notes.push("Built from image layers: the headline and CTA are pictures, so Claude's check aligns them to the approved references rather than re-setting type.");
   return { config: { ...master, elements: out, adaptMethod: "layered" }, notes };
@@ -233049,11 +233461,11 @@ var GET_READY_BURST_2 = {
   },
   hierarchy: ["headline", "kicker/subheadline", "message", "cta", "lockup"],
   zones: {
-    portrait: { axis: "stacked", photoFrac: 0.569, bandFrac: 0.059, bandAt: "seam", tolerance: 0.03 },
+    portrait: { axis: "stacked", photoFrac: 0.569, displayPhotoFrac: 0.568, bandFrac: 0.059, bandAt: "seam", tolerance: 0.03 },
     tower: { axis: "stacked", photoFrac: 0.52, bandFrac: 0.045, bandAt: "seam", tolerance: 0.05 },
-    square: { axis: "stacked", photoFrac: 0.6, bandFrac: 0.05, bandAt: "seam", tolerance: 0.05 },
+    square: { axis: "stacked", photoFrac: 0.6, displayPhotoFrac: 0.55, bandFrac: 0.05, bandAt: "seam", tolerance: 0.05 },
     landscape: { axis: "side", photoFrac: 0.55, bandFrac: 0.15, bandAt: "panelTop", tolerance: 0.05 },
-    wide: { axis: "side", photoFrac: 0.5, bandFrac: 0.169, bandAt: "panelTop", tolerance: 0.05 },
+    wide: { axis: "side", photoFrac: 0.5, displayPhotoFrac: 0.69, bandFrac: 0.169, bandAt: "panelTop", tolerance: 0.05 },
     strip: { axis: "row", photoFrac: 0.3, bandFrac: 0, bandAt: "none", tolerance: 0.05 }
   },
   parts: {
@@ -239994,10 +240406,11 @@ async function layeredPanelFill(config2, req) {
     return null;
   }
 }
-async function adaptOne(master, masterConfig, width, height, brandInfo, log, exemplars = [], excludeId) {
+async function adaptOne(master, masterConfig, width, height, brandInfo, log, exemplars = [], excludeId, hints = {}) {
   let adapted = null;
   let method = "scaled";
   const notes = [];
+  const spec = describeFormat(width, height, hints.name ?? null, hints.channel ?? null);
   const reference = chooseReference(exemplars, width, height, excludeId);
   if (reference?.scaleFromExemplar) {
     adapted = adaptFreeformConfig(reference.exemplar.config, reference.exemplar.width, reference.exemplar.height, width, height);
@@ -240007,7 +240420,7 @@ async function adaptOne(master, masterConfig, width, height, brandInfo, log, exe
   const hasTextHeadline = masterConfig.elements.some((e) => e.type === "text" && e.text.trim().length > 0);
   const styleSpec = styleSchemaFor(master.name);
   if (!adapted && !hasTextHeadline && hasLayeredSlots(masterConfig)) {
-    const ly = adaptLayered(masterConfig, master.width, master.height, width, height, { panelFill: brandInfo.panelFill ?? null, logoUrl: brandInfo.logoUrl, spec: styleSpec });
+    const ly = adaptLayered(masterConfig, master.width, master.height, width, height, { panelFill: brandInfo.panelFill ?? null, logoUrl: brandInfo.logoUrl, spec: styleSpec, formatClass: spec.formatClass });
     if (ly) {
       adapted = ly.config;
       method = "layered";
@@ -240016,9 +240429,10 @@ async function adaptOne(master, masterConfig, width, height, brandInfo, log, exe
   }
   if (!adapted && shouldRecompose(masterConfig, master.width, master.height, width, height)) {
     try {
-      const specZone = styleSpec?.zones[describeFormat(width, height, null).formatClass];
+      const specZone = styleSpec?.zones[spec.formatClass];
       const rc = await recomposeToFormat(masterConfig, master.width, master.height, width, height, {
         brand: brandInfo,
+        formatClass: spec.formatClass,
         // An approved piece's measurements lead; else the campaign schema's zones; else the class recipe.
         ...reference ? { recipeOverrides: reference.exemplar.measured } : specZone ? { recipeOverrides: { photoFrac: specZone.photoFrac, bandFrac: specZone.bandFrac, bandAt: specZone.bandAt } } : {}
       });
@@ -240051,8 +240465,8 @@ async function adaptOne(master, masterConfig, width, height, brandInfo, log, exe
       method = "scaled";
     }
   }
-  const spec = describeFormat(width, height, null);
   const issues = checkLayout(adapted, width, height);
+  const rejected = checkMandatory(masterConfig, adapted, width, height);
   let feedbackLine = null;
   try {
     feedbackLine = describeFormatFeedback(await feedbackForFormat(spec.formatClass));
@@ -240063,13 +240477,15 @@ async function adaptOne(master, masterConfig, width, height, brandInfo, log, exe
     ...adapted,
     adaptMethod: adapted.adaptMethod ?? method,
     adaptNotes: [
+      ...rejected.map((r3) => `Rejected: ${r3}`),
       ...adapted.adaptNotes ?? [],
       ...notes,
       ...issues.map((i) => `${i.severity === "error" ? "Check" : "Note"}: ${i.message}`),
       ...feedbackLine ? [feedbackLine] : []
-    ]
+    ],
+    ...rejected.length > 0 ? { rejected } : {}
   });
-  return { config: config2, method, spec, reference };
+  return { config: config2, method, spec, reference, rejected };
 }
 router13.post("/templates/:id/adapt", requireAdmin, async (req, res) => {
   const id = Number(req.params.id);
@@ -240099,6 +240515,20 @@ router13.post("/templates/:id/adapt", requireAdmin, async (req, res) => {
     }
   } catch (err) {
     req.log?.warn?.({ err, templateId: master.id }, "key-visual motion backfill failed; continuing");
+  }
+  if (hasLayeredSlots(masterConfig) && !hasPanelParts(masterConfig) && masterConfig.elements.some((e) => e.type === "image" && e.slot === "panel")) {
+    try {
+      const storage3 = new ObjectStorageService();
+      const split2 = await splitPanelGraphic(masterConfig, { loadImage: makeImageLoader(req), uploadBytes: (bytes2, ct) => storage3.uploadBytes(bytes2, ct) });
+      if (hasPanelParts(split2.config)) {
+        masterConfig = normalizeFreeformConfig({ ...parsed, elements: split2.config.elements });
+        parsed = { ...parsed, elements: masterConfig.elements };
+        await db.update(templatesTable).set({ config: JSON.stringify(parsed), updatedAt: /* @__PURE__ */ new Date() }).where(eq(templatesTable.id, master.id));
+        req.log?.info?.({ templateId: master.id, notes: split2.notes }, "panel graphic cut into parts");
+      }
+    } catch (err) {
+      req.log?.warn?.({ err, templateId: master.id }, "panel split failed; continuing");
+    }
   }
   if (isImageOnly(masterConfig) && !hasLayeredSlots(masterConfig)) {
     try {
@@ -240142,6 +240572,7 @@ router13.post("/templates/:id/adapt", requireAdmin, async (req, res) => {
     }
   }
   const created = [];
+  let rejectedCount = 0;
   for (const raw of rawTargets) {
     if (typeof raw !== "object" || raw === null) continue;
     const t = raw;
@@ -240157,11 +240588,16 @@ router13.post("/templates/:id/adapt", requireAdmin, async (req, res) => {
     if (!Number.isInteger(width) || !Number.isInteger(height) || width < 16 || height < 16 || width > 8e3 || height > 8e3) {
       continue;
     }
-    const { config: merged, method, spec } = await adaptOne(master, masterConfig, width, height, brandInfo, req.log, exemplars);
+    const hints = {
+      name: typeof t.formatName === "string" ? t.formatName : typeof t.name === "string" ? t.name : null,
+      channel: typeof t.channel === "string" ? t.channel : null
+    };
+    const { config: merged, method, spec, rejected } = await adaptOne(master, masterConfig, width, height, brandInfo, req.log, exemplars, void 0, hints);
+    if (rejected.length > 0) rejectedCount++;
     const name = typeof t.name === "string" && t.name.trim() ? t.name.trim().slice(0, 120) : `${master.name} ${spec.entry ? `${spec.label} ` : ""}${width}\xD7${height}`;
     const [template] = await db.insert(templatesTable).values({
       name,
-      description: `Adapted from "${master.name}" (${master.width}\xD7${master.height}) \xB7 ${method.replace(":", " ")} \xB7 ${spec.formatClass}`,
+      description: `${rejected.length > 0 ? "REJECTED \xB7 " : ""}Adapted from "${master.name}" (${master.width}\xD7${master.height}) \xB7 ${method.replace(":", " ")} \xB7 ${spec.formatClass}`,
       // Created pieces always land in Work-in-progress, whatever the master
       // is; only "Make template" moves a piece into Templates.
       category: "wip",
@@ -240177,6 +240613,7 @@ router13.post("/templates/:id/adapt", requireAdmin, async (req, res) => {
     res.status(400).json({ error: "No valid adaptation targets supplied" });
     return;
   }
+  if (rejectedCount > 0) res.setHeader("X-Adapt-Rejected", String(rejectedCount));
   res.status(201).json(created.map(formatTemplate));
 });
 router13.post("/templates/:id/claude-review", requireAuth, async (req, res) => {
@@ -240671,7 +241108,7 @@ router13.post("/templates/:id/redo", requireAdmin, async (req, res) => {
   try {
     await ensureBrandFontsRegistered();
     const exemplars = await approvedExemplars(master.id);
-    const { config: config2, method, spec, reference } = await adaptOne(master, masterConfig, piece.width, piece.height, brandInfo, req.log, exemplars, piece.id);
+    const { config: config2, method, spec, reference } = await adaptOne(master, masterConfig, piece.width, piece.height, brandInfo, req.log, exemplars, piece.id, { name: piece.name });
     const [updated] = await db.update(templatesTable).set({
       config: JSON.stringify(config2),
       description: `Adapted from "${master.name}" (${master.width}\xD7${master.height}) \xB7 ${method.replace(":", " ")} \xB7 ${spec.formatClass} \xB7 redone ${(/* @__PURE__ */ new Date()).toISOString().slice(0, 10)}`,
@@ -242968,16 +243405,19 @@ async function parseCollateralBrief(bytes2) {
   for (const d of merged) {
     if (d.widthPx == null || d.heightPx == null) continue;
     const k = sizeKey(d);
-    const e = uniq.get(k) ?? { width: d.widthPx, height: d.heightPx, unit: d.unit, count: 0, names: /* @__PURE__ */ new Set() };
+    const e = uniq.get(k) ?? { width: d.widthPx, height: d.heightPx, unit: d.unit, count: 0, names: /* @__PURE__ */ new Set(), channels: /* @__PURE__ */ new Set(), messageTypes: /* @__PURE__ */ new Set() };
     e.count += d.count;
     e.names.add(d.name);
+    if (d.channel) e.channels.add(d.channel);
+    const mt = messageTypeOf(d.name, [d.content.headline ?? "", d.content.body ?? "", d.notes ?? ""]);
+    if (mt) e.messageTypes.add(mt);
     uniq.set(k, e);
   }
   return {
     campaignName,
     projectNumbers: [...new Set(merged.map((d) => d.projectNumber))],
     deliverables: merged,
-    uniqueSizes: [...uniq.values()].map((e) => ({ width: e.width, height: e.height, unit: e.unit, count: e.count, names: [...e.names] })).sort((a, b) => b.count - a.count),
+    uniqueSizes: [...uniq.values()].map((e) => ({ width: e.width, height: e.height, unit: e.unit, count: e.count, names: [...e.names], channels: [...e.channels], messageType: e.messageTypes.size === 1 ? [...e.messageTypes][0] : null })).sort((a, b) => b.count - a.count),
     warnings
   };
 }
@@ -243012,7 +243452,9 @@ router23.post("/campaigns/build-plan", requireAuth, async (req, res) => {
     width: Number(s2.width),
     height: Number(s2.height),
     unit: typeof s2.unit === "string" ? s2.unit : "px",
-    names: Array.isArray(s2.names) ? s2.names.filter((n) => typeof n === "string") : []
+    names: Array.isArray(s2.names) ? s2.names.filter((n) => typeof n === "string") : [],
+    channel: typeof s2.channel === "string" ? s2.channel.slice(0, 60) : Array.isArray(s2.channels) && typeof s2.channels[0] === "string" ? String(s2.channels[0]).slice(0, 60) : null,
+    messageType: typeof s2.messageType === "string" ? s2.messageType.slice(0, 40) : null
   })).filter((s2) => Number.isFinite(s2.width) && Number.isFinite(s2.height) && s2.width > 0 && s2.height > 0).slice(0, 200);
   if (ids.length === 0 || sizes.length === 0) {
     res.status(400).json({ error: "masterTemplateIds and sizes are both required" });
@@ -243032,7 +243474,14 @@ router23.post("/campaigns/build-plan", requireAuth, async (req, res) => {
     } catch {
       flat = false;
     }
-    return { id: r3.id, name: r3.name, width: r3.width, height: r3.height, flat };
+    let copy = [];
+    try {
+      const raw = JSON.parse(r3.config);
+      copy = (raw.elements ?? []).filter((e) => e.type === "text" && typeof e.text === "string").map((e) => e.text);
+    } catch {
+      copy = [];
+    }
+    return { id: r3.id, name: r3.name, width: r3.width, height: r3.height, flat, messageType: messageTypeOf(r3.name, copy) };
   });
   res.json(planCampaignBuild(masters, sizes, { campaignName }));
 });

@@ -10,4 +10,8 @@ export interface AdaptTarget {
   width: number;
   height: number;
   name?: string;
+  /** The brief's deliverable name for the size (decides the format class with the channel) */
+  formatName?: string;
+  /** Brief channel section (DISPLAY, OOH …) */
+  channel?: string;
 }

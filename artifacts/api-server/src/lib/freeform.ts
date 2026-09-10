@@ -97,6 +97,10 @@ export interface MotionPart { src: string; fx: number; fy: number; fw: number; f
 export interface FreeformImage extends FreeformBase {
   type: "image";
   role: ImageRole;
+  /** Cut from a baked panel graphic at import (band, message, lockup) so the
+   * panel can be re-stacked per zone; the panel image itself stays on the
+   * master as the ground reference. */
+  panelPart?: boolean;
   /** Motion from the imported HTML example (see MotionTrack). */
   motion?: MotionTrack;
   /** The motion shared by this layer's group (its animated ancestors only);
@@ -174,6 +178,9 @@ export interface FreeformConfig {
   /** How this layout was derived from its master ("recomposed:portrait",
    *  "scaled", "key-visual"). */
   adaptMethod?: string;
+  /** Set when the automated layout failed the mandatory-element gate: the
+   * reasons a designer must resolve before the piece can be used. */
+  rejected?: string[];
   /** What the adapt engine decided and what a designer should check. */
   adaptNotes?: string[];
 }
@@ -437,6 +444,7 @@ export function normalizeFreeformConfig(raw: unknown): FreeformConfig {
         ...(focusY !== undefined ? { focusY } : {}),
         ...(focusBox ? { focusBox } : {}),
         ...(el.bakedCopy === true ? { bakedCopy: true } : {}),
+        ...(el.panelPart === true ? { panelPart: true } : {}),
         ...(kvText && kvText.length > 0 ? { kvText } : {}),
         ...(motion ? { motion } : {}),
         ...(groupMotion ? { groupMotion } : {}),
@@ -513,6 +521,10 @@ export function normalizeFreeformConfig(raw: unknown): FreeformConfig {
   const adaptNotes = Array.isArray(rawNotes)
     ? (rawNotes as unknown[]).filter((n): n is string => typeof n === "string" && n.trim().length > 0).slice(0, 16).map((n) => n.slice(0, 240))
     : [];
+  const rejected = Array.isArray((raw as { rejected?: unknown }).rejected)
+    ? ((raw as { rejected: unknown[] }).rejected).filter((r): r is string => typeof r === "string" && r.trim().length > 0).map((r) => r.slice(0, 300)).slice(0, 20)
+    : [];
+
   return {
     kind: "freeform",
     elements,
@@ -522,5 +534,6 @@ export function normalizeFreeformConfig(raw: unknown): FreeformConfig {
     ...(previewHtml ? { previewHtml } : {}),
     ...(adaptMethod ? { adaptMethod } : {}),
     ...(adaptNotes.length > 0 ? { adaptNotes } : {}),
+    ...(rejected.length > 0 ? { rejected } : {}),
   };
 }

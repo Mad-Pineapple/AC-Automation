@@ -12,4 +12,7 @@ export type CollateralPlanUniqueSizesItem = {
   unit: string;
   count: number;
   names: string[];
+  channels?: string[];
+  /** @nullable */
+  messageType?: string | null;
 };

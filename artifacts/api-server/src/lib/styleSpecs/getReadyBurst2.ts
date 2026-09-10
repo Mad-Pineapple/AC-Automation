@@ -41,6 +41,9 @@ export interface ZoneRule {
   axis: "stacked" | "side" | "row";
   /** Photo zone share along the split axis. */
   photoFrac: number;
+  /** The share on display-sized canvases (short side ≤ 400px), when the
+   * shipped display pieces differ from OOH — 69% on the 970×250. */
+  displayPhotoFrac?: number;
   /** Band thickness as a fraction of canvas height, and where it sits. */
   bandFrac: number;
   bandAt: "seam" | "panelTop" | "none";
@@ -93,11 +96,11 @@ export const GET_READY_BURST_2: StyleSchema = {
   hierarchy: ["headline", "kicker/subheadline", "message", "cta", "lockup"],
 
   zones: {
-    portrait: { axis: "stacked", photoFrac: 0.569, bandFrac: 0.059, bandAt: "seam", tolerance: 0.03 },
+    portrait: { axis: "stacked", photoFrac: 0.569, displayPhotoFrac: 0.568, bandFrac: 0.059, bandAt: "seam", tolerance: 0.03 },
     tower: { axis: "stacked", photoFrac: 0.52, bandFrac: 0.045, bandAt: "seam", tolerance: 0.05 },
-    square: { axis: "stacked", photoFrac: 0.6, bandFrac: 0.05, bandAt: "seam", tolerance: 0.05 },
+    square: { axis: "stacked", photoFrac: 0.6, displayPhotoFrac: 0.55, bandFrac: 0.05, bandAt: "seam", tolerance: 0.05 },
     landscape: { axis: "side", photoFrac: 0.55, bandFrac: 0.15, bandAt: "panelTop", tolerance: 0.05 },
-    wide: { axis: "side", photoFrac: 0.5, bandFrac: 0.169, bandAt: "panelTop", tolerance: 0.05 },
+    wide: { axis: "side", photoFrac: 0.5, displayPhotoFrac: 0.69, bandFrac: 0.169, bandAt: "panelTop", tolerance: 0.05 },
     strip: { axis: "row", photoFrac: 0.3, bandFrac: 0, bandAt: "none", tolerance: 0.05 },
   },
 

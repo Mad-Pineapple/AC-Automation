@@ -12,6 +12,7 @@
  * XLSX is read with the deps already on board (jszip + fast-xml-parser) —
  * shared strings, inline strings, numbers and date serials are handled.
  */
+import { messageTypeOf } from "./campaignPlan";
 import JSZip from "jszip";
 import { XMLParser } from "fast-xml-parser";
 
@@ -43,7 +44,7 @@ export interface CollateralPlan {
   campaignName: string;
   projectNumbers: string[];
   deliverables: Deliverable[];
-  uniqueSizes: { width: number; height: number; unit: "px" | "mm"; count: number; names: string[] }[];
+  uniqueSizes: { width: number; height: number; unit: "px" | "mm"; count: number; names: string[]; channels: string[]; messageType: string | null }[];
   warnings: string[];
 }
 
@@ -264,13 +265,16 @@ export async function parseCollateralBrief(bytes: Buffer): Promise<CollateralPla
     else merged.push(d);
   }
   const sizeKey = (d: Deliverable) => `${d.widthPx}x${d.heightPx}${d.unit}`;
-  const uniq = new Map<string, { width: number; height: number; unit: "px" | "mm"; count: number; names: Set<string> }>();
+  const uniq = new Map<string, { width: number; height: number; unit: "px" | "mm"; count: number; names: Set<string>; channels: Set<string>; messageTypes: Set<string> }>();
   for (const d of merged) {
     if (d.widthPx == null || d.heightPx == null) continue;
     const k = sizeKey(d);
-    const e = uniq.get(k) ?? { width: d.widthPx, height: d.heightPx, unit: d.unit, count: 0, names: new Set<string>() };
+    const e = uniq.get(k) ?? { width: d.widthPx, height: d.heightPx, unit: d.unit, count: 0, names: new Set<string>(), channels: new Set<string>(), messageTypes: new Set<string>() };
     e.count += d.count;
     e.names.add(d.name);
+    if (d.channel) e.channels.add(d.channel);
+    const mt = messageTypeOf(d.name, [d.content.headline ?? "", d.content.body ?? "", d.notes ?? ""]);
+    if (mt) e.messageTypes.add(mt);
     uniq.set(k, e);
   }
 
@@ -279,7 +283,7 @@ export async function parseCollateralBrief(bytes: Buffer): Promise<CollateralPla
     projectNumbers: [...new Set(merged.map((d) => d.projectNumber))],
     deliverables: merged,
     uniqueSizes: [...uniq.values()]
-      .map((e) => ({ width: e.width, height: e.height, unit: e.unit, count: e.count, names: [...e.names] }))
+      .map((e) => ({ width: e.width, height: e.height, unit: e.unit, count: e.count, names: [...e.names], channels: [...e.channels], messageType: e.messageTypes.size === 1 ? [...e.messageTypes][0] : null }))
       .sort((a, b) => b.count - a.count),
     warnings,
   };

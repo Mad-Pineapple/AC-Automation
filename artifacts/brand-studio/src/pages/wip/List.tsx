@@ -107,8 +107,17 @@ function WipCard({
             <h3 className="font-semibold text-sm truncate">{template.name}</h3>
             <p className="text-xs text-muted-foreground font-mono">{template.dims}</p>
           </div>
-          <Badge variant="secondary" className="text-xs shrink-0">In progress</Badge>
+          {((template.config as { rejected?: string[] } | undefined)?.rejected?.length ?? 0) > 0 ? (
+            <Badge variant="destructive" className="text-xs shrink-0" title={((template.config as { rejected?: string[] }).rejected ?? []).join(" ")}>Rejected</Badge>
+          ) : (
+            <Badge variant="secondary" className="text-xs shrink-0">In progress</Badge>
+          )}
         </div>
+        {((template.config as { rejected?: string[] } | undefined)?.rejected?.length ?? 0) > 0 && (
+          <ul className="text-xs text-destructive list-disc pl-4 space-y-0.5">
+            {((template.config as { rejected?: string[] }).rejected ?? []).slice(0, 3).map((r, i) => <li key={i}>{r}</li>)}
+          </ul>
+        )}
         {template.description && (
           <p className="text-xs text-muted-foreground line-clamp-2">{template.description}</p>
         )}

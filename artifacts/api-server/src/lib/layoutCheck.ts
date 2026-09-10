@@ -119,6 +119,64 @@ function checkMarkRules(config: FreeformConfig, width: number, height: number): 
   return issues;
 }
 
+/**
+ * The hard gate on automated layouts (point 6 of the production rules):
+ * a rebuilt piece is REJECTED, not merely flagged, when
+ *  - a mandatory element the source carried has disappeared (headline,
+ *    call-to-action, logo tile or lockup, the message line off strips),
+ *  - the logo tile or lockup is undersized for the canvas, or
+ *  - copy collides with other copy or with the cut-out imagery.
+ * Returns plain-language reasons; empty means the piece may proceed.
+ */
+export function checkMandatory(master: FreeformConfig, adapted: FreeformConfig, width: number, height: number): string[] {
+  const reasons: string[] = [];
+  const short = Math.min(width, height);
+  const isStrip = height <= 120 && width / height >= 2.5;
+  const present = (cfg: FreeformConfig, slot: string) =>
+    cfg.elements.some((e) => (e.slot === slot || (e.type === "text" && e.role === slot) || (e.type === "image" && e.role === slot)) && (e.type !== "text" || e.text.trim().length > 0) && e.w > 0 && e.h > 0);
+  const hadLogo = present(master, "logo") || present(master, "lockup");
+  const hasLogo = present(adapted, "logo") || present(adapted, "lockup");
+  if (present(master, "headline") && !present(adapted, "headline")) reasons.push("The headline is missing.");
+  if (present(master, "cta") && !present(adapted, "cta")) reasons.push("The call-to-action is missing.");
+  if (hadLogo && !hasLogo) reasons.push("The logo tile / lockup is missing.");
+  if (!isStrip && present(master, "message") && !present(adapted, "message")) reasons.push("The message line is missing.");
+
+  const logoMin = Math.max(24, Math.round(short / 8));
+  for (const el of adapted.elements) {
+    if (el.type !== "image") continue;
+    if (el.slot === "logo" || el.role === "logo") {
+      if (Math.min(el.w, el.h) < logoMin) reasons.push(`Logo tile is ${Math.round(el.w)}×${Math.round(el.h)}px — under the ${logoMin}px minimum for this canvas.`);
+    } else if (el.slot === "lockup") {
+      const lockupMin = isStrip ? 14 : Math.max(16, Math.round(short * 0.05));
+      if (el.h < lockupMin) reasons.push(`Lockup is ${Math.round(el.h)}px tall — under the ${lockupMin}px minimum for this canvas.`);
+    }
+  }
+
+  // Collisions: copy over copy, or copy over the cut-out subject.
+  const copyish = adapted.elements.filter((e) => (e.type === "text" && e.text.trim().length > 0) || (e.type === "image" && ["headline", "subheadline", "message", "cta", "lockup"].includes(e.slot ?? "")));
+  const cutouts = adapted.elements.filter((e) => e.type === "image" && e.slot === "cutout");
+  const overlapFrac = (a: { x: number; y: number; w: number; h: number }, b: { x: number; y: number; w: number; h: number }) => {
+    const ix = Math.max(0, Math.min(a.x + a.w, b.x + b.w) - Math.max(a.x, b.x));
+    const iy = Math.max(0, Math.min(a.y + a.h, b.y + b.h) - Math.max(a.y, b.y));
+    return (ix * iy) / Math.max(1, Math.min(a.w * a.h, b.w * b.h));
+  };
+  for (let i = 0; i < copyish.length; i++) {
+    for (let j = i + 1; j < copyish.length; j++) {
+      const f = overlapFrac(copyish[i], copyish[j]);
+      if (f > 0.15) reasons.push(`"${label(copyish[i])}" and "${label(copyish[j])}" overlap by ${Math.round(f * 100)}%.`);
+    }
+    for (const c of cutouts) {
+      const f = overlapFrac(copyish[i], c);
+      if (f > 0.15) reasons.push(`"${label(copyish[i])}" runs over the cut-out imagery by ${Math.round(f * 100)}%.`);
+    }
+  }
+  for (const el of adapted.elements) {
+    if (!["headline", "cta", "logo", "lockup"].includes(el.slot ?? (el.type === "image" ? el.role : el.type === "text" ? el.role : ""))) continue;
+    if (el.x < -0.5 || el.y < -0.5 || el.x + el.w > width + 0.5 || el.y + el.h > height + 0.5) reasons.push(`"${label(el)}" sits partly outside the canvas.`);
+  }
+  return [...new Set(reasons)];
+}
+
 function label(el: { id: string; type: string; slot?: string; text?: string }): string {
   if (el.type === "text" && el.text) return el.text.replace(/\s+/g, " ").slice(0, 28);
   return el.slot ?? el.id;

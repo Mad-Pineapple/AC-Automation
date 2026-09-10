@@ -42,6 +42,8 @@ export interface FormatSpec {
   entry: CatalogEntry | null;
   /** Human label: catalog label, a brief's own deliverable name, or W×H. */
   label: string;
+  /** Channel from the brief section, else the catalogue entry, else null. */
+  channel: Channel | null;
 }
 
 /** Shape difference on a log scale, so 2:1 vs 1:1 and 1:1 vs 1:2 score alike. */
@@ -54,6 +56,52 @@ export const ASPECT_REBUILD_THRESHOLD = 0.3;
 
 /** Formats this short (px) are strips: one-row layout, full-height logo tile. */
 export const STRIP_MAX_HEIGHT = 120;
+
+/** Hints from the brief: the deliverable's own name and the channel section
+ *  it sits under. They decide the class before the dimensions do. */
+export interface FormatHints {
+  name?: string | null;
+  channel?: string | null;
+}
+
+const STRIP_NAME = /\b(leaderboard|mobile banner|smartphone banner|super ?banner|big banner|banner strip|strip|companion|top banner|footer banner|sticky)\b/i;
+const OOH_CHANNEL = /\b(ooh|out[- ]of[- ]home|digital billboard|digi billboard|digital screen|screen|print|press|poster|adshel|jcdecaux|street|transit|bus|rail)\b/i;
+
+/** Normalise a brief channel/section label to a catalogue channel. */
+export function channelOf(hint?: string | null): Channel | null {
+  const h = (hint ?? "").trim();
+  if (!h) return null;
+  if (/\b(social|facebook|instagram|meta|linkedin|tiktok|youtube)\b/i.test(h)) return "social";
+  if (/\b(print|press|poster|flyer|newspaper|magazine)\b/i.test(h)) return "print";
+  if (/\b(ooh|out[- ]of[- ]home|billboard|adshel|jcdecaux|street|transit|bus|rail)\b/i.test(h)) return "ooh";
+  if (/\b(screen|kiosk|digital screen|in[- ]store)\b/i.test(h)) return "screen";
+  if (/\b(native)\b/i.test(h)) return "native";
+  if (/\b(web|website|hero|landing|email|edm)\b/i.test(h)) return "web";
+  if (/\b(display|dv360|gdn|programmatic|html5?|banner|digital)\b/i.test(h)) return "display";
+  return null;
+}
+
+/**
+ * The format class, decided the way the production sheet reads: the
+ * deliverable's name and channel first, the dimensions only as a fallback.
+ *  - A leaderboard, mobile banner or anything named a strip IS a strip,
+ *    whatever its exact ratio.
+ *  - Out-of-home, screen and print pieces are never strips below 6:1 — a
+ *    3:1 billboard is a wide layout with a photo and a panel, not a strip.
+ *  - Otherwise the geometric rule applies (≥5:1, or ≤120px tall at ≥2.5:1).
+ */
+export function classifyFormat(width: number, height: number, hints: FormatHints = {}): FormatClass {
+  const ratio = width / height;
+  const name = (hints.name ?? "").trim();
+  const channel = (hints.channel ?? "").trim();
+  const entry = lookupFormat(width, height);
+  if (STRIP_NAME.test(name) || (entry && STRIP_NAME.test(entry.label))) return "strip";
+  if (OOH_CHANNEL.test(channel) || OOH_CHANNEL.test(name) || (entry && (entry.channel === "ooh" || entry.channel === "print" || entry.channel === "screen"))) {
+    if (ratio >= 6) return "strip";
+    return classifyAspect(width, Math.max(height, STRIP_MAX_HEIGHT + 1));
+  }
+  return classifyAspect(width, height);
+}
 
 export function classifyAspect(width: number, height: number): FormatClass {
   const ratio = width / height;
@@ -186,7 +234,7 @@ export function lookupFormat(width: number, height: number): CatalogEntry | null
 
 /** Everything the engines need to know about a target size. `labelHint`
  * is the brief's own deliverable name when it has one. */
-export function describeFormat(width: number, height: number, labelHint?: string | null): FormatSpec {
+export function describeFormat(width: number, height: number, labelHint?: string | null, channelHint?: string | null): FormatSpec {
   const entry = lookupFormat(width, height);
   const hint = (labelHint ?? "").trim();
   return {
@@ -195,10 +243,11 @@ export function describeFormat(width: number, height: number, labelHint?: string
     ratio: width / height,
     short: Math.min(width, height),
     long: Math.max(width, height),
-    formatClass: classifyAspect(width, height),
+    formatClass: classifyFormat(width, height, { name: hint, channel: channelHint }),
     budget: classifyBudget(width, height),
     entry,
     label: hint || entry?.label || `${width}×${height}`,
+    channel: channelOf(channelHint) ?? entry?.channel ?? null,
   };
 }
 

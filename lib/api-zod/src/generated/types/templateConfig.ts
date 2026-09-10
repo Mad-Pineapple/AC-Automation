@@ -18,6 +18,8 @@ export interface TemplateConfig {
   elements?: FreeformElement[];
   /** How an adapted template was derived: recomposed:<class> | key-visual | panel | scaled */
   adaptMethod?: string;
+  /** Reasons the automated layout failed the mandatory-element gate; empty or absent when it passed */
+  rejected?: string[];
   /** What the adapt engine decided and what a designer should check */
   adaptNotes?: string[];
 }

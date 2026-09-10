@@ -227,6 +227,8 @@ export interface TemplateConfig {
   elements?: FreeformElement[];
   /** How an adapted template was derived: recomposed:<class> | key-visual | panel | scaled */
   adaptMethod?: string;
+  /** Reasons the automated layout failed the mandatory-element gate; empty or absent when it passed */
+  rejected?: string[];
   /** What the adapt engine decided and what a designer should check */
   adaptNotes?: string[];
 }
@@ -369,6 +371,10 @@ export interface AdaptTarget {
   width: number;
   height: number;
   name?: string;
+  /** The brief's deliverable name for the size (decides the format class with the channel) */
+  formatName?: string;
+  /** Brief channel section (DISPLAY, OOH …) */
+  channel?: string;
 }
 
 export interface AdaptTemplateRequest {
@@ -457,6 +463,9 @@ export type CollateralPlanUniqueSizesItem = {
   unit: string;
   count: number;
   names: string[];
+  channels?: string[];
+  /** @nullable */
+  messageType?: string | null;
 };
 
 export interface CollateralPlan {
@@ -498,6 +507,16 @@ export type CampaignBuildPlanRequestSizesItem = {
   height: number;
   unit?: string;
   names?: string[];
+  /**
+     * Brief channel section the size sits under (DISPLAY, OOH …)
+     * @nullable
+     */
+  channel?: string | null;
+  /**
+     * Message type the brief row asks for (phase 1 | countdown …)
+     * @nullable
+     */
+  messageType?: string | null;
 };
 
 export interface CampaignBuildPlanRequest {
@@ -514,6 +533,10 @@ export type CampaignBuildPlanJobsItem = {
   name: string;
   /** @nullable */
   variant?: string | null;
+  /** @nullable */
+  channel?: string | null;
+  /** @nullable */
+  messageType?: string | null;
   sourceLabel: string;
   aspectDistance: number;
   recomposed: boolean;
