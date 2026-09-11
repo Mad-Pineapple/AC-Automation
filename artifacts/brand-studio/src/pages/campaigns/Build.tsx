@@ -15,6 +15,7 @@ import {
   type CampaignBuildPlan,
 } from "@workspace/api-client-react";
 import { useUpload } from "@workspace/object-storage-web";
+import { PartRulesEditor } from "@/components/PartRulesEditor";
 import { ChevronLeft, FileSpreadsheet, ImagePlus, Loader2, Check, Wand2, AlertTriangle, X } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -438,6 +439,9 @@ export default function CampaignBuild() {
                   </p>
                   {build.profile.notes.slice(1).map((n, i) => <p key={i} className="text-muted-foreground">{n}</p>)}
                 </div>
+              ) : null}
+              {build.profile ? (
+                <PartRulesEditor profileId={build.profile.id} />
               ) : (
                 <p className="text-xs text-muted-foreground">No layout profile could be measured from these examples; sizes use the family defaults.</p>
               )}

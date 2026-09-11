@@ -77,6 +77,7 @@ import type {
   ImportPackageRequest,
   ImportPackageResult,
   IndexGuidelinesBody,
+  LayoutProfileDetail,
   ListAssetsParams,
   ListBriefsParams,
   ListComparisonNotesParams,
@@ -96,6 +97,7 @@ import type {
   Template,
   TemplateInput,
   TemplateUpdate,
+  UpdateLayoutProfileRulesBody,
   UploadUrlRequest,
   UploadUrlResponse,
   VideoExportRequest,
@@ -1644,6 +1646,155 @@ export const useImportExampleArtwork = <TError = ErrorType<unknown>,
         TContext
       > => {
       return useMutation(getImportExampleArtworkMutationOptions(options));
+    }
+
+export const getGetLayoutProfileUrl = (id: number,) => {
+
+
+
+
+  return `/api/layout-profiles/${id}`
+}
+
+/**
+ * @summary A measured campaign layout profile with its part rules
+ */
+export const getLayoutProfile = async (id: number, options?: RequestInit): Promise<LayoutProfileDetail> => {
+
+  return customFetch<LayoutProfileDetail>(getGetLayoutProfileUrl(id),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetLayoutProfileQueryKey = (id: number,) => {
+    return [
+    `/api/layout-profiles/${id}`
+    ] as const;
+    }
+
+
+export const getGetLayoutProfileQueryOptions = <TData = Awaited<ReturnType<typeof getLayoutProfile>>, TError = ErrorType<ErrorResponse>>(id: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getLayoutProfile>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetLayoutProfileQueryKey(id);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getLayoutProfile>>> = ({ signal }) => getLayoutProfile(id, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: !!(id), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getLayoutProfile>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetLayoutProfileQueryResult = NonNullable<Awaited<ReturnType<typeof getLayoutProfile>>>
+export type GetLayoutProfileQueryError = ErrorType<ErrorResponse>
+
+
+/**
+ * @summary A measured campaign layout profile with its part rules
+ */
+
+export function useGetLayoutProfile<TData = Awaited<ReturnType<typeof getLayoutProfile>>, TError = ErrorType<ErrorResponse>>(
+ id: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getLayoutProfile>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetLayoutProfileQueryOptions(id,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
+
+export const getUpdateLayoutProfileRulesUrl = (id: number,) => {
+
+
+
+
+  return `/api/layout-profiles/${id}/rules`
+}
+
+/**
+ * @summary Save designer edits to a profile's part rules
+ */
+export const updateLayoutProfileRules = async (id: number,
+    updateLayoutProfileRulesBody: UpdateLayoutProfileRulesBody, options?: RequestInit): Promise<LayoutProfileDetail> => {
+
+  return customFetch<LayoutProfileDetail>(getUpdateLayoutProfileRulesUrl(id),
+  {
+    ...options,
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      updateLayoutProfileRulesBody,)
+  }
+);}
+
+
+
+
+export const getUpdateLayoutProfileRulesMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateLayoutProfileRules>>, TError,{id: number;data: BodyType<UpdateLayoutProfileRulesBody>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof updateLayoutProfileRules>>, TError,{id: number;data: BodyType<UpdateLayoutProfileRulesBody>}, TContext> => {
+
+const mutationKey = ['updateLayoutProfileRules'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof updateLayoutProfileRules>>, {id: number;data: BodyType<UpdateLayoutProfileRulesBody>}> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  updateLayoutProfileRules(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UpdateLayoutProfileRulesMutationResult = NonNullable<Awaited<ReturnType<typeof updateLayoutProfileRules>>>
+    export type UpdateLayoutProfileRulesMutationBody = BodyType<UpdateLayoutProfileRulesBody>
+    export type UpdateLayoutProfileRulesMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Save designer edits to a profile's part rules
+ */
+export const useUpdateLayoutProfileRules = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateLayoutProfileRules>>, TError,{id: number;data: BodyType<UpdateLayoutProfileRulesBody>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof updateLayoutProfileRules>>,
+        TError,
+        {id: number;data: BodyType<UpdateLayoutProfileRulesBody>},
+        TContext
+      > => {
+      return useMutation(getUpdateLayoutProfileRulesMutationOptions(options));
     }
 
 export const getIndexGuidelinesUrl = () => {

@@ -539,6 +539,9 @@ export function adaptLayered(master: FreeformConfig, srcW: number, srcH: number,
   const axisKey: "stacked" | "side" = recipe.axis === "stacked" ? "stacked" : "side";
   const disp = spec?.display?.[axisKey] ?? DEFAULT_DISPLAY[axisKey];
   const tall = photoZone.w / Math.max(1, photoZone.h) < 0.7;
+  // Designer-set part rules (defaults come from the measured profile).
+  const rules = spec?.partRules ?? {};
+  const ruleOf = (slot: keyof NonNullable<StyleSchema["partRules"]>) => rules[slot] ?? {};
 
   // ---- Copy placement -------------------------------------------------------
   let s: number, gx: number, gy: number;
@@ -561,7 +564,10 @@ export function adaptLayered(master: FreeformConfig, srcW: number, srcH: number,
     if (hBox.w * s > maxW) s = maxW / Math.max(1, hBox.w);
     const hw = hBox.w * s, hh = hBox.h * s;
     gx = r(photoZone.x + (photoZone.w - hw) / 2);
-    gy = r(Math.max(photoZone.y + margin / 2, photoZone.y + photoZone.h * disp.headlineCy - hh / 2));
+    const copyPin = ruleOf("headline").pin ?? "measured";
+    const wantCy = copyPin === "top" ? (hh / 2 + margin / 2) / photoZone.h : copyPin === "centre" ? 0.5 : disp.headlineCy;
+    gy = r(Math.max(photoZone.y + margin / 2, photoZone.y + photoZone.h * wantCy - hh / 2));
+    if (copyPin !== "measured") notes.push(`Copy pinned to the ${copyPin} of the photo zone by the profile's rules.`);
     if (sub) {
       const sw = Math.min(maxW, hw * disp.subW), sh = hh * disp.subH;
       subBox = { x: r(photoZone.x + (photoZone.w - sw) / 2), y: r(gy + hh + hh * disp.subGap), w: r(sw), h: r(sh) };
@@ -572,9 +578,15 @@ export function adaptLayered(master: FreeformConfig, srcW: number, srcH: number,
 
   // ---- Cut-out (the car): whole, at the family's share, on the copy ---------
   let cutoutBox: Box | null = null;
-  if (cutout && photo && !rowLike) {
+  const cutRule = ruleOf("cutout");
+  if (cutout && photo && !rowLike && cutRule.pin === "none") {
+    notes.push("Cut-out left out by the profile's rules.");
+  } else if (cutout && photo && !rowLike) {
     const ov = copyOverCutoutFrac != null ? copyOverCutoutFrac * lastLineScaled : 0;
-    const top = copyBottom - ov;
+    const wantW = photoZone.w * (tall ? 0.94 : disp.cutoutW);
+    const wantH = wantW / (cutout.w / Math.max(1, cutout.h));
+    // zone-bottom: the car sits on the zone's bottom edge whatever the copy does.
+    const top = cutRule.pin === "zone-bottom" ? photoZone.y + photoZone.h - wantH * (1 - (disp.cutoutBleed > 0.3 ? 0.35 : 0)) : copyBottom - ov;
     const share = tall ? 0.94 : disp.cutoutW;
     const aspect = cutout.w / Math.max(1, cutout.h);
     let w = photoZone.w * share, h = w / aspect;
@@ -697,7 +709,9 @@ export function adaptLayered(master: FreeformConfig, srcW: number, srcH: number,
     // outer margins so the message and lockup stay legible.
     const shallow = panelZone.h < 200;
     let stackTop = panelZone.y + (shallow ? margin / 2 : margin);
-    if (partBand && recipe.bandAt !== "none") {
+    const bandRule = ruleOf("band");
+    const bandAllowed = bandRule.pin !== "none" && !(shallow && bandRule.dropWhenTight === true && panelZone.h < 120);
+    if (partBand && recipe.bandAt !== "none" && bandAllowed) {
       // Full zone width, aspect kept, never taller than a quarter of the zone
       // (an eighth on a shallow zone, where the message and lockup need the room).
       let bw = panelZone.w, bh = bw * (partBand.h / Math.max(1, partBand.w));
@@ -712,22 +726,33 @@ export function adaptLayered(master: FreeformConfig, srcW: number, srcH: number,
     // Natural sizes at the panel's own scale; the CTA follows the pill rule.
     interface Item { el: Img; w: number; h: number; minH: number; fixed: boolean }
     const items: Item[] = [];
-    if (partMessage) items.push({ el: partMessage, w: partMessage.w * ps, h: partMessage.h * ps, minH: 11, fixed: false });
+    const msgRule = ruleOf("message"), ctaRule = ruleOf("cta"), lockRule = ruleOf("lockup");
+    if (partMessage) items.push({ el: partMessage, w: partMessage.w * ps, h: partMessage.h * ps, minH: msgRule.minPx ?? 11, fixed: false });
     if (cta) {
       const oohShare = recipe.axis === "stacked" ? 0.075 : 0.125;
-      const wantFixed = ctaLooksFixed && isDisplayCanvas && !shallow && fixedCta!.w <= panelInner.w * 0.9;
+      const wantFixed = ctaRule.size === "scale" ? false : ctaLooksFixed && isDisplayCanvas && (ctaRule.size === "fixed" || !shallow) && fixedCta!.w <= panelInner.w * 0.9;
       // A fixed display pill that is wider than the zone is scaled to the
       // zone, never swapped for the OOH share (that made a 12px pill on 160-wide).
       const fitFixed = ctaLooksFixed && isDisplayCanvas && !wantFixed;
       const ctaH = wantFixed ? fixedCta!.h : fitFixed ? r((panelInner.w * 0.85) * (fixedCta!.h / fixedCta!.w)) : ctaLooksFixed ? r(short * oohShare) : Math.max(recipe.ctaFloorPx, r(cta.h * ps));
       const ctaW = wantFixed ? fixedCta!.w : Math.min(panelInner.w * 0.85, r(ctaH * (cta.w / Math.max(1, cta.h))));
-      items.push({ el: cta, w: ctaW, h: wantFixed ? ctaH : ctaW * (cta.h / Math.max(1, cta.w)), minH: recipe.ctaFloorPx, fixed: wantFixed });
+      const fitW = ctaRule.size === "fit-width" ? panelInner.w * 0.85 : ctaW;
+      items.push({ el: cta, w: fitW, h: wantFixed ? ctaH : fitW * (cta.h / Math.max(1, cta.w)), minH: ctaRule.minPx ?? recipe.ctaFloorPx, fixed: wantFixed });
     }
-    if (partLockup) items.push({ el: partLockup, w: partLockup.w * ps, h: partLockup.h * ps, minH: 14, fixed: false });
+    if (partLockup) items.push({ el: partLockup, w: partLockup.w * ps, h: partLockup.h * ps, minH: lockRule.minPx ?? 14, fixed: false });
     // Width caps per part, then a common shrink when the column is too tall.
     const capW = (it: Item) => (it.el === partMessage ? panelInner.w * 0.9 : it.el === partLockup ? panelInner.w * 0.7 : panelInner.w * 0.85);
     for (const it of items) { if (it.w > capW(it)) { const k = capW(it) / it.w; it.w *= k; it.h *= k; } }
     const total = () => items.reduce((a, it) => a + it.h, 0) + gapPx * (items.length - 1);
+    // Parts marked drop-when-tight leave a shallow column before anything is squeezed below its minimum.
+    if (total() > avail) {
+      const droppable = items.filter((it) => (it.el === partMessage && msgRule.dropWhenTight) || (it.el === partLockup && lockRule.dropWhenTight));
+      for (const d of droppable) {
+        if (total() <= avail) break;
+        const idx = items.indexOf(d);
+        if (idx >= 0) { items.splice(idx, 1); notes.push(`${d.el === partMessage ? "Message" : "Lockup"} dropped by the profile's rules: no room in this panel.`); }
+      }
+    }
     if (total() > avail) {
       const flexible = items.filter((it) => !it.fixed);
       const fixedH = items.filter((it) => it.fixed).reduce((a, it) => a + it.h, 0);

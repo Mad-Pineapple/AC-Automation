@@ -294,7 +294,7 @@ async function adaptOne(
   const issues = checkLayout(adapted, width, height);
   // The hard gate: an automated layout that lost a mandatory element,
   // undersized the logo or let copy collide is rejected, not merely noted.
-  const rejected = checkMandatory(masterConfig, adapted, width, height);
+  const rejected = checkMandatory(masterConfig, { ...adapted, adaptNotes: [...(adapted.adaptNotes ?? []), ...notes] }, width, height, (styleSpec?.partRules ?? {}) as Record<string, { minPx?: number; neverOverlap?: string[]; dropWhenTight?: boolean }>);
   // What designers have said about pieces of this shape so far rides on
   // every new one, so the lesson is in front of whoever reviews it.
   let feedbackLine: string | null = null;

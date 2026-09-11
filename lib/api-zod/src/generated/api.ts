@@ -854,6 +854,83 @@ export const ImportExampleArtworkBody = zod.object({
 
 
 /**
+ * @summary A measured campaign layout profile with its part rules
+ */
+export const GetLayoutProfileParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const GetLayoutProfileResponse = zod.object({
+  "id": zod.number(),
+  "name": zod.string(),
+  "sources": zod.array(zod.object({
+  "templateId": zod.number(),
+  "name": zod.string(),
+  "width": zod.number(),
+  "height": zod.number(),
+  "axis": zod.string(),
+  "formatClass": zod.string()
+})),
+  "measuredClasses": zod.array(zod.string()),
+  "interpolatedClasses": zod.array(zod.string()),
+  "notes": zod.array(zod.string()),
+  "rules": zod.record(zod.string(), zod.object({
+  "pin": zod.enum(['measured', 'top', 'centre', 'bottom', 'on-copy', 'zone-bottom', 'panel-edge', 'none']).optional(),
+  "size": zod.enum(['measured', 'fixed', 'fit-width', 'scale']).optional(),
+  "aspect": zod.enum(['locked', 'free']).optional(),
+  "dropWhenTight": zod.boolean().optional(),
+  "minPx": zod.number().optional(),
+  "neverOverlap": zod.array(zod.string()).optional()
+})),
+  "updatedAt": zod.string()
+})
+
+
+/**
+ * @summary Save designer edits to a profile's part rules
+ */
+export const UpdateLayoutProfileRulesParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const UpdateLayoutProfileRulesBody = zod.object({
+  "rules": zod.record(zod.string(), zod.object({
+  "pin": zod.enum(['measured', 'top', 'centre', 'bottom', 'on-copy', 'zone-bottom', 'panel-edge', 'none']).optional(),
+  "size": zod.enum(['measured', 'fixed', 'fit-width', 'scale']).optional(),
+  "aspect": zod.enum(['locked', 'free']).optional(),
+  "dropWhenTight": zod.boolean().optional(),
+  "minPx": zod.number().optional(),
+  "neverOverlap": zod.array(zod.string()).optional()
+}))
+})
+
+export const UpdateLayoutProfileRulesResponse = zod.object({
+  "id": zod.number(),
+  "name": zod.string(),
+  "sources": zod.array(zod.object({
+  "templateId": zod.number(),
+  "name": zod.string(),
+  "width": zod.number(),
+  "height": zod.number(),
+  "axis": zod.string(),
+  "formatClass": zod.string()
+})),
+  "measuredClasses": zod.array(zod.string()),
+  "interpolatedClasses": zod.array(zod.string()),
+  "notes": zod.array(zod.string()),
+  "rules": zod.record(zod.string(), zod.object({
+  "pin": zod.enum(['measured', 'top', 'centre', 'bottom', 'on-copy', 'zone-bottom', 'panel-edge', 'none']).optional(),
+  "size": zod.enum(['measured', 'fixed', 'fit-width', 'scale']).optional(),
+  "aspect": zod.enum(['locked', 'free']).optional(),
+  "dropWhenTight": zod.boolean().optional(),
+  "minPx": zod.number().optional(),
+  "neverOverlap": zod.array(zod.string()).optional()
+})),
+  "updatedAt": zod.string()
+})
+
+
+/**
  * @summary Rebuild the element-aware guideline passage index for a brand
  */
 export const IndexGuidelinesBody = zod.object({

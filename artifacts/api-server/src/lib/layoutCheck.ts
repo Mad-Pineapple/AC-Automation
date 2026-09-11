@@ -128,7 +128,7 @@ function checkMarkRules(config: FreeformConfig, width: number, height: number): 
  *  - copy collides with other copy or with the cut-out imagery.
  * Returns plain-language reasons; empty means the piece may proceed.
  */
-export function checkMandatory(master: FreeformConfig, adapted: FreeformConfig, width: number, height: number): string[] {
+export function checkMandatory(master: FreeformConfig, adapted: FreeformConfig, width: number, height: number, partRules: Record<string, { minPx?: number; neverOverlap?: string[]; dropWhenTight?: boolean }> = {}): string[] {
   const reasons: string[] = [];
   const short = Math.min(width, height);
   const isStrip = height <= 120 && width / height >= 2.5;
@@ -136,10 +136,15 @@ export function checkMandatory(master: FreeformConfig, adapted: FreeformConfig, 
     cfg.elements.some((e) => (e.slot === slot || (e.type === "text" && e.role === slot) || (e.type === "image" && e.role === slot)) && (e.type !== "text" || e.text.trim().length > 0) && e.w > 0 && e.h > 0);
   const hadLogo = present(master, "logo") || present(master, "lockup");
   const hasLogo = present(adapted, "logo") || present(adapted, "lockup");
+  // A part the profile's rules allow to drop when the zone is tight is not a
+  // failure when the adapter dropped it for that reason (its note says so).
+  const droppedByRule = (slot: string) =>
+    partRules[slot]?.dropWhenTight === true &&
+    (adapted.adaptNotes ?? []).some((n) => /dropped by the profile's rules/i.test(n) && n.toLowerCase().includes(slot === "cta" ? "button" : slot));
   if (present(master, "headline") && !present(adapted, "headline")) reasons.push("The headline is missing.");
-  if (present(master, "cta") && !present(adapted, "cta")) reasons.push("The call-to-action is missing.");
+  if (present(master, "cta") && !present(adapted, "cta") && !droppedByRule("cta")) reasons.push("The call-to-action is missing.");
   if (hadLogo && !hasLogo) reasons.push("The logo tile / lockup is missing.");
-  if (!isStrip && present(master, "message") && !present(adapted, "message")) reasons.push("The message line is missing.");
+  if (!isStrip && present(master, "message") && !present(adapted, "message") && !droppedByRule("message")) reasons.push("The message line is missing.");
 
   const logoMin = Math.max(24, Math.round(short / 8));
   for (const el of adapted.elements) {
@@ -197,6 +202,22 @@ export function checkMandatory(master: FreeformConfig, adapted: FreeformConfig, 
   for (const el of adapted.elements) {
     if (!["headline", "cta", "logo", "lockup"].includes(el.slot ?? (el.type === "image" ? el.role : el.type === "text" ? el.role : ""))) continue;
     if (el.x < -0.5 || el.y < -0.5 || el.x + el.w > width + 0.5 || el.y + el.h > height + 0.5) reasons.push(`"${label(el)}" sits partly outside the canvas.`);
+  }
+  // Designer rules: minimum sizes and never-overlap pairs.
+  const bySlot = new Map<string, FreeformConfig["elements"][number][]>();
+  for (const el of adapted.elements) { const s = el.slot ?? ""; if (!s) continue; bySlot.set(s, [...(bySlot.get(s) ?? []), el]); }
+  for (const [slot, rule] of Object.entries(partRules)) {
+    const els = bySlot.get(slot) ?? [];
+    for (const el of els) {
+      const dim = slot === "logo" ? Math.min(el.w, el.h) : el.h;
+      if (rule.minPx && dim < rule.minPx) reasons.push(`"${label(el)}" is ${Math.round(dim)}px — under the ${rule.minPx}px minimum set in the profile's rules.`);
+      for (const other of rule.neverOverlap ?? []) {
+        for (const o of bySlot.get(other) ?? []) {
+          const f = overlapFrac(el, o);
+          if (f > 0.1) reasons.push(`"${label(el)}" overlaps "${label(o)}" by ${Math.round(f * 100)}% — the profile's rules say they never overlap.`);
+        }
+      }
+    }
   }
   return [...new Set(reasons)];
 }

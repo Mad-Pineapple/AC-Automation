@@ -195354,6 +195354,70 @@ var ImportExampleArtworkBody = objectType({
   "fileName": stringType().min(1),
   "brandId": numberType().optional()
 });
+var GetLayoutProfileParams = objectType({
+  "id": coerce.number()
+});
+var GetLayoutProfileResponse = objectType({
+  "id": numberType(),
+  "name": stringType(),
+  "sources": arrayType(objectType({
+    "templateId": numberType(),
+    "name": stringType(),
+    "width": numberType(),
+    "height": numberType(),
+    "axis": stringType(),
+    "formatClass": stringType()
+  })),
+  "measuredClasses": arrayType(stringType()),
+  "interpolatedClasses": arrayType(stringType()),
+  "notes": arrayType(stringType()),
+  "rules": recordType(stringType(), objectType({
+    "pin": enumType(["measured", "top", "centre", "bottom", "on-copy", "zone-bottom", "panel-edge", "none"]).optional(),
+    "size": enumType(["measured", "fixed", "fit-width", "scale"]).optional(),
+    "aspect": enumType(["locked", "free"]).optional(),
+    "dropWhenTight": booleanType().optional(),
+    "minPx": numberType().optional(),
+    "neverOverlap": arrayType(stringType()).optional()
+  })),
+  "updatedAt": stringType()
+});
+var UpdateLayoutProfileRulesParams = objectType({
+  "id": coerce.number()
+});
+var UpdateLayoutProfileRulesBody = objectType({
+  "rules": recordType(stringType(), objectType({
+    "pin": enumType(["measured", "top", "centre", "bottom", "on-copy", "zone-bottom", "panel-edge", "none"]).optional(),
+    "size": enumType(["measured", "fixed", "fit-width", "scale"]).optional(),
+    "aspect": enumType(["locked", "free"]).optional(),
+    "dropWhenTight": booleanType().optional(),
+    "minPx": numberType().optional(),
+    "neverOverlap": arrayType(stringType()).optional()
+  }))
+});
+var UpdateLayoutProfileRulesResponse = objectType({
+  "id": numberType(),
+  "name": stringType(),
+  "sources": arrayType(objectType({
+    "templateId": numberType(),
+    "name": stringType(),
+    "width": numberType(),
+    "height": numberType(),
+    "axis": stringType(),
+    "formatClass": stringType()
+  })),
+  "measuredClasses": arrayType(stringType()),
+  "interpolatedClasses": arrayType(stringType()),
+  "notes": arrayType(stringType()),
+  "rules": recordType(stringType(), objectType({
+    "pin": enumType(["measured", "top", "centre", "bottom", "on-copy", "zone-bottom", "panel-edge", "none"]).optional(),
+    "size": enumType(["measured", "fixed", "fit-width", "scale"]).optional(),
+    "aspect": enumType(["locked", "free"]).optional(),
+    "dropWhenTight": booleanType().optional(),
+    "minPx": numberType().optional(),
+    "neverOverlap": arrayType(stringType()).optional()
+  })),
+  "updatedAt": stringType()
+});
 var IndexGuidelinesBody = objectType({
   "brandId": numberType().optional()
 });
@@ -232183,17 +232247,18 @@ function checkMarkRules(config2, width, height) {
   }
   return issues;
 }
-function checkMandatory(master, adapted, width, height) {
+function checkMandatory(master, adapted, width, height, partRules = {}) {
   const reasons = [];
   const short = Math.min(width, height);
   const isStrip = height <= 120 && width / height >= 2.5;
   const present = (cfg, slot) => cfg.elements.some((e) => (e.slot === slot || e.type === "text" && e.role === slot || e.type === "image" && e.role === slot) && (e.type !== "text" || e.text.trim().length > 0) && e.w > 0 && e.h > 0);
   const hadLogo = present(master, "logo") || present(master, "lockup");
   const hasLogo = present(adapted, "logo") || present(adapted, "lockup");
+  const droppedByRule = (slot) => partRules[slot]?.dropWhenTight === true && (adapted.adaptNotes ?? []).some((n) => /dropped by the profile's rules/i.test(n) && n.toLowerCase().includes(slot === "cta" ? "button" : slot));
   if (present(master, "headline") && !present(adapted, "headline")) reasons.push("The headline is missing.");
-  if (present(master, "cta") && !present(adapted, "cta")) reasons.push("The call-to-action is missing.");
+  if (present(master, "cta") && !present(adapted, "cta") && !droppedByRule("cta")) reasons.push("The call-to-action is missing.");
   if (hadLogo && !hasLogo) reasons.push("The logo tile / lockup is missing.");
-  if (!isStrip && present(master, "message") && !present(adapted, "message")) reasons.push("The message line is missing.");
+  if (!isStrip && present(master, "message") && !present(adapted, "message") && !droppedByRule("message")) reasons.push("The message line is missing.");
   const logoMin = Math.max(24, Math.round(short / 8));
   for (const el of adapted.elements) {
     if (el.type !== "image") continue;
@@ -232240,6 +232305,25 @@ function checkMandatory(master, adapted, width, height) {
   for (const el of adapted.elements) {
     if (!["headline", "cta", "logo", "lockup"].includes(el.slot ?? (el.type === "image" ? el.role : el.type === "text" ? el.role : ""))) continue;
     if (el.x < -0.5 || el.y < -0.5 || el.x + el.w > width + 0.5 || el.y + el.h > height + 0.5) reasons.push(`"${label(el)}" sits partly outside the canvas.`);
+  }
+  const bySlot = /* @__PURE__ */ new Map();
+  for (const el of adapted.elements) {
+    const s2 = el.slot ?? "";
+    if (!s2) continue;
+    bySlot.set(s2, [...bySlot.get(s2) ?? [], el]);
+  }
+  for (const [slot, rule] of Object.entries(partRules)) {
+    const els = bySlot.get(slot) ?? [];
+    for (const el of els) {
+      const dim = slot === "logo" ? Math.min(el.w, el.h) : el.h;
+      if (rule.minPx && dim < rule.minPx) reasons.push(`"${label(el)}" is ${Math.round(dim)}px \u2014 under the ${rule.minPx}px minimum set in the profile's rules.`);
+      for (const other of rule.neverOverlap ?? []) {
+        for (const o of bySlot.get(other) ?? []) {
+          const f = overlapFrac2(el, o);
+          if (f > 0.1) reasons.push(`"${label(el)}" overlaps "${label(o)}" by ${Math.round(f * 100)}% \u2014 the profile's rules say they never overlap.`);
+        }
+      }
+    }
   }
   return [...new Set(reasons)];
 }
@@ -232673,6 +232757,8 @@ function adaptLayered(master, srcW, srcH, dstW, dstH, opts = {}) {
   const axisKey = recipe.axis === "stacked" ? "stacked" : "side";
   const disp = spec?.display?.[axisKey] ?? DEFAULT_DISPLAY[axisKey];
   const tall = photoZone.w / Math.max(1, photoZone.h) < 0.7;
+  const rules = spec?.partRules ?? {};
+  const ruleOf = (slot) => rules[slot] ?? {};
   let s2, gx, gy;
   let subBox = null;
   if (rowLike) {
@@ -232689,7 +232775,10 @@ function adaptLayered(master, srcW, srcH, dstW, dstH, opts = {}) {
     if (hBox.w * s2 > maxW) s2 = maxW / Math.max(1, hBox.w);
     const hw = hBox.w * s2, hh = hBox.h * s2;
     gx = r2(photoZone.x + (photoZone.w - hw) / 2);
-    gy = r2(Math.max(photoZone.y + margin / 2, photoZone.y + photoZone.h * disp.headlineCy - hh / 2));
+    const copyPin = ruleOf("headline").pin ?? "measured";
+    const wantCy = copyPin === "top" ? (hh / 2 + margin / 2) / photoZone.h : copyPin === "centre" ? 0.5 : disp.headlineCy;
+    gy = r2(Math.max(photoZone.y + margin / 2, photoZone.y + photoZone.h * wantCy - hh / 2));
+    if (copyPin !== "measured") notes.push(`Copy pinned to the ${copyPin} of the photo zone by the profile's rules.`);
     if (sub) {
       const sw = Math.min(maxW, hw * disp.subW), sh = hh * disp.subH;
       subBox = { x: r2(photoZone.x + (photoZone.w - sw) / 2), y: r2(gy + hh + hh * disp.subGap), w: r2(sw), h: r2(sh) };
@@ -232698,9 +232787,14 @@ function adaptLayered(master, srcW, srcH, dstW, dstH, opts = {}) {
   const copyBottom = subBox ? subBox.y + subBox.h : gy + hBox.h * s2;
   const lastLineScaled = subBox ? subBox.h : hBox.h * s2;
   let cutoutBox = null;
-  if (cutout && photo && !rowLike) {
+  const cutRule = ruleOf("cutout");
+  if (cutout && photo && !rowLike && cutRule.pin === "none") {
+    notes.push("Cut-out left out by the profile's rules.");
+  } else if (cutout && photo && !rowLike) {
     const ov = copyOverCutoutFrac != null ? copyOverCutoutFrac * lastLineScaled : 0;
-    const top = copyBottom - ov;
+    const wantW = photoZone.w * (tall ? 0.94 : disp.cutoutW);
+    const wantH = wantW / (cutout.w / Math.max(1, cutout.h));
+    const top = cutRule.pin === "zone-bottom" ? photoZone.y + photoZone.h - wantH * (1 - (disp.cutoutBleed > 0.3 ? 0.35 : 0)) : copyBottom - ov;
     const share = tall ? 0.94 : disp.cutoutW;
     const aspect = cutout.w / Math.max(1, cutout.h);
     let w = photoZone.w * share, h = w / aspect;
@@ -232809,7 +232903,9 @@ function adaptLayered(master, srcW, srcH, dstW, dstH, opts = {}) {
     const ps = panelImg ? panelZone.w / Math.max(1, panelImg.w) : 1;
     const shallow = panelZone.h < 200;
     let stackTop = panelZone.y + (shallow ? margin / 2 : margin);
-    if (partBand && recipe.bandAt !== "none") {
+    const bandRule = ruleOf("band");
+    const bandAllowed = bandRule.pin !== "none" && !(shallow && bandRule.dropWhenTight === true && panelZone.h < 120);
+    if (partBand && recipe.bandAt !== "none" && bandAllowed) {
       let bw = panelZone.w, bh = bw * (partBand.h / Math.max(1, partBand.w));
       const capH = panelZone.h * (shallow ? 0.2 : 0.25);
       if (bh > capH) {
@@ -232823,16 +232919,18 @@ function adaptLayered(master, srcW, srcH, dstW, dstH, opts = {}) {
     const avail = Math.max(10, stackBottom - stackTop);
     const gapPx = Math.max(4, margin / 2);
     const items = [];
-    if (partMessage) items.push({ el: partMessage, w: partMessage.w * ps, h: partMessage.h * ps, minH: 11, fixed: false });
+    const msgRule = ruleOf("message"), ctaRule = ruleOf("cta"), lockRule = ruleOf("lockup");
+    if (partMessage) items.push({ el: partMessage, w: partMessage.w * ps, h: partMessage.h * ps, minH: msgRule.minPx ?? 11, fixed: false });
     if (cta) {
       const oohShare = recipe.axis === "stacked" ? 0.075 : 0.125;
-      const wantFixed = ctaLooksFixed && isDisplayCanvas && !shallow && fixedCta.w <= panelInner.w * 0.9;
+      const wantFixed = ctaRule.size === "scale" ? false : ctaLooksFixed && isDisplayCanvas && (ctaRule.size === "fixed" || !shallow) && fixedCta.w <= panelInner.w * 0.9;
       const fitFixed = ctaLooksFixed && isDisplayCanvas && !wantFixed;
       const ctaH = wantFixed ? fixedCta.h : fitFixed ? r2(panelInner.w * 0.85 * (fixedCta.h / fixedCta.w)) : ctaLooksFixed ? r2(short * oohShare) : Math.max(recipe.ctaFloorPx, r2(cta.h * ps));
       const ctaW = wantFixed ? fixedCta.w : Math.min(panelInner.w * 0.85, r2(ctaH * (cta.w / Math.max(1, cta.h))));
-      items.push({ el: cta, w: ctaW, h: wantFixed ? ctaH : ctaW * (cta.h / Math.max(1, cta.w)), minH: recipe.ctaFloorPx, fixed: wantFixed });
+      const fitW = ctaRule.size === "fit-width" ? panelInner.w * 0.85 : ctaW;
+      items.push({ el: cta, w: fitW, h: wantFixed ? ctaH : fitW * (cta.h / Math.max(1, cta.w)), minH: ctaRule.minPx ?? recipe.ctaFloorPx, fixed: wantFixed });
     }
-    if (partLockup) items.push({ el: partLockup, w: partLockup.w * ps, h: partLockup.h * ps, minH: 14, fixed: false });
+    if (partLockup) items.push({ el: partLockup, w: partLockup.w * ps, h: partLockup.h * ps, minH: lockRule.minPx ?? 14, fixed: false });
     const capW = (it) => it.el === partMessage ? panelInner.w * 0.9 : it.el === partLockup ? panelInner.w * 0.7 : panelInner.w * 0.85;
     for (const it of items) {
       if (it.w > capW(it)) {
@@ -232842,6 +232940,17 @@ function adaptLayered(master, srcW, srcH, dstW, dstH, opts = {}) {
       }
     }
     const total = () => items.reduce((a, it) => a + it.h, 0) + gapPx * (items.length - 1);
+    if (total() > avail) {
+      const droppable = items.filter((it) => it.el === partMessage && msgRule.dropWhenTight || it.el === partLockup && lockRule.dropWhenTight);
+      for (const d of droppable) {
+        if (total() <= avail) break;
+        const idx = items.indexOf(d);
+        if (idx >= 0) {
+          items.splice(idx, 1);
+          notes.push(`${d.el === partMessage ? "Message" : "Lockup"} dropped by the profile's rules: no room in this panel.`);
+        }
+      }
+    }
     if (total() > avail) {
       const flexible = items.filter((it) => !it.fixed);
       const fixedH = items.filter((it) => it.fixed).reduce((a, it) => a + it.h, 0);
@@ -233407,6 +233516,7 @@ function partsFor(box, leaves) {
 }
 
 // src/lib/styleSpecs/getReadyBurst2.ts
+var PART_RULE_SLOTS = ["headline", "subheadline", "cutout", "band", "message", "cta", "lockup", "logo", "photo"];
 var GET_READY_BURST_2 = {
   id: "get-ready-burst-2",
   name: "AEM Get Ready \u2014 Burst 2 (photo + panel)",
@@ -233614,6 +233724,39 @@ function describeStyleSchema(s2) {
 }
 
 // src/lib/layoutProfile.ts
+function defaultRules(profile) {
+  return {
+    headline: { pin: "measured", size: "measured", aspect: "locked", dropWhenTight: false, minPx: 24, neverOverlap: ["lockup", "cta"] },
+    subheadline: { pin: "measured", size: "measured", aspect: "locked", dropWhenTight: true, minPx: 10, neverOverlap: ["lockup", "cta"] },
+    cutout: { pin: "on-copy", size: "measured", aspect: "locked", dropWhenTight: true, neverOverlap: [] },
+    band: { pin: "panel-edge", size: "fit-width", aspect: "locked", dropWhenTight: true, neverOverlap: ["lockup", "logo"] },
+    message: { pin: "measured", size: "measured", aspect: "locked", dropWhenTight: true, minPx: 11, neverOverlap: ["cta", "lockup"] },
+    cta: { pin: "measured", size: profile.cta.fixedPx ? "fixed" : "scale", aspect: "locked", dropWhenTight: false, minPx: 24, neverOverlap: ["lockup", "message"] },
+    lockup: { pin: "measured", size: "measured", aspect: "locked", dropWhenTight: false, minPx: 16, neverOverlap: ["band", "cta"] },
+    logo: { pin: "bottom", size: "measured", aspect: "locked", dropWhenTight: false, minPx: 24, neverOverlap: ["band", "cutout"] },
+    photo: { pin: "measured", size: "scale", aspect: "free", dropWhenTight: false, neverOverlap: [] }
+  };
+}
+function mergeRules(profile, edits) {
+  const base = { ...defaultRules(profile), ...profile.rules ?? {} };
+  if (typeof edits !== "object" || edits === null) return base;
+  const PIN = /* @__PURE__ */ new Set(["measured", "top", "centre", "bottom", "on-copy", "zone-bottom", "panel-edge", "none"]);
+  const SIZE = /* @__PURE__ */ new Set(["measured", "fixed", "fit-width", "scale"]);
+  for (const slot of PART_RULE_SLOTS) {
+    const e = edits[slot];
+    if (typeof e !== "object" || e === null) continue;
+    const r4 = e;
+    const cur = { ...base[slot] };
+    if (typeof r4.pin === "string" && PIN.has(r4.pin)) cur.pin = r4.pin;
+    if (typeof r4.size === "string" && SIZE.has(r4.size)) cur.size = r4.size;
+    if (r4.aspect === "locked" || r4.aspect === "free") cur.aspect = r4.aspect;
+    if (typeof r4.dropWhenTight === "boolean") cur.dropWhenTight = r4.dropWhenTight;
+    if (typeof r4.minPx === "number" && Number.isFinite(r4.minPx)) cur.minPx = Math.max(0, Math.min(2e3, Math.round(r4.minPx)));
+    if (Array.isArray(r4.neverOverlap)) cur.neverOverlap = r4.neverOverlap.filter((v) => typeof v === "string" && PART_RULE_SLOTS.includes(v));
+    base[slot] = cur;
+  }
+  return base;
+}
 var r3 = (v) => Math.round(v * 1e3) / 1e3;
 function byRole(config2, role) {
   return config2.elements.find((e) => e.slot === role || e.type === "text" && e.role === role || e.type === "image" && e.role === role && role === "logo");
@@ -233788,8 +233931,17 @@ function profileToStyleSchema(profile, id) {
     never: [],
     sizes: [],
     references: profile.sources.map((s2) => `${s2.name} (${s2.width}\xD7${s2.height})`),
-    ...profile.copyOverCutoutFrac != null ? { copyOverCutoutFrac: profile.copyOverCutoutFrac } : {}
+    ...profile.copyOverCutoutFrac != null ? { copyOverCutoutFrac: profile.copyOverCutoutFrac } : {},
+    partRules: mergeRules(profile, null)
   };
+}
+async function updateProfileRules(id, edits) {
+  const p = await getProfile(id);
+  if (!p) return null;
+  const rules = mergeRules(p.profile, edits);
+  const profile = { ...p.profile, rules };
+  const [saved] = await db.update(layoutProfilesTable).set({ profile: JSON.stringify(profile), updatedAt: /* @__PURE__ */ new Date() }).where(eq(layoutProfilesTable.id, id)).returning();
+  return parseRow(saved);
 }
 var DEFAULT_STACKED = { headlineH: 0.193, headlineCy: 0.422, subW: 0.986, subH: 0.517, subGap: 0.069, cutoutW: 0.8, cutoutCx: 0.41, cutoutBleed: 0.45, message: { cy: 0.36, w: 0.73 }, cta: { cy: 0.55 }, lockup: { cy: 0.82, w: 0.7 }, bandH: 0.147 };
 var DEFAULT_SIDE = { headlineH: 0.396, headlineCy: 0.266, subW: 0.874, subH: 0.404, subGap: 0.07, cutoutW: 0.467, cutoutCx: 0.419, cutoutBleed: 0.6, message: { cy: 0.378, w: 0.7 }, cta: { cy: 0.562 }, lockup: { cy: 0.838, w: 0.7 }, bandH: 0.152 };
@@ -233827,6 +233979,11 @@ async function learnProfile(masterIds, name, createdBy) {
   const [existing] = await db.select().from(layoutProfilesTable).where(eq(layoutProfilesTable.sourceKey, sourceKey));
   let saved;
   if (existing) {
+    try {
+      const prev = JSON.parse(existing.profile);
+      if (prev.rules) profile.rules = prev.rules;
+    } catch {
+    }
     [saved] = await db.update(layoutProfilesTable).set({ name: profileName, profile: JSON.stringify(profile), updatedAt: /* @__PURE__ */ new Date() }).where(eq(layoutProfilesTable.id, existing.id)).returning();
   } else {
     [saved] = await db.insert(layoutProfilesTable).values({ name: profileName, sourceKey, profile: JSON.stringify(profile), createdBy: createdBy ?? null }).returning();
@@ -241286,7 +241443,7 @@ async function adaptOne(master, masterConfig, width, height, brandInfo, log, exe
     }
   }
   const issues = checkLayout(adapted, width, height);
-  const rejected = checkMandatory(masterConfig, adapted, width, height);
+  const rejected = checkMandatory(masterConfig, { ...adapted, adaptNotes: [...adapted.adaptNotes ?? [], ...notes] }, width, height, styleSpec?.partRules ?? {});
   let feedbackLine = null;
   try {
     feedbackLine = describeFormatFeedback(await feedbackForFormat(spec.formatClass));
@@ -244366,10 +244523,19 @@ function formatProfile(p) {
     interpolatedClasses: Object.keys(zones).filter((k) => !zones[k].measured),
     measuredAxes: p.profile.measuredAxes,
     notes: p.profile.notes,
+    rules: mergeRules(p.profile, null),
     profile: p.profile,
     updatedAt: p.updatedAt.toISOString()
   };
 }
+router24.put("/layout-profiles/:id/rules", requireAdmin, async (req, res) => {
+  const saved = await updateProfileRules(Number(req.params.id), req.body?.rules ?? req.body);
+  if (!saved) {
+    res.status(404).json({ error: "Profile not found" });
+    return;
+  }
+  res.json(formatProfile(saved));
+});
 router24.post("/layout-profiles/learn", requireAuth, async (req, res) => {
   const raw = Array.isArray(req.body?.masterTemplateIds) ? req.body.masterTemplateIds : [];
   const ids = raw.map(Number).filter((n) => Number.isInteger(n) && n > 0).slice(0, 50);

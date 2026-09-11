@@ -9,7 +9,7 @@
  */
 import { Router } from "express";
 import { requireAuth, requireAdmin } from "../middlewares/requireAuth";
-import { learnProfile, listProfiles, getProfile, deleteProfile, type StoredProfile } from "../lib/layoutProfile";
+import { learnProfile, listProfiles, getProfile, deleteProfile, updateProfileRules, mergeRules, type StoredProfile } from "../lib/layoutProfile";
 
 const router = Router();
 
@@ -23,10 +23,17 @@ export function formatProfile(p: StoredProfile) {
     interpolatedClasses: (Object.keys(zones) as (keyof typeof zones)[]).filter((k) => !zones[k].measured),
     measuredAxes: p.profile.measuredAxes,
     notes: p.profile.notes,
+    rules: mergeRules(p.profile, null),
     profile: p.profile,
     updatedAt: p.updatedAt.toISOString(),
   };
 }
+
+router.put("/layout-profiles/:id/rules", requireAdmin, async (req, res): Promise<void> => {
+  const saved = await updateProfileRules(Number(req.params.id), req.body?.rules ?? req.body);
+  if (!saved) { res.status(404).json({ error: "Profile not found" }); return; }
+  res.json(formatProfile(saved));
+});
 
 router.post("/layout-profiles/learn", requireAuth, async (req, res): Promise<void> => {
   const raw: unknown[] = Array.isArray(req.body?.masterTemplateIds) ? req.body.masterTemplateIds : [];

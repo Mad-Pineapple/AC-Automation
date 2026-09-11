@@ -74,6 +74,29 @@ export interface DisplayAxisRule {
   bandH: number;
 }
 
+/**
+ * Behaviour rules a designer can set per part (the Bannerbear / Figma model,
+ * plus what this campaign taught us). Defaults come from the measured
+ * profile; the adapter and the gate honour them.
+ */
+export interface PartRules {
+  /** Where the part is pinned. Copy: measured | top | centre of the photo zone. Cut-out: on-copy | zone-bottom. Band: panel-edge | none. Column parts: measured | top | centre | bottom of the panel. */
+  pin?: "measured" | "top" | "centre" | "bottom" | "on-copy" | "zone-bottom" | "panel-edge" | "none";
+  /** How the part sizes: measured (profile share) | fixed (placed asset at its px) | fit-width (fill the zone width) | scale (with the zone). */
+  size?: "measured" | "fixed" | "fit-width" | "scale";
+  /** Keep aspect ratio (default locked). */
+  aspect?: "locked" | "free";
+  /** Drop the part when a zone has no room (strips, shallow panels). */
+  dropWhenTight?: boolean;
+  /** Never render below this many px (height for copy/lockup/button, short side for the logo). */
+  minPx?: number;
+  /** Parts this one must never overlap by more than 10%. */
+  neverOverlap?: string[];
+}
+
+export const PART_RULE_SLOTS = ["headline", "subheadline", "cutout", "band", "message", "cta", "lockup", "logo", "photo"] as const;
+export type PartRuleSlot = (typeof PART_RULE_SLOTS)[number];
+
 export interface StyleSchema {
   id: string;
   name: string;
@@ -92,6 +115,8 @@ export interface StyleSchema {
   alwaysDisplay?: boolean;
   /** Measured copy-to-cut-out relationship, when the master pair had one. */
   copyOverCutoutFrac?: number;
+  /** Designer-set behaviour rules per part (see PartRules). */
+  partRules?: Partial<Record<PartRuleSlot, PartRules>>;
   parts: Record<string, PartRule>;
   /** Copy variants the campaign actually shipped — the only copy allowed. */
   variants: Array<{ phase: string; kicker?: string; headline: string; subheadline?: string; message: string; cta: { display: string; ooh: string } }>;

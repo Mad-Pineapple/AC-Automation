@@ -504,6 +504,60 @@ paths:
               schema:
                 $ref: "#/components/schemas/ImportExampleResult"
 
+  /layout-profiles/{id}:
+    get:
+      operationId: getLayoutProfile
+      tags: [layoutProfiles]
+      summary: A measured campaign layout profile with its part rules
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        "200":
+          description: Profile
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LayoutProfileDetail"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /layout-profiles/{id}/rules:
+    put:
+      operationId: updateLayoutProfileRules
+      tags: [layoutProfiles]
+      summary: Save designer edits to a profile's part rules
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                rules:
+                  type: object
+                  additionalProperties:
+                    $ref: "#/components/schemas/PartRules"
+              required: [rules]
+      responses:
+        "200":
+          description: Updated profile
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LayoutProfileDetail"
+
   /guidelines/index:
     post:
       operationId: indexGuidelines
@@ -2544,6 +2598,51 @@ components:
         assetsImported:
           type: integer
       required: [kind, templates, warnings, assetsImported]
+
+    PartRules:
+      type: object
+      properties:
+        pin: { type: string, enum: [measured, top, centre, bottom, on-copy, zone-bottom, panel-edge, none] }
+        size: { type: string, enum: [measured, fixed, fit-width, scale] }
+        aspect: { type: string, enum: [locked, free] }
+        dropWhenTight: { type: boolean }
+        minPx: { type: number }
+        neverOverlap:
+          type: array
+          items: { type: string }
+
+    LayoutProfileDetail:
+      type: object
+      properties:
+        id: { type: integer }
+        name: { type: string }
+        sources:
+          type: array
+          items:
+            type: object
+            properties:
+              templateId: { type: integer }
+              name: { type: string }
+              width: { type: integer }
+              height: { type: integer }
+              axis: { type: string }
+              formatClass: { type: string }
+            required: [templateId, name, width, height, axis, formatClass]
+        measuredClasses:
+          type: array
+          items: { type: string }
+        interpolatedClasses:
+          type: array
+          items: { type: string }
+        notes:
+          type: array
+          items: { type: string }
+        rules:
+          type: object
+          additionalProperties:
+            $ref: "#/components/schemas/PartRules"
+        updatedAt: { type: string }
+      required: [id, name, sources, measuredClasses, interpolatedClasses, notes, rules, updatedAt]
 
     GuidelineIndexResult:
       type: object

@@ -17,7 +17,7 @@ import { db, templatesTable, layoutProfilesTable } from "@workspace/db";
 import { eq, inArray, desc, sql } from "drizzle-orm";
 import { normalizeFreeformConfig, type FreeformConfig, type FreeformElement } from "./freeform";
 import { classifyFormat, type FormatClass } from "./formatCatalog";
-import { styleSchemaFor, type StyleSchema, type DisplayAxisRule, type ZoneRule, type PartRule } from "./styleSpecs/getReadyBurst2";
+import { styleSchemaFor, PART_RULE_SLOTS, type StyleSchema, type DisplayAxisRule, type ZoneRule, type PartRule, type PartRules, type PartRuleSlot } from "./styleSpecs/getReadyBurst2";
 
 type Axis = "stacked" | "side";
 interface Box { x: number; y: number; w: number; h: number }
@@ -59,6 +59,45 @@ export interface LayoutProfile {
   cta: { fixedPx?: { w: number; h: number }; fixedShortRange?: [number, number] };
   copyOverCutoutFrac: number | null;
   notes: string[];
+  /** Designer-set behaviour rules per part; absent = defaults from the measurements. */
+  rules?: Partial<Record<PartRuleSlot, PartRules>>;
+}
+
+/** The rules the measurements imply, before a designer touches them. */
+export function defaultRules(profile: Pick<LayoutProfile, "cta" | "display">): Record<PartRuleSlot, PartRules> {
+  return {
+    headline: { pin: "measured", size: "measured", aspect: "locked", dropWhenTight: false, minPx: 24, neverOverlap: ["lockup", "cta"] },
+    subheadline: { pin: "measured", size: "measured", aspect: "locked", dropWhenTight: true, minPx: 10, neverOverlap: ["lockup", "cta"] },
+    cutout: { pin: "on-copy", size: "measured", aspect: "locked", dropWhenTight: true, neverOverlap: [] },
+    band: { pin: "panel-edge", size: "fit-width", aspect: "locked", dropWhenTight: true, neverOverlap: ["lockup", "logo"] },
+    message: { pin: "measured", size: "measured", aspect: "locked", dropWhenTight: true, minPx: 11, neverOverlap: ["cta", "lockup"] },
+    cta: { pin: "measured", size: profile.cta.fixedPx ? "fixed" : "scale", aspect: "locked", dropWhenTight: false, minPx: 24, neverOverlap: ["lockup", "message"] },
+    lockup: { pin: "measured", size: "measured", aspect: "locked", dropWhenTight: false, minPx: 16, neverOverlap: ["band", "cta"] },
+    logo: { pin: "bottom", size: "measured", aspect: "locked", dropWhenTight: false, minPx: 24, neverOverlap: ["band", "cutout"] },
+    photo: { pin: "measured", size: "scale", aspect: "free", dropWhenTight: false, neverOverlap: [] },
+  };
+}
+
+/** Merge designer edits over the defaults, dropping anything that is not a known rule. */
+export function mergeRules(profile: Pick<LayoutProfile, "cta" | "display" | "rules">, edits: unknown): Record<PartRuleSlot, PartRules> {
+  const base = { ...defaultRules(profile), ...(profile.rules ?? {}) } as Record<PartRuleSlot, PartRules>;
+  if (typeof edits !== "object" || edits === null) return base;
+  const PIN = new Set(["measured", "top", "centre", "bottom", "on-copy", "zone-bottom", "panel-edge", "none"]);
+  const SIZE = new Set(["measured", "fixed", "fit-width", "scale"]);
+  for (const slot of PART_RULE_SLOTS) {
+    const e = (edits as Record<string, unknown>)[slot];
+    if (typeof e !== "object" || e === null) continue;
+    const r = e as Record<string, unknown>;
+    const cur = { ...base[slot] };
+    if (typeof r.pin === "string" && PIN.has(r.pin)) cur.pin = r.pin as PartRules["pin"];
+    if (typeof r.size === "string" && SIZE.has(r.size)) cur.size = r.size as PartRules["size"];
+    if (r.aspect === "locked" || r.aspect === "free") cur.aspect = r.aspect;
+    if (typeof r.dropWhenTight === "boolean") cur.dropWhenTight = r.dropWhenTight;
+    if (typeof r.minPx === "number" && Number.isFinite(r.minPx)) cur.minPx = Math.max(0, Math.min(2000, Math.round(r.minPx)));
+    if (Array.isArray(r.neverOverlap)) cur.neverOverlap = (r.neverOverlap as unknown[]).filter((v): v is string => typeof v === "string" && (PART_RULE_SLOTS as readonly string[]).includes(v));
+    base[slot] = cur;
+  }
+  return base;
 }
 
 const r3 = (v: number) => Math.round(v * 1000) / 1000;
@@ -255,7 +294,18 @@ export function profileToStyleSchema(profile: LayoutProfile, id: number): StyleS
     sizes: [],
     references: profile.sources.map((s) => `${s.name} (${s.width}×${s.height})`),
     ...(profile.copyOverCutoutFrac != null ? { copyOverCutoutFrac: profile.copyOverCutoutFrac } : {}),
+    partRules: mergeRules(profile, null),
   };
+}
+
+/** Save designer edits to a profile's rules. */
+export async function updateProfileRules(id: number, edits: unknown): Promise<StoredProfile | null> {
+  const p = await getProfile(id);
+  if (!p) return null;
+  const rules = mergeRules(p.profile, edits);
+  const profile: LayoutProfile = { ...p.profile, rules };
+  const [saved] = await db.update(layoutProfilesTable).set({ profile: JSON.stringify(profile), updatedAt: new Date() }).where(eq(layoutProfilesTable.id, id)).returning();
+  return parseRow(saved);
 }
 
 const DEFAULT_STACKED: DisplayAxisRule = { headlineH: 0.193, headlineCy: 0.422, subW: 0.986, subH: 0.517, subGap: 0.069, cutoutW: 0.8, cutoutCx: 0.41, cutoutBleed: 0.45, message: { cy: 0.36, w: 0.73 }, cta: { cy: 0.55 }, lockup: { cy: 0.82, w: 0.7 }, bandH: 0.147 };
@@ -294,6 +344,8 @@ export async function learnProfile(masterIds: number[], name?: string | null, cr
   const [existing] = await db.select().from(layoutProfilesTable).where(eq(layoutProfilesTable.sourceKey, sourceKey));
   let saved: typeof layoutProfilesTable.$inferSelect;
   if (existing) {
+    // Re-measuring keeps the designer's rule edits.
+    try { const prev = JSON.parse(existing.profile) as LayoutProfile; if (prev.rules) profile.rules = prev.rules; } catch { /* fresh rules */ }
     [saved] = await db.update(layoutProfilesTable).set({ name: profileName, profile: JSON.stringify(profile), updatedAt: new Date() }).where(eq(layoutProfilesTable.id, existing.id)).returning();
   } else {
     [saved] = await db.insert(layoutProfilesTable).values({ name: profileName, sourceKey, profile: JSON.stringify(profile), createdBy: createdBy ?? null }).returning();

@@ -504,6 +504,69 @@ export interface ImportExampleResult {
   assetsImported: number;
 }
 
+export type PartRulesPin = typeof PartRulesPin[keyof typeof PartRulesPin];
+
+
+export const PartRulesPin = {
+  measured: 'measured',
+  top: 'top',
+  centre: 'centre',
+  bottom: 'bottom',
+  'on-copy': 'on-copy',
+  'zone-bottom': 'zone-bottom',
+  'panel-edge': 'panel-edge',
+  none: 'none',
+} as const;
+
+export type PartRulesSize = typeof PartRulesSize[keyof typeof PartRulesSize];
+
+
+export const PartRulesSize = {
+  measured: 'measured',
+  fixed: 'fixed',
+  'fit-width': 'fit-width',
+  scale: 'scale',
+} as const;
+
+export type PartRulesAspect = typeof PartRulesAspect[keyof typeof PartRulesAspect];
+
+
+export const PartRulesAspect = {
+  locked: 'locked',
+  free: 'free',
+} as const;
+
+export interface PartRules {
+  pin?: PartRulesPin;
+  size?: PartRulesSize;
+  aspect?: PartRulesAspect;
+  dropWhenTight?: boolean;
+  minPx?: number;
+  neverOverlap?: string[];
+}
+
+export type LayoutProfileDetailSourcesItem = {
+  templateId: number;
+  name: string;
+  width: number;
+  height: number;
+  axis: string;
+  formatClass: string;
+};
+
+export type LayoutProfileDetailRules = {[key: string]: PartRules};
+
+export interface LayoutProfileDetail {
+  id: number;
+  name: string;
+  sources: LayoutProfileDetailSourcesItem[];
+  measuredClasses: string[];
+  interpolatedClasses: string[];
+  notes: string[];
+  rules: LayoutProfileDetailRules;
+  updatedAt: string;
+}
+
 export type GuidelineIndexResultSourcesItem = {
   source: string;
   passages: number;
@@ -1185,6 +1248,12 @@ export const ListTemplatesInclude = {
 export type ClearWipTemplates200 = {
   deleted: number;
   kept: number;
+};
+
+export type UpdateLayoutProfileRulesBodyRules = {[key: string]: PartRules};
+
+export type UpdateLayoutProfileRulesBody = {
+  rules: UpdateLayoutProfileRulesBodyRules;
 };
 
 export type IndexGuidelinesBody = {
