@@ -2,10 +2,37 @@ import { Router } from "express";
 import { randomBytes } from "node:crypto";
 import { db } from "@workspace/db";
 import { templatesTable, brandsTable, brandAssetsTable, creativesTable, creativeEventsTable } from "@workspace/db";
-import { eq, sql, desc } from "drizzle-orm";
+import { eq, sql, desc, or } from "drizzle-orm";
 import { requireAdmin, requireAuth } from "../middlewares/requireAuth";
-import { normalizeFreeformConfig, isFreeformConfig } from "../lib/freeform";
-import { buildHtmlPackage, ARTWORK_MOTIONS, COPY_MOTIONS, type ArtworkMotion, type CopyMotion } from "../lib/htmlExport";
+import { normalizeFreeformConfig, isFreeformConfig, type FreeformConfig } from "../lib/freeform";
+import { buildHtmlPackage, buildResponsiveHtmlPackage, ARTWORK_MOTIONS, COPY_MOTIONS, type ArtworkMotion, type CopyMotion, type ResponsiveSize } from "../lib/htmlExport";
+
+/**
+ * The sizes a responsive package carries: the requested piece first, then
+ * every other usable size built from the same master (the master included),
+ * one per width×height (the newest), rejected layouts left out.
+ */
+async function familySizes(template: { id: number; sourceTemplateId: number | null }, first: { width: number; height: number; config: FreeformConfig }): Promise<ResponsiveSize[]> {
+  const masterId = template.sourceTemplateId ?? template.id;
+  const rows = await db.select().from(templatesTable).where(or(eq(templatesTable.id, masterId), eq(templatesTable.sourceTemplateId, masterId)));
+  const byFormat = new Map<string, ResponsiveSize>();
+  byFormat.set(`${first.width}x${first.height}`, { ...first, templateId: template.id });
+  for (const r of rows.sort((a, b) => b.id - a.id)) {
+    if (r.id === template.id) continue;
+    const key = `${r.width}x${r.height}`;
+    if (byFormat.has(key)) continue;
+    let parsed: unknown;
+    try { parsed = JSON.parse(r.config || "{}"); } catch { continue; }
+    if (!isFreeformConfig(parsed)) continue;
+    const cfg = normalizeFreeformConfig(parsed);
+    if (cfg.rejected && cfg.rejected.length) continue;
+    if (cfg.elements.length === 0) continue;
+    byFormat.set(key, { width: r.width, height: r.height, config: cfg, templateId: r.id });
+  }
+  const [head, ...rest] = [...byFormat.values()];
+  rest.sort((a, b) => b.width * b.height - a.width * a.height);
+  return [head, ...rest];
+}
 
 function motionFromBody(body: any): { artworkMotion?: ArtworkMotion; copyMotion?: CopyMotion; storyFrames?: boolean; matchKeyVisual?: boolean } {
   const out: { artworkMotion?: ArtworkMotion; copyMotion?: CopyMotion; storyFrames?: boolean; matchKeyVisual?: boolean } = {};
@@ -103,8 +130,10 @@ router.post("/templates/:id/export-html", requireAdmin, async (req, res): Promis
       ? (config.layoutOptions.find((o) => Math.abs(o.x - headline.x) < 2 && Math.abs(o.y - headline.y) < 2)?.label ?? null)
       : null;
 
+  const responsive = body.responsive === true;
+  const sizes = responsive ? await familySizes(template, { width: template.width, height: template.height, config }) : [];
   const token = randomBytes(9).toString("base64url");
-  const format = `${template.width}x${template.height}`;
+  const format = responsive ? "responsive" : `${template.width}x${template.height}`;
   const [creative] = await db
     .insert(creativesTable)
     .values({
@@ -122,10 +151,7 @@ router.post("/templates/:id/export-html", requireAdmin, async (req, res): Promis
     .returning();
 
   const base = process.env.PUBLIC_BASE_URL ?? requestBase(req);
-  const pkg = await buildHtmlPackage({
-    width: template.width,
-    height: template.height,
-    config,
+  const shared = {
     tags: { token, name: template.name, campaign, format, variant, layoutLabel },
     clickUrl,
     studioBase: base,
@@ -136,17 +162,21 @@ router.post("/templates/:id/export-html", requireAdmin, async (req, res): Promis
     accentColor: brand?.primaryColor ?? "#11263d",
     durationSec,
     loops,
-    fluid,
     pixelUrls,
     customFonts: await customFontRefs(),
     loadAsset: assetLoader(base),
-  });
+  };
+  const pkg = responsive
+    ? await buildResponsiveHtmlPackage({ ...shared, sizes })
+    : await buildHtmlPackage({ ...shared, width: template.width, height: template.height, config, fluid });
 
   const safe = `${template.name.replace(/[^a-z0-9]+/gi, "-").replace(/^-|-$/g, "").slice(0, 60) || "creative"}_${format}_${token}.zip`;
   res.set("Content-Type", "application/zip");
   res.set("Content-Disposition", `attachment; filename="${safe}"`);
   res.set("X-Creative-Id", String(creative.id));
   res.set("X-Creative-Token", token);
+  if (responsive) res.set("X-Creative-Sizes", sizes.map((s) => `${s.width}x${s.height}`).join(","));
+  res.set("X-Package-Bytes", String(pkg.zip.length));
   res.send(pkg.zip);
 });
 
@@ -169,6 +199,31 @@ router.post("/templates/:id/preview-html", requireAuth, async (req, res): Promis
   const animation = (ANIMS.has(body.animation) ? body.animation : "entrance") as
     "none" | "entrance" | "kenburns" | "frames" | "reveal";
   const base = process.env.PUBLIC_BASE_URL ?? requestBase(req);
+  const responsive = body.responsive === true;
+  const previewShared = {
+    tags: { token: "preview", name: template.name, campaign: null, format: responsive ? "responsive" : `${template.width}x${template.height}`, variant: null, layoutLabel: null },
+    clickUrl: typeof body.clickUrl === "string" ? body.clickUrl : null,
+    studioBase: base,
+    brandFontFamily: brand?.fontFamily ?? "National 2",
+    animate: body.animate !== false,
+    animation,
+    ...motionFromBody(body),
+    accentColor: brand?.primaryColor ?? "#11263d",
+    durationSec: Number.isFinite(Number(body.durationSec)) ? Number(body.durationSec) : undefined,
+    loops: Number.isFinite(Number(body.loops)) ? Number(body.loops) : undefined,
+    inline: true,
+    customFonts: await customFontRefs(),
+    loadAsset: assetLoader(base),
+  };
+  if (responsive) {
+    const sizes = await familySizes(template, { width: template.width, height: template.height, config });
+    const rpkg = await buildResponsiveHtmlPackage({ ...previewShared, sizes });
+    res.set("Content-Type", "text/html; charset=utf-8");
+    res.set("Cache-Control", "no-store");
+    res.set("X-Creative-Sizes", sizes.map((s) => `${s.width}x${s.height}`).join(","));
+    res.send(rpkg.html);
+    return;
+  }
   const pkg = await buildHtmlPackage({
     width: template.width,
     height: template.height,

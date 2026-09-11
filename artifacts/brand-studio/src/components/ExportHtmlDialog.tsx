@@ -27,6 +27,8 @@ export function ExportHtmlDialog({ templateId, templateName }: { templateId: num
   const [copyMotion, setCopyMotion] = useState<"none" | "fade" | "rise" | "pan" | "pop" | "wipe" | "baseline" | "tumble" | "typewriter" | "block">("rise");
   const [storyFrames, setStoryFrames] = useState(false);
   const [matchKeyVisual, setMatchKeyVisual] = useState(true);
+  const [responsive, setResponsive] = useState(false);
+  const [responsiveSizes, setResponsiveSizes] = useState<string[]>([]);
   const [motionSource, setMotionSource] = useState<"key-visual" | "studio" | null>(null);
   const motionBody = () => ({
     animate,
@@ -57,10 +59,11 @@ export function ExportHtmlDialog({ templateId, templateName }: { templateId: num
       const res = await fetch(`/api/templates/${templateId}/preview-html`, {
         method: "POST",
         headers: { "Content-Type": "application/json", ...(token ? { Authorization: `Bearer ${token}` } : {}) },
-        body: JSON.stringify({ clickUrl, fluid: false, ...motionBody() }),
+        body: JSON.stringify({ clickUrl, fluid: false, responsive, ...motionBody() }),
       });
       if (!res.ok) throw new Error(await res.text());
       const html = await res.text();
+      setResponsiveSizes((res.headers.get("x-creative-sizes") ?? "").split(",").filter(Boolean));
       const m = /name="ad\.size" content="width=(\d+),height=(\d+)"/.exec(html);
       if (m) setDims({ w: Number(m[1]), h: Number(m[2]) });
       const src = /data-motion-source="(key-visual|studio)"/.exec(html);
@@ -92,7 +95,7 @@ export function ExportHtmlDialog({ templateId, templateName }: { templateId: num
       const res = await fetch(`/api/templates/${templateId}/export-html`, {
         method: "POST",
         headers: { "Content-Type": "application/json", ...(token ? { Authorization: `Bearer ${token}` } : {}) },
-        body: JSON.stringify({ campaign, variant, clickUrl, fluid, pixelUrls: pixels.split(/\n+/).map((p) => p.trim()).filter(Boolean), ...motionBody() }),
+        body: JSON.stringify({ campaign, variant, clickUrl, fluid, responsive, pixelUrls: pixels.split(/\n+/).map((p) => p.trim()).filter(Boolean), ...motionBody() }),
       });
       if (!res.ok) throw new Error(await res.text());
       const blob = await res.blob();
@@ -105,9 +108,11 @@ export function ExportHtmlDialog({ templateId, templateName }: { templateId: num
       a.click();
       a.remove();
       URL.revokeObjectURL(url);
+      const packed = (res.headers.get("x-creative-sizes") ?? "").split(",").filter(Boolean);
+      const kb = Math.round(Number(res.headers.get("x-package-bytes") ?? 0) / 1024);
       toast({
-        title: "HTML5 package downloaded",
-        description: `Creative ${res.headers.get("x-creative-token") ?? ""} is registered — events will show on Performance.`,
+        title: packed.length ? `Responsive HTML5 downloaded — ${packed.length} sizes${kb ? `, ${kb} KB` : ""}` : "HTML5 package downloaded",
+        description: `${packed.length ? `${packed.join(", ")}. ` : ""}Creative ${res.headers.get("x-creative-token") ?? ""} is registered — events will show on Performance.`,
       });
       setOpen(false);
     } catch (err) {
@@ -258,9 +263,19 @@ export function ExportHtmlDialog({ templateId, templateName }: { templateId: num
               page&apos;s Google Tag Manager dataLayer when present, and forward to GA4 when the studio is configured.
             </p>
           </div>
-          <div className="flex items-center gap-4 text-sm">
+          <div className="flex flex-col gap-1.5 text-sm">
             <label className="flex items-center gap-2">
-              <input type="checkbox" checked={fluid} onChange={(e) => setFluid(e.target.checked)} /> Fluid (scale to container)
+              <input type="checkbox" checked={fluid} disabled={responsive} onChange={(e) => setFluid(e.target.checked)} /> Fluid (scale to container)
+            </label>
+            <label className="flex items-start gap-2" data-testid="label-export-responsive">
+              <input type="checkbox" className="mt-0.5" checked={responsive} onChange={(e) => setResponsive(e.target.checked)} data-testid="checkbox-export-responsive" />
+              <span>
+                Responsive: one package for every size built from this master
+                <span className="block text-[10px] text-muted-foreground leading-tight">
+                  One HTML5 upload; the ad slot shows its exact size (media rules) or the closest fit, scaled. For DV360 line items that serve many sizes.
+                  {responsiveSizes.length > 0 ? ` Sizes in the package: ${responsiveSizes.join(", ")}.` : ""}
+                </span>
+              </span>
             </label>
           </div>
         </div>

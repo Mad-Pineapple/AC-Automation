@@ -79,12 +79,37 @@ export interface HtmlExportOptions {
   customFonts?: { family: string; src: string; format: "truetype" | "opentype" }[];
   /** Fetch bytes for a src (storage object, public file, absolute URL). */
   loadAsset: (src: string) => Promise<{ bytes: Buffer; contentType: string } | null>;
+  /** Internal (responsive packages): share one zip and file list across
+   * sizes, prefix asset and keyframe names per size, load fonts once. */
+  _zip?: JSZip;
+  _files?: string[];
+  _sizeIndex?: number;
+  _skipFonts?: boolean;
+}
+
+/** One size's rendered stage, for assembling several into one document. */
+export interface RenderedStage {
+  width: number;
+  height: number;
+  format: string;
+  body: string;
+  keyframes: string;
+  fontFaces: string[];
+  durationSec: number;
+  loops: number;
+  motionSource: "key-visual" | "studio";
+  animation: string;
+  artworkMotion: ArtworkMotion;
+  copyMotion: CopyMotion;
+  storyFrames: boolean;
+  wipeStage: boolean;
 }
 
 export interface HtmlPackage {
   zip: Buffer;
   html: string;
   files: string[];
+  stage?: RenderedStage;
 }
 
 const FONT_FILES = [
@@ -102,7 +127,7 @@ function hexWithAlpha(hex: string, alpha: number): string {
   return `rgba(${parseInt(m[1], 16)}, ${parseInt(m[2], 16)}, ${parseInt(m[3], 16)}, ${Math.max(0, Math.min(1, alpha))})`;
 }
 
-function safeFileName(src: string, index: number, contentType: string): string {
+function safeFileName(src: string, index: number, contentType: string, prefix = ""): string {
   const ext =
     contentType.includes("png") ? "png"
     : contentType.includes("jpeg") || contentType.includes("jpg") ? "jpg"
@@ -110,7 +135,7 @@ function safeFileName(src: string, index: number, contentType: string): string {
     : contentType.includes("webp") ? "webp"
     : contentType.includes("gif") ? "gif"
     : (src.split(".").pop() ?? "bin").replace(/[^a-z0-9]/gi, "").slice(0, 4) || "bin";
-  return `assets/img-${index}.${ext}`;
+  return `assets/${prefix}img-${index}.${ext}`;
 }
 
 /**
@@ -191,15 +216,36 @@ function dynamicKey(el: FreeformText): string | null {
   }
 }
 
+const SHARED_KEYFRAMES = `@keyframes enter{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
+@keyframes kenburns{from{transform:scale(1)}to{transform:scale(1.08)}}
+@keyframes drift{0%{transform:scale(1.06) translate(0,0)}100%{transform:scale(1.06) translate(-2.5%,1.5%)}}
+@keyframes zoomout{from{transform:scale(1.12)}to{transform:scale(1)}}
+@keyframes breathe{from{transform:scale(1)}to{transform:scale(1.035)}}
+@keyframes fadein{from{opacity:0}to{opacity:1}}
+@keyframes pan{from{opacity:0;transform:translateX(-28px)}to{opacity:1;transform:none}}
+@keyframes pop{from{opacity:0;transform:scale(.82)}to{opacity:1;transform:scale(1)}}
+@keyframes wipein{from{clip-path:inset(0 100% 0 0);opacity:1}to{clip-path:inset(0 0 0 0);opacity:1}}
+@keyframes baseline{from{clip-path:inset(0 0 100% 0);transform:translateY(18px)}to{clip-path:inset(0 0 0 0);transform:none}}
+@keyframes tumble{from{opacity:0;transform:rotate(-5deg) translateY(16px);transform-origin:left bottom}to{opacity:1;transform:none}}
+@keyframes blockwipe{0%{transform:scaleX(0);transform-origin:left center}45%{transform:scaleX(1);transform-origin:left center}55%{transform:scaleX(1);transform-origin:right center}100%{transform:scaleX(0);transform-origin:right center}}
+.tw .w{opacity:0;animation:fadein .18s ease-out both}
+@keyframes wipe{from{clip-path:inset(0 100% 0 0)}to{clip-path:inset(0 0 0 0)}}
+/* Story frames: 1 = hook, 2 = support, 3 = end-frame (holds). */
+@keyframes frame1{0%{opacity:0;transform:translateY(12px)}6%{opacity:1;transform:none}36%{opacity:1}42%{opacity:0;transform:translateY(-8px)}100%{opacity:0}}
+@keyframes frame2{0%{opacity:0}40%{opacity:0;transform:translateY(12px)}46%{opacity:1;transform:none}66%{opacity:1}72%{opacity:0;transform:translateY(-8px)}100%{opacity:0}}
+@keyframes frame3{0%{opacity:0}70%{opacity:0;transform:translateY(12px)}76%{opacity:1;transform:none}100%{opacity:1}}`;
+
 export async function buildHtmlPackage(opts: HtmlExportOptions): Promise<HtmlPackage> {
   const { width, height, config, tags, studioBase } = opts;
-  const zip = new JSZip();
-  const files: string[] = [];
+  const zip = opts._zip ?? new JSZip();
+  const files: string[] = opts._files ?? [];
   const brandFont = opts.brandFontFamily ?? "National 2";
+  const sizePrefix = opts._sizeIndex != null ? `s${opts._sizeIndex}-` : "";
+  const kvPrefix = opts._sizeIndex != null ? `s${opts._sizeIndex}_` : "";
 
   // Fonts: embedded from the deployment's own files.
   const fontFaces: string[] = [];
-  for (const f of FONT_FILES) {
+  for (const f of opts._skipFonts ? [] : FONT_FILES) {
     const asset = await opts.loadAsset(f.src);
     if (asset) {
       let ref = f.file;
@@ -221,7 +267,7 @@ export async function buildHtmlPackage(opts: HtmlExportOptions): Promise<HtmlPac
       .map((e) => String(e.fontFamily)),
   );
   let customIdx = 0;
-  for (const f of opts.customFonts ?? []) {
+  for (const f of opts._skipFonts ? [] : (opts.customFonts ?? [])) {
     if (!usedFamilies.has(f.family) || f.family === "National 2") continue;
     const asset = await opts.loadAsset(f.src);
     if (!asset) continue;
@@ -266,8 +312,8 @@ export async function buildHtmlPackage(opts: HtmlExportOptions): Promise<HtmlPac
       const last = m.frames[m.frames.length - 1];
       stops.push(`100%{transform:translate(${fr(last.dx * kx)}px,${fr(last.dy * ky)}px) scale(${fr(last.sx)},${fr(last.sy)});opacity:${fr(last.o)}}`);
     }
-    kvKeyframes.push(`@keyframes kv${idx}{${stops.join("")}}`);
-    return `animation:kv${idx} ${D}s linear 0s ${L} normal forwards;transform-origin:0 0`;
+    kvKeyframes.push(`@keyframes kv${kvPrefix}${idx}{${stops.join("")}}`);
+    return `animation:kv${kvPrefix}${idx} ${D}s linear 0s ${L} normal forwards;transform-origin:0 0`;
   };
   const bgImage = config.elements.find((e): e is FreeformImage => e.type === "image" && e.role !== "logo");
   const kbOrigin = `${Math.round((bgImage?.focusX ?? 0.5) * 100)}% ${Math.round((bgImage?.focusY ?? 0.5) * 100)}%`;
@@ -368,7 +414,7 @@ export async function buildHtmlPackage(opts: HtmlExportOptions): Promise<HtmlPac
           if (opts.inline) {
             src = `data:${asset.contentType};base64,${asset.bytes.toString("base64")}`;
           } else {
-            const name = safeFileName(el.src, imgIndex++, asset.contentType);
+            const name = safeFileName(el.src, imgIndex++, asset.contentType, sizePrefix);
             zip.file(name, asset.bytes);
             files.push(name);
             src = name;
@@ -388,7 +434,7 @@ export async function buildHtmlPackage(opts: HtmlExportOptions): Promise<HtmlPac
           if (passet) {
             if (opts.inline) psrc = `data:${passet.contentType};base64,${passet.bytes.toString("base64")}`;
             else {
-              const pname = safeFileName(part.src, imgIndex++, passet.contentType);
+              const pname = safeFileName(part.src, imgIndex++, passet.contentType, sizePrefix);
               zip.file(pname, passet.bytes);
               files.push(pname);
               psrc = pname;
@@ -400,7 +446,7 @@ export async function buildHtmlPackage(opts: HtmlExportOptions): Promise<HtmlPac
             const kx = pw / Math.max(1, m.w0), ky = ph / Math.max(1, m.h0);
             const fr = (v: number) => Math.round(v * 100) / 100;
             const stops = m.frames.map((f) => `${fr((f.t * m.dur / Math.max(0.01, kvDur)) * 100)}%{transform:translate(${fr(f.dx * kx)}px,${fr(f.dy * ky)}px) scale(${fr(f.sx)},${fr(f.sy)});opacity:${fr(f.o)}}`);
-            const name = `kvp${kvLayers.indexOf(el)}_${pi}`;
+            const name = `kvp${kvPrefix}${kvLayers.indexOf(el)}_${pi}`;
             kvKeyframes.push(`@keyframes ${name}{${stops.join("")}}`);
             panim = `animation:${name} ${D}s linear 0s ${L} normal forwards;transform-origin:0 0`;
           }
@@ -427,6 +473,18 @@ export async function buildHtmlPackage(opts: HtmlExportOptions): Promise<HtmlPac
     }
   }
 
+  const stage: RenderedStage = {
+    width, height, format: `${width}x${height}`,
+    body: body.join("\n"),
+    keyframes: useKv ? kvKeyframes.join("\n") : "",
+    fontFaces,
+    durationSec: D, loops: L,
+    motionSource: useKv ? "key-visual" : "studio",
+    animation: useKv ? "key-visual" : preset,
+    artworkMotion: artMotion, copyMotion, storyFrames,
+    wipeStage: !useKv && artMotion === "wipe",
+  };
+
   const utm = new URLSearchParams({
     utm_source: "brand-studio",
     utm_medium: "display",
@@ -450,24 +508,7 @@ html,body{margin:0;padding:0;background:transparent}
 #fluid{position:relative;width:100%;}
 .el{box-sizing:border-box}
 .img{display:block}
-@keyframes enter{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
-@keyframes kenburns{from{transform:scale(1)}to{transform:scale(1.08)}}
-@keyframes drift{0%{transform:scale(1.06) translate(0,0)}100%{transform:scale(1.06) translate(-2.5%,1.5%)}}
-@keyframes zoomout{from{transform:scale(1.12)}to{transform:scale(1)}}
-@keyframes breathe{from{transform:scale(1)}to{transform:scale(1.035)}}
-@keyframes fadein{from{opacity:0}to{opacity:1}}
-@keyframes pan{from{opacity:0;transform:translateX(-28px)}to{opacity:1;transform:none}}
-@keyframes pop{from{opacity:0;transform:scale(.82)}to{opacity:1;transform:scale(1)}}
-@keyframes wipein{from{clip-path:inset(0 100% 0 0);opacity:1}to{clip-path:inset(0 0 0 0);opacity:1}}
-@keyframes baseline{from{clip-path:inset(0 0 100% 0);transform:translateY(18px)}to{clip-path:inset(0 0 0 0);transform:none}}
-@keyframes tumble{from{opacity:0;transform:rotate(-5deg) translateY(16px);transform-origin:left bottom}to{opacity:1;transform:none}}
-@keyframes blockwipe{0%{transform:scaleX(0);transform-origin:left center}45%{transform:scaleX(1);transform-origin:left center}55%{transform:scaleX(1);transform-origin:right center}100%{transform:scaleX(0);transform-origin:right center}}
-.tw .w{opacity:0;animation:fadein .18s ease-out both}
-@keyframes wipe{from{clip-path:inset(0 100% 0 0)}to{clip-path:inset(0 0 0 0)}}
-/* Story frames: 1 = hook, 2 = support, 3 = end-frame (holds). */
-@keyframes frame1{0%{opacity:0;transform:translateY(12px)}6%{opacity:1;transform:none}36%{opacity:1}42%{opacity:0;transform:translateY(-8px)}100%{opacity:0}}
-@keyframes frame2{0%{opacity:0}40%{opacity:0;transform:translateY(12px)}46%{opacity:1;transform:none}66%{opacity:1}72%{opacity:0;transform:translateY(-8px)}100%{opacity:0}}
-@keyframes frame3{0%{opacity:0}70%{opacity:0;transform:translateY(12px)}76%{opacity:1;transform:none}100%{opacity:1}}
+${SHARED_KEYFRAMES}
 ${useKv ? kvKeyframes.join("\n") : artMotion === "wipe" ? `#stage{animation:wipe .9s cubic-bezier(.4,0,.2,1) both}` : ""}
 @media (prefers-reduced-motion:reduce){.el,#stage{animation:none!important;clip-path:none!important}}
 #clicktag-layer{position:absolute;left:0;top:0;width:${width}px;height:${height}px;z-index:2147483647;display:block;text-decoration:none;background:transparent;cursor:pointer}
@@ -527,11 +568,11 @@ ${(opts.pixelUrls ?? [])
     var text=el.textContent||''; var delay=parseFloat(el.getAttribute('data-delay')||'0');
     el.textContent='';
     var i=0;
-    text.split(/(\n)/).forEach(function(part){
-      if(part==='\n'){ el.appendChild(document.createTextNode('\n')); return; }
-      part.split(/(\s+)/).forEach(function(tok){
+    text.split(/(\\n)/).forEach(function(part){
+      if(part==='\\n'){ el.appendChild(document.createTextNode('\\n')); return; }
+      part.split(/(\\s+)/).forEach(function(tok){
         if(!tok) return;
-        if(/^\s+$/.test(tok)){ el.appendChild(document.createTextNode(tok)); return; }
+        if(/^\\s+$/.test(tok)){ el.appendChild(document.createTextNode(tok)); return; }
         var sp=document.createElement('span'); sp.className='w'; sp.textContent=tok; sp.style.animationDelay=(delay+i*0.09).toFixed(2)+'s'; el.appendChild(sp); i++;
       });
     });
@@ -602,9 +643,234 @@ ${(opts.pixelUrls ?? [])
 </body>
 </html>`;
 
-  if (opts.inline) return { zip: Buffer.alloc(0), html, files: ["index.html"] };
+  if (opts.inline || opts._zip) return { zip: Buffer.alloc(0), html, files: opts._zip ? files : ["index.html"], stage };
   zip.file("index.html", html);
   files.unshift("index.html");
   const zipBuf = await zip.generateAsync({ type: "nodebuffer", compression: "DEFLATE" });
-  return { zip: zipBuf, html, files };
+  return { zip: zipBuf, html, files, stage };
+}
+
+// ---------------------------------------------------------------------------
+// Responsive package: every size of a campaign in ONE document
+// ---------------------------------------------------------------------------
+
+export interface ResponsiveSize {
+  width: number;
+  height: number;
+  config: FreeformConfig;
+  templateId?: number;
+}
+
+export interface ResponsiveHtmlOptions extends Omit<HtmlExportOptions, "width" | "height" | "config" | "_zip" | "_files" | "_sizeIndex" | "_skipFonts"> {
+  /** The first size is the primary (declared in ad.size); the rest are
+   * alternatives the serving slot may pick. */
+  sizes: ResponsiveSize[];
+}
+
+export interface ResponsiveHtmlPackage extends HtmlPackage {
+  sizes: Array<{ width: number; height: number; templateId?: number }>;
+}
+
+/**
+ * One HTML5 document carrying every size built from the same master. Each
+ * size is a hidden stage with its own layout and motion; a media rule per
+ * serving size shows the exact match without script, and a small picker
+ * chooses the best stage for any other slot (largest that fits with the
+ * closest aspect, scaled to fill) — so one upload serves a whole DV360
+ * line item. Assets are shared in the zip; fonts are embedded once.
+ */
+export async function buildResponsiveHtmlPackage(opts: ResponsiveHtmlOptions): Promise<ResponsiveHtmlPackage> {
+  if (opts.sizes.length === 0) throw new Error("A responsive package needs at least one size");
+  const zip = new JSZip();
+  const files: string[] = [];
+  const stages: RenderedStage[] = [];
+  for (const [i, size] of opts.sizes.entries()) {
+    const pkg = await buildHtmlPackage({
+      ...opts,
+      width: size.width,
+      height: size.height,
+      config: size.config,
+      tags: { ...opts.tags, format: `${size.width}x${size.height}` },
+      _zip: zip,
+      _files: files,
+      _sizeIndex: i,
+      _skipFonts: i > 0,
+      fluid: false,
+    });
+    if (pkg.stage) stages.push(pkg.stage);
+  }
+  const primary = stages[0];
+  const { tags, studioBase } = opts;
+  const utm = new URLSearchParams({
+    utm_source: "brand-studio",
+    utm_medium: "display",
+    utm_campaign: tags.campaign ?? "",
+    utm_content: `responsive${tags.variant ? `-${tags.variant}` : ""}`,
+    utm_term: tags.token,
+  });
+  const landing = opts.clickUrl ? `${opts.clickUrl}${opts.clickUrl.includes("?") ? "&" : "?"}${utm.toString()}` : "";
+  const sizeCss = stages.map((st, i) =>
+    `#s${i}{width:${st.width}px;height:${st.height}px}\n@media (width:${st.width}px) and (height:${st.height}px){.stage{display:none}#s${i}{display:block}}${st.wipeStage ? `\n#s${i}{animation:wipe .9s cubic-bezier(.4,0,.2,1) both}` : ""}${st.keyframes ? `\n${st.keyframes}` : ""}`,
+  ).join("\n");
+  const stageMarkup = stages.map((st, i) =>
+    `<div class="stage${i === 0 ? " on" : ""}" id="s${i}" data-w="${st.width}" data-h="${st.height}" data-format="${st.format}" data-animation="${st.animation}" data-motion-source="${st.motionSource}" data-artwork-motion="${st.artworkMotion}" data-copy-motion="${st.copyMotion}" data-story-frames="${st.storyFrames}" data-duration="${st.durationSec}" data-loops="${st.loops}">\n${st.body}\n<a href="javascript:void(0)" class="clicktag" aria-label="${esc(tags.name)}"></a>\n</div>`,
+  ).join("\n");
+  const pixels = (opts.pixelUrls ?? []).filter((u) => /^https:\/\//i.test(u)).slice(0, 5)
+    .map((u) => `<img src="${esc(u)}" alt="" width="1" height="1" style="position:absolute;left:-9999px;top:0" aria-hidden="true">`).join("\n");
+
+  const html = `<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="ad.size" content="width=${primary.width},height=${primary.height}">
+<meta name="ad.sizes" content="${stages.map((st) => st.format).join(",")}">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>${esc(tags.name)}</title>
+<style>
+${primary.fontFaces.join("\n")}
+html,body{margin:0;padding:0;background:transparent;width:100%;height:100%}
+#fluid{position:relative;width:100%;height:100%;overflow:hidden}
+.stage{position:absolute;left:0;top:0;overflow:hidden;background:#ffffff;transform-origin:top left;display:none}
+.stage.on{display:block}
+.el{box-sizing:border-box}
+.img{display:block}
+${SHARED_KEYFRAMES}
+${sizeCss}
+@media (prefers-reduced-motion:reduce){.el,.stage{animation:none!important;clip-path:none!important}}
+.clicktag{position:absolute;left:0;top:0;width:100%;height:100%;z-index:2147483647;display:block;text-decoration:none;background:transparent;cursor:pointer}
+</style>
+<script type="text/javascript">var clickTag = window.clickTag || ${JSON.stringify(landing)};</script>
+</head>
+<body>
+<div id="fluid" data-creative="${esc(tags.token)}" data-name="${esc(tags.name)}" data-campaign="${esc(tags.campaign ?? "")}" data-variant="${esc(tags.variant ?? "")}" data-format="responsive">
+${stageMarkup}
+${pixels}
+</div>
+<script>
+(function(){
+  var STUDIO=${JSON.stringify(studioBase)};
+  var TOKEN=${JSON.stringify(tags.token)};
+  var SIZES=${JSON.stringify(stages.map((st, i) => ({ i, w: st.width, h: st.height })))};
+  var root=document.getElementById('fluid');
+  var params=new URLSearchParams(location.search);
+  var dynKey='';
+  var shown=-1;
+
+  // ---- Pick the stage for the slot: exact size first, else the largest
+  // that fits with the closest aspect, scaled to fill the slot. ----
+  function pick(){
+    var vw=window.innerWidth||document.documentElement.clientWidth||SIZES[0].w;
+    var vh=window.innerHeight||document.documentElement.clientHeight||SIZES[0].h;
+    var forced=params.get('size');
+    var best=null;
+    if(forced){ SIZES.forEach(function(s){ if(s.w+'x'+s.h===forced) best=s; }); }
+    if(!best){ SIZES.forEach(function(s){ if(s.w===vw&&s.h===vh) best=s; }); }
+    if(!best){
+      var fit=SIZES.filter(function(s){ return s.w<=vw+0.5&&s.h<=vh+0.5; });
+      var pool=fit.length?fit:SIZES.slice();
+      var ar=vw/Math.max(1,vh);
+      pool.sort(function(a,b){
+        var da=Math.abs(Math.log((a.w/a.h)/ar)), db=Math.abs(Math.log((b.w/b.h)/ar));
+        if(Math.abs(da-db)>0.02) return da-db;
+        return (b.w*b.h)-(a.w*a.h);
+      });
+      best=pool[0];
+    }
+    if(best.i!==shown){
+      shown=best.i;
+      SIZES.forEach(function(s){ var el=document.getElementById('s'+s.i); if(el) el.className=s.i===best.i?'stage on':'stage'; });
+    }
+    var el=document.getElementById('s'+best.i);
+    var k=Math.min(vw/best.w, vh/best.h);
+    if(!isFinite(k)||k<=0) k=1;
+    if(Math.abs(k-1)<0.005) k=1;
+    el.style.transform=k===1?'':'scale('+k+')';
+    el.style.left=Math.max(0,Math.round((vw-best.w*k)/2))+'px';
+    el.style.top=Math.max(0,Math.round((vh-best.h*k)/2))+'px';
+    return best;
+  }
+  var current=pick();
+  window.addEventListener('resize',function(){ current=pick(); });
+
+  // ---- Dynamic content: URL params or a JSON feed override baked copy. ----
+  function applyDynamic(data){
+    if(!data) return;
+    var keys=['headline','subhead','body','cta','image'];
+    keys.forEach(function(k){
+      if(data[k]==null||data[k]==='') return;
+      var els=root.querySelectorAll('[data-dynamic="'+k+'"]');
+      for(var i=0;i<els.length;i++){ if(k==='image') els[i].setAttribute('src',data[k]); else els[i].textContent=data[k]; }
+    });
+    dynKey=data.key||data.variant||'';
+  }
+  var urlData={};
+  ['headline','subhead','body','cta','image','key','variant'].forEach(function(k){ if(params.get(k)) urlData[k]=params.get(k); });
+  applyDynamic(urlData);
+  if(params.get('feed')){ try{ fetch(params.get('feed'),{mode:'cors'}).then(function(r){return r.json();}).then(applyDynamic).catch(function(){}); }catch(e){} }
+
+  // ---- Typewriter: reveal copy word by word (keeps line breaks). ----
+  root.querySelectorAll('.tw').forEach(function(el){
+    var text=el.textContent||''; var delay=parseFloat(el.getAttribute('data-delay')||'0');
+    el.textContent=''; var i=0;
+    text.split(/(\\n)/).forEach(function(part){
+      if(part==='\\n'){ el.appendChild(document.createTextNode('\\n')); return; }
+      part.split(/(\\s+)/).forEach(function(tok){
+        if(!tok) return;
+        if(/^\\s+$/.test(tok)){ el.appendChild(document.createTextNode(tok)); return; }
+        var sp=document.createElement('span'); sp.className='w'; sp.textContent=tok; sp.style.animationDelay=(delay+i*0.09).toFixed(2)+'s'; el.appendChild(sp); i++;
+      });
+    });
+  });
+
+  // ---- Analytics beacons (fire-and-forget; never block the creative). ----
+  var TRACK=${opts.inline ? "false" : "true"};
+  function beacon(type,extra){
+    if(!TRACK) return;
+    try{
+      var q='?t='+encodeURIComponent(type)+'&f='+encodeURIComponent(current.w+'x'+current.h)+(dynKey?'&k='+encodeURIComponent(dynKey):'')+(extra||'');
+      var url=STUDIO+'/track/c/'+TOKEN+q;
+      if(navigator.sendBeacon){ navigator.sendBeacon(url); } else { (new Image()).src=url+'&_='+Date.now(); }
+    }catch(e){}
+  }
+  beacon('impression');
+  function dl(event){
+    try{
+      var w=window; try{ if(w.parent && w.parent.dataLayer) w=w.parent; }catch(e){}
+      if(w.dataLayer && typeof w.dataLayer.push==='function'){
+        w.dataLayer.push({event:event, creative_id:TOKEN, creative_name:root.getAttribute('data-name'), creative_campaign:root.getAttribute('data-campaign'), creative_format:current.w+'x'+current.h, creative_variant:root.getAttribute('data-variant')});
+      }
+    }catch(e){}
+  }
+  dl('creative_impression');
+  var viewMs=0,inView=false,since=0,viewableSent=false;
+  function flush(){ if(inView){ viewMs+=Date.now()-since; since=Date.now(); } }
+  if('IntersectionObserver' in window){
+    new IntersectionObserver(function(entries){
+      entries.forEach(function(e){
+        if(e.intersectionRatio>=0.5 && !inView){ inView=true; since=Date.now(); }
+        else if(e.intersectionRatio<0.5 && inView){ flush(); inView=false; }
+      });
+    },{threshold:[0,0.5,1]}).observe(root);
+  } else { inView=true; since=Date.now(); }
+  setInterval(function(){ flush(); if(!viewableSent && viewMs>=1000){ viewableSent=true; beacon('viewable','&ms='+viewMs); } },500);
+  window.addEventListener('pagehide',function(){ flush(); if(viewMs>0) beacon('view','&ms='+viewMs); });
+  var interacted=false;
+  function onInteract(){ if(interacted) return; interacted=true; beacon('interaction'); }
+  root.addEventListener('pointerenter',onInteract); root.addEventListener('touchstart',onInteract,{passive:true});
+  root.addEventListener('click',function(ev){
+    var t=ev.target; if(!(t&&t.className==='clicktag')) return;
+    ev.preventDefault(); beacon('click'); dl('creative_click');
+    var url=window.clickTag||''; if(url){ window.open(url,'_blank'); }
+  });
+})();
+</script>
+</body>
+</html>`;
+
+  const sizes = opts.sizes.map((sz) => ({ width: sz.width, height: sz.height, ...(sz.templateId ? { templateId: sz.templateId } : {}) }));
+  if (opts.inline) return { zip: Buffer.alloc(0), html, files: ["index.html"], sizes };
+  zip.file("index.html", html);
+  files.unshift("index.html");
+  const zipBuf = await zip.generateAsync({ type: "nodebuffer", compression: "DEFLATE" });
+  return { zip: zipBuf, html, files, sizes };
 }
