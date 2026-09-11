@@ -12,7 +12,7 @@ import { checkLayout, checkMandatory } from "../lib/layoutCheck";
 import { isImageOnly, hasLayeredSlots, hasPanelParts, splitPanelGraphic, enrichLayeredArtwork, adaptLayered, edgeColour, storageImageLoader } from "../lib/layeredArtwork";
 import { analyseGwdHtml, motionForElements, type GwdLeaf } from "../lib/gwdMotion";
 import { resolveStyleSchema, learnProfile, getProfile } from "../lib/layoutProfile";
-import { guidelinesForConfig, guidelineNotes } from "../lib/guidelines";
+import { guidelinesForConfig, guidelineNotes, topicsPerElement } from "../lib/guidelines";
 import type { StyleSchema } from "../lib/styleSpecs/getReadyBurst2";
 import { visibleBounds } from "../lib/gwdImport";
 
@@ -580,7 +580,8 @@ router.post("/templates/:id/claude-review", requireAuth, async (req, res): Promi
       styleSpec: resolvedStyle.schema ? `${resolvedStyle.label}\n${describeStyleSchema(resolvedStyle.schema)}` : null,
       // The guideline passages for exactly the elements on this piece: logo
       // rules when there is a logo tile, pattern rules when there is a band…
-      elementGuidelines: await guidelinesForConfig(brand?.id ?? null, config, t.width, t.height).catch(() => []),
+      elementGuidelines: await guidelinesForConfig(brand?.id ?? null, config, t.width, t.height, 5).catch(() => []),
+      elementTopics: topicsPerElement(config, t.width, t.height),
       headlineMaxH: (() => {
         const sp = resolvedStyle.schema;
         if (!sp || !hasLayeredSlots(config)) return null;

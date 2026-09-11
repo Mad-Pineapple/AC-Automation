@@ -48,6 +48,7 @@ interface ClaudeReviewShape {
   reviewedAt: string;
   answeredBy?: string;
   guidelinesApplied?: Array<{ topic: string; label: string; elementIds: string[]; sources: string[]; passages: number }>;
+  elementChecks?: Array<{ elementId: string; label: string; topics: string[]; status: "ok" | "issue"; note: string | null }>;
 }
 interface ClaudeFixesShape {
   at: string;
@@ -110,9 +111,15 @@ function ClaudeReviewPanel({ template, busy, onCheck, onUndo, undoing }: { templ
           {remaining.length > 0 && (
             <p className="text-xs text-amber-700 flex gap-1.5"><AlertTriangle className="w-3.5 h-3.5 shrink-0 mt-0.5" /><span>{remaining.length} thing{remaining.length === 1 ? "" : "s"} still need{remaining.length === 1 ? "s" : ""} a designer: {remaining.map((i) => i.message).join(" ")}</span></p>
           )}
+          {r.elementChecks && r.elementChecks.length > 0 && (
+            <p className="text-[10px] text-muted-foreground" data-testid={`claude-coverage-${template.id}`}>
+              Every element checked against the guidelines: {r.elementChecks.length} elements, {r.elementChecks.filter((c) => c.status === "issue").length} with an issue
+              {r.elementChecks.some((c) => c.status === "issue") ? ` (${r.elementChecks.filter((c) => c.status === "issue").map((c) => `${c.label}${c.note ? `: ${c.note}` : ""}`).join("; ")})` : ""}.
+            </p>
+          )}
           {r.guidelinesApplied && r.guidelinesApplied.length > 0 && (
             <p className="text-[10px] text-muted-foreground" data-testid={`claude-guidelines-${template.id}`}>
-              Guidelines read for this piece: {r.guidelinesApplied.filter((g) => g.elementIds.length > 0 || g.topic === "social").map((g) => g.label.toLowerCase()).join(", ")}
+              Guidelines read: {r.guidelinesApplied.map((g) => g.label.toLowerCase()).join(", ")}
               {" · from "}{Array.from(new Set(r.guidelinesApplied.flatMap((g) => g.sources))).join(", ")}
             </p>
           )}

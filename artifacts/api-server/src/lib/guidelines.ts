@@ -18,7 +18,7 @@ import { extractPdfText } from "./pdf";
 import { DISTILLED_GUIDELINES, DISTILLED_GUIDELINES_SOURCE } from "./brandGuidelines/aucklandCouncilDistilled";
 import { logger } from "./logger";
 
-export type GuidelineTopic = "logo" | "pattern" | "anther" | "photography" | "typography" | "colour" | "voice" | "social" | "cta" | "layout";
+export type GuidelineTopic = "logo" | "pattern" | "anther" | "photography" | "illustration" | "typography" | "colour" | "voice" | "strapline" | "tereo" | "accessibility" | "social" | "cta" | "layout";
 
 export interface TopicDef {
   id: GuidelineTopic;
@@ -34,9 +34,13 @@ export const TOPICS: TopicDef[] = [
   { id: "pattern", label: "Kotahitanga patterns and bands", slots: ["band", "pattern", "decoration"], keywords: /kotahitanga|pattern|tohu|motif|wallpaper|stamp|texture|band\b/i },
   { id: "anther", label: "The anther framing device", slots: ["anther", "frame"], keywords: /anther|framing device|circle on a (straight )?stem|stem/i },
   { id: "photography", label: "Photography and imagery", slots: ["photo", "product", "cutout", "image"], keywords: /photograph|imagery|\bimage\b|crop|talent|model release|stock|video\b|footage/i },
+  { id: "illustration", label: "Illustration and icons", slots: ["illustration", "icon", "ctaIcon"], keywords: /illustrat|\bicon/i },
   { id: "typography", label: "Typography", slots: ["headline", "subheadline", "message", "body", "text", "kicker"], keywords: /typograph|\bfont\b|typeface|national 2|condensed|tracking|leading|sentence case|caps\b|headline|body copy/i },
   { id: "colour", label: "Colour palette", slots: ["panel", "rect", "scrim"], keywords: /colou?r|palette|#[0-9a-f]{6}|\bhex\b|tint|ocean|k[oō]whai|shore|anther red|pantone|cmyk/i },
-  { id: "voice", label: "Voice and tone", slots: ["headline", "subheadline", "message", "body", "text", "cta"], keywords: /voice|tone|te reo|māori|maori|greeting|kia ora|plain (english|language)|we say|never say|copy\b/i },
+  { id: "voice", label: "Voice and tone", slots: ["headline", "subheadline", "message", "body", "text", "cta"], keywords: /voice|tone|greeting|plain (english|language)|we say|never say|copy\b|sentence case|exclamation|jargon|conversational|inclusive/i },
+  { id: "strapline", label: "Strapline and brand line", slots: ["strapline", "tagline"], keywords: /strapline|tagline|brand line|t[āa]maki turuki|altogether auckland|end[- ]frame/i },
+  { id: "tereo", label: "Te reo Māori", slots: [], keywords: /te reo|m[āa]ori|macron|bilingual|kia ora|t[āa]maki makaurau|kaunihera|tohu\b|whakatauk/i },
+  { id: "accessibility", label: "Accessibility and legibility", slots: [], keywords: /accessib|contrast|legib|readab|minimum (type|font|text) size|wcag|colou?r[- ]blind|caption/i },
   { id: "social", label: "Social media rules", slots: ["social"], keywords: /social|instagram|facebook|tiktok|linkedin|story\b|reel|profile picture|safe zone|1080/i },
   { id: "cta", label: "Buttons and calls to action", slots: ["cta", "ctaLabel", "ctaIcon"], keywords: /call to action|\bcta\b|button|pill|search (bar|pill)|find out more|learn more/i },
   { id: "layout", label: "Grid, margins and formats", slots: ["*"], keywords: /\bgrid\b|margin|format|layout|hierarchy|white ?space|alignment|bleed/i },
@@ -237,29 +241,58 @@ export async function guidelineStatus(brandId: number): Promise<{ total: number;
 // ---------------------------------------------------------------------------
 // Reading for a piece
 
-/** The topics the elements on a piece call for, with the element ids per topic. */
+/**
+ * The topics a piece calls for, with the element ids per topic. Every
+ * element on the artwork maps to at least one topic, and three topics
+ * apply to every piece as a whole: colour, grid and margins, accessibility.
+ */
 export function topicsForConfig(config: FreeformConfig, width: number, height: number): Array<{ topic: TopicDef; elementIds: string[] }> {
   const out: Array<{ topic: TopicDef; elementIds: string[] }> = [];
-  const hasText = config.elements.some((e) => e.type === "text" && e.text.trim().length > 0);
+  const allText = config.elements.filter((e) => e.type === "text" && e.text.trim().length > 0);
+  const hasText = allText.length > 0 || config.elements.some((e) => ["headline", "subheadline", "message", "kicker", "ctaLabel"].includes(e.slot ?? ""));
+  const textOf = (e: FreeformConfig["elements"][number]) => (e.type === "text" ? e.text : "");
+  const hasStrapline = allText.some((e) => /t[āa]maki turuki|altogether auckland/i.test(textOf(e)));
+  const hasTeReo = allText.some((e) => /[āēīōū]/i.test(textOf(e)) || /\b(kia ora|t[āa]maki makaurau|kaunihera|whānau|whanau|tohu)\b/i.test(textOf(e)));
   for (const t of TOPICS) {
     const ids = config.elements
       .filter((e) => {
-        const slot = e.slot ?? "";
-        const role = e.type === "text" || e.type === "image" ? (e as { role?: string }).role ?? "" : "";
-        if (t.id === "colour") return e.type === "rect" || slot === "panel" || slot === "scrim";
-        if (t.id === "typography" || t.id === "voice") return (e.type === "text" && e.text.trim().length > 0) || ["headline", "subheadline", "message", "kicker"].includes(slot);
-        if (t.id === "social") return false;
-        if (t.id === "layout") return false;
-        if (t.id === "anther") return e.type === "image" && ((e as { radius?: number }).radius ?? 0) > 0 && slot !== "logo";
-        return t.slots.includes(slot) || t.slots.includes(role);
+        const slot: string = e.slot ?? "";
+        const role: string = e.type === "text" || e.type === "image" ? (e as { role?: string }).role ?? "" : "";
+        const isCopy = (e.type === "text" && e.text.trim().length > 0) || ["headline", "subheadline", "message", "kicker", "ctaLabel"].includes(slot);
+        switch (t.id) {
+          case "colour": return e.type === "rect" || ["panel", "scrim", "band"].includes(slot);
+          case "typography": return isCopy;
+          case "voice": return isCopy;
+          case "strapline": return slot === "strapline" || /t[āa]maki turuki|altogether auckland/i.test(textOf(e));
+          case "tereo": return e.type === "text" && (/[āēīōū]/i.test(e.text) || /\b(kia ora|t[āa]maki makaurau|kaunihera|whānau|whanau)\b/i.test(e.text));
+          case "accessibility": return isCopy || slot === "cta";
+          case "anther": return e.type === "image" && ((e as { radius?: number }).radius ?? 0) > 0 && slot !== "logo";
+          case "illustration": return e.type === "image" && (slot === "ctaIcon" || slot === "icon" || slot === "illustration");
+          case "photography": return e.type === "image" && ["photo", "cutout"].includes(slot) || (e.type === "image" && role === "product");
+          case "social": return false;
+          case "layout": return false;
+          default: return t.slots.includes(slot) || t.slots.includes(role);
+        }
       })
       .map((e) => e.id);
-    if (t.id === "social" && Math.abs(width - height) < 2 && width >= 600) out.push({ topic: t, elementIds: [] });
-    else if (t.id === "layout") out.push({ topic: t, elementIds: [] });
-    else if (t.id === "voice" && !hasText) continue;
-    else if (ids.length > 0) out.push({ topic: t, elementIds: ids });
+    if (t.id === "social") { if (Math.abs(width - height) < 2 && width >= 600) out.push({ topic: t, elementIds: [] }); continue; }
+    if (t.id === "layout" || t.id === "colour" || t.id === "accessibility") { out.push({ topic: t, elementIds: ids }); continue; }
+    if (t.id === "voice" && !hasText) continue;
+    if (t.id === "strapline" && !hasStrapline && ids.length === 0) continue;
+    if (t.id === "tereo" && !hasTeReo) continue;
+    if (ids.length > 0) out.push({ topic: t, elementIds: ids });
   }
   return out;
+}
+
+/** Which topics each element on the piece is checked against (every element gets at least the whole-piece topics). */
+export function topicsPerElement(config: FreeformConfig, width: number, height: number): Array<{ elementId: string; label: string; topics: GuidelineTopic[] }> {
+  const byTopic = topicsForConfig(config, width, height);
+  return config.elements.map((e) => {
+    const mine = byTopic.filter((t) => t.elementIds.includes(e.id)).map((t) => t.topic.id);
+    const label = e.slot ?? (e.type === "text" ? e.role : e.type === "image" ? e.role : "rect");
+    return { elementId: e.id, label, topics: mine.length ? mine : (["layout"] as GuidelineTopic[]) };
+  });
 }
 
 export interface ElementGuideline { topic: GuidelineTopic; label: string; elementIds: string[]; passages: Passage[] }

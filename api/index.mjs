@@ -233887,9 +233887,13 @@ var TOPICS = [
   { id: "pattern", label: "Kotahitanga patterns and bands", slots: ["band", "pattern", "decoration"], keywords: /kotahitanga|pattern|tohu|motif|wallpaper|stamp|texture|band\b/i },
   { id: "anther", label: "The anther framing device", slots: ["anther", "frame"], keywords: /anther|framing device|circle on a (straight )?stem|stem/i },
   { id: "photography", label: "Photography and imagery", slots: ["photo", "product", "cutout", "image"], keywords: /photograph|imagery|\bimage\b|crop|talent|model release|stock|video\b|footage/i },
+  { id: "illustration", label: "Illustration and icons", slots: ["illustration", "icon", "ctaIcon"], keywords: /illustrat|\bicon/i },
   { id: "typography", label: "Typography", slots: ["headline", "subheadline", "message", "body", "text", "kicker"], keywords: /typograph|\bfont\b|typeface|national 2|condensed|tracking|leading|sentence case|caps\b|headline|body copy/i },
   { id: "colour", label: "Colour palette", slots: ["panel", "rect", "scrim"], keywords: /colou?r|palette|#[0-9a-f]{6}|\bhex\b|tint|ocean|k[oō]whai|shore|anther red|pantone|cmyk/i },
-  { id: "voice", label: "Voice and tone", slots: ["headline", "subheadline", "message", "body", "text", "cta"], keywords: /voice|tone|te reo|māori|maori|greeting|kia ora|plain (english|language)|we say|never say|copy\b/i },
+  { id: "voice", label: "Voice and tone", slots: ["headline", "subheadline", "message", "body", "text", "cta"], keywords: /voice|tone|greeting|plain (english|language)|we say|never say|copy\b|sentence case|exclamation|jargon|conversational|inclusive/i },
+  { id: "strapline", label: "Strapline and brand line", slots: ["strapline", "tagline"], keywords: /strapline|tagline|brand line|t[āa]maki turuki|altogether auckland|end[- ]frame/i },
+  { id: "tereo", label: "Te reo M\u0101ori", slots: [], keywords: /te reo|m[āa]ori|macron|bilingual|kia ora|t[āa]maki makaurau|kaunihera|tohu\b|whakatauk/i },
+  { id: "accessibility", label: "Accessibility and legibility", slots: [], keywords: /accessib|contrast|legib|readab|minimum (type|font|text) size|wcag|colou?r[- ]blind|caption/i },
   { id: "social", label: "Social media rules", slots: ["social"], keywords: /social|instagram|facebook|tiktok|linkedin|story\b|reel|profile picture|safe zone|1080/i },
   { id: "cta", label: "Buttons and calls to action", slots: ["cta", "ctaLabel", "ctaIcon"], keywords: /call to action|\bcta\b|button|pill|search (bar|pill)|find out more|learn more/i },
   { id: "layout", label: "Grid, margins and formats", slots: ["*"], keywords: /\bgrid\b|margin|format|layout|hierarchy|white ?space|alignment|bleed/i }
@@ -234058,24 +234062,65 @@ async function guidelineStatus(brandId) {
 }
 function topicsForConfig(config2, width, height) {
   const out = [];
-  const hasText = config2.elements.some((e) => e.type === "text" && e.text.trim().length > 0);
+  const allText = config2.elements.filter((e) => e.type === "text" && e.text.trim().length > 0);
+  const hasText = allText.length > 0 || config2.elements.some((e) => ["headline", "subheadline", "message", "kicker", "ctaLabel"].includes(e.slot ?? ""));
+  const textOf = (e) => e.type === "text" ? e.text : "";
+  const hasStrapline = allText.some((e) => /t[āa]maki turuki|altogether auckland/i.test(textOf(e)));
+  const hasTeReo = allText.some((e) => /[āēīōū]/i.test(textOf(e)) || /\b(kia ora|t[āa]maki makaurau|kaunihera|whānau|whanau|tohu)\b/i.test(textOf(e)));
   for (const t of TOPICS) {
     const ids = config2.elements.filter((e) => {
       const slot = e.slot ?? "";
       const role = e.type === "text" || e.type === "image" ? e.role ?? "" : "";
-      if (t.id === "colour") return e.type === "rect" || slot === "panel" || slot === "scrim";
-      if (t.id === "typography" || t.id === "voice") return e.type === "text" && e.text.trim().length > 0 || ["headline", "subheadline", "message", "kicker"].includes(slot);
-      if (t.id === "social") return false;
-      if (t.id === "layout") return false;
-      if (t.id === "anther") return e.type === "image" && (e.radius ?? 0) > 0 && slot !== "logo";
-      return t.slots.includes(slot) || t.slots.includes(role);
+      const isCopy = e.type === "text" && e.text.trim().length > 0 || ["headline", "subheadline", "message", "kicker", "ctaLabel"].includes(slot);
+      switch (t.id) {
+        case "colour":
+          return e.type === "rect" || ["panel", "scrim", "band"].includes(slot);
+        case "typography":
+          return isCopy;
+        case "voice":
+          return isCopy;
+        case "strapline":
+          return slot === "strapline" || /t[āa]maki turuki|altogether auckland/i.test(textOf(e));
+        case "tereo":
+          return e.type === "text" && (/[āēīōū]/i.test(e.text) || /\b(kia ora|t[āa]maki makaurau|kaunihera|whānau|whanau)\b/i.test(e.text));
+        case "accessibility":
+          return isCopy || slot === "cta";
+        case "anther":
+          return e.type === "image" && (e.radius ?? 0) > 0 && slot !== "logo";
+        case "illustration":
+          return e.type === "image" && (slot === "ctaIcon" || slot === "icon" || slot === "illustration");
+        case "photography":
+          return e.type === "image" && ["photo", "cutout"].includes(slot) || e.type === "image" && role === "product";
+        case "social":
+          return false;
+        case "layout":
+          return false;
+        default:
+          return t.slots.includes(slot) || t.slots.includes(role);
+      }
     }).map((e) => e.id);
-    if (t.id === "social" && Math.abs(width - height) < 2 && width >= 600) out.push({ topic: t, elementIds: [] });
-    else if (t.id === "layout") out.push({ topic: t, elementIds: [] });
-    else if (t.id === "voice" && !hasText) continue;
-    else if (ids.length > 0) out.push({ topic: t, elementIds: ids });
+    if (t.id === "social") {
+      if (Math.abs(width - height) < 2 && width >= 600) out.push({ topic: t, elementIds: [] });
+      continue;
+    }
+    if (t.id === "layout" || t.id === "colour" || t.id === "accessibility") {
+      out.push({ topic: t, elementIds: ids });
+      continue;
+    }
+    if (t.id === "voice" && !hasText) continue;
+    if (t.id === "strapline" && !hasStrapline && ids.length === 0) continue;
+    if (t.id === "tereo" && !hasTeReo) continue;
+    if (ids.length > 0) out.push({ topic: t, elementIds: ids });
   }
   return out;
+}
+function topicsPerElement(config2, width, height) {
+  const byTopic = topicsForConfig(config2, width, height);
+  return config2.elements.map((e) => {
+    const mine = byTopic.filter((t) => t.elementIds.includes(e.id)).map((t) => t.topic.id);
+    const label2 = e.slot ?? (e.type === "text" ? e.role : e.type === "image" ? e.role : "rect");
+    return { elementId: e.id, label: label2, topics: mine.length ? mine : ["layout"] };
+  });
 }
 var SOURCE_RANK = (source) => source === DISTILLED_GUIDELINES_SOURCE ? 0 : source === "Brand summary" ? 2 : 1;
 async function guidelinesForConfig(brandId, config2, width, height, perTopic = 4) {
@@ -234309,8 +234354,21 @@ function isClaudeReviewConfigured() {
 var REVIEW_SCHEMA = {
   type: "object",
   additionalProperties: false,
-  required: ["verdict", "confidence", "summary", "issues"],
+  required: ["verdict", "confidence", "summary", "issues", "elementChecks"],
   properties: {
+    elementChecks: {
+      type: "array",
+      items: {
+        type: "object",
+        additionalProperties: false,
+        required: ["elementId", "status", "note"],
+        properties: {
+          elementId: { type: "string" },
+          status: { type: "string", enum: ["ok", "issue"] },
+          note: { type: ["string", "null"] }
+        }
+      }
+    },
     verdict: { type: "string", enum: ["right", "wrong"] },
     confidence: { type: "number" },
     summary: { type: "string" },
@@ -234429,9 +234487,12 @@ async function reviewPiece(input) {
     ...rules.layoutRules(input.width, input.height).map((r4) => `- ${r4}`),
     input.brand.fontFamily ? `- Brand font: ${input.brand.fontFamily}.` : "",
     "",
-    input.elementGuidelines && input.elementGuidelines.length ? `GUIDELINES FOR THE ELEMENTS ON THIS PIECE \u2014 read from the brand guidelines for exactly the things present (a logo tile, a pattern band, a photograph, live type, a panel colour\u2026). Check each named element against its passages and cite the passage in the issue message when it is broken:
-${input.elementGuidelines.map((g) => `${g.label.toUpperCase()}${g.elementIds.length ? ` (elements ${g.elementIds.slice(0, 6).join(", ")})` : ""}:
-${g.passages.map((p) => `- ${p.heading ? `[${p.heading}] ` : ""}${p.body} (${p.source})`).join("\n")}`).join("\n\n").slice(0, 9e3)}` : input.brand.guidelines ? `BRAND GUIDELINES (operational extract):
+    input.elementGuidelines && input.elementGuidelines.length ? `BRAND GUIDELINES FOR THIS PIECE \u2014 read from the brand guidelines for everything on it. Colour, grid and margins, and accessibility apply to the whole piece; the rest apply to the elements named. EVERY element must be checked against the topics listed for it and reported in elementChecks (status ok or issue, with a short note citing the passage when it is broken). Cite the passage in any issue message:
+${input.elementGuidelines.map((g) => `${g.label.toUpperCase()}${g.elementIds.length ? ` (elements ${g.elementIds.slice(0, 8).join(", ")})` : " (whole piece)"}:
+${g.passages.map((p) => `- ${p.heading ? `[${p.heading}] ` : ""}${p.body} (${p.source})`).join("\n")}`).join("\n\n").slice(0, 14e3)}${input.elementTopics && input.elementTopics.length ? `
+
+ELEMENTS TO CHECK (id \u2014 what it is \u2014 topics):
+${input.elementTopics.map((e) => `- ${e.elementId} \u2014 ${e.label} \u2014 ${e.topics.join(", ")}`).join("\n")}` : ""}` : input.brand.guidelines ? `BRAND GUIDELINES (operational extract):
 ${input.brand.guidelines.slice(0, 3500)}` : "",
     input.styleSpec ? `
 CAMPAIGN STYLE SPEC \u2014 measured off the signed-off artwork; this is the standard for this piece, above general taste:
@@ -234513,6 +234574,12 @@ ${input.measured.map((m) => `- [${m.severity}] ${m.message}${m.elementId ? ` (el
     ms: Date.now() - started,
     exemplarIds: refs.map((r4) => r4.id),
     ...input.elementGuidelines && input.elementGuidelines.length ? { guidelinesApplied: input.elementGuidelines.map((g) => ({ topic: g.topic, label: g.label, elementIds: g.elementIds, sources: [...new Set(g.passages.map((p) => p.source))], passages: g.passages.length })) } : {},
+    ...input.elementTopics && input.elementTopics.length ? {
+      elementChecks: input.elementTopics.map((e) => {
+        const got = (Array.isArray(parsed.elementChecks) ? parsed.elementChecks : []).find((c) => c.elementId === e.elementId);
+        return { elementId: e.elementId, label: e.label, topics: e.topics, status: got?.status === "issue" ? "issue" : "ok", note: got?.note ? String(got.note).slice(0, 300) : null };
+      })
+    } : {},
     ...answeredBy ? { answeredBy } : {}
   };
   logger2.info({ verdict: review.verdict, confidence: review.confidence, issues: issues.length, ms: review.ms, tokens: response.usage?.input_tokens }, "claude review finished");
@@ -241442,7 +241509,8 @@ router13.post("/templates/:id/claude-review", requireAuth, async (req, res) => {
 ${describeStyleSchema(resolvedStyle.schema)}` : null,
       // The guideline passages for exactly the elements on this piece: logo
       // rules when there is a logo tile, pattern rules when there is a band…
-      elementGuidelines: await guidelinesForConfig(brand?.id ?? null, config2, t.width, t.height).catch(() => []),
+      elementGuidelines: await guidelinesForConfig(brand?.id ?? null, config2, t.width, t.height, 5).catch(() => []),
+      elementTopics: topicsPerElement(config2, t.width, t.height),
       headlineMaxH: (() => {
         const sp = resolvedStyle.schema;
         if (!sp || !hasLayeredSlots(config2)) return null;
