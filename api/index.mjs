@@ -232144,7 +232144,17 @@ function checkMandatory(master, adapted, width, height) {
   }
   const isCopy = (e) => e.type === "text" && e.text.trim().length > 0 || e.type === "image" && ["headline", "subheadline", "message", "cta", "lockup"].includes(e.slot ?? "");
   const copyish = adapted.elements.filter(isCopy);
-  const cutouts = adapted.elements.filter((e) => e.type === "image" && e.slot === "cutout");
+  const cutouts = adapted.elements.map((e, i) => ({ e, i })).filter(({ e }) => e.type === "image" && e.slot === "cutout").map(({ e, i }) => {
+    let box = { x: e.x, y: e.y, w: e.w, h: e.h, id: e.id, slot: e.slot, type: e.type };
+    for (const later of adapted.elements.slice(i + 1)) {
+      if (later.type !== "rect" || later.slot !== "panel") continue;
+      const coversX = later.x <= box.x + 1 && later.x + later.w >= box.x + box.w - 1;
+      const coversY = later.y <= box.y + 1 && later.y + later.h >= box.y + box.h - 1;
+      if (coversX && later.y > box.y && later.y < box.y + box.h) box = { ...box, h: later.y - box.y };
+      else if (coversY && later.x > box.x && later.x < box.x + box.w) box = { ...box, w: later.x - box.x };
+    }
+    return box;
+  });
   const overlapFrac2 = (a, b) => {
     const ix = Math.max(0, Math.min(a.x + a.w, b.x + b.w) - Math.max(a.x, b.x));
     const iy = Math.max(0, Math.min(a.y + a.h, b.y + b.h) - Math.max(a.y, b.y));
@@ -232504,6 +232514,10 @@ async function splitPanelGraphic(config2, io) {
   notes.push(`Panel graphic cut into ${parts.map((p) => p.slot).join(", ")} so the panel can be re-stacked at any size.`);
   return { config: { ...config2, elements }, notes };
 }
+var DEFAULT_DISPLAY = {
+  stacked: { headlineH: 0.193, headlineCy: 0.422, subW: 0.986, subH: 0.517, subGap: 0.069, cutoutW: 0.8, cutoutCx: 0.41, cutoutBleed: 0.45, message: { cy: 0.36, w: 0.73 }, cta: { cy: 0.55 }, lockup: { cy: 0.82, w: 0.7 }, bandH: 0.147 },
+  side: { headlineH: 0.396, headlineCy: 0.266, subW: 0.874, subH: 0.404, subGap: 0.07, cutoutW: 0.467, cutoutCx: 0.419, cutoutBleed: 0.6, message: { cy: 0.378, w: 0.7 }, cta: { cy: 0.562 }, lockup: { cy: 0.838, w: 0.7 }, bandH: 0.152 }
+};
 function recipeCtaFloor(recipe) {
   return recipe.ctaFloorPx;
 }
@@ -232581,132 +232595,144 @@ function adaptLayered(master, srcW, srcH, dstW, dstH, opts = {}) {
     }
   }
   const out = [];
-  if (opts.panelFill) out.push({ id: "ly_panel_ground", type: "rect", slot: "panel", fill: opts.panelFill, x: panelZone.x, y: panelZone.y, w: panelZone.w, h: panelZone.h, locked: true });
-  const photo = by("photo")[0];
-  const cutoutForPan = [...by("cutout")].sort((a, b) => area2(b) - area2(a))[0];
-  let panX = typeof photo?.focusX === "number" ? photo.focusX : 0.5;
-  let panY = typeof photo?.focusY === "number" ? photo.focusY : 0.5;
-  if (photo && cutoutForPan && !isStrip) {
-    const photoAspect = photo.w / Math.max(1, photo.h);
-    let rw = photoZone.w, rh = rw / photoAspect;
-    if (rh < photoZone.h) {
-      rh = photoZone.h;
-      rw = rh * photoAspect;
-    }
-    const sx = rw / Math.max(1, photo.w), sy = rh / Math.max(1, photo.h);
-    const bx0 = (cutoutForPan.x - photo.x) * sx - photoZone.w * 0.03, bx1 = (cutoutForPan.x + cutoutForPan.w - photo.x) * sx + photoZone.w * 0.03;
-    const by0 = (cutoutForPan.y - photo.y) * sy - photoZone.h * 0.05, by1 = (cutoutForPan.y + cutoutForPan.h - photo.y) * sy + photoZone.h * 0.05;
-    const slackX = rw - photoZone.w, slackY = rh - photoZone.h;
-    const fit = (b0, b1, win, slack, cur, copyRoom) => {
-      if (slack <= 0) return cur;
-      const lo = Math.max(0, b1 - win), hi = Math.min(slack, b0 - win * copyRoom);
-      if (lo <= hi) return Math.min(1, Math.max(0, Math.min(Math.max(cur * slack, lo), hi) / slack));
-      return cur;
-    };
-    panX = fit(bx0, bx1, photoZone.w, slackX, panX, 0);
-    panY = fit(by0, by1, photoZone.h, slackY, panY, 0.45);
-  }
-  if (photo) out.push({ ...photo, id: "ly_photo", fit: "cover", focusX: Math.round(panX * 1e3) / 1e3, focusY: Math.round(panY * 1e3) / 1e3, x: photoZone.x, y: photoZone.y, w: photoZone.w, h: photoZone.h });
-  const cutout = [...by("cutout")].sort((a, b) => area2(b) - area2(a))[0];
-  let cutoutBox = null;
-  let cutoutFloating = false;
-  if (cutout && photo && !isStrip) {
-    const photoAspect = photo.w / Math.max(1, photo.h);
-    let rw = photoZone.w, rh = rw / photoAspect;
-    if (rh < photoZone.h) {
-      rh = photoZone.h;
-      rw = rh * photoAspect;
-    }
-    const fx = panX;
-    const fy = panY;
-    const rx = photoZone.x - (rw - photoZone.w) * fx;
-    const ry = photoZone.y - (rh - photoZone.h) * fy;
-    const sx = rw / Math.max(1, photo.w), sy = rh / Math.max(1, photo.h);
-    const box = { x: rx + (cutout.x - photo.x) * sx, y: ry + (cutout.y - photo.y) * sy, w: cutout.w * sx, h: cutout.h * sy };
-    const visible = overlap(box, photoZone) / Math.max(1, area2(box));
-    const tall = photoZone.w / Math.max(1, photoZone.h) < 0.7;
-    const photoIdx = out.findIndex((e) => e.id === "ly_photo");
-    if (recipe.axis === "stacked" && box.w > photoZone.w * 0.96) {
-      const cx0 = (cutout.x - photo.x) * sx, cx1 = cx0 + cutout.w * sx;
-      const slackX = Math.max(0, rw - photoZone.w);
-      const overlapAt = (p) => Math.max(0, Math.min(p + photoZone.w, cx1) - Math.max(p, cx0));
-      const cur = panX * slackX;
-      const leftOf = Math.min(slackX, Math.max(0, cx0 - photoZone.w - photoZone.w * 0.04));
-      const rightOf = Math.min(slackX, Math.max(0, cx1 + photoZone.w * 0.04));
-      const candidates = [leftOf, rightOf].map((p) => ({ p, o: overlapAt(p) })).filter((c) => c.o <= (cx1 - cx0) * 0.12).sort((a, b) => Math.abs(a.p - cur) - Math.abs(b.p - cur));
-      const best = candidates[0];
-      if (best && slackX > 0) {
-        const share = tall ? 0.94 : 0.8;
-        const cw = photoZone.w * share, chh = cw * (cutout.h / Math.max(1, cutout.w));
-        cutoutBox = { x: r2(photoZone.x + (photoZone.w - cw) / 2), y: r2(photoZone.y + photoZone.h - chh - margin / 2), w: r2(cw), h: r2(chh) };
-        cutoutFloating = true;
-        if (photoIdx >= 0) out[photoIdx].focusX = Math.round(best.p / slackX * 1e3) / 1e3;
-        notes.push("Cut-out placed whole at the column's width; the photo's crop window moved just off its own car.");
-      } else {
-        notes.push("Cut-out dropped: the column cannot show the whole car without a second car behind it.");
-      }
-    } else if (visible >= 0.6 && box.h <= photoZone.h * 0.6) {
-      let placed2 = { x: box.x, y: box.y, w: box.w, h: box.h };
-      if (tall) {
-        const k = Math.min(1.35, photoZone.w * 0.94 / Math.max(1, box.w));
-        if (k > 1.02) {
-          const w = box.w * k, h = box.h * k;
-          let x = box.x + box.w / 2 - w / 2, y = box.y + box.h / 2 - h / 2;
-          x = Math.max(photoZone.x + 2, Math.min(photoZone.x + photoZone.w - w - 2, x));
-          y = Math.min(photoZone.y + photoZone.h - h - 2, y);
-          placed2 = { x, y, w, h };
-          notes.push("Cut-out enlarged to the column's width so the whole car reads.");
-        }
-      }
-      cutoutBox = { x: r2(placed2.x), y: r2(placed2.y), w: r2(placed2.w), h: r2(placed2.h) };
-    } else {
-      notes.push("Cut-out dropped: at this crop it would not sit over the photo's own subject.");
-    }
-  } else if (cutout) notes.push("Cut-out dropped: strips carry photo, headline, CTA and logo only.");
   const hx0 = Math.min(...headlineParts.map((i) => i.x)), hy0 = Math.min(...headlineParts.map((i) => i.y));
   const hBox = { x: hx0, y: hy0, w: Math.max(...headlineParts.map((i) => i.x + i.w)) - hx0, h: Math.max(...headlineParts.map((i) => i.y + i.h)) - hy0 };
   const sub = by("subheadline")[0];
   const groupH = sub ? Math.max(hBox.y + hBox.h, sub.y + sub.h) - hBox.y : hBox.h;
+  const groupW = Math.max(hBox.w, sub ? sub.x + sub.w - hBox.x : 0);
+  const cutout = [...by("cutout")].sort((a, b) => area2(b) - area2(a))[0];
   const masterCopyBottom = sub ? Math.max(hBox.y + hBox.h, sub.y + sub.h) : hBox.y + hBox.h;
   const lastLineH = sub ? sub.h : hBox.h;
   const copyOverCutoutFrac = cutout ? (masterCopyBottom - cutout.y) / Math.max(1, lastLineH) : null;
-  const groupW = Math.max(hBox.w, sub ? sub.x + sub.w - hBox.x : 0);
   const rowLike = isStrip || recipe.axis === "row";
-  const copyBand = rowLike ? { x: panelZone.x + margin, y: panelZone.y + margin, w: r2(isStrip ? Math.max(40, panelZone.w - margin * 2 - stripReserve) : panelZone.w * 0.55), h: panelZone.h - margin * 2 } : { x: photoZone.x + margin, y: photoZone.y + margin, w: photoZone.w - margin * 2, h: (cutoutBox ? cutoutBox.y + Math.max(0, (copyOverCutoutFrac ?? 0) * lastLineH) : photoZone.y + photoZone.h) - photoZone.y - margin * 2 };
-  const target = fitInto({ ...copyBand, w: r2(copyBand.w * (rowLike ? 1 : recipe.headlineWidthFrac)), h: rowLike ? copyBand.h : r2(Math.min(copyBand.h, photoZone.h * recipe.headlineMaxHeightFrac * 1.5)) }, groupW / Math.max(1, groupH), 2.2);
-  let s2 = target.w / Math.max(1, groupW);
-  const specHeadline = spec?.parts.headline;
-  if (specHeadline && !rowLike) {
-    const share = recipe.axis === "stacked" ? specHeadline.display?.stacked ?? 0.19 : specHeadline.display?.side ?? 0.38;
-    const capH = short * share;
-    if (hBox.h * s2 > capH) s2 = capH / Math.max(1, hBox.h);
+  const photo = by("photo")[0];
+  const axisKey = recipe.axis === "stacked" ? "stacked" : "side";
+  const disp = spec?.display?.[axisKey] ?? DEFAULT_DISPLAY[axisKey];
+  const tall = photoZone.w / Math.max(1, photoZone.h) < 0.7;
+  let s2, gx, gy;
+  let subBox = null;
+  if (rowLike) {
+    const copyBand = { x: panelZone.x + margin, y: panelZone.y + margin, w: r2(isStrip ? Math.max(40, panelZone.w - margin * 2 - stripReserve) : panelZone.w * 0.55), h: panelZone.h - margin * 2 };
+    const target = fitInto(copyBand, groupW / Math.max(1, groupH), 2.2);
+    s2 = target.w / Math.max(1, groupW);
+    gx = copyBand.x;
+    gy = r2(copyBand.y + (copyBand.h - groupH * s2) / 2);
+    if (sub) subBox = { x: r2(gx + (sub.x - hBox.x) * s2), y: r2(gy + (sub.y - hBox.y) * s2), w: r2(sub.w * s2), h: r2(sub.h * s2) };
+  } else {
+    const shareH = tall ? Math.min(disp.headlineH, 0.19) : disp.headlineH;
+    s2 = short * shareH / Math.max(1, hBox.h);
+    const maxW = photoZone.w * 0.94;
+    if (hBox.w * s2 > maxW) s2 = maxW / Math.max(1, hBox.w);
+    const hw = hBox.w * s2, hh = hBox.h * s2;
+    gx = r2(photoZone.x + (photoZone.w - hw) / 2);
+    gy = r2(Math.max(photoZone.y + margin / 2, photoZone.y + photoZone.h * disp.headlineCy - hh / 2));
+    if (sub) {
+      const sw = Math.min(maxW, hw * disp.subW), sh = hh * disp.subH;
+      subBox = { x: r2(photoZone.x + (photoZone.w - sw) / 2), y: r2(gy + hh + hh * disp.subGap), w: r2(sw), h: r2(sh) };
+    }
   }
-  const gx = rowLike ? copyBand.x : r2(copyBand.x + (copyBand.w - groupW * s2) / 2);
-  let gy = r2(copyBand.y + (copyBand.h - groupH * s2) / 2);
-  if (!rowLike && cutoutBox) {
-    const ov = copyOverCutoutFrac != null ? copyOverCutoutFrac * lastLineH * s2 : -margin / 2;
-    gy = r2(Math.max(copyBand.y, cutoutBox.y + ov - groupH * s2));
-    if (cutoutFloating) {
-      const anchorY = spec?.parts.headline?.anchor.y ?? 0.45;
-      const wantGy = r2(photoZone.y + photoZone.h * anchorY - groupH * s2 / 2);
-      const shift = Math.min(0, Math.max(copyBand.y, wantGy) - gy);
-      if (shift < 0) {
-        gy += shift;
-        cutoutBox = { ...cutoutBox, y: r2(cutoutBox.y + shift) };
+  const copyBottom = subBox ? subBox.y + subBox.h : gy + hBox.h * s2;
+  const lastLineScaled = subBox ? subBox.h : hBox.h * s2;
+  let cutoutBox = null;
+  if (cutout && photo && !rowLike) {
+    const ov = copyOverCutoutFrac != null ? copyOverCutoutFrac * lastLineScaled : 0;
+    const top = copyBottom - ov;
+    const share = tall ? 0.94 : disp.cutoutW;
+    const aspect = cutout.w / Math.max(1, cutout.h);
+    let w = photoZone.w * share, h = w / aspect;
+    const allowedBottom = photoZone.y + photoZone.h + disp.cutoutBleed * h;
+    if (top + h > allowedBottom) {
+      const hFit = (photoZone.y + photoZone.h - top) / Math.max(0.05, 1 - disp.cutoutBleed);
+      if (hFit >= 12) {
+        h = hFit;
+        w = h * aspect;
       }
     }
-    if (copyOverCutoutFrac != null && copyOverCutoutFrac > 0.02) notes.push("Car cut-out overlaps the copy as in the master (copy reads behind the car).");
-  } else if (specHeadline && !rowLike) {
-    const anchor = recipe.axis === "stacked" ? photoZone.y + photoZone.h * (specHeadline.anchor.y ?? 0.45) : dstH * 0.36;
-    gy = r2(Math.max(copyBand.y, Math.min(copyBand.y + copyBand.h - groupH * s2, anchor - groupH * s2 / 2)));
+    if (top + h > photoZone.y + 12 && h >= 12) {
+      let cx = photoZone.x + photoZone.w * (tall ? 0.5 : disp.cutoutCx);
+      cx = Math.max(photoZone.x + w / 2, Math.min(photoZone.x + photoZone.w - w / 2, cx));
+      cutoutBox = { x: r2(cx - w / 2), y: r2(top), w: r2(w), h: r2(h) };
+      if (copyOverCutoutFrac != null && copyOverCutoutFrac > 0.02) notes.push("Car cut-out overlaps the copy as in the master (copy reads behind the car).");
+    } else {
+      notes.push("Cut-out dropped: no room for the car under the copy at this size.");
+    }
+  } else if (cutout) notes.push("Cut-out dropped: strips carry photo, headline, CTA and logo only.");
+  let photoPlaced = false;
+  const masterPanel = by("panel")[0];
+  const masterAxis = masterPanel ? masterPanel.w >= srcW * 0.9 ? "stacked" : masterPanel.h >= srcH * 0.9 ? "side" : null : null;
+  if (photo && !rowLike && masterAxis === axisKey && masterPanel) {
+    const mz = masterAxis === "stacked" ? { x: 0, y: 0, w: srcW, h: masterPanel.y } : { x: 0, y: 0, w: masterPanel.x, h: srcH };
+    const k = Math.max(photoZone.w / Math.max(1, mz.w), photoZone.h / Math.max(1, mz.h));
+    const box = { x: photoZone.x + (photo.x - mz.x) * k, y: photoZone.y + (photo.y - mz.y) * k, w: photo.w * k, h: photo.h * k };
+    const covers = box.x <= photoZone.x + 0.5 && box.y <= photoZone.y + 0.5 && box.x + box.w >= photoZone.x + photoZone.w - 0.5 && box.y + box.h >= photoZone.y + photoZone.h - 0.5;
+    const carMapped = cutout ? { x: photoZone.x + (cutout.x - mz.x) * k, y: photoZone.y + (cutout.y - mz.y) * k, w: cutout.w * k, h: cutout.h * k } : null;
+    const carWhole = !carMapped || carMapped.x >= photoZone.x - 1 && carMapped.x + carMapped.w <= photoZone.x + photoZone.w + 1 && carMapped.y >= photoZone.y - 1 && carMapped.y + carMapped.h * 0.55 <= photoZone.y + photoZone.h + 1;
+    if (covers && carWhole) {
+      out.push({ ...photo, id: "ly_photo", fit: "fill", x: r2(box.x), y: r2(box.y), w: r2(box.w), h: r2(box.h) });
+      photoPlaced = true;
+      if (cutout && cutoutBox && carMapped) {
+        cutoutBox = { x: r2(carMapped.x), y: r2(carMapped.y), w: r2(carMapped.w), h: r2(carMapped.h) };
+      }
+    }
   }
+  let panX = typeof photo?.focusX === "number" ? photo.focusX : 0.5;
+  let panY = typeof photo?.focusY === "number" ? photo.focusY : 0.5;
+  if (photo && cutout && cutoutBox && !rowLike && !photoPlaced) {
+    const photoAspect = photo.w / Math.max(1, photo.h);
+    let rw = photoZone.w, rh = rw / photoAspect;
+    if (rh < photoZone.h) {
+      rh = photoZone.h;
+      rw = rh * photoAspect;
+    }
+    const sx = rw / Math.max(1, photo.w), sy = rh / Math.max(1, photo.h);
+    const slackX = Math.max(0, rw - photoZone.w), slackY = Math.max(0, rh - photoZone.h);
+    const cx0 = (cutout.x - photo.x) * sx, cx1 = cx0 + cutout.w * sx;
+    const cy0 = (cutout.y - photo.y) * sy, cy1 = cy0 + cutout.h * sy;
+    const winX = panX * slackX, winY = panY * slackY;
+    const mapped = { x: photoZone.x + cx0 - winX, y: photoZone.y + cy0 - winY, w: cx1 - cx0, h: cy1 - cy0 };
+    const covered = overlap(mapped, cutoutBox) / Math.max(1, area2(mapped));
+    if (covered < 0.85) {
+      const cands = [];
+      const ovl = (px, py) => {
+        const ix = Math.max(0, Math.min(px + photoZone.w, cx1) - Math.max(px, cx0));
+        const iy = Math.max(0, Math.min(py + photoZone.h, cy1) - Math.max(py, cy0));
+        return ix * iy / Math.max(1, (cx1 - cx0) * (cy1 - cy0));
+      };
+      const push = (px, py) => {
+        px = Math.max(0, Math.min(slackX, px));
+        py = Math.max(0, Math.min(slackY, py));
+        cands.push({ px, py, o: ovl(px, py), d: Math.abs(px - winX) + Math.abs(py - winY) });
+      };
+      push(cx0 - photoZone.w - photoZone.w * 0.04, winY);
+      push(cx1 + photoZone.w * 0.04, winY);
+      push(winX, cy0 - photoZone.h - photoZone.h * 0.04);
+      push(winX, cy1 + photoZone.h * 0.04);
+      const ok = cands.filter((c) => c.o <= 0.12).sort((a, b) => a.d - b.d)[0];
+      if (ok) {
+        panX = slackX > 0 ? ok.px / slackX : panX;
+        panY = slackY > 0 ? ok.py / slackY : panY;
+        notes.push("Photo window moved just off its own car so the cut-out is the only car.");
+      } else {
+        const least = cands.sort((a, b) => a.o - b.o)[0];
+        if (least && least.o < ovl(winX, winY)) {
+          panX = slackX > 0 ? least.px / slackX : panX;
+          panY = slackY > 0 ? least.py / slackY : panY;
+        }
+        notes.push("Check: the photo's own car may show beside the cut-out at this size.");
+      }
+    }
+  }
+  if (photo && !photoPlaced) out.push({ ...photo, id: "ly_photo", fit: "cover", focusX: Math.round(panX * 1e3) / 1e3, focusY: Math.round(panY * 1e3) / 1e3, x: photoZone.x, y: photoZone.y, w: photoZone.w, h: photoZone.h });
   const scrim = by("scrim")[0];
-  if (scrim && photo) out.push({ ...scrim, id: "ly_scrim", fit: "fill", x: photoZone.x, y: photoZone.y, w: photoZone.w, h: r2(Math.max(gy + groupH * s2 + margin, photoZone.h * 0.35) - photoZone.y) });
+  if (scrim && photo && !rowLike) out.push({ ...scrim, id: "ly_scrim", fit: "fill", x: photoZone.x, y: photoZone.y, w: photoZone.w, h: r2(Math.max(copyBottom + margin, photoZone.h * 0.35) - photoZone.y) });
+  const groundEl = opts.panelFill ? { id: "ly_panel_ground", type: "rect", slot: "panel", fill: opts.panelFill, x: panelZone.x, y: panelZone.y, w: panelZone.w, h: panelZone.h, locked: true } : null;
+  if (groundEl && rowLike) out.push(groundEl);
   for (const [k, part] of headlineParts.entries()) {
     out.push({ ...part, id: headlineParts.length === 1 ? "ly_headline" : `ly_headline_${k}`, fit: "contain", x: r2(gx + (part.x - hBox.x) * s2), y: r2(gy + (part.y - hBox.y) * s2), w: r2(part.w * s2), h: r2(part.h * s2) });
   }
-  if (sub) out.push({ ...sub, id: "ly_subheadline", fit: "contain", x: r2(gx + (sub.x - hBox.x) * s2), y: r2(gy + (sub.y - hBox.y) * s2), w: r2(sub.w * s2), h: r2(sub.h * s2) });
+  if (sub && subBox) out.push({ ...sub, id: "ly_subheadline", fit: "contain", ...subBox });
   if (cutout && cutoutBox) out.push({ ...cutout, id: "ly_cutout", fit: "contain", ...cutoutBox });
+  if (groundEl && !rowLike) out.push(groundEl);
   const panelImg = by("panel")[0];
   const cta = by("cta")[0];
   const panelInner = { x: panelZone.x + margin, y: panelZone.y + margin, w: panelZone.w - margin * 2, h: panelZone.h - margin * 2 };
@@ -232773,10 +232799,11 @@ function adaptLayered(master, srcW, srcH, dstW, dstH, opts = {}) {
       }
     }
     const anchorOf = (it) => {
+      if (isDisplayCanvas) return it.el === partMessage ? disp.message.cy : it.el === partLockup ? disp.lockup.cy : disp.cta.cy;
       const part = it.el === partMessage ? spec?.parts.message : it.el === partLockup ? spec?.parts.lockup : spec?.parts.cta;
       return part?.anchor.y ?? null;
     };
-    let anchored = spec && !shallow ? items.map((it) => {
+    let anchored = (spec || isDisplayCanvas) && !shallow ? items.map((it) => {
       const a = anchorOf(it);
       if (a == null) return NaN;
       const centre = panelZone.y + a * panelZone.h;
@@ -233521,6 +233548,12 @@ var GET_READY_BURST_2 = {
     landscape: { axis: "side", photoFrac: 0.55, bandFrac: 0.15, bandAt: "panelTop", tolerance: 0.05 },
     wide: { axis: "side", photoFrac: 0.5, displayPhotoFrac: 0.69, bandFrac: 0.169, bandAt: "panelTop", tolerance: 0.05 },
     strip: { axis: "row", photoFrac: 0.3, bandFrac: 0, bandAt: "none", tolerance: 0.05 }
+  },
+  display: {
+    // 300×600 final / working files: photo zone 0–341, panel zone 341–600.
+    stacked: { headlineH: 0.193, headlineCy: 0.422, subW: 0.986, subH: 0.517, subGap: 0.069, cutoutW: 0.8, cutoutCx: 0.41, cutoutBleed: 0.45, message: { cy: 0.36, w: 0.73 }, cta: { cy: 0.55 }, lockup: { cy: 0.82, w: 0.7 }, bandH: 0.147 },
+    // 970×250 working file: photo zone 0–670, panel zone 670–970.
+    side: { headlineH: 0.396, headlineCy: 0.266, subW: 0.874, subH: 0.404, subGap: 0.07, cutoutW: 0.467, cutoutCx: 0.419, cutoutBleed: 0.6, message: { cy: 0.378, w: 0.7 }, cta: { cy: 0.562 }, lockup: { cy: 0.838, w: 0.7 }, bandH: 0.152 }
   },
   parts: {
     photo: {

@@ -50,6 +50,28 @@ export interface ZoneRule {
   tolerance: number;
 }
 
+/** Display-canvas layout numbers measured off the shipped 300×600 (stacked)
+ *  and 970×250 (side) pieces: fractions of the photo zone / panel zone. */
+export interface DisplayAxisRule {
+  /** Headline height as a fraction of the canvas short side. */
+  headlineH: number;
+  /** Headline block centre, fraction of the photo zone height. */
+  headlineCy: number;
+  /** Sub-line width and height as fractions of the headline's; gap below the headline as a fraction of headline height. */
+  subW: number;
+  subH: number;
+  subGap: number;
+  /** Cut-out width as a fraction of the photo zone width, its centre x, and how much of its height may run past the zone bottom. */
+  cutoutW: number;
+  cutoutCx: number;
+  cutoutBleed: number;
+  /** Panel column: centres as fractions of the panel zone height; widths as fractions of the panel zone width. */
+  message: { cy: number; w: number };
+  cta: { cy: number };
+  lockup: { cy: number; w: number };
+  bandH: number;
+}
+
 export interface StyleSchema {
   id: string;
   name: string;
@@ -60,6 +82,8 @@ export interface StyleSchema {
   /** Reading order — first is the most important element on the page. */
   hierarchy: string[];
   zones: Record<FormatClass, ZoneRule>;
+  /** Measured display layouts by axis (see DisplayAxisRule). */
+  display?: { stacked: DisplayAxisRule; side: DisplayAxisRule };
   parts: Record<string, PartRule>;
   /** Copy variants the campaign actually shipped — the only copy allowed. */
   variants: Array<{ phase: string; kicker?: string; headline: string; subheadline?: string; message: string; cta: { display: string; ooh: string } }>;
@@ -102,6 +126,13 @@ export const GET_READY_BURST_2: StyleSchema = {
     landscape: { axis: "side", photoFrac: 0.55, bandFrac: 0.15, bandAt: "panelTop", tolerance: 0.05 },
     wide: { axis: "side", photoFrac: 0.5, displayPhotoFrac: 0.69, bandFrac: 0.169, bandAt: "panelTop", tolerance: 0.05 },
     strip: { axis: "row", photoFrac: 0.3, bandFrac: 0, bandAt: "none", tolerance: 0.05 },
+  },
+
+  display: {
+    // 300×600 final / working files: photo zone 0–341, panel zone 341–600.
+    stacked: { headlineH: 0.193, headlineCy: 0.422, subW: 0.986, subH: 0.517, subGap: 0.069, cutoutW: 0.8, cutoutCx: 0.41, cutoutBleed: 0.45, message: { cy: 0.36, w: 0.73 }, cta: { cy: 0.55 }, lockup: { cy: 0.82, w: 0.7 }, bandH: 0.147 },
+    // 970×250 working file: photo zone 0–670, panel zone 670–970.
+    side: { headlineH: 0.396, headlineCy: 0.266, subW: 0.874, subH: 0.404, subGap: 0.07, cutoutW: 0.467, cutoutCx: 0.419, cutoutBleed: 0.6, message: { cy: 0.378, w: 0.7 }, cta: { cy: 0.562 }, lockup: { cy: 0.838, w: 0.7 }, bandH: 0.152 },
   },
 
   parts: {

@@ -155,7 +155,22 @@ export function checkMandatory(master: FreeformConfig, adapted: FreeformConfig, 
   // Collisions: copy over copy, or copy over the cut-out subject.
   const isCopy = (e: FreeformConfig["elements"][number]) => (e.type === "text" && e.text.trim().length > 0) || (e.type === "image" && ["headline", "subheadline", "message", "cta", "lockup"].includes(e.slot ?? ""));
   const copyish = adapted.elements.filter(isCopy);
-  const cutouts = adapted.elements.filter((e) => e.type === "image" && e.slot === "cutout");
+  // A cut-out's part that runs under a panel ground drawn after it (the
+  // water under the car) is invisible: judge only the part that shows.
+  const cutouts = adapted.elements
+    .map((e, i) => ({ e, i }))
+    .filter(({ e }) => e.type === "image" && e.slot === "cutout")
+    .map(({ e, i }) => {
+      let box = { x: e.x, y: e.y, w: e.w, h: e.h, id: e.id, slot: e.slot, type: e.type };
+      for (const later of adapted.elements.slice(i + 1)) {
+        if (later.type !== "rect" || later.slot !== "panel") continue;
+        const coversX = later.x <= box.x + 1 && later.x + later.w >= box.x + box.w - 1;
+        const coversY = later.y <= box.y + 1 && later.y + later.h >= box.y + box.h - 1;
+        if (coversX && later.y > box.y && later.y < box.y + box.h) box = { ...box, h: later.y - box.y };
+        else if (coversY && later.x > box.x && later.x < box.x + box.w) box = { ...box, w: later.x - box.x };
+      }
+      return box;
+    });
   const overlapFrac = (a: { x: number; y: number; w: number; h: number }, b: { x: number; y: number; w: number; h: number }) => {
     const ix = Math.max(0, Math.min(a.x + a.w, b.x + b.w) - Math.max(a.x, b.x));
     const iy = Math.max(0, Math.min(a.y + a.h, b.y + b.h) - Math.max(a.y, b.y));

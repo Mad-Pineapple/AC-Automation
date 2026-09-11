@@ -24,7 +24,7 @@ import { RECIPES } from "./recipes";
 import { guidelineLogoPlacement } from "./logoRules";
 import { ObjectStorageService } from "./objectStorage";
 import { logger } from "./logger";
-import type { StyleSchema } from "./styleSpecs/getReadyBurst2";
+import type { StyleSchema, DisplayAxisRule } from "./styleSpecs/getReadyBurst2";
 
 type Slot = NonNullable<FreeformElement["slot"]>;
 type Img = FreeformImage;
@@ -428,6 +428,13 @@ export interface LayeredAdaptOptions {
   formatClass?: FormatClass;
 }
 
+/** Display layout numbers used when no campaign schema matches (the Get
+ *  Ready measurements — a sound generic photo-over-panel display layout). */
+const DEFAULT_DISPLAY: { stacked: DisplayAxisRule; side: DisplayAxisRule } = {
+  stacked: { headlineH: 0.193, headlineCy: 0.422, subW: 0.986, subH: 0.517, subGap: 0.069, cutoutW: 0.8, cutoutCx: 0.41, cutoutBleed: 0.45, message: { cy: 0.36, w: 0.73 }, cta: { cy: 0.55 }, lockup: { cy: 0.82, w: 0.7 }, bandH: 0.147 },
+  side: { headlineH: 0.396, headlineCy: 0.266, subW: 0.874, subH: 0.404, subGap: 0.07, cutoutW: 0.467, cutoutCx: 0.419, cutoutBleed: 0.6, message: { cy: 0.378, w: 0.7 }, cta: { cy: 0.562 }, lockup: { cy: 0.838, w: 0.7 }, bandH: 0.152 },
+};
+
 function recipeCtaFloor(recipe: { ctaFloorPx: number }): number {
   return recipe.ctaFloorPx;
 }
@@ -508,179 +515,165 @@ export function adaptLayered(master: FreeformConfig, srcW: number, srcH: number,
   }
 
   const out: FreeformElement[] = [];
-  // Panel ground first, so a panel image that doesn't cover the zone still sits on brand colour.
-  if (opts.panelFill) out.push({ id: "ly_panel_ground", type: "rect", slot: "panel", fill: opts.panelFill, x: panelZone.x, y: panelZone.y, w: panelZone.w, h: panelZone.h, locked: true } as FreeformElement);
 
-  // Photo covers its zone, panned so the subject (the cut-out's box in the
-  // master: the flooded car) stays whole inside the crop window — a centre
-  // crop of a tall photo into a wide zone halves the car.
-  const photo = by("photo")[0];
-  const cutoutForPan = [...by("cutout")].sort((a, b) => area(b) - area(a))[0];
-  let panX = typeof photo?.focusX === "number" ? photo.focusX : 0.5;
-  let panY = typeof photo?.focusY === "number" ? photo.focusY : 0.5;
-  if (photo && cutoutForPan && !isStrip) {
-    const photoAspect = photo.w / Math.max(1, photo.h);
-    let rw = photoZone.w, rh = rw / photoAspect;
-    if (rh < photoZone.h) { rh = photoZone.h; rw = rh * photoAspect; }
-    const sx = rw / Math.max(1, photo.w), sy = rh / Math.max(1, photo.h);
-    // Subject box in the oversize photo's own px, with a little air around it.
-    const bx0 = (cutoutForPan.x - photo.x) * sx - photoZone.w * 0.03, bx1 = (cutoutForPan.x + cutoutForPan.w - photo.x) * sx + photoZone.w * 0.03;
-    const by0 = (cutoutForPan.y - photo.y) * sy - photoZone.h * 0.05, by1 = (cutoutForPan.y + cutoutForPan.h - photo.y) * sy + photoZone.h * 0.05;
-    const slackX = rw - photoZone.w, slackY = rh - photoZone.h;
-    // The crop window's top-left is slack × pan. Keep the box inside it when
-    // it fits, else centre on the box.
-    // Only pan when the subject can sit whole in the window AND leave the
-    // upper part of the zone for the copy (its top no higher than 45% down);
-    // otherwise the master's own framing stands — never zoom into the car.
-    const fit = (b0: number, b1: number, win: number, slack: number, cur: number, copyRoom: number) => {
-      if (slack <= 0) return cur;
-      const lo = Math.max(0, b1 - win), hi = Math.min(slack, b0 - win * copyRoom);
-      if (lo <= hi) return Math.min(1, Math.max(0, Math.min(Math.max(cur * slack, lo), hi) / slack));
-      return cur;
-    };
-    panX = fit(bx0, bx1, photoZone.w, slackX, panX, 0);
-    panY = fit(by0, by1, photoZone.h, slackY, panY, 0.45);
-  }
-  if (photo) out.push({ ...photo, id: "ly_photo", fit: "cover", focusX: Math.round(panX * 1000) / 1000, focusY: Math.round(panY * 1000) / 1000, x: photoZone.x, y: photoZone.y, w: photoZone.w, h: photoZone.h });
-
-  // Cut-out first: it anchors to the bottom of the photo zone, and the copy
-  // group takes the band above it (as in the master: headline over the car).
-  // The anchoring cut-out is the largest one (the car), never a stray thin layer.
-  const cutout = [...by("cutout")].sort((a, b) => area(b) - area(a))[0];
-  let cutoutBox: Box | null = null;
-  /** True when the cut-out was placed free of the photo's own car and may
-   *  move up with the copy to the family's headline height. */
-  let cutoutFloating = false;
-  if (cutout && photo && !isStrip) {
-    // The cut-out (the car) is a pop-out of the subject already in the photo,
-    // so it must land exactly where the photo's own subject lands. The master's
-    // photo layer is its image at natural aspect (the importer trims layers to
-    // their asset), so map the cut-out through the photo's cover-fit into the
-    // new zone. If it can't stay mostly inside the zone, drop it — the photo
-    // shows the subject anyway, and two cars is the one thing we never ship.
-    const photoAspect = photo.w / Math.max(1, photo.h);
-    let rw = photoZone.w, rh = rw / photoAspect;
-    if (rh < photoZone.h) { rh = photoZone.h; rw = rh * photoAspect; }
-    const fx = panX;
-    const fy = panY;
-    const rx = photoZone.x - (rw - photoZone.w) * fx;
-    const ry = photoZone.y - (rh - photoZone.h) * fy;
-    const sx = rw / Math.max(1, photo.w), sy = rh / Math.max(1, photo.h);
-    const box: Box = { x: rx + (cutout.x - photo.x) * sx, y: ry + (cutout.y - photo.y) * sy, w: cutout.w * sx, h: cutout.h * sy };
-    const visible = overlap(box, photoZone) / Math.max(1, area(box));
-    const tall = photoZone.w / Math.max(1, photoZone.h) < 0.7;
-    const photoIdx = out.findIndex((e) => e.id === "ly_photo");
-    if (recipe.axis === "stacked" && box.w > photoZone.w * 0.96) {
-      // Stacked zone where the car at cover scale is wider than the zone.
-      // Show the WHOLE car — at the family's share of the width (80% on a
-      // portrait, as the shipped 300×600; the full column on a narrow one)
-      // — and pan the photo to the nearest window that keeps its own car
-      // out of frame, so there is only one car.
-      const cx0 = (cutout.x - photo.x) * sx, cx1 = cx0 + cutout.w * sx;
-      const slackX = Math.max(0, rw - photoZone.w);
-      const overlapAt = (p: number) => Math.max(0, Math.min(p + photoZone.w, cx1) - Math.max(p, cx0));
-      // The nearest window to the master's own framing that leaves its car
-      // out: just left of the car or just right of it, whichever is closer.
-      const cur = panX * slackX;
-      const leftOf = Math.min(slackX, Math.max(0, cx0 - photoZone.w - photoZone.w * 0.04));
-      const rightOf = Math.min(slackX, Math.max(0, cx1 + photoZone.w * 0.04));
-      const candidates = [leftOf, rightOf].map((p) => ({ p, o: overlapAt(p) })).filter((c) => c.o <= (cx1 - cx0) * 0.12).sort((a, b) => Math.abs(a.p - cur) - Math.abs(b.p - cur));
-      const best = candidates[0];
-      if (best && slackX > 0) {
-        const share = tall ? 0.94 : 0.8;
-        const cw = photoZone.w * share, chh = cw * (cutout.h / Math.max(1, cutout.w));
-        // Provisional: bottom of the zone. Once the copy is sized, car and
-        // copy move up together to the family's headline height.
-        cutoutBox = { x: r(photoZone.x + (photoZone.w - cw) / 2), y: r(photoZone.y + photoZone.h - chh - margin / 2), w: r(cw), h: r(chh) };
-        cutoutFloating = true;
-        if (photoIdx >= 0) (out[photoIdx] as Img).focusX = Math.round((best.p / slackX) * 1000) / 1000;
-        notes.push("Cut-out placed whole at the column's width; the photo's crop window moved just off its own car.");
-      } else {
-        notes.push("Cut-out dropped: the column cannot show the whole car without a second car behind it.");
-      }
-    } else if (visible >= 0.6 && box.h <= photoZone.h * 0.6) {
-      let placed: Box = { x: box.x, y: box.y, w: box.w, h: box.h };
-      if (tall) {
-        // Room to spare: grow the cut-out to the column's width (it covers
-        // the photo's own car, which sits beneath it), never past 1.35×.
-        const k = Math.min(1.35, (photoZone.w * 0.94) / Math.max(1, box.w));
-        if (k > 1.02) {
-          const w = box.w * k, h = box.h * k;
-          let x = box.x + box.w / 2 - w / 2, y = box.y + box.h / 2 - h / 2;
-          x = Math.max(photoZone.x + 2, Math.min(photoZone.x + photoZone.w - w - 2, x));
-          y = Math.min(photoZone.y + photoZone.h - h - 2, y);
-          placed = { x, y, w, h };
-          notes.push("Cut-out enlarged to the column's width so the whole car reads.");
-        }
-      }
-      cutoutBox = { x: r(placed.x), y: r(placed.y), w: r(placed.w), h: r(placed.h) };
-    } else {
-      notes.push("Cut-out dropped: at this crop it would not sit over the photo's own subject.");
-    }
-  } else if (cutout) notes.push("Cut-out dropped: strips carry photo, headline, CTA and logo only.");
-
-  // Copy group: headline (+ sub-headline) fitted into the band above the cut-out
-  // (tall / side layouts) or beside the photo (strips).
+  // ---- Copy group metrics (from the master) ------------------------------
   const hx0 = Math.min(...headlineParts.map((i) => i.x)), hy0 = Math.min(...headlineParts.map((i) => i.y));
   const hBox: Box = { x: hx0, y: hy0, w: Math.max(...headlineParts.map((i) => i.x + i.w)) - hx0, h: Math.max(...headlineParts.map((i) => i.y + i.h)) - hy0 };
   const sub = by("subheadline")[0];
   const groupH = sub ? Math.max(hBox.y + hBox.h, sub.y + sub.h) - hBox.y : hBox.h;
-  // The designer's copy-to-car relationship: the cut-out is drawn over the
-  // bottom of the copy (a slight overlap that reads as the copy sitting
-  // behind the car). Measure it on the master as a fraction of the last
-  // line's height and reproduce it at every size — never replace it with a gap.
+  const groupW = Math.max(hBox.w, sub ? sub.x + sub.w - hBox.x : 0);
+  const cutout = [...by("cutout")].sort((a, b) => area(b) - area(a))[0];
+  // The designer's copy-to-car relationship: the cut-out is drawn over (or
+  // touching) the bottom of the last copy line so the copy reads behind the
+  // car. Measured on the master as a fraction of that line's height and
+  // reproduced at every size — never replaced with a gap.
   const masterCopyBottom = sub ? Math.max(hBox.y + hBox.h, sub.y + sub.h) : hBox.y + hBox.h;
   const lastLineH = sub ? sub.h : hBox.h;
   const copyOverCutoutFrac = cutout ? (masterCopyBottom - cutout.y) / Math.max(1, lastLineH) : null;
-  const groupW = Math.max(hBox.w, sub ? sub.x + sub.w - hBox.x : 0);
   const rowLike = isStrip || recipe.axis === "row";
-  const copyBand: Box = rowLike
-    ? { x: panelZone.x + margin, y: panelZone.y + margin, w: r(isStrip ? Math.max(40, panelZone.w - margin * 2 - stripReserve) : panelZone.w * 0.55), h: panelZone.h - margin * 2 }
-    : { x: photoZone.x + margin, y: photoZone.y + margin, w: photoZone.w - margin * 2, h: (cutoutBox ? cutoutBox.y + Math.max(0, (copyOverCutoutFrac ?? 0) * lastLineH) : photoZone.y + photoZone.h) - photoZone.y - margin * 2 };
-  const target = fitInto({ ...copyBand, w: r(copyBand.w * (rowLike ? 1 : recipe.headlineWidthFrac)), h: rowLike ? copyBand.h : r(Math.min(copyBand.h, photoZone.h * recipe.headlineMaxHeightFrac * 1.5)) }, groupW / Math.max(1, groupH), 2.2);
-  let s = target.w / Math.max(1, groupW);
-  // Schema: a display glyph headline is 19% of the short side tall; never
-  // let the run grow past that, however wide the zone is.
-  const specHeadline = spec?.parts.headline;
-  if (specHeadline && !rowLike) {
-    // Display shares: 19% of the short side on stacked layouts, 38% on side
-    // layouts (the 970×250 glyph run). OOH masters carry the type live, so
-    // this only governs picture headlines.
-    const share = recipe.axis === "stacked" ? specHeadline.display?.stacked ?? 0.19 : specHeadline.display?.side ?? 0.38;
-    const capH = short * share;
-    if (hBox.h * s > capH) s = capH / Math.max(1, hBox.h);
-  }
-  const gx = rowLike ? copyBand.x : r(copyBand.x + (copyBand.w - groupW * s) / 2);
-  // Block centre at the schema anchor (45% of the photo zone on tall, 36% of
-  // height on wide), kept inside the band above the cut-out.
-  let gy = r(copyBand.y + (copyBand.h - groupH * s) / 2);
-  if (!rowLike && cutoutBox) {
-    // With a cut-out the copy block sits on it exactly as in the master: the
-    // measured overlap (or touch) between the last line and the car's top,
-    // scaled with the copy — the car is drawn after the copy, so it reads
-    // in front.
-    const ov = copyOverCutoutFrac != null ? copyOverCutoutFrac * lastLineH * s : -margin / 2;
-    gy = r(Math.max(copyBand.y, cutoutBox.y + ov - groupH * s));
-    if (cutoutFloating) {
-      // Copy block centre at the family's headline anchor (45% of the photo
-      // zone), the car riding up with it; never above the top margin.
-      const anchorY = spec?.parts.headline?.anchor.y ?? 0.45;
-      const wantGy = r(photoZone.y + photoZone.h * anchorY - (groupH * s) / 2);
-      const shift = Math.min(0, Math.max(copyBand.y, wantGy) - gy);
-      if (shift < 0) { gy += shift; cutoutBox = { ...cutoutBox, y: r(cutoutBox.y + shift) }; }
+  const photo = by("photo")[0];
+  const axisKey: "stacked" | "side" = recipe.axis === "stacked" ? "stacked" : "side";
+  const disp = spec?.display?.[axisKey] ?? DEFAULT_DISPLAY[axisKey];
+  const tall = photoZone.w / Math.max(1, photoZone.h) < 0.7;
+
+  // ---- Copy placement -------------------------------------------------------
+  let s: number, gx: number, gy: number;
+  let subBox: Box | null = null;
+  if (rowLike) {
+    const copyBand: Box = { x: panelZone.x + margin, y: panelZone.y + margin, w: r(isStrip ? Math.max(40, panelZone.w - margin * 2 - stripReserve) : panelZone.w * 0.55), h: panelZone.h - margin * 2 };
+    const target = fitInto(copyBand, groupW / Math.max(1, groupH), 2.2);
+    s = target.w / Math.max(1, groupW);
+    gx = copyBand.x;
+    gy = r(copyBand.y + (copyBand.h - groupH * s) / 2);
+    if (sub) subBox = { x: r(gx + (sub.x - hBox.x) * s), y: r(gy + (sub.y - hBox.y) * s), w: r(sub.w * s), h: r(sub.h * s) };
+  } else {
+    // Headline height from the short side, centred on the zone at the
+    // measured height; the sub-line set at the measured share of the
+    // headline (the designer re-set it smaller on the wide layout).
+    const shareH = tall ? Math.min(disp.headlineH, 0.19) : disp.headlineH;
+    s = (short * shareH) / Math.max(1, hBox.h);
+    // The shipped pieces run the glyph headline to 93% of the zone width.
+    const maxW = photoZone.w * 0.94;
+    if (hBox.w * s > maxW) s = maxW / Math.max(1, hBox.w);
+    const hw = hBox.w * s, hh = hBox.h * s;
+    gx = r(photoZone.x + (photoZone.w - hw) / 2);
+    gy = r(Math.max(photoZone.y + margin / 2, photoZone.y + photoZone.h * disp.headlineCy - hh / 2));
+    if (sub) {
+      const sw = Math.min(maxW, hw * disp.subW), sh = hh * disp.subH;
+      subBox = { x: r(photoZone.x + (photoZone.w - sw) / 2), y: r(gy + hh + hh * disp.subGap), w: r(sw), h: r(sh) };
     }
-    if (copyOverCutoutFrac != null && copyOverCutoutFrac > 0.02) notes.push("Car cut-out overlaps the copy as in the master (copy reads behind the car).");
-  } else if (specHeadline && !rowLike) {
-    const anchor = recipe.axis === "stacked" ? photoZone.y + photoZone.h * (specHeadline.anchor.y ?? 0.45) : dstH * 0.36;
-    gy = r(Math.max(copyBand.y, Math.min(copyBand.y + copyBand.h - groupH * s, anchor - (groupH * s) / 2)));
   }
+  const copyBottom = subBox ? subBox.y + subBox.h : gy + hBox.h * s;
+  const lastLineScaled = subBox ? subBox.h : hBox.h * s;
+
+  // ---- Cut-out (the car): whole, at the family's share, on the copy ---------
+  let cutoutBox: Box | null = null;
+  if (cutout && photo && !rowLike) {
+    const ov = copyOverCutoutFrac != null ? copyOverCutoutFrac * lastLineScaled : 0;
+    const top = copyBottom - ov;
+    const share = tall ? 0.94 : disp.cutoutW;
+    const aspect = cutout.w / Math.max(1, cutout.h);
+    let w = photoZone.w * share, h = w / aspect;
+    // May run past the zone bottom only by the measured bleed (the water
+    // under the car); otherwise shrink to stay whole — as big as possible.
+    const allowedBottom = photoZone.y + photoZone.h + disp.cutoutBleed * h;
+    if (top + h > allowedBottom) {
+      const hFit = (photoZone.y + photoZone.h - top) / Math.max(0.05, 1 - disp.cutoutBleed);
+      if (hFit >= 12) { h = hFit; w = h * aspect; }
+    }
+    if (top + h > photoZone.y + 12 && h >= 12) {
+      let cx = photoZone.x + photoZone.w * (tall ? 0.5 : disp.cutoutCx);
+      cx = Math.max(photoZone.x + w / 2, Math.min(photoZone.x + photoZone.w - w / 2, cx));
+      cutoutBox = { x: r(cx - w / 2), y: r(top), w: r(w), h: r(h) };
+      if (copyOverCutoutFrac != null && copyOverCutoutFrac > 0.02) notes.push("Car cut-out overlaps the copy as in the master (copy reads behind the car).");
+    } else {
+      notes.push("Cut-out dropped: no room for the car under the copy at this size.");
+    }
+  } else if (cutout) notes.push("Cut-out dropped: strips carry photo, headline, CTA and logo only.");
+
+  // ---- Photo -------------------------------------------------------------
+  // Same layout axis as the master: keep the designer's framing — the photo
+  // box scaled with the zone, so the crop, the car and the copy land where
+  // they do on the master (the panel ground covers whatever runs under it).
+  let photoPlaced = false;
+  const masterPanel = by("panel")[0];
+  const masterAxis: "stacked" | "side" | null = masterPanel ? (masterPanel.w >= srcW * 0.9 ? "stacked" : masterPanel.h >= srcH * 0.9 ? "side" : null) : null;
+  if (photo && !rowLike && masterAxis === axisKey && masterPanel) {
+    const mz: Box = masterAxis === "stacked" ? { x: 0, y: 0, w: srcW, h: masterPanel.y } : { x: 0, y: 0, w: masterPanel.x, h: srcH };
+    const k = Math.max(photoZone.w / Math.max(1, mz.w), photoZone.h / Math.max(1, mz.h));
+    const box: Box = { x: photoZone.x + (photo.x - mz.x) * k, y: photoZone.y + (photo.y - mz.y) * k, w: photo.w * k, h: photo.h * k };
+    // The framing must still cover the zone and keep the car whole in it.
+    const covers = box.x <= photoZone.x + 0.5 && box.y <= photoZone.y + 0.5 && box.x + box.w >= photoZone.x + photoZone.w - 0.5 && box.y + box.h >= photoZone.y + photoZone.h - 0.5;
+    const carMapped: Box | null = cutout ? { x: photoZone.x + (cutout.x - mz.x) * k, y: photoZone.y + (cutout.y - mz.y) * k, w: cutout.w * k, h: cutout.h * k } : null;
+    // Whole horizontally, and at least the car body (top 55%) inside the zone vertically.
+    const carWhole = !carMapped || (carMapped.x >= photoZone.x - 1 && carMapped.x + carMapped.w <= photoZone.x + photoZone.w + 1 && carMapped.y >= photoZone.y - 1 && carMapped.y + carMapped.h * 0.55 <= photoZone.y + photoZone.h + 1);
+    if (covers && carWhole) {
+      out.push({ ...photo, id: "ly_photo", fit: "fill" as "cover", x: r(box.x), y: r(box.y), w: r(box.w), h: r(box.h) });
+      photoPlaced = true;
+      if (cutout && cutoutBox && carMapped) {
+        // The cut-out is the car in the photo: keep it exactly over it.
+        cutoutBox = { x: r(carMapped.x), y: r(carMapped.y), w: r(carMapped.w), h: r(carMapped.h) };
+      }
+    }
+  }
+  let panX = typeof photo?.focusX === "number" ? photo.focusX : 0.5;
+  let panY = typeof photo?.focusY === "number" ? photo.focusY : 0.5;
+  if (photo && cutout && cutoutBox && !rowLike && !photoPlaced) {
+    const photoAspect = photo.w / Math.max(1, photo.h);
+    let rw = photoZone.w, rh = rw / photoAspect;
+    if (rh < photoZone.h) { rh = photoZone.h; rw = rh * photoAspect; }
+    const sx = rw / Math.max(1, photo.w), sy = rh / Math.max(1, photo.h);
+    const slackX = Math.max(0, rw - photoZone.w), slackY = Math.max(0, rh - photoZone.h);
+    // The photo's own car in the oversize photo's px.
+    const cx0 = (cutout.x - photo.x) * sx, cx1 = cx0 + cutout.w * sx;
+    const cy0 = (cutout.y - photo.y) * sy, cy1 = cy0 + cutout.h * sy;
+    const winX = panX * slackX, winY = panY * slackY;
+    const mapped: Box = { x: photoZone.x + cx0 - winX, y: photoZone.y + cy0 - winY, w: cx1 - cx0, h: cy1 - cy0 };
+    const covered = overlap(mapped, cutoutBox) / Math.max(1, area(mapped));
+    if (covered < 0.85) {
+      // Move the window the shortest distance that leaves the photo's own car
+      // out (left/right for columns, above for wide zones); keep the current
+      // framing when no window can.
+      type Cand = { px: number; py: number; o: number; d: number };
+      const cands: Cand[] = [];
+      const ovl = (px: number, py: number) => {
+        const ix = Math.max(0, Math.min(px + photoZone.w, cx1) - Math.max(px, cx0));
+        const iy = Math.max(0, Math.min(py + photoZone.h, cy1) - Math.max(py, cy0));
+        return (ix * iy) / Math.max(1, (cx1 - cx0) * (cy1 - cy0));
+      };
+      const push = (px: number, py: number) => { px = Math.max(0, Math.min(slackX, px)); py = Math.max(0, Math.min(slackY, py)); cands.push({ px, py, o: ovl(px, py), d: Math.abs(px - winX) + Math.abs(py - winY) }); };
+      push(cx0 - photoZone.w - photoZone.w * 0.04, winY);
+      push(cx1 + photoZone.w * 0.04, winY);
+      push(winX, cy0 - photoZone.h - photoZone.h * 0.04);
+      push(winX, cy1 + photoZone.h * 0.04);
+      const ok = cands.filter((c) => c.o <= 0.12).sort((a, b) => a.d - b.d)[0];
+      if (ok) {
+        panX = slackX > 0 ? ok.px / slackX : panX;
+        panY = slackY > 0 ? ok.py / slackY : panY;
+        notes.push("Photo window moved just off its own car so the cut-out is the only car.");
+      } else {
+        const least = cands.sort((a, b) => a.o - b.o)[0];
+        if (least && least.o < ovl(winX, winY)) { panX = slackX > 0 ? least.px / slackX : panX; panY = slackY > 0 ? least.py / slackY : panY; }
+        notes.push("Check: the photo's own car may show beside the cut-out at this size.");
+      }
+    }
+  }
+  if (photo && !photoPlaced) out.push({ ...photo, id: "ly_photo", fit: "cover", focusX: Math.round(panX * 1000) / 1000, focusY: Math.round(panY * 1000) / 1000, x: photoZone.x, y: photoZone.y, w: photoZone.w, h: photoZone.h });
+
   const scrim = by("scrim")[0];
-  if (scrim && photo) out.push({ ...scrim, id: "ly_scrim", fit: "fill" as "cover", x: photoZone.x, y: photoZone.y, w: photoZone.w, h: r(Math.max(gy + groupH * s + margin, photoZone.h * 0.35) - photoZone.y) });
+  if (scrim && photo && !rowLike) out.push({ ...scrim, id: "ly_scrim", fit: "fill" as "cover", x: photoZone.x, y: photoZone.y, w: photoZone.w, h: r(Math.max(copyBottom + margin, photoZone.h * 0.35) - photoZone.y) });
+  const groundEl: FreeformElement | null = opts.panelFill ? ({ id: "ly_panel_ground", type: "rect", slot: "panel", fill: opts.panelFill, x: panelZone.x, y: panelZone.y, w: panelZone.w, h: panelZone.h, locked: true } as FreeformElement) : null;
+  // On a strip the copy sits on the panel, so its ground goes under the copy.
+  if (groundEl && rowLike) out.push(groundEl);
   for (const [k, part] of headlineParts.entries()) {
     out.push({ ...part, id: headlineParts.length === 1 ? "ly_headline" : `ly_headline_${k}`, fit: "contain", x: r(gx + (part.x - hBox.x) * s), y: r(gy + (part.y - hBox.y) * s), w: r(part.w * s), h: r(part.h * s) });
   }
-  if (sub) out.push({ ...sub, id: "ly_subheadline", fit: "contain", x: r(gx + (sub.x - hBox.x) * s), y: r(gy + (sub.y - hBox.y) * s), w: r(sub.w * s), h: r(sub.h * s) });
+  if (sub && subBox) out.push({ ...sub, id: "ly_subheadline", fit: "contain", ...subBox });
   if (cutout && cutoutBox) out.push({ ...cutout, id: "ly_cutout", fit: "contain", ...cutoutBox });
+
+  // Stacked / side: the panel ground AFTER the photo group, so the photo and
+  // the car's water may run under the panel zone (as in the master).
+  if (groundEl && !rowLike) out.push(groundEl);
 
   // Panel group. When the baked panel has been cut into parts (band,
   // message, lockup), re-stack them in the zone the way the schema reads:
@@ -749,10 +742,11 @@ export function adaptLayered(master: FreeformConfig, srcW: number, srcH: number,
     // the anchored positions keep their order and don't collide; else an
     // even stack.
     const anchorOf = (it: Item): number | null => {
+      if (isDisplayCanvas) return it.el === partMessage ? disp.message.cy : it.el === partLockup ? disp.lockup.cy : disp.cta.cy;
       const part = it.el === partMessage ? spec?.parts.message : it.el === partLockup ? spec?.parts.lockup : spec?.parts.cta;
       return part?.anchor.y ?? null;
     };
-    let anchored: number[] | null = spec && !shallow ? items.map((it) => {
+    let anchored: number[] | null = (spec || isDisplayCanvas) && !shallow ? items.map((it) => {
       const a = anchorOf(it);
       if (a == null) return NaN;
       const centre = panelZone.y + a * panelZone.h;
