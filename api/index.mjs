@@ -244366,7 +244366,7 @@ router25.post("/guidelines/index", requireAdmin, async (req, res) => {
     res.status(500).json({ error: err instanceof Error ? err.message.slice(0, 200) : "Index failed" });
   }
 });
-router25.get("/guidelines/status", requireAuth, async (req, res) => {
+router25.get("/guidelines/status", optionalAuth, async (req, res) => {
   const brandId = await brandIdFrom(req.query.brandId);
   if (!brandId) {
     res.json({ brandId: null, total: 0, bySource: [], byTopic: [] });

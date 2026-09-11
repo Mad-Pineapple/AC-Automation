@@ -8,7 +8,7 @@
 import { Router } from "express";
 import { db, brandsTable, templatesTable } from "@workspace/db";
 import { eq } from "drizzle-orm";
-import { requireAuth, requireAdmin } from "../middlewares/requireAuth";
+import { requireAuth, requireAdmin, optionalAuth } from "../middlewares/requireAuth";
 import { indexGuidelines, guidelineStatus, guidelinesForConfig } from "../lib/guidelines";
 import { isFreeformConfig, normalizeFreeformConfig } from "../lib/freeform";
 
@@ -33,7 +33,8 @@ router.post("/guidelines/index", requireAdmin, async (req, res): Promise<void> =
   }
 });
 
-router.get("/guidelines/status", requireAuth, async (req, res): Promise<void> => {
+// Counts only — nothing sensitive, and useful for a health check.
+router.get("/guidelines/status", optionalAuth, async (req, res): Promise<void> => {
   const brandId = await brandIdFrom(req.query.brandId);
   if (!brandId) { res.json({ brandId: null, total: 0, bySource: [], byTopic: [] }); return; }
   res.json({ brandId, ...(await guidelineStatus(brandId)) });
