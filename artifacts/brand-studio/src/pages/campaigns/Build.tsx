@@ -73,7 +73,7 @@ export default function CampaignBuild() {
   const [pickedJobs, setPickedJobs] = useState<Set<number> | null>(null);
 
   const { data: brands } = useListBrands();
-  const { uploadFile } = useUpload();
+  const { uploadFile, progress: uploadProgress, isUploading } = useUpload();
   const importExample = useImportExampleArtwork();
   const parsePlan = useParseCollateralPlan();
   const planBuild = usePlanCampaignBuild();
@@ -303,10 +303,17 @@ export default function CampaignBuild() {
                 disabled={!!busy}
               />
               <ImagePlus className="w-7 h-7 text-primary" />
-              <p className="font-semibold text-sm">Upload your example artwork</p>
+              {busy && busy.startsWith("Reading") ? (
+                <p className="text-sm font-medium flex items-center gap-2" data-testid="examples-progress">
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  {isUploading ? `Uploading ${busy.replace(/^Reading /, "").replace(/…$/, "")} · ${Math.max(1, Math.round(uploadProgress))}%` : busy.replace(/^Reading /, "Taking apart ")}
+                </p>
+              ) : (
+                <p className="font-semibold text-sm">Upload your example artwork</p>
+              )}
               <p className="text-xs text-muted-foreground max-w-sm">
                 One file per shape you designed — a portrait billboard and a wide billboard, say.
-                Multi-page documents import each page as its own message variant.
+                Multi-page documents import each page as its own message variant. Files up to 500 MB; large packages upload in the background, so leave this tab open.
               </p>
             </label>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
