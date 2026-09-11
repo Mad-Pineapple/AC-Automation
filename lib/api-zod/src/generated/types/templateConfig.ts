@@ -6,6 +6,7 @@
  * OpenAPI spec version: 0.1.0
  */
 import type { FreeformElement } from './freeformElement';
+import type { PrincipleScores } from './principleScores';
 
 export interface TemplateConfig {
   contentAlignment?: string;
@@ -22,4 +23,5 @@ export interface TemplateConfig {
   rejected?: string[];
   /** What the adapt engine decided and what a designer should check */
   adaptNotes?: string[];
+  principles?: PrincipleScores;
 }

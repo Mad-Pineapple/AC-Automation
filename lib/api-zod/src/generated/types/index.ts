@@ -109,6 +109,8 @@ export * from './partRulesSize';
 export * from './performanceStats';
 export * from './performanceStatsTimeseriesItem';
 export * from './performanceStatsTopAssetsItem';
+export * from './principleScores';
+export * from './principleScoresContrastDetailItem';
 export * from './reviewProgress';
 export * from './reviewProgressInput';
 export * from './sharedAsset';

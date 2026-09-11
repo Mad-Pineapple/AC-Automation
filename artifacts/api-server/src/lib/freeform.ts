@@ -183,6 +183,8 @@ export interface FreeformConfig {
   rejected?: string[];
   /** What the adapt engine decided and what a designer should check. */
   adaptNotes?: string[];
+  /** Design-principle scores (0..1) and the worst contrast ratio behind copy. */
+  principles?: { alignment: number; margins: number; balance: number; contrast: number | null; contrastDetail?: Array<{ id: string; label: string; ratio: number; floor: number }> };
 }
 
 const MAX_ELEMENTS = 200;
@@ -521,6 +523,17 @@ export function normalizeFreeformConfig(raw: unknown): FreeformConfig {
   const adaptNotes = Array.isArray(rawNotes)
     ? (rawNotes as unknown[]).filter((n): n is string => typeof n === "string" && n.trim().length > 0).slice(0, 16).map((n) => n.slice(0, 240))
     : [];
+  const rawPr = (raw as { principles?: unknown }).principles as Record<string, unknown> | undefined;
+  const unit = (v: unknown) => (typeof v === "number" && Number.isFinite(v) ? Math.max(0, Math.min(1, v)) : null);
+  const principles = rawPr && typeof rawPr === "object" && unit(rawPr.alignment) != null && unit(rawPr.margins) != null && unit(rawPr.balance) != null
+    ? {
+        alignment: unit(rawPr.alignment)!, margins: unit(rawPr.margins)!, balance: unit(rawPr.balance)!,
+        contrast: typeof rawPr.contrast === "number" && Number.isFinite(rawPr.contrast) ? Math.round(rawPr.contrast * 100) / 100 : null,
+        ...(Array.isArray(rawPr.contrastDetail)
+          ? { contrastDetail: (rawPr.contrastDetail as unknown[]).filter((d): d is { id: string; label: string; ratio: number; floor: number } => !!d && typeof d === "object" && typeof (d as { id?: unknown }).id === "string" && typeof (d as { ratio?: unknown }).ratio === "number").slice(0, 8).map((d) => ({ id: String(d.id).slice(0, 80), label: String(d.label ?? d.id).slice(0, 40), ratio: d.ratio, floor: d.floor === 4.5 ? 4.5 : 3 })) }
+          : {}),
+      }
+    : null;
   const rejected = Array.isArray((raw as { rejected?: unknown }).rejected)
     ? ((raw as { rejected: unknown[] }).rejected).filter((r): r is string => typeof r === "string" && r.trim().length > 0).map((r) => r.slice(0, 300)).slice(0, 20)
     : [];
@@ -535,5 +548,6 @@ export function normalizeFreeformConfig(raw: unknown): FreeformConfig {
     ...(adaptMethod ? { adaptMethod } : {}),
     ...(adaptNotes.length > 0 ? { adaptNotes } : {}),
     ...(rejected.length > 0 ? { rejected } : {}),
+    ...(principles ? { principles } : {}),
   };
 }

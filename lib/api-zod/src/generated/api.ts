@@ -244,7 +244,19 @@ export const ListTemplatesResponseItem = zod.object({
 }).describe('A single positioned element in a freeform template layout.')).optional(),
   "adaptMethod": zod.string().optional().describe('How an adapted template was derived: recomposed:<class> | key-visual | panel | scaled'),
   "rejected": zod.array(zod.string()).optional().describe('Reasons the automated layout failed the mandatory-element gate; empty or absent when it passed'),
-  "adaptNotes": zod.array(zod.string()).optional().describe('What the adapt engine decided and what a designer should check')
+  "adaptNotes": zod.array(zod.string()).optional().describe('What the adapt engine decided and what a designer should check'),
+  "principles": zod.object({
+  "alignment": zod.number(),
+  "margins": zod.number(),
+  "balance": zod.number(),
+  "contrast": zod.number().nullish(),
+  "contrastDetail": zod.array(zod.object({
+  "id": zod.string(),
+  "label": zod.string(),
+  "ratio": zod.number(),
+  "floor": zod.number()
+})).optional()
+}).optional().describe('Design-principle scores for an automated layout (0..1) and the worst contrast ratio behind copy')
 }),
   "sourceImageUrl": zod.string().nullish(),
   "sourceTemplateId": zod.number().nullish().describe('The master this template was adapted from'),
@@ -316,7 +328,19 @@ export const CreateTemplateBody = zod.object({
 }).describe('A single positioned element in a freeform template layout.')).optional(),
   "adaptMethod": zod.string().optional().describe('How an adapted template was derived: recomposed:<class> | key-visual | panel | scaled'),
   "rejected": zod.array(zod.string()).optional().describe('Reasons the automated layout failed the mandatory-element gate; empty or absent when it passed'),
-  "adaptNotes": zod.array(zod.string()).optional().describe('What the adapt engine decided and what a designer should check')
+  "adaptNotes": zod.array(zod.string()).optional().describe('What the adapt engine decided and what a designer should check'),
+  "principles": zod.object({
+  "alignment": zod.number(),
+  "margins": zod.number(),
+  "balance": zod.number(),
+  "contrast": zod.number().nullish(),
+  "contrastDetail": zod.array(zod.object({
+  "id": zod.string(),
+  "label": zod.string(),
+  "ratio": zod.number(),
+  "floor": zod.number()
+})).optional()
+}).optional().describe('Design-principle scores for an automated layout (0..1) and the worst contrast ratio behind copy')
 }).optional(),
   "sourceImageUrl": zod.string().nullish()
 })
@@ -390,7 +414,19 @@ export const GetTemplateResponse = zod.object({
 }).describe('A single positioned element in a freeform template layout.')).optional(),
   "adaptMethod": zod.string().optional().describe('How an adapted template was derived: recomposed:<class> | key-visual | panel | scaled'),
   "rejected": zod.array(zod.string()).optional().describe('Reasons the automated layout failed the mandatory-element gate; empty or absent when it passed'),
-  "adaptNotes": zod.array(zod.string()).optional().describe('What the adapt engine decided and what a designer should check')
+  "adaptNotes": zod.array(zod.string()).optional().describe('What the adapt engine decided and what a designer should check'),
+  "principles": zod.object({
+  "alignment": zod.number(),
+  "margins": zod.number(),
+  "balance": zod.number(),
+  "contrast": zod.number().nullish(),
+  "contrastDetail": zod.array(zod.object({
+  "id": zod.string(),
+  "label": zod.string(),
+  "ratio": zod.number(),
+  "floor": zod.number()
+})).optional()
+}).optional().describe('Design-principle scores for an automated layout (0..1) and the worst contrast ratio behind copy')
 }),
   "sourceImageUrl": zod.string().nullish(),
   "sourceTemplateId": zod.number().nullish().describe('The master this template was adapted from'),
@@ -465,7 +501,19 @@ export const UpdateTemplateBody = zod.object({
 }).describe('A single positioned element in a freeform template layout.')).optional(),
   "adaptMethod": zod.string().optional().describe('How an adapted template was derived: recomposed:<class> | key-visual | panel | scaled'),
   "rejected": zod.array(zod.string()).optional().describe('Reasons the automated layout failed the mandatory-element gate; empty or absent when it passed'),
-  "adaptNotes": zod.array(zod.string()).optional().describe('What the adapt engine decided and what a designer should check')
+  "adaptNotes": zod.array(zod.string()).optional().describe('What the adapt engine decided and what a designer should check'),
+  "principles": zod.object({
+  "alignment": zod.number(),
+  "margins": zod.number(),
+  "balance": zod.number(),
+  "contrast": zod.number().nullish(),
+  "contrastDetail": zod.array(zod.object({
+  "id": zod.string(),
+  "label": zod.string(),
+  "ratio": zod.number(),
+  "floor": zod.number()
+})).optional()
+}).optional().describe('Design-principle scores for an automated layout (0..1) and the worst contrast ratio behind copy')
 }).optional(),
   "sourceImageUrl": zod.string().nullish()
 })
@@ -531,7 +579,19 @@ export const UpdateTemplateResponse = zod.object({
 }).describe('A single positioned element in a freeform template layout.')).optional(),
   "adaptMethod": zod.string().optional().describe('How an adapted template was derived: recomposed:<class> | key-visual | panel | scaled'),
   "rejected": zod.array(zod.string()).optional().describe('Reasons the automated layout failed the mandatory-element gate; empty or absent when it passed'),
-  "adaptNotes": zod.array(zod.string()).optional().describe('What the adapt engine decided and what a designer should check')
+  "adaptNotes": zod.array(zod.string()).optional().describe('What the adapt engine decided and what a designer should check'),
+  "principles": zod.object({
+  "alignment": zod.number(),
+  "margins": zod.number(),
+  "balance": zod.number(),
+  "contrast": zod.number().nullish(),
+  "contrastDetail": zod.array(zod.object({
+  "id": zod.string(),
+  "label": zod.string(),
+  "ratio": zod.number(),
+  "floor": zod.number()
+})).optional()
+}).optional().describe('Design-principle scores for an automated layout (0..1) and the worst contrast ratio behind copy')
 }),
   "sourceImageUrl": zod.string().nullish(),
   "sourceTemplateId": zod.number().nullish().describe('The master this template was adapted from'),
@@ -646,7 +706,19 @@ export const DissectPdfResponse = zod.object({
 }).describe('A single positioned element in a freeform template layout.')).optional(),
   "adaptMethod": zod.string().optional().describe('How an adapted template was derived: recomposed:<class> | key-visual | panel | scaled'),
   "rejected": zod.array(zod.string()).optional().describe('Reasons the automated layout failed the mandatory-element gate; empty or absent when it passed'),
-  "adaptNotes": zod.array(zod.string()).optional().describe('What the adapt engine decided and what a designer should check')
+  "adaptNotes": zod.array(zod.string()).optional().describe('What the adapt engine decided and what a designer should check'),
+  "principles": zod.object({
+  "alignment": zod.number(),
+  "margins": zod.number(),
+  "balance": zod.number(),
+  "contrast": zod.number().nullish(),
+  "contrastDetail": zod.array(zod.object({
+  "id": zod.string(),
+  "label": zod.string(),
+  "ratio": zod.number(),
+  "floor": zod.number()
+})).optional()
+}).optional().describe('Design-principle scores for an automated layout (0..1) and the worst contrast ratio behind copy')
 }),
   "warnings": zod.array(zod.string())
 })
@@ -718,7 +790,19 @@ export const DissectImageResponse = zod.object({
 }).describe('A single positioned element in a freeform template layout.')).optional(),
   "adaptMethod": zod.string().optional().describe('How an adapted template was derived: recomposed:<class> | key-visual | panel | scaled'),
   "rejected": zod.array(zod.string()).optional().describe('Reasons the automated layout failed the mandatory-element gate; empty or absent when it passed'),
-  "adaptNotes": zod.array(zod.string()).optional().describe('What the adapt engine decided and what a designer should check')
+  "adaptNotes": zod.array(zod.string()).optional().describe('What the adapt engine decided and what a designer should check'),
+  "principles": zod.object({
+  "alignment": zod.number(),
+  "margins": zod.number(),
+  "balance": zod.number(),
+  "contrast": zod.number().nullish(),
+  "contrastDetail": zod.array(zod.object({
+  "id": zod.string(),
+  "label": zod.string(),
+  "ratio": zod.number(),
+  "floor": zod.number()
+})).optional()
+}).optional().describe('Design-principle scores for an automated layout (0..1) and the worst contrast ratio behind copy')
 }),
   "warnings": zod.array(zod.string())
 })
@@ -2376,7 +2460,19 @@ export const ClaudeReviewTemplateResponse = zod.object({
 }).describe('A single positioned element in a freeform template layout.')).optional(),
   "adaptMethod": zod.string().optional().describe('How an adapted template was derived: recomposed:<class> | key-visual | panel | scaled'),
   "rejected": zod.array(zod.string()).optional().describe('Reasons the automated layout failed the mandatory-element gate; empty or absent when it passed'),
-  "adaptNotes": zod.array(zod.string()).optional().describe('What the adapt engine decided and what a designer should check')
+  "adaptNotes": zod.array(zod.string()).optional().describe('What the adapt engine decided and what a designer should check'),
+  "principles": zod.object({
+  "alignment": zod.number(),
+  "margins": zod.number(),
+  "balance": zod.number(),
+  "contrast": zod.number().nullish(),
+  "contrastDetail": zod.array(zod.object({
+  "id": zod.string(),
+  "label": zod.string(),
+  "ratio": zod.number(),
+  "floor": zod.number()
+})).optional()
+}).optional().describe('Design-principle scores for an automated layout (0..1) and the worst contrast ratio behind copy')
 }),
   "sourceImageUrl": zod.string().nullish(),
   "sourceTemplateId": zod.number().nullish().describe('The master this template was adapted from'),
@@ -2454,7 +2550,19 @@ export const UndoClaudeReviewTemplateResponse = zod.object({
 }).describe('A single positioned element in a freeform template layout.')).optional(),
   "adaptMethod": zod.string().optional().describe('How an adapted template was derived: recomposed:<class> | key-visual | panel | scaled'),
   "rejected": zod.array(zod.string()).optional().describe('Reasons the automated layout failed the mandatory-element gate; empty or absent when it passed'),
-  "adaptNotes": zod.array(zod.string()).optional().describe('What the adapt engine decided and what a designer should check')
+  "adaptNotes": zod.array(zod.string()).optional().describe('What the adapt engine decided and what a designer should check'),
+  "principles": zod.object({
+  "alignment": zod.number(),
+  "margins": zod.number(),
+  "balance": zod.number(),
+  "contrast": zod.number().nullish(),
+  "contrastDetail": zod.array(zod.object({
+  "id": zod.string(),
+  "label": zod.string(),
+  "ratio": zod.number(),
+  "floor": zod.number()
+})).optional()
+}).optional().describe('Design-principle scores for an automated layout (0..1) and the worst contrast ratio behind copy')
 }),
   "sourceImageUrl": zod.string().nullish(),
   "sourceTemplateId": zod.number().nullish().describe('The master this template was adapted from'),

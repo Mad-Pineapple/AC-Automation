@@ -5167,9 +5167,9 @@ var require_lib = __commonJS({
     module.exports._codecDataCache = { __proto__: null };
     module.exports.getCodec = function getCodec(encoding) {
       if (!module.exports.encodings) {
-        var raw = require_encodings();
+        var raw2 = require_encodings();
         module.exports.encodings = { __proto__: null };
-        mergeModules(module.exports.encodings, raw);
+        mergeModules(module.exports.encodings, raw2);
       }
       var enc = module.exports._canonicalizeEncoding(encoding);
       var codecOptions = {};
@@ -15714,8 +15714,8 @@ var require_raw = __commonJS({
     var debug8 = require_src()("body-parser:raw");
     var read = require_read();
     var { normalizeOptions, passthrough } = require_utils();
-    module.exports = raw;
-    function raw(options) {
+    module.exports = raw2;
+    function raw2(options) {
       const normalizedOptions = normalizeOptions(options, "application/octet-stream");
       const readOptions = {
         ...normalizedOptions,
@@ -16867,7 +16867,7 @@ var require_get_intrinsic = __commonJS({
     var max = require_max();
     var min = require_min();
     var pow = require_pow();
-    var round = require_round();
+    var round2 = require_round();
     var sign = require_sign();
     var $Function = Function;
     var getEvalledConstructor = function(expressionSyntax) {
@@ -16981,7 +16981,7 @@ var require_get_intrinsic = __commonJS({
       "%Math.max%": max,
       "%Math.min%": min,
       "%Math.pow%": pow,
-      "%Math.round%": round,
+      "%Math.round%": round2,
       "%Math.sign%": sign,
       "%Reflect.getPrototypeOf%": $ReflectGPO
     };
@@ -26861,9 +26861,9 @@ var require_levels = __commonJS({
       const formatter = instance[formattersSym].level;
       const { labels } = instance.levels;
       const cache3 = {};
-      for (const label2 in labels) {
-        const level = formatter(labels[label2], Number(label2));
-        cache3[label2] = JSON.stringify(level).slice(0, -1);
+      for (const label3 in labels) {
+        const level = formatter(labels[label3], Number(label3));
+        cache3[label3] = JSON.stringify(level).slice(0, -1);
       }
       instance[lsCacheSym] = cache3;
       return instance;
@@ -28079,7 +28079,7 @@ var require_pino = __commonJS({
         bindings(bindings) {
           return bindings;
         },
-        level(label2, number4) {
+        level(label3, number4) {
           return { level: number4 };
         }
       }),
@@ -31824,11 +31824,11 @@ var require_postgres_interval = __commonJS({
     "use strict";
     var extend2 = require_mutable();
     module.exports = PostgresInterval;
-    function PostgresInterval(raw) {
+    function PostgresInterval(raw2) {
       if (!(this instanceof PostgresInterval)) {
-        return new PostgresInterval(raw);
+        return new PostgresInterval(raw2);
       }
-      extend2(this, parse5(raw));
+      extend2(this, parse5(raw2));
     }
     var properties = ["seconds", "minutes", "hours", "days", "months", "years"];
     PostgresInterval.prototype.toPostgres = function() {
@@ -36766,8 +36766,8 @@ var init_storedFile = __esm({
       }
       async readSidecar() {
         try {
-          const raw = await fsp.readFile(this.sidecarPath, "utf8");
-          return JSON.parse(raw);
+          const raw2 = await fsp.readFile(this.sidecarPath, "utf8");
+          return JSON.parse(raw2);
         } catch {
           return {};
         }
@@ -56936,7 +56936,7 @@ var require_get_named_curve = __commonJS({
           throw new errors_js_1.JOSENotSupported("Unsupported key curve for this operation");
       }
     };
-    var getNamedCurve = (kee, raw) => {
+    var getNamedCurve = (kee, raw2) => {
       let key;
       if ((0, webcrypto_js_1.isCryptoKey)(kee)) {
         key = node_crypto_1.KeyObject.from(kee);
@@ -56959,7 +56959,7 @@ var require_get_named_curve = __commonJS({
           return `X${key.asymmetricKeyType.slice(1)}`;
         case "ec": {
           const namedCurve = key.asymmetricKeyDetails.namedCurve;
-          if (raw) {
+          if (raw2) {
             return namedCurve;
           }
           return namedCurveToJOSE(namedCurve);
@@ -59440,9 +59440,9 @@ var require_produce = __commonJS({
     var epoch_js_1 = require_epoch();
     var is_object_js_1 = require_is_object();
     var secs_js_1 = require_secs();
-    function validateInput(label2, input) {
+    function validateInput(label3, input) {
       if (!Number.isFinite(input)) {
-        throw new TypeError(`Invalid ${label2} input`);
+        throw new TypeError(`Invalid ${label3} input`);
       }
       return input;
     }
@@ -75123,11 +75123,11 @@ var require_progressevent = __commonJS({
 var require_encoding2 = __commonJS({
   "../../node_modules/.pnpm/undici@6.27.0/node_modules/undici/lib/web/fileapi/encoding.js"(exports2, module) {
     "use strict";
-    function getEncoding(label2) {
-      if (!label2) {
+    function getEncoding(label3) {
+      if (!label3) {
         return "failure";
       }
-      switch (label2.trim().toLowerCase()) {
+      switch (label3.trim().toLowerCase()) {
         case "unicode-1-1-utf-8":
         case "unicode11utf8":
         case "unicode20utf8":
@@ -81565,11 +81565,11 @@ function __asyncValues(o) {
     }, reject);
   }
 }
-function __makeTemplateObject(cooked, raw) {
+function __makeTemplateObject(cooked, raw2) {
   if (Object.defineProperty) {
-    Object.defineProperty(cooked, "raw", { value: raw });
+    Object.defineProperty(cooked, "raw", { value: raw2 });
   } else {
-    cooked.raw = raw;
+    cooked.raw = raw2;
   }
   return cooked;
 }
@@ -139882,8 +139882,8 @@ function woffToSfnt(input) {
     const compLength = buf.readUInt32BE(dirOffset + 8);
     const origLength = buf.readUInt32BE(dirOffset + 12);
     const checksum = buf.readUInt32BE(dirOffset + 16);
-    const raw = buf.subarray(offset, offset + compLength);
-    const data = compLength < origLength ? inflateSync(raw) : Buffer.from(raw);
+    const raw2 = buf.subarray(offset, offset + compLength);
+    const data = compLength < origLength ? inflateSync(raw2) : Buffer.from(raw2);
     if (data.length !== origLength) throw new Error(`WOFF table ${tag.toString("latin1")} decoded to wrong length`);
     tables.push({ tag: Buffer.from(tag), data, checksum });
     dirOffset += 20;
@@ -140001,8 +140001,8 @@ function readSfntFamilyName(sfnt) {
       if (nameId !== 1 && nameId !== 16) continue;
       const length = buf.readUInt16BE(r4 + 8);
       const start = stringBase + buf.readUInt16BE(r4 + 10);
-      const raw = Buffer.from(buf.subarray(start, start + length));
-      const value = platformId === 3 || platformId === 0 ? raw.swap16().toString("utf16le") : raw.toString("latin1");
+      const raw2 = Buffer.from(buf.subarray(start, start + length));
+      const value = platformId === 3 || platformId === 0 ? raw2.swap16().toString("utf16le") : raw2.toString("latin1");
       const clean = value.replace(/\0/g, "").trim();
       if (!clean) continue;
       if (nameId === 16) preferred = preferred ?? clean;
@@ -145542,17 +145542,17 @@ async function renderHtmlToVideo(html, width, height, format, durationMs = DEFAU
       const frameCount = Math.round(durationMs / 1e3 * GIF_FPS);
       const frameDelayMs = 1e3 / GIF_FPS;
       const frames = [];
-      const sharp14 = (await import("sharp")).default;
+      const sharp15 = (await import("sharp")).default;
       const start = Date.now();
       for (let i = 0; i < frameCount; i++) {
         const due = start + i * frameDelayMs;
         const wait = due - Date.now();
         if (wait > 0) await page2.waitForTimeout(wait);
         const png = await page2.screenshot({ type: "png" });
-        frames.push(await sharp14(png).resize(gifW, gifH).ensureAlpha().raw().toBuffer());
+        frames.push(await sharp15(png).resize(gifW, gifH).ensureAlpha().raw().toBuffer());
       }
       await page2.close();
-      const gif = await sharp14(Buffer.concat(frames), {
+      const gif = await sharp15(Buffer.concat(frames), {
         // Animated raw input: `pages` lives inside `raw` (sharp ≥0.33; the
         // published typings don't know the property yet, hence the cast).
         raw: { width: gifW, height: gifH, channels: 4, pages: frames.length }
@@ -147275,15 +147275,15 @@ function userOAuthProvider(config2) {
   return async (opts) => {
     const { fs: fs5 } = await Promise.resolve().then(() => (init_node(), node_exports));
     await checkCredentialsFileSafety(config2.credentialsPath, config2.onSafetyWarning);
-    let raw;
+    let raw2;
     try {
-      raw = await fs5.promises.readFile(config2.credentialsPath, "utf-8");
+      raw2 = await fs5.promises.readFile(config2.credentialsPath, "utf-8");
     } catch (err) {
       throw new WorkloadIdentityError(`Credentials file not found at ${config2.credentialsPath}: ${err}`);
     }
     let creds;
     try {
-      creds = JSON.parse(raw);
+      creds = JSON.parse(raw2);
     } catch (err) {
       throw new WorkloadIdentityError(`Credentials file at ${config2.credentialsPath} is not valid JSON: ${err}`);
     }
@@ -147453,8 +147453,8 @@ function cachedExchangeProvider(exchange, credentialsPath, onCacheWriteError, on
     await checkCredentialsFileSafety(credentialsPath, onSafetyWarning);
     let existing;
     try {
-      const raw = await fs5.promises.readFile(credentialsPath, "utf-8");
-      existing = JSON.parse(raw);
+      const raw2 = await fs5.promises.readFile(credentialsPath, "utf-8");
+      existing = JSON.parse(raw2);
       const token = existing?.["access_token"];
       if (token && !opts?.forceRefresh) {
         const expiresAt = existing?.["expires_at"];
@@ -151414,8 +151414,8 @@ async function setupSkills(ctx2) {
   };
 }
 function assertSafeMemberNames(names) {
-  for (const raw of names) {
-    const entry = raw.trim();
+  for (const raw2 of names) {
+    const entry = raw2.trim();
     if (!entry)
       continue;
     if (path7.isAbsolute(entry) || entry.split(/[\\/]/).includes("..")) {
@@ -151473,8 +151473,8 @@ async function runArchiveTool(cmd, args) {
 function archiveTopDir(names) {
   let top;
   let nested = false;
-  for (const raw of names) {
-    const parts = raw.trim().split("/").filter((p) => p !== "" && p !== ".");
+  for (const raw2 of names) {
+    const parts = raw2.trim().split("/").filter((p) => p !== "" && p !== ".");
     if (parts.length === 0)
       continue;
     const first = parts[0];
@@ -163892,15 +163892,15 @@ var heroBox_exports = {};
 __export(heroBox_exports, {
   detectHeroBox: () => detectHeroBox
 });
-import sharp9 from "sharp";
+import sharp10 from "sharp";
 async function detectHeroBox(image) {
   try {
-    const meta = await sharp9(image).metadata();
+    const meta = await sharp10(image).metadata();
     const imgW = meta.width ?? 0;
     const imgH = meta.height ?? 0;
     if (!imgW || !imgH) return null;
     const side = Math.max(16, Math.round(Math.min(imgW, imgH) * BOX_FRACTION));
-    const { info } = await sharp9(image).resize(side, side, { fit: "cover", position: sharp9.strategy.attention }).toBuffer({ resolveWithObject: true });
+    const { info } = await sharp10(image).resize(side, side, { fit: "cover", position: sharp10.strategy.attention }).toBuffer({ resolveWithObject: true });
     const left = Math.abs(info.cropOffsetLeft ?? 0);
     const top = Math.abs(info.cropOffsetTop ?? 0);
     const clamp01 = (v) => Math.max(0, Math.min(1, v));
@@ -174360,7 +174360,7 @@ var require_psdReader = __commonJS({
       }
       recoverMemory(reader, lengths.byteLength);
     }
-    function readSection(reader, round, func, skipEmpty = true, eightBytes = false) {
+    function readSection(reader, round2, func, skipEmpty = true, eightBytes = false) {
       let length = readUint32(reader);
       if (eightBytes) {
         if (length !== 0)
@@ -174380,7 +174380,7 @@ var require_psdReader = __commonJS({
           warnOrThrow(reader, `Unread section data`);
         }
       }
-      while (length % round) {
+      while (length % round2) {
         length++;
         end++;
       }
@@ -179913,7 +179913,7 @@ var require_psdWriter = __commonJS({
       }
       return max;
     }
-    function writeSection(writer, round, func, writeTotalLength = false, large = false) {
+    function writeSection(writer, round2, func, writeTotalLength = false, large = false) {
       if (large)
         writeUint32(writer, 0);
       const offset = writer.offset;
@@ -179921,7 +179921,7 @@ var require_psdWriter = __commonJS({
       func();
       let length = writer.offset - offset - 4;
       let len = length;
-      while (len % round) {
+      while (len % round2) {
         writeUint8(writer, 0);
         len++;
       }
@@ -182020,9 +182020,9 @@ function importKey(key, algorithm, keyUsage) {
 }
 var DEFAULT_CLOCK_SKEW_IN_MS = 5 * 1e3;
 async function hasValidSignature(jwt2, key) {
-  const { header, signature, raw } = jwt2;
+  const { header, signature, raw: raw2 } = jwt2;
   const encoder2 = new TextEncoder();
-  const data = encoder2.encode([raw.header, raw.payload].join("."));
+  const data = encoder2.encode([raw2.header, raw2.payload].join("."));
   const algorithm = getCryptoAlgorithm(header.alg);
   try {
     const cryptoKey = await importKey(key, algorithm, "verify");
@@ -186004,7 +186004,7 @@ var EnterpriseConnection = class _EnterpriseConnection {
   }
 };
 var ExternalAccount = class _ExternalAccount {
-  constructor(id, provider, providerUserId, identificationId, externalId, approvedScopes, emailAddress, firstName, lastName, imageUrl, username, phoneNumber, publicMetadata = {}, label2, verification) {
+  constructor(id, provider, providerUserId, identificationId, externalId, approvedScopes, emailAddress, firstName, lastName, imageUrl, username, phoneNumber, publicMetadata = {}, label3, verification) {
     this.id = id;
     this.provider = provider;
     this.providerUserId = providerUserId;
@@ -186018,7 +186018,7 @@ var ExternalAccount = class _ExternalAccount {
     this.username = username;
     this.phoneNumber = phoneNumber;
     this.publicMetadata = publicMetadata;
-    this.label = label2;
+    this.label = label3;
     this.verification = verification;
   }
   static fromJSON(data) {
@@ -186259,12 +186259,12 @@ var MachineSecretKey = class _MachineSecretKey {
   }
 };
 var OauthAccessToken = class _OauthAccessToken {
-  constructor(externalAccountId, provider, token, publicMetadata = {}, label2, scopes, tokenSecret, expiresAt, idToken) {
+  constructor(externalAccountId, provider, token, publicMetadata = {}, label3, scopes, tokenSecret, expiresAt, idToken) {
     this.externalAccountId = externalAccountId;
     this.provider = provider;
     this.token = token;
     this.publicMetadata = publicMetadata;
-    this.label = label2;
+    this.label = label3;
     this.scopes = scopes;
     this.tokenSecret = tokenSecret;
     this.expiresAt = expiresAt;
@@ -190734,8 +190734,8 @@ var CLERK_FAPI = "https://frontend-api.clerk.dev";
 var CLERK_PROXY_PATH = "/api/__clerk";
 function getClerkProxyHost(req) {
   const forwarded = req.headers["x-forwarded-host"];
-  const raw = Array.isArray(forwarded) ? forwarded[0] : forwarded;
-  const firstHop = raw?.split(",")[0]?.trim();
+  const raw2 = Array.isArray(forwarded) ? forwarded[0] : forwarded;
+  const firstHop = raw2?.split(",")[0]?.trim();
   return firstHop || req.headers.host?.trim() || void 0;
 }
 function clerkProxyMiddleware() {
@@ -194849,7 +194849,19 @@ var ListTemplatesResponseItem = objectType({
     }).describe("A single positioned element in a freeform template layout.")).optional(),
     "adaptMethod": stringType().optional().describe("How an adapted template was derived: recomposed:<class> | key-visual | panel | scaled"),
     "rejected": arrayType(stringType()).optional().describe("Reasons the automated layout failed the mandatory-element gate; empty or absent when it passed"),
-    "adaptNotes": arrayType(stringType()).optional().describe("What the adapt engine decided and what a designer should check")
+    "adaptNotes": arrayType(stringType()).optional().describe("What the adapt engine decided and what a designer should check"),
+    "principles": objectType({
+      "alignment": numberType(),
+      "margins": numberType(),
+      "balance": numberType(),
+      "contrast": numberType().nullish(),
+      "contrastDetail": arrayType(objectType({
+        "id": stringType(),
+        "label": stringType(),
+        "ratio": numberType(),
+        "floor": numberType()
+      })).optional()
+    }).optional().describe("Design-principle scores for an automated layout (0..1) and the worst contrast ratio behind copy")
   }),
   "sourceImageUrl": stringType().nullish(),
   "sourceTemplateId": numberType().nullish().describe("The master this template was adapted from"),
@@ -194916,7 +194928,19 @@ var CreateTemplateBody = objectType({
     }).describe("A single positioned element in a freeform template layout.")).optional(),
     "adaptMethod": stringType().optional().describe("How an adapted template was derived: recomposed:<class> | key-visual | panel | scaled"),
     "rejected": arrayType(stringType()).optional().describe("Reasons the automated layout failed the mandatory-element gate; empty or absent when it passed"),
-    "adaptNotes": arrayType(stringType()).optional().describe("What the adapt engine decided and what a designer should check")
+    "adaptNotes": arrayType(stringType()).optional().describe("What the adapt engine decided and what a designer should check"),
+    "principles": objectType({
+      "alignment": numberType(),
+      "margins": numberType(),
+      "balance": numberType(),
+      "contrast": numberType().nullish(),
+      "contrastDetail": arrayType(objectType({
+        "id": stringType(),
+        "label": stringType(),
+        "ratio": numberType(),
+        "floor": numberType()
+      })).optional()
+    }).optional().describe("Design-principle scores for an automated layout (0..1) and the worst contrast ratio behind copy")
   }).optional(),
   "sourceImageUrl": stringType().nullish()
 });
@@ -194984,7 +195008,19 @@ var GetTemplateResponse = objectType({
     }).describe("A single positioned element in a freeform template layout.")).optional(),
     "adaptMethod": stringType().optional().describe("How an adapted template was derived: recomposed:<class> | key-visual | panel | scaled"),
     "rejected": arrayType(stringType()).optional().describe("Reasons the automated layout failed the mandatory-element gate; empty or absent when it passed"),
-    "adaptNotes": arrayType(stringType()).optional().describe("What the adapt engine decided and what a designer should check")
+    "adaptNotes": arrayType(stringType()).optional().describe("What the adapt engine decided and what a designer should check"),
+    "principles": objectType({
+      "alignment": numberType(),
+      "margins": numberType(),
+      "balance": numberType(),
+      "contrast": numberType().nullish(),
+      "contrastDetail": arrayType(objectType({
+        "id": stringType(),
+        "label": stringType(),
+        "ratio": numberType(),
+        "floor": numberType()
+      })).optional()
+    }).optional().describe("Design-principle scores for an automated layout (0..1) and the worst contrast ratio behind copy")
   }),
   "sourceImageUrl": stringType().nullish(),
   "sourceTemplateId": numberType().nullish().describe("The master this template was adapted from"),
@@ -195053,7 +195089,19 @@ var UpdateTemplateBody = objectType({
     }).describe("A single positioned element in a freeform template layout.")).optional(),
     "adaptMethod": stringType().optional().describe("How an adapted template was derived: recomposed:<class> | key-visual | panel | scaled"),
     "rejected": arrayType(stringType()).optional().describe("Reasons the automated layout failed the mandatory-element gate; empty or absent when it passed"),
-    "adaptNotes": arrayType(stringType()).optional().describe("What the adapt engine decided and what a designer should check")
+    "adaptNotes": arrayType(stringType()).optional().describe("What the adapt engine decided and what a designer should check"),
+    "principles": objectType({
+      "alignment": numberType(),
+      "margins": numberType(),
+      "balance": numberType(),
+      "contrast": numberType().nullish(),
+      "contrastDetail": arrayType(objectType({
+        "id": stringType(),
+        "label": stringType(),
+        "ratio": numberType(),
+        "floor": numberType()
+      })).optional()
+    }).optional().describe("Design-principle scores for an automated layout (0..1) and the worst contrast ratio behind copy")
   }).optional(),
   "sourceImageUrl": stringType().nullish()
 });
@@ -195118,7 +195166,19 @@ var UpdateTemplateResponse = objectType({
     }).describe("A single positioned element in a freeform template layout.")).optional(),
     "adaptMethod": stringType().optional().describe("How an adapted template was derived: recomposed:<class> | key-visual | panel | scaled"),
     "rejected": arrayType(stringType()).optional().describe("Reasons the automated layout failed the mandatory-element gate; empty or absent when it passed"),
-    "adaptNotes": arrayType(stringType()).optional().describe("What the adapt engine decided and what a designer should check")
+    "adaptNotes": arrayType(stringType()).optional().describe("What the adapt engine decided and what a designer should check"),
+    "principles": objectType({
+      "alignment": numberType(),
+      "margins": numberType(),
+      "balance": numberType(),
+      "contrast": numberType().nullish(),
+      "contrastDetail": arrayType(objectType({
+        "id": stringType(),
+        "label": stringType(),
+        "ratio": numberType(),
+        "floor": numberType()
+      })).optional()
+    }).optional().describe("Design-principle scores for an automated layout (0..1) and the worst contrast ratio behind copy")
   }),
   "sourceImageUrl": stringType().nullish(),
   "sourceTemplateId": numberType().nullish().describe("The master this template was adapted from"),
@@ -195207,7 +195267,19 @@ var DissectPdfResponse = objectType({
     }).describe("A single positioned element in a freeform template layout.")).optional(),
     "adaptMethod": stringType().optional().describe("How an adapted template was derived: recomposed:<class> | key-visual | panel | scaled"),
     "rejected": arrayType(stringType()).optional().describe("Reasons the automated layout failed the mandatory-element gate; empty or absent when it passed"),
-    "adaptNotes": arrayType(stringType()).optional().describe("What the adapt engine decided and what a designer should check")
+    "adaptNotes": arrayType(stringType()).optional().describe("What the adapt engine decided and what a designer should check"),
+    "principles": objectType({
+      "alignment": numberType(),
+      "margins": numberType(),
+      "balance": numberType(),
+      "contrast": numberType().nullish(),
+      "contrastDetail": arrayType(objectType({
+        "id": stringType(),
+        "label": stringType(),
+        "ratio": numberType(),
+        "floor": numberType()
+      })).optional()
+    }).optional().describe("Design-principle scores for an automated layout (0..1) and the worst contrast ratio behind copy")
   }),
   "warnings": arrayType(stringType())
 });
@@ -195270,7 +195342,19 @@ var DissectImageResponse = objectType({
     }).describe("A single positioned element in a freeform template layout.")).optional(),
     "adaptMethod": stringType().optional().describe("How an adapted template was derived: recomposed:<class> | key-visual | panel | scaled"),
     "rejected": arrayType(stringType()).optional().describe("Reasons the automated layout failed the mandatory-element gate; empty or absent when it passed"),
-    "adaptNotes": arrayType(stringType()).optional().describe("What the adapt engine decided and what a designer should check")
+    "adaptNotes": arrayType(stringType()).optional().describe("What the adapt engine decided and what a designer should check"),
+    "principles": objectType({
+      "alignment": numberType(),
+      "margins": numberType(),
+      "balance": numberType(),
+      "contrast": numberType().nullish(),
+      "contrastDetail": arrayType(objectType({
+        "id": stringType(),
+        "label": stringType(),
+        "ratio": numberType(),
+        "floor": numberType()
+      })).optional()
+    }).optional().describe("Design-principle scores for an automated layout (0..1) and the worst contrast ratio behind copy")
   }),
   "warnings": arrayType(stringType())
 });
@@ -196533,7 +196617,19 @@ var ClaudeReviewTemplateResponse = objectType({
     }).describe("A single positioned element in a freeform template layout.")).optional(),
     "adaptMethod": stringType().optional().describe("How an adapted template was derived: recomposed:<class> | key-visual | panel | scaled"),
     "rejected": arrayType(stringType()).optional().describe("Reasons the automated layout failed the mandatory-element gate; empty or absent when it passed"),
-    "adaptNotes": arrayType(stringType()).optional().describe("What the adapt engine decided and what a designer should check")
+    "adaptNotes": arrayType(stringType()).optional().describe("What the adapt engine decided and what a designer should check"),
+    "principles": objectType({
+      "alignment": numberType(),
+      "margins": numberType(),
+      "balance": numberType(),
+      "contrast": numberType().nullish(),
+      "contrastDetail": arrayType(objectType({
+        "id": stringType(),
+        "label": stringType(),
+        "ratio": numberType(),
+        "floor": numberType()
+      })).optional()
+    }).optional().describe("Design-principle scores for an automated layout (0..1) and the worst contrast ratio behind copy")
   }),
   "sourceImageUrl": stringType().nullish(),
   "sourceTemplateId": numberType().nullish().describe("The master this template was adapted from"),
@@ -196605,7 +196701,19 @@ var UndoClaudeReviewTemplateResponse = objectType({
     }).describe("A single positioned element in a freeform template layout.")).optional(),
     "adaptMethod": stringType().optional().describe("How an adapted template was derived: recomposed:<class> | key-visual | panel | scaled"),
     "rejected": arrayType(stringType()).optional().describe("Reasons the automated layout failed the mandatory-element gate; empty or absent when it passed"),
-    "adaptNotes": arrayType(stringType()).optional().describe("What the adapt engine decided and what a designer should check")
+    "adaptNotes": arrayType(stringType()).optional().describe("What the adapt engine decided and what a designer should check"),
+    "principles": objectType({
+      "alignment": numberType(),
+      "margins": numberType(),
+      "balance": numberType(),
+      "contrast": numberType().nullish(),
+      "contrastDetail": arrayType(objectType({
+        "id": stringType(),
+        "label": stringType(),
+        "ratio": numberType(),
+        "floor": numberType()
+      })).optional()
+    }).optional().describe("Design-principle scores for an automated layout (0..1) and the worst contrast ratio behind copy")
   }),
   "sourceImageUrl": stringType().nullish(),
   "sourceTemplateId": numberType().nullish().describe("The master this template was adapted from"),
@@ -197776,10 +197884,10 @@ function sql(strings, ...params) {
     return new SQL(list);
   }
   sql2.fromList = fromList;
-  function raw(str2) {
+  function raw2(str2) {
     return new SQL([new StringChunk(str2)]);
   }
-  sql2.raw = raw;
+  sql2.raw = raw2;
   function join2(chunks, separator) {
     const result = [];
     for (const [i, chunk] of chunks.entries()) {
@@ -215646,24 +215754,24 @@ function channelOf(hint) {
   return null;
 }
 function classifyFormat(width, height, hints = {}) {
-  const ratio = width / height;
+  const ratio2 = width / height;
   const name = (hints.name ?? "").trim();
   const channel = (hints.channel ?? "").trim();
   const entry = lookupFormat(width, height);
   if (STRIP_NAME.test(name) || entry && STRIP_NAME.test(entry.label)) return "strip";
   if (OOH_CHANNEL.test(channel) || OOH_CHANNEL.test(name) || entry && (entry.channel === "ooh" || entry.channel === "print" || entry.channel === "screen")) {
-    if (ratio >= 6) return "strip";
+    if (ratio2 >= 6) return "strip";
     return classifyAspect(width, Math.max(height, STRIP_MAX_HEIGHT + 1));
   }
   return classifyAspect(width, height);
 }
 function classifyAspect(width, height) {
-  const ratio = width / height;
-  if (ratio >= 5 || height <= STRIP_MAX_HEIGHT && ratio >= 2.5) return "strip";
-  if (ratio <= 0.35) return "tower";
-  if (ratio < 0.8) return "portrait";
-  if (ratio <= 1.25) return "square";
-  if (ratio < 2) return "landscape";
+  const ratio2 = width / height;
+  if (ratio2 >= 5 || height <= STRIP_MAX_HEIGHT && ratio2 >= 2.5) return "strip";
+  if (ratio2 <= 0.35) return "tower";
+  if (ratio2 < 0.8) return "portrait";
+  if (ratio2 <= 1.25) return "square";
+  if (ratio2 < 2) return "landscape";
   return "wide";
 }
 function classifyBudget(width, height) {
@@ -216020,11 +216128,11 @@ function trackingRowsToCsv(rows) {
 // src/lib/metaInsights.ts
 function metaConfig() {
   const token = process.env.META_ACCESS_TOKEN?.trim();
-  const raw = process.env.META_AD_ACCOUNT_ID?.trim();
-  if (!token || !raw) return null;
+  const raw2 = process.env.META_AD_ACCOUNT_ID?.trim();
+  if (!token || !raw2) return null;
   return {
     token,
-    accountId: raw.startsWith("act_") ? raw : `act_${raw}`,
+    accountId: raw2.startsWith("act_") ? raw2 : `act_${raw2}`,
     version: process.env.META_API_VERSION?.trim() || "v21.0",
     baseUrl: (process.env.META_GRAPH_BASE_URL?.trim() || "https://graph.facebook.com").replace(/\/+$/, "")
   };
@@ -226266,12 +226374,12 @@ ${snippet}`;
 async function fetchLogoDataUri(logoUrl, origin) {
   if (!logoUrl) return void 0;
   try {
-    const sharp14 = (await import("sharp")).default;
+    const sharp15 = (await import("sharp")).default;
     const abs = /^https?:\/\//i.test(logoUrl) ? logoUrl : `${origin}${logoUrl}`;
     const res = await fetch(abs);
     if (!res.ok) return void 0;
     const buf = Buffer.from(await res.arrayBuffer());
-    const png = await sharp14(buf).resize(240, 240, { fit: "cover" }).png().toBuffer();
+    const png = await sharp15(buf).resize(240, 240, { fit: "cover" }).png().toBuffer();
     return `data:image/png;base64,${png.toString("base64")}`;
   } catch {
     return void 0;
@@ -226281,16 +226389,16 @@ async function fetchLogoDataUri(logoUrl, origin) {
 // src/lib/brandRules.ts
 var SOCIAL_TILE_FORMATS = /* @__PURE__ */ new Set(["social_square", "animated_social"]);
 function splitLayoutRules(width, height, panelColour) {
-  const ratio = width / height;
-  if (ratio >= 2) {
+  const ratio2 = width / height;
+  if (ratio2 >= 2) {
     return [
-      `LAYOUT (wide ${width}\xD7${height}, ratio ${ratio.toFixed(1)}): split the canvas VERTICALLY \u2014 photography fills the LEFT ~50%, and a SOLID ${panelColour} panel fills the RIGHT ~50% carrying the copy. Do not float copy across the photograph.`,
+      `LAYOUT (wide ${width}\xD7${height}, ratio ${ratio2.toFixed(1)}): split the canvas VERTICALLY \u2014 photography fills the LEFT ~50%, and a SOLID ${panelColour} panel fills the RIGHT ~50% carrying the copy. Do not float copy across the photograph.`,
       "Headline sits on the image side, left-aligned, occupying a band roughly a third of the canvas height \u2014 single line, large. The CTA sits in the right-hand panel, vertically centred."
     ];
   }
-  if (ratio <= 0.7) {
+  if (ratio2 <= 0.7) {
     return [
-      `LAYOUT (tall ${width}\xD7${height}, ratio ${ratio.toFixed(2)}): split the canvas HORIZONTALLY \u2014 photography fills the TOP ~55% with the headline over it, and a SOLID ${panelColour} panel fills the BOTTOM ~38% carrying the message and CTA.`,
+      `LAYOUT (tall ${width}\xD7${height}, ratio ${ratio2.toFixed(2)}): split the canvas HORIZONTALLY \u2014 photography fills the TOP ~55% with the headline over it, and a SOLID ${panelColour} panel fills the BOTTOM ~38% carrying the message and CTA.`,
       "The CTA is centred horizontally and sits roughly three-quarters of the way down. Headline band \u2248 a third of the canvas width in cap height \u2014 big, not timid."
     ];
   }
@@ -226880,10 +226988,10 @@ No markdown, no commentary, just the JSON object.`;
   });
   try {
     const parsed = JSON.parse(response.choices[0]?.message?.content ?? "{}");
-    const raw = parsed.suggestions ?? {};
+    const raw2 = parsed.suggestions ?? {};
     const suggestions = {};
     for (const field of GUIDELINE_FIELDS) {
-      const value = raw[field];
+      const value = raw2[field];
       if (typeof value === "string" && value.trim()) {
         suggestions[field] = value.trim();
       }
@@ -227046,11 +227154,11 @@ function toObjectEntityPath(url2) {
   const idx = url2.indexOf("/objects/");
   return idx === -1 ? null : url2.slice(idx);
 }
-function withTimeout(p, ms, label2) {
+function withTimeout(p, ms, label3) {
   return Promise.race([
     p,
     new Promise(
-      (_2, reject) => setTimeout(() => reject(new Error(`${label2} timed out after ${ms}ms`)), ms)
+      (_2, reject) => setTimeout(() => reject(new Error(`${label3} timed out after ${ms}ms`)), ms)
     )
   ]);
 }
@@ -227061,8 +227169,8 @@ async function downloadReferenceImage(url2) {
     return await withTimeout(
       (async () => {
         const file2 = await objectStorageService3.getObjectEntityFile(objectPath);
-        const [raw] = await file2.download();
-        const buffer = await sharp(raw).resize({ width: 1024, height: 1024, fit: "inside", withoutEnlargement: true }).jpeg({ quality: 85 }).toBuffer();
+        const [raw2] = await file2.download();
+        const buffer = await sharp(raw2).resize({ width: 1024, height: 1024, fit: "inside", withoutEnlargement: true }).jpeg({ quality: 85 }).toBuffer();
         return { buffer, mimeType: "image/jpeg" };
       })(),
       25e3,
@@ -227195,11 +227303,11 @@ function brandLabs(brand) {
   }
   return hexes.map((c) => hexToRgb(c)).filter((c) => c !== null).map(rgbToLab);
 }
-function withTimeout2(p, ms, label2) {
+function withTimeout2(p, ms, label3) {
   return Promise.race([
     p,
     new Promise(
-      (_2, reject) => setTimeout(() => reject(new Error(`${label2} timed out after ${ms}ms`)), ms)
+      (_2, reject) => setTimeout(() => reject(new Error(`${label3} timed out after ${ms}ms`)), ms)
     )
   ]);
 }
@@ -227283,8 +227391,8 @@ async function loadImageBytes(imageUrl) {
   const objectPath = toObjectEntityPath(imageUrl);
   if (objectPath) {
     const file2 = await objectStorageService4.getObjectEntityFile(objectPath);
-    const [raw] = await file2.download();
-    return raw;
+    const [raw2] = await file2.download();
+    return raw2;
   }
   if (/^https?:\/\//i.test(imageUrl)) {
     const resp = await fetch(imageUrl);
@@ -227318,11 +227426,11 @@ async function extractDominantColors(buffer, max = 5) {
   }
 }
 async function checkImageCompliance(imageUrl, brand) {
-  const raw = await loadImageBytes(imageUrl);
-  if (!raw) return { status: "skipped", score: 0, issues: [] };
-  const jpeg = await sharp2(raw).resize({ width: 640, height: 640, fit: "inside", withoutEnlargement: true }).jpeg({ quality: 80 }).toBuffer();
+  const raw2 = await loadImageBytes(imageUrl);
+  if (!raw2) return { status: "skipped", score: 0, issues: [] };
+  const jpeg = await sharp2(raw2).resize({ width: 640, height: 640, fit: "inside", withoutEnlargement: true }).jpeg({ quality: 80 }).toBuffer();
   const dataUrl = `data:image/jpeg;base64,${jpeg.toString("base64")}`;
-  const dominant = await extractDominantColors(raw);
+  const dominant = await extractDominantColors(raw2);
   const palette = [
     `Primary ${brand.primaryColor}`,
     `Secondary ${brand.secondaryColor}`,
@@ -227487,9 +227595,9 @@ function adaptFreeformConfig(master, srcW, srcH, dstW, dstH) {
   return { kind: "freeform", elements };
 }
 var MAX_MOTION_FRAMES = 200;
-function sanitizeMotion(raw) {
-  if (typeof raw !== "object" || raw === null) return void 0;
-  const m = raw;
+function sanitizeMotion(raw2) {
+  if (typeof raw2 !== "object" || raw2 === null) return void 0;
+  const m = raw2;
   const dur = num(m.dur);
   const w0 = num(m.w0), h0 = num(m.h0);
   if (!(dur > 0) || dur > 60 || !(w0 > 0) || !(h0 > 0) || !Array.isArray(m.frames)) return void 0;
@@ -227512,8 +227620,8 @@ function sanitizeMotion(raw) {
   frames.sort((a, b) => a.t - b.t);
   return { dur: Math.round(dur * 100) / 100, w0: Math.round(w0), h0: Math.round(h0), frames };
 }
-function normalizeFreeformConfig(raw) {
-  const rawElements = isFreeformConfigShape(raw) && Array.isArray(raw.elements) ? raw.elements : [];
+function normalizeFreeformConfig(raw2) {
+  const rawElements = isFreeformConfigShape(raw2) && Array.isArray(raw2.elements) ? raw2.elements : [];
   const elements = [];
   for (const rawEl of rawElements.slice(0, MAX_ELEMENTS)) {
     if (typeof rawEl !== "object" || rawEl === null) continue;
@@ -227618,7 +227726,7 @@ function normalizeFreeformConfig(raw) {
       });
     }
   }
-  const rawOpts = raw.layoutOptions;
+  const rawOpts = raw2.layoutOptions;
   const layoutOptions = Array.isArray(rawOpts) ? rawOpts.slice(0, 4).filter((o) => typeof o === "object" && o !== null).map((o) => ({
     label: String(o.label ?? "Option").slice(0, 40),
     x: num(o.x),
@@ -227630,22 +227738,31 @@ function normalizeFreeformConfig(raw) {
     color: sanitizeColor(o.color, "#ffffff"),
     score: num(o.score)
   })) : [];
-  const rawSrc = raw.sourceAssets;
+  const rawSrc = raw2.sourceAssets;
   const sourceAssets = Array.isArray(rawSrc) ? rawSrc.slice(0, 500).filter((a) => typeof a === "object" && a !== null).map((a) => ({
     name: String(a.name ?? "").slice(0, 300),
     objectPath: String(a.objectPath ?? "").slice(0, 500),
     contentType: String(a.contentType ?? "").slice(0, 100),
     kind: String(a.kind ?? "image").slice(0, 40)
   })).filter((a) => a.name && a.objectPath) : [];
-  const rawFolder = raw.sourceFolder;
+  const rawFolder = raw2.sourceFolder;
   const sourceFolder = typeof rawFolder === "string" ? rawFolder.slice(0, 200) : void 0;
-  const rawPrev = raw.previewHtml;
+  const rawPrev = raw2.previewHtml;
   const previewHtml = typeof rawPrev === "string" && rawPrev.startsWith("/api/storage/") ? rawPrev.slice(0, 500) : void 0;
-  const rawMethod = raw.adaptMethod;
+  const rawMethod = raw2.adaptMethod;
   const adaptMethod = typeof rawMethod === "string" && /^[\w:-]{1,40}$/.test(rawMethod) ? rawMethod : void 0;
-  const rawNotes = raw.adaptNotes;
+  const rawNotes = raw2.adaptNotes;
   const adaptNotes = Array.isArray(rawNotes) ? rawNotes.filter((n) => typeof n === "string" && n.trim().length > 0).slice(0, 16).map((n) => n.slice(0, 240)) : [];
-  const rejected = Array.isArray(raw.rejected) ? raw.rejected.filter((r4) => typeof r4 === "string" && r4.trim().length > 0).map((r4) => r4.slice(0, 300)).slice(0, 20) : [];
+  const rawPr = raw2.principles;
+  const unit = (v) => typeof v === "number" && Number.isFinite(v) ? Math.max(0, Math.min(1, v)) : null;
+  const principles = rawPr && typeof rawPr === "object" && unit(rawPr.alignment) != null && unit(rawPr.margins) != null && unit(rawPr.balance) != null ? {
+    alignment: unit(rawPr.alignment),
+    margins: unit(rawPr.margins),
+    balance: unit(rawPr.balance),
+    contrast: typeof rawPr.contrast === "number" && Number.isFinite(rawPr.contrast) ? Math.round(rawPr.contrast * 100) / 100 : null,
+    ...Array.isArray(rawPr.contrastDetail) ? { contrastDetail: rawPr.contrastDetail.filter((d) => !!d && typeof d === "object" && typeof d.id === "string" && typeof d.ratio === "number").slice(0, 8).map((d) => ({ id: String(d.id).slice(0, 80), label: String(d.label ?? d.id).slice(0, 40), ratio: d.ratio, floor: d.floor === 4.5 ? 4.5 : 3 })) } : {}
+  } : null;
+  const rejected = Array.isArray(raw2.rejected) ? raw2.rejected.filter((r4) => typeof r4 === "string" && r4.trim().length > 0).map((r4) => r4.slice(0, 300)).slice(0, 20) : [];
   return {
     kind: "freeform",
     elements,
@@ -227655,7 +227772,8 @@ function normalizeFreeformConfig(raw) {
     ...previewHtml ? { previewHtml } : {},
     ...adaptMethod ? { adaptMethod } : {},
     ...adaptNotes.length > 0 ? { adaptNotes } : {},
-    ...rejected.length > 0 ? { rejected } : {}
+    ...rejected.length > 0 ? { rejected } : {},
+    ...principles ? { principles } : {}
   };
 }
 
@@ -227770,8 +227888,8 @@ async function snapshotTemplateConfig(id) {
   const t = rows.rows[0];
   if (!t?.config) return null;
   try {
-    const raw = JSON.parse(t.config);
-    return isFreeformConfig(raw) ? JSON.stringify(normalizeFreeformConfig(raw)) : null;
+    const raw2 = JSON.parse(t.config);
+    return isFreeformConfig(raw2) ? JSON.stringify(normalizeFreeformConfig(raw2)) : null;
   } catch {
     return null;
   }
@@ -227783,9 +227901,9 @@ async function rememberRightPiece(templateId, opts = {}) {
   if (t.category === "knowledge") return Number(t.id);
   let config2;
   try {
-    const raw = JSON.parse(t.config || "{}");
-    if (!isFreeformConfig(raw)) return null;
-    config2 = normalizeFreeformConfig(raw);
+    const raw2 = JSON.parse(t.config || "{}");
+    if (!isFreeformConfig(raw2)) return null;
+    config2 = normalizeFreeformConfig(raw2);
   } catch {
     return null;
   }
@@ -227907,12 +228025,12 @@ function rgbToCmyk({ r: r4, g, b }) {
   const B = Math.max(0, Math.min(255, b)) / 255;
   const k = 1 - Math.max(R, G, B);
   if (k >= 1) return { c: 0, m: 0, y: 0, k: 100 };
-  const pct = (v) => Math.round(v * 1e3) / 10;
+  const pct2 = (v) => Math.round(v * 1e3) / 10;
   return {
-    c: pct((1 - R - k) / (1 - k)),
-    m: pct((1 - G - k) / (1 - k)),
-    y: pct((1 - B - k) / (1 - k)),
-    k: pct(k)
+    c: pct2((1 - R - k) / (1 - k)),
+    m: pct2((1 - G - k) / (1 - k)),
+    y: pct2((1 - B - k) / (1 - k)),
+    k: pct2(k)
   };
 }
 function rgbToLab2({ r: r4, g, b }) {
@@ -229022,10 +229140,10 @@ function baseUrl(req) {
 }
 var MAX_VARIANT_ROWS = 20;
 var MAX_VARIANT_FIELD = 500;
-function normalizeVariantsInput(raw) {
-  if (!Array.isArray(raw)) return null;
+function normalizeVariantsInput(raw2) {
+  if (!Array.isArray(raw2)) return null;
   const rows = [];
-  for (const item of raw.slice(0, MAX_VARIANT_ROWS)) {
+  for (const item of raw2.slice(0, MAX_VARIANT_ROWS)) {
     if (typeof item !== "object" || item === null) continue;
     const r4 = item;
     const field = (v) => typeof v === "string" && v.trim() ? v.trim().slice(0, MAX_VARIANT_FIELD) : null;
@@ -229423,7 +229541,7 @@ router7.post("/briefs/:id/generate", requireAuth, async (req, res) => {
         const distinct = [...new Set(sizeToImageSize.values())];
         const results = await Promise.all(
           distinct.map(async (imgSize) => {
-            const raw = await generateProductImage({
+            const raw2 = await generateProductImage({
               campaignName: brief.campaignName,
               brandName: brand.name,
               industry: brand.industry,
@@ -229439,10 +229557,10 @@ router7.post("/briefs/:id/generate", requireAuth, async (req, res) => {
                 backgroundColor: brand.backgroundColor
               }
             });
-            let url2 = raw;
-            if (raw && raw.startsWith("data:")) {
+            let url2 = raw2;
+            if (raw2 && raw2.startsWith("data:")) {
               try {
-                const objectPath = await objectStorageService5.uploadDataUrl(raw);
+                const objectPath = await objectStorageService5.uploadDataUrl(raw2);
                 url2 = `${baseUrl(req)}/api/storage${objectPath}`;
               } catch (err) {
                 logger2.error({ err, briefId: id }, "Product image upload failed");
@@ -230110,7 +230228,7 @@ router8.post("/assets/:id/regenerate", requireAuth, async (req, res) => {
         const { width, height } = dimsForSize(asset.templateSize, tplById);
         const size = imageSizeForDims(width, height);
         const references = await collectBrandReferences(brand.id, [asset.templateSize], tplById);
-        const raw = await generateProductImage({
+        const raw2 = await generateProductImage({
           campaignName: brief.campaignName,
           brandName: brand.name,
           industry: brand.industry,
@@ -230126,10 +230244,10 @@ router8.post("/assets/:id/regenerate", requireAuth, async (req, res) => {
             backgroundColor: brand.backgroundColor
           }
         });
-        imageUrl = raw;
-        if (raw && raw.startsWith("data:")) {
+        imageUrl = raw2;
+        if (raw2 && raw2.startsWith("data:")) {
           try {
-            const objectPath = await objectStorageService6.uploadDataUrl(raw);
+            const objectPath = await objectStorageService6.uploadDataUrl(raw2);
             imageUrl = `${baseUrl2(req)}/api/storage${objectPath}`;
           } catch (err) {
             logger2.error({ err, assetId: id }, "Regenerated product image upload failed");
@@ -230276,13 +230394,13 @@ router8.post("/assets/:id/edit-image", requireAuth, async (req, res) => {
   }
   try {
     const file2 = await objectStorageService6.getObjectEntityFile(objectPath);
-    const [raw] = await file2.download();
+    const [raw2] = await file2.download();
     const tplById = await loadTemplateMap();
     const { width, height } = dimsForSize(asset.templateSize, tplById);
     const size = imageSizeForDims(width, height);
     const rules = getBrandRules(brand.name);
     const editPrompt = `Apply this edit to the advertising artwork, changing ONLY what the instruction asks and preserving the existing art style, composition and colour treatment everywhere else: ${instruction}. Keep every colour within the brand palette (${[brand.primaryColor, brand.secondaryColor, brand.accentColor, brand.backgroundColor].filter(Boolean).join(", ")}). ${rules.imageryRules().join(" ")}`;
-    const buffer = await editImageBuffers([{ buffer: raw, mimeType: "image/png" }], editPrompt, size);
+    const buffer = await editImageBuffers([{ buffer: raw2, mimeType: "image/png" }], editPrompt, size);
     if (!buffer.length) throw new Error("empty edit result");
     const newObjectPath = await objectStorageService6.uploadDataUrl(
       `data:image/png;base64,${buffer.toString("base64")}`
@@ -230403,8 +230521,8 @@ router8.post("/briefs/:id/ad-tags", requireAuth, async (req, res) => {
     res.status(403).json({ error: "Forbidden: you do not own this brief" });
     return;
   }
-  const raw = req.body?.clickUrl;
-  const clickUrl = typeof raw === "string" && raw.trim() !== "" ? raw.trim() : null;
+  const raw2 = req.body?.clickUrl;
+  const clickUrl = typeof raw2 === "string" && raw2.trim() !== "" ? raw2.trim() : null;
   const assets = await db.select().from(assetsTable).where(eq(assetsTable.briefId, briefId)).orderBy(assetsTable.id);
   let created = 0;
   let updated = 0;
@@ -231194,7 +231312,7 @@ async function composeKeyVisualAdaptation(master, srcW, srcH, dstW, dstH, brand)
       const fitCap = Math.min(fitToWidth, fitToHeight);
       return Math.round(Math.max(MIN_HEADLINE_PX, Math.min(fitCap, isStrip || isWide ? Math.max(designSize, fitCap * 0.8) : designSize)));
     };
-    const mk = (label2, zone, zx, zy, zw, zh, align) => {
+    const mk = (label3, zone, zx, zy, zw, zh, align) => {
       zx = Math.max(margin, zx);
       zy = Math.max(margin, zy);
       zw = Math.min(zw, dstW - margin - zx);
@@ -231203,7 +231321,7 @@ async function composeKeyVisualAdaptation(master, srcW, srcH, dstW, dstH, brand)
       const fontSize2 = fitFont(zw, zh);
       const h = boxHeight(text3, fontSize2, zw, 1.25);
       if (h > zh + fontSize2 * 0.6) return null;
-      return { label: label2, zone, x: Math.round(zx), y: Math.round(zy), w: Math.round(zw), h, fontSize: fontSize2, align, color: headline.color ?? "#ffffff", score: 0 };
+      return { label: label3, zone, x: Math.round(zx), y: Math.round(zy), w: Math.round(zw), h, fontSize: fontSize2, align, color: headline.color ?? "#ffffff", score: 0 };
     };
     const candidates = [];
     {
@@ -231417,10 +231535,10 @@ function inferSlots(config2, width, height) {
   if (cta) {
     cta.slot = "cta";
     if (!ctaLabel) {
-      const label2 = texts.filter((t) => unassigned(t) && centreIn2(t, cta)).sort((a, b) => area(b) - area(a))[0];
-      if (label2) {
-        label2.slot = "ctaLabel";
-        ctaLabel = label2;
+      const label3 = texts.filter((t) => unassigned(t) && centreIn2(t, cta)).sort((a, b) => area(b) - area(a))[0];
+      if (label3) {
+        label3.slot = "ctaLabel";
+        ctaLabel = label3;
       }
     }
     if (!ctaIcon) {
@@ -231994,9 +232112,9 @@ async function recomposeToFormat(master, srcW, srcH, dstW, dstH, opts) {
         const sw = r(zoneW * 0.9);
         elements.push(textEl("rc_subheadline", "subheadline", "subhead", sub, { x: copyZone.x + r((copyZone.w - sw) / 2), y: y0 + hlH + gap, w: sw, h: r(subFit.height) }, subFit.fontSize, subFit.lines.join("\n"), "center", 1.1));
       }
-      const alt = (label2, frac, score) => {
+      const alt = (label3, frac, score) => {
         const y = r(clamp(copyZone.y + copyZone.h * frac - blockH / 2, copyZone.y + margin, copyZone.y + copyZone.h - blockH - margin));
-        options.push({ label: label2, x: hlBox.x, y, w: hlBox.w, h: hlH, fontSize: fit.fontSize, align: "center", color: hl.color, score });
+        options.push({ label: label3, x: hlBox.x, y, w: hlBox.w, h: hlH, fontSize: fit.fontSize, align: "center", color: hl.color, score });
       };
       alt("Recipe position", centreFrac, 100);
       alt("Headline higher", Math.max(0.15, centreFrac - 0.15), 80);
@@ -232028,19 +232146,19 @@ async function recomposeToFormat(master, srcW, srcH, dstW, dstH, opts) {
     const padX = r(ctaH * 0.45);
     let labelFit = null;
     if (sem.ctaLabel) {
-      const label2 = sem.ctaLabel.text.replace(/\s+/g, " ").trim();
+      const label3 = sem.ctaLabel.text.replace(/\s+/g, " ").trim();
       const spec = { ...fontSpec(sem.ctaLabel), minSize: 8, maxSize: r(ctaH * 0.55), lineHeight: 1, maxLines: 1 };
       const avail = () => ctaW - padX * 2 - (iconSize ? iconSize + r(ctaH * 0.25) : 0);
       const maxW = panelZone.w * (recipe.axis === "row" ? 0.5 : 0.92);
-      labelFit = fitText(label2, { w: avail(), h: ctaH }, spec);
+      labelFit = fitText(label3, { w: avail(), h: ctaH }, spec);
       if (!labelFit.fits || labelFit.fontSize < ctaH * 0.4) {
-        const want = fitText(label2, { w: 1e4, h: ctaH }, spec).width + padX * 2 + (iconSize ? iconSize + r(ctaH * 0.25) : 0);
+        const want = fitText(label3, { w: 1e4, h: ctaH }, spec).width + padX * 2 + (iconSize ? iconSize + r(ctaH * 0.25) : 0);
         ctaW = r(Math.min(Math.max(ctaW, want), maxW));
-        labelFit = fitText(label2, { w: avail(), h: ctaH }, spec);
+        labelFit = fitText(label3, { w: avail(), h: ctaH }, spec);
       }
       if (!labelFit.fits && iconSize) {
         iconSize = 0;
-        labelFit = fitText(label2, { w: avail(), h: ctaH }, spec);
+        labelFit = fitText(label3, { w: avail(), h: ctaH }, spec);
         if (!labelFit.fits) {
           notes.push("CTA label does not fit at the minimum size \u2014 shorten it for this format.");
           needsReview = true;
@@ -232269,8 +232387,8 @@ function checkMandatory(master, adapted, width, height, partRules = {}) {
       if (el.h < lockupMin) reasons.push(`Lockup is ${Math.round(el.h)}px tall \u2014 under the ${lockupMin}px minimum for this canvas.`);
     }
   }
-  const isCopy = (e) => e.type === "text" && e.text.trim().length > 0 || e.type === "image" && ["headline", "subheadline", "message", "cta", "lockup"].includes(e.slot ?? "");
-  const copyish = adapted.elements.filter(isCopy);
+  const isCopy2 = (e) => e.type === "text" && e.text.trim().length > 0 || e.type === "image" && ["headline", "subheadline", "message", "cta", "lockup"].includes(e.slot ?? "");
+  const copyish = adapted.elements.filter(isCopy2);
   const cutouts = adapted.elements.map((e, i) => ({ e, i })).filter(({ e }) => e.type === "image" && e.slot === "cutout").map(({ e, i }) => {
     let box = { x: e.x, y: e.y, w: e.w, h: e.h, id: e.id, slot: e.slot, type: e.type };
     for (const later of adapted.elements.slice(i + 1)) {
@@ -232287,7 +232405,7 @@ function checkMandatory(master, adapted, width, height, partRules = {}) {
     const iy = Math.max(0, Math.min(a.y + a.h, b.y + b.h) - Math.max(a.y, b.y));
     return ix * iy / Math.max(1, Math.min(a.w * a.h, b.w * b.h));
   };
-  const masterCopy = master.elements.filter(isCopy);
+  const masterCopy = master.elements.filter(isCopy2);
   const masterCutouts = master.elements.filter((e) => e.type === "image" && e.slot === "cutout");
   let designedOverlap = 0;
   for (const c of masterCopy) for (const k of masterCutouts) designedOverlap = Math.max(designedOverlap, overlapFrac2(c, k));
@@ -232306,19 +232424,19 @@ function checkMandatory(master, adapted, width, height, partRules = {}) {
     if (!["headline", "cta", "logo", "lockup"].includes(el.slot ?? (el.type === "image" ? el.role : el.type === "text" ? el.role : ""))) continue;
     if (el.x < -0.5 || el.y < -0.5 || el.x + el.w > width + 0.5 || el.y + el.h > height + 0.5) reasons.push(`"${label(el)}" sits partly outside the canvas.`);
   }
-  const bySlot = /* @__PURE__ */ new Map();
+  const bySlot2 = /* @__PURE__ */ new Map();
   for (const el of adapted.elements) {
     const s2 = el.slot ?? "";
     if (!s2) continue;
-    bySlot.set(s2, [...bySlot.get(s2) ?? [], el]);
+    bySlot2.set(s2, [...bySlot2.get(s2) ?? [], el]);
   }
   for (const [slot, rule] of Object.entries(partRules)) {
-    const els = bySlot.get(slot) ?? [];
+    const els = bySlot2.get(slot) ?? [];
     for (const el of els) {
       const dim = slot === "logo" ? Math.min(el.w, el.h) : el.h;
       if (rule.minPx && dim < rule.minPx) reasons.push(`"${label(el)}" is ${Math.round(dim)}px \u2014 under the ${rule.minPx}px minimum set in the profile's rules.`);
       for (const other of rule.neverOverlap ?? []) {
-        for (const o of bySlot.get(other) ?? []) {
+        for (const o of bySlot2.get(other) ?? []) {
           const f = overlapFrac2(el, o);
           if (f > 0.1) reasons.push(`"${label(el)}" overlaps "${label(o)}" by ${Math.round(f * 100)}% \u2014 the profile's rules say they never overlap.`);
         }
@@ -232332,8 +232450,233 @@ function label(el) {
   return el.slot ?? el.id;
 }
 
-// src/lib/layeredArtwork.ts
+// src/lib/principles.ts
 import sharp6 from "sharp";
+var COPY_SLOTS = /* @__PURE__ */ new Set(["headline", "subheadline", "message"]);
+var ALIGN_SLOTS = /* @__PURE__ */ new Set(["headline", "subheadline", "message", "cta", "lockup"]);
+function label2(el) {
+  return el.slot ?? (el.type === "text" ? el.role : el.id);
+}
+function isCopy(el) {
+  if (el.slot && COPY_SLOTS.has(el.slot)) return el.w > 0 && el.h > 0;
+  return el.type === "text" && el.text.trim().length > 0 && el.w > 0 && el.h > 0;
+}
+function bySlot(cfg, slot) {
+  return cfg.elements.find((e) => (e.slot === slot || e.type === "text" && e.role === slot) && e.w > 0 && e.h > 0 && (e.type !== "text" || e.text.trim().length > 0));
+}
+function scoreGeometry(master, srcW, srcH, adapted, w, h) {
+  const issues = [];
+  const short = Math.min(w, h);
+  const srcShort = Math.min(srcW, srcH);
+  const slots = [...ALIGN_SLOTS].filter((s2) => bySlot(master, s2) && bySlot(adapted, s2));
+  const groupOf = (s2) => s2 === "headline" || s2 === "subheadline" ? "copy" : "panel";
+  const sameAxisBuild = srcW >= srcH === w >= h;
+  let pairs = 0, kept = 0;
+  const tolM = Math.max(2, srcShort * 0.02);
+  const tolA = Math.max(3, short * 0.025);
+  for (let i = 0; i < slots.length; i++) {
+    for (let j = i + 1; j < slots.length; j++) {
+      const a0 = bySlot(master, slots[i]), b0 = bySlot(master, slots[j]);
+      const a1 = bySlot(adapted, slots[i]), b1 = bySlot(adapted, slots[j]);
+      const rel = (a, b, tol) => ({
+        left: Math.abs(a.x - b.x) <= tol,
+        centre: Math.abs(a.x + a.w / 2 - (b.x + b.w / 2)) <= tol,
+        right: Math.abs(a.x + a.w - (b.x + b.w)) <= tol
+      });
+      const m = rel(a0, b0, tolM);
+      if (!m.left && !m.centre && !m.right) continue;
+      if (!sameAxisBuild && groupOf(slots[i]) !== groupOf(slots[j])) continue;
+      pairs++;
+      const r4 = rel(a1, b1, tolA);
+      if (m.left && r4.left || m.centre && r4.centre || m.right && r4.right) kept++;
+      else {
+        const off = m.left ? Math.abs(a1.x - b1.x) : m.centre ? Math.abs(a1.x + a1.w / 2 - (b1.x + b1.w / 2)) : Math.abs(a1.x + a1.w - (b1.x + b1.w));
+        issues.push({ severity: off > short * 0.08 ? "error" : "warn", message: `Alignment: ${slots[i]} and ${slots[j]} shared a ${m.left ? "left edge" : m.centre ? "centre line" : "right edge"} in the master but are ${Math.round(off)}px apart here.`, elementId: a1.id });
+      }
+    }
+  }
+  const alignment = pairs === 0 ? 1 : kept / pairs;
+  let margins = 1;
+  for (const el of adapted.elements) {
+    if (!isCopy(el) && el.slot !== "cta" && el.slot !== "lockup") continue;
+    const m0 = master.elements.find((e) => e.slot === el.slot && e.slot) ?? null;
+    const masterFrac = m0 ? Math.max(0, Math.min(m0.x, m0.y, srcW - (m0.x + m0.w), srcH - (m0.y + m0.h))) / srcShort : 0.04;
+    const floor = Math.max(4, Math.round(short * Math.min(masterFrac, 0.12) * 0.6));
+    const gap = Math.min(el.x, el.y, w - (el.x + el.w), h - (el.y + el.h));
+    if (gap < floor) {
+      margins = Math.min(margins, Math.max(0, gap) / floor);
+      issues.push({ severity: gap < floor / 2 ? "error" : "warn", message: `Margins: ${label2(el)} sits ${Math.round(Math.max(0, gap))}px from the canvas edge; the master keeps about ${Math.round(masterFrac * 100)}% of the short side clear (${floor}px here).`, elementId: el.id });
+    }
+  }
+  const weightOf = (cfg) => {
+    let ax = 0, ay = 0, aw = 0;
+    for (const el of cfg.elements) {
+      const s2 = el.slot ?? "";
+      if (!(isCopy(el) || ["cutout", "panel", "cta", "lockup", "logo"].includes(s2))) continue;
+      const area3 = Math.max(1, el.w * el.h) * (isCopy(el) ? 1.3 : 1);
+      ax += (el.x + el.w / 2) * area3;
+      ay += (el.y + el.h / 2) * area3;
+      aw += area3;
+    }
+    return aw > 0 ? { x: ax / aw, y: ay / aw } : null;
+  };
+  const cm = weightOf(master), ca = weightOf(adapted);
+  let balance = 1;
+  if (cm && ca) {
+    const sameAxis = srcW >= srcH === w >= h;
+    if (sameAxis) {
+      const dx = Math.abs(cm.x / srcW - ca.x / w), dy = Math.abs(cm.y / srcH - ca.y / h);
+      const d = Math.max(dx, dy);
+      balance = Math.max(0, 1 - d / 0.3);
+      if (d > 0.15) issues.push({ severity: d > 0.25 ? "error" : "warn", message: `Balance: the visual weight sits ${Math.round(d * 100)}% of the canvas away from where the master puts it.` });
+    } else {
+      const longIsX = w >= h;
+      const pos = longIsX ? ca.x / w : ca.y / h;
+      const d = Math.abs(pos - 0.5);
+      balance = Math.max(0, 1 - Math.max(0, d - 0.15) / 0.3);
+      if (d > 0.3) issues.push({ severity: "warn", message: `Balance: the weight is crowded toward one end of the ${longIsX ? "width" : "height"} (${Math.round(pos * 100)}% along).` });
+    }
+  }
+  return { scores: { alignment: round(alignment), margins: round(margins), balance: round(balance) }, issues };
+}
+function relLum(r4, g, b) {
+  const c = (v) => {
+    const s2 = v / 255;
+    return s2 <= 0.03928 ? s2 / 12.92 : Math.pow((s2 + 0.055) / 1.055, 2.4);
+  };
+  return 0.2126 * c(r4) + 0.7152 * c(g) + 0.0722 * c(b);
+}
+function ratio(l1, l2) {
+  const [a, b] = l1 >= l2 ? [l1, l2] : [l2, l1];
+  return (a + 0.05) / (b + 0.05);
+}
+function round(n) {
+  return Math.round(n * 100) / 100;
+}
+async function raw(png) {
+  const { data, info } = await sharp6(png).ensureAlpha().raw().toBuffer({ resolveWithObject: true });
+  return { data, width: info.width, height: info.height };
+}
+async function scoreContrast(config2, w, h, loadImage, brandFontFamily, baseline = /* @__PURE__ */ new Map()) {
+  const copy = config2.elements.filter(isCopy);
+  if (copy.length === 0) return { contrast: null, detail: [], rejections: [], issues: [] };
+  const copyIds = new Set(copy.map((e) => e.id));
+  const opts = { loadImage, brandFontFamily, scale: 1 };
+  const behind = await raw(await renderFreeformToPng({ ...config2, elements: config2.elements.filter((e) => !copyIds.has(e.id)) }, w, h, opts));
+  const onWhite = await raw(await renderFreeformToPng({ ...config2, elements: config2.elements.filter((e) => copyIds.has(e.id)) }, w, h, opts));
+  let onBlack = null;
+  const detail = [];
+  const rejections = [];
+  const issues = [];
+  const px = (img, x, y) => {
+    const i = (y * img.width + x) * 4;
+    return [img.data[i], img.data[i + 1], img.data[i + 2]];
+  };
+  for (const el of copy) {
+    const x0 = Math.max(0, Math.floor(el.x)), y0 = Math.max(0, Math.floor(el.y));
+    const x1 = Math.min(w, Math.ceil(el.x + el.w)), y1 = Math.min(h, Math.ceil(el.y + el.h));
+    if (x1 - x0 < 2 || y1 - y0 < 2) continue;
+    let src = onWhite;
+    const collect = (img, ground) => {
+      const pts2 = [];
+      for (let y = y0; y < y1; y++) for (let x = x0; x < x1; x++) {
+        const [r5, g, b] = px(img, x, y);
+        if (Math.abs(r5 - ground) + Math.abs(g - ground) + Math.abs(b - ground) > 60) pts2.push([x, y]);
+      }
+      return pts2;
+    };
+    let pts = collect(src, 255);
+    const area3 = (x1 - x0) * (y1 - y0);
+    if (pts.length < area3 * 0.01) {
+      if (!onBlack) {
+        const black = { id: "__ground", type: "rect", x: 0, y: 0, w, h, fill: "#000000" };
+        onBlack = await raw(await renderFreeformToPng({ ...config2, elements: [black, ...config2.elements.filter((e) => copyIds.has(e.id))] }, w, h, opts));
+      }
+      src = onBlack;
+      pts = collect(src, 0);
+      if (pts.length < area3 * 5e-3) continue;
+    }
+    const key = (r5, g, b) => r5 >> 4 << 8 | g >> 4 << 4 | b >> 4;
+    const hist = /* @__PURE__ */ new Map();
+    for (const [x, y] of pts) {
+      const [r5, g, b] = px(src, x, y);
+      hist.set(key(r5, g, b), (hist.get(key(r5, g, b)) ?? 0) + 1);
+    }
+    let modeKey = -1, modeN = 0;
+    for (const [k, n2] of hist) if (n2 > modeN) {
+      modeN = n2;
+      modeKey = k;
+    }
+    let lc = 0, lb = 0, n = 0;
+    if (el.type !== "text" && modeN > area3 * 0.45) {
+      let gr = 0, gg = 0, gb = 0, gn = 0;
+      for (const [x, y] of pts) {
+        const [r5, g, b] = px(src, x, y);
+        if (key(r5, g, b) === modeKey) {
+          gr += r5;
+          gg += g;
+          gb += b;
+          gn++;
+        }
+      }
+      const ground = [gr / gn, gg / gn, gb / gn];
+      const glyphs = pts.filter(([x, y]) => {
+        const [r5, g, b] = px(src, x, y);
+        return Math.abs(r5 - ground[0]) + Math.abs(g - ground[1]) + Math.abs(b - ground[2]) > 90;
+      });
+      if (glyphs.length < area3 * 5e-3) continue;
+      const step = Math.max(1, Math.floor(glyphs.length / 4e3));
+      for (let i = 0; i < glyphs.length; i += step) {
+        const [x, y] = glyphs[i];
+        const [r5, g, b] = px(src, x, y);
+        lc += relLum(r5, g, b);
+        n++;
+      }
+      lb = relLum(ground[0], ground[1], ground[2]) * n;
+    } else {
+      const step = Math.max(1, Math.floor(pts.length / 4e3));
+      for (let i = 0; i < pts.length; i += step) {
+        const [x, y] = pts[i];
+        const [cr, cg, cb] = px(src, x, y);
+        const [br, bg, bb] = px(behind, x, y);
+        lc += relLum(cr, cg, cb);
+        lb += relLum(br, bg, bb);
+        n++;
+      }
+    }
+    if (n === 0) continue;
+    const r4 = ratio(lc / n, lb / n);
+    const t = el.type === "text" ? el : null;
+    const large = t ? t.fontSize >= 18 : Math.min(el.w, el.h) >= 18;
+    const floor = large ? 3 : 4.5;
+    detail.push({ id: el.id, label: label2(el), ratio: round(r4), floor });
+    if (r4 < floor) {
+      const designed = baseline.get(label2(el));
+      if (designed != null && r4 >= designed * 0.8) {
+        issues.push({ severity: "warn", message: `Contrast: ${label2(el)} reads at ${r4.toFixed(1)}:1 \u2014 under the ${floor}:1 floor, but the master reads the same (${designed.toFixed(1)}:1), so as designed.`, elementId: el.id });
+        continue;
+      }
+      const msg = `Contrast: ${label2(el)} reads at ${r4.toFixed(1)}:1 against what is behind it (floor ${floor}:1${designed != null ? `; the master reads ${designed.toFixed(1)}:1` : ""}).`;
+      if (el.slot === "headline" || el.slot === "message" || t && t.role === "headline") rejections.push(msg);
+      else issues.push({ severity: r4 < floor * 0.7 ? "error" : "warn", message: msg, elementId: el.id });
+    }
+  }
+  detail.sort((a, b) => a.ratio - b.ratio);
+  return { contrast: detail.length ? detail[0].ratio : null, detail, rejections, issues };
+}
+var baselineCache = /* @__PURE__ */ new Map();
+async function contrastBaseline(key, master, w, h, loadImage, brandFontFamily) {
+  const hit = baselineCache.get(key);
+  if (hit && Date.now() - hit.at < 10 * 6e4) return hit.ratios;
+  const m = await scoreContrast(master, w, h, loadImage, brandFontFamily);
+  const ratios = /* @__PURE__ */ new Map();
+  for (const d of m.detail ?? []) ratios.set(d.label, d.ratio);
+  baselineCache.set(key, { at: Date.now(), ratios });
+  return ratios;
+}
+
+// src/lib/layeredArtwork.ts
+import sharp7 from "sharp";
 init_objectStorage();
 init_logger();
 var area2 = (b) => Math.max(0, b.w) * Math.max(0, b.h);
@@ -232430,7 +232773,7 @@ function inferImageSlots(config2, W2, H2) {
 }
 async function edgeColour(bytes2) {
   try {
-    const { data, info } = await sharp6(bytes2).resize(16, 16, { fit: "fill" }).removeAlpha().raw().toBuffer({ resolveWithObject: true });
+    const { data, info } = await sharp7(bytes2).resize(16, 16, { fit: "fill" }).removeAlpha().raw().toBuffer({ resolveWithObject: true });
     const px = [];
     for (let y = 0; y < info.height; y++) for (let x = 0; x < info.width; x++) {
       if (x === 0 || y === 0 || x === info.width - 1 || y === info.height - 1) {
@@ -232478,11 +232821,11 @@ async function mergeGlyphRun(config2, ids, io) {
     if (!g.src) continue;
     const bytes2 = await io.loadImage(g.src);
     if (!bytes2) continue;
-    const resized = await sharp6(bytes2).resize(Math.max(1, r2(g.w * scale)), Math.max(1, r2(g.h * scale)), { fit: "fill" }).png().toBuffer();
+    const resized = await sharp7(bytes2).resize(Math.max(1, r2(g.w * scale)), Math.max(1, r2(g.h * scale)), { fit: "fill" }).png().toBuffer();
     layers.push({ input: resized, left: r2((g.x - x0) * scale), top: r2((g.y - y0) * scale) });
   }
   if (!layers.length) return config2;
-  const merged = await sharp6({ create: { width: Math.max(1, (x1 - x0) * scale), height: Math.max(1, (y1 - y0) * scale), channels: 4, background: { r: 0, g: 0, b: 0, alpha: 0 } } }).composite(layers).png().toBuffer();
+  const merged = await sharp7({ create: { width: Math.max(1, (x1 - x0) * scale), height: Math.max(1, (y1 - y0) * scale), channels: 4, background: { r: 0, g: 0, b: 0, alpha: 0 } } }).composite(layers).png().toBuffer();
   const stored = await io.uploadBytes(merged, "image/png");
   const first = run[0];
   const runMotion = run.map((g) => g.groupMotion ?? g.motion).find(Boolean);
@@ -232540,13 +232883,13 @@ async function splitPanelGraphic(config2, io) {
   if (!panel) return { config: config2, notes };
   const bytes2 = await io.loadImage(panel.src);
   if (!bytes2) return { config: config2, notes };
-  const meta = await sharp6(bytes2).metadata();
+  const meta = await sharp7(bytes2).metadata();
   if (!meta.width || !meta.height) return { config: config2, notes };
   const W2 = meta.width, H2 = meta.height;
-  const raw = await sharp6(bytes2).ensureAlpha().raw().toBuffer();
+  const raw2 = await sharp7(bytes2).ensureAlpha().raw().toBuffer();
   const px = (x, y) => {
     const i = (y * W2 + x) * 4;
-    return [raw[i], raw[i + 1], raw[i + 2], raw[i + 3]];
+    return [raw2[i], raw2[i + 1], raw2[i + 2], raw2[i + 3]];
   };
   const tally = /* @__PURE__ */ new Map();
   const bump = (x, y) => {
@@ -232632,7 +232975,7 @@ async function splitPanelGraphic(config2, io) {
     const x0 = Math.max(0, seg.x0 - pad), y0 = Math.max(0, seg.y0 - pad);
     const x1 = Math.min(W2 - 1, seg.x1 + pad), y1 = Math.min(H2 - 1, seg.y1 + pad);
     const cw = x1 - x0 + 1, ch = y1 - y0 + 1;
-    const buf = await sharp6(bytes2).extract({ left: x0, top: y0, width: cw, height: ch }).png().toBuffer();
+    const buf = await sharp7(bytes2).extract({ left: x0, top: y0, width: cw, height: ch }).png().toBuffer();
     const stored = await io.uploadBytes(buf, "image/png");
     const w = cw * sx, h = ch * sy;
     const el = {
@@ -233115,12 +233458,12 @@ function parseKeyframes(html) {
     const byPct = out.get(m[1]) ?? /* @__PURE__ */ new Map();
     for (const f of m[2].matchAll(/([\d.]+%|from|to)(?:\s*,\s*(?:[\d.]+%|from|to))*\s*\{([^}]*)\}/g)) {
       const sel = f[1];
-      const pct = sel === "from" ? 0 : sel === "to" ? 100 : parseFloat(sel);
+      const pct2 = sel === "from" ? 0 : sel === "to" ? 100 : parseFloat(sel);
       const body = f[2];
       const xf = parseTransform(body);
       const o = /(?<![-\w])opacity\s*:\s*([\d.]+)/.exec(body);
       const timing = parseTimingIn(body);
-      const prev = byPct.get(pct) ?? { pct, hasTransform: false };
+      const prev = byPct.get(pct2) ?? { pct: pct2, hasTransform: false };
       const next = { ...prev };
       if (xf.hasTransform && !prev.hasTransform) {
         next.hasTransform = true;
@@ -233131,7 +233474,7 @@ function parseKeyframes(html) {
       }
       if (o && prev.opacity == null) next.opacity = parseFloat(o[1]);
       if (timing && !prev.timing) next.timing = timing;
-      byPct.set(pct, next);
+      byPct.set(pct2, next);
     }
     out.set(m[1], byPct);
   }
@@ -234228,20 +234571,20 @@ function topicsForConfig(config2, width, height) {
     const ids = config2.elements.filter((e) => {
       const slot = e.slot ?? "";
       const role = e.type === "text" || e.type === "image" ? e.role ?? "" : "";
-      const isCopy = e.type === "text" && e.text.trim().length > 0 || ["headline", "subheadline", "message", "kicker", "ctaLabel"].includes(slot);
+      const isCopy2 = e.type === "text" && e.text.trim().length > 0 || ["headline", "subheadline", "message", "kicker", "ctaLabel"].includes(slot);
       switch (t.id) {
         case "colour":
           return e.type === "rect" || ["panel", "scrim", "band"].includes(slot);
         case "typography":
-          return isCopy;
+          return isCopy2;
         case "voice":
-          return isCopy;
+          return isCopy2;
         case "strapline":
           return slot === "strapline" || /t[āa]maki turuki|altogether auckland/i.test(textOf(e));
         case "tereo":
           return e.type === "text" && (/[āēīōū]/i.test(e.text) || /\b(kia ora|t[āa]maki makaurau|kaunihera|whānau|whanau)\b/i.test(e.text));
         case "accessibility":
-          return isCopy || slot === "cta";
+          return isCopy2 || slot === "cta";
         case "anther":
           return e.type === "image" && (e.radius ?? 0) > 0 && slot !== "logo";
         case "illustration":
@@ -234275,8 +234618,8 @@ function topicsPerElement(config2, width, height) {
   const byTopic = topicsForConfig(config2, width, height);
   return config2.elements.map((e) => {
     const mine = byTopic.filter((t) => t.elementIds.includes(e.id)).map((t) => t.topic.id);
-    const label2 = e.slot ?? (e.type === "text" ? e.role : e.type === "image" ? e.role : "rect");
-    return { elementId: e.id, label: label2, topics: mine.length ? mine : ["layout"] };
+    const label3 = e.slot ?? (e.type === "text" ? e.role : e.type === "image" ? e.role : "rect");
+    return { elementId: e.id, label: label3, topics: mine.length ? mine : ["layout"] };
   });
 }
 var SOURCE_RANK = (source) => source === DISTILLED_GUIDELINES_SOURCE ? 0 : source === "Brand summary" ? 2 : 1;
@@ -234290,8 +234633,8 @@ async function guidelinesForConfig(brandId, config2, width, height, perTopic = 4
     rows = [];
   }
   if (rows.length === 0) {
-    const raw = splitIntoPassages(DISTILLED_GUIDELINES);
-    rows = raw.flatMap((p) => topicsOf(p.heading, p.body).map((topic) => ({ id: 0, brandId: null, source: DISTILLED_GUIDELINES_SOURCE, sourceAssetId: null, topic, heading: p.heading, body: p.body, ord: p.ord, createdAt: /* @__PURE__ */ new Date() })));
+    const raw2 = splitIntoPassages(DISTILLED_GUIDELINES);
+    rows = raw2.flatMap((p) => topicsOf(p.heading, p.body).map((topic) => ({ id: 0, brandId: null, source: DISTILLED_GUIDELINES_SOURCE, sourceAssetId: null, topic, heading: p.heading, body: p.body, ord: p.ord, createdAt: /* @__PURE__ */ new Date() })));
   }
   const out = [];
   for (const w of wanted) {
@@ -234318,7 +234661,7 @@ function guidelineNotes(items) {
 
 // src/lib/gwdImport.ts
 init_objectStorage();
-import sharp7 from "sharp";
+import sharp8 from "sharp";
 var objectStorageService8 = new ObjectStorageService();
 var IMAGE_TYPES = {
   jpg: "image/jpeg",
@@ -234327,14 +234670,14 @@ var IMAGE_TYPES = {
   webp: "image/webp"
 };
 async function visibleBounds(bytes2) {
-  const meta = await sharp7(bytes2).metadata();
+  const meta = await sharp8(bytes2).metadata();
   if (!meta.hasAlpha || !meta.width || !meta.height) return null;
-  const raw = await sharp7(bytes2).ensureAlpha().raw().toBuffer();
+  const raw2 = await sharp8(bytes2).ensureAlpha().raw().toBuffer();
   const W2 = meta.width, H2 = meta.height;
   let minX = W2, minY = H2, maxX = -1, maxY = -1;
   for (let py = 0; py < H2; py++) {
     for (let px = 0; px < W2; px++) {
-      if (raw[(py * W2 + px) * 4 + 3] > 16) {
+      if (raw2[(py * W2 + px) * 4 + 3] > 16) {
         if (px < minX) minX = px;
         if (px > maxX) maxX = px;
         if (py < minY) minY = py;
@@ -234382,7 +234725,7 @@ async function reconstructGwdBanners(zip, baseName2) {
         const vb = await visibleBounds(bytes2);
         if (vb) {
           const dispX = w / vb.W, dispY = h / vb.H;
-          bytes2 = Buffer.from(await sharp7(bytes2).extract({ left: vb.minX, top: vb.minY, width: vb.bw, height: vb.bh }).png().toBuffer());
+          bytes2 = Buffer.from(await sharp8(bytes2).extract({ left: vb.minX, top: vb.minY, width: vb.bw, height: vb.bh }).png().toBuffer());
           x += vb.minX * dispX;
           y += vb.minY * dispY;
           w = vb.bw * dispX;
@@ -234426,8 +234769,8 @@ async function reconstructGwdBanners(zip, baseName2) {
       if (!covered) kept.push(elements[a]);
     }
     if (kept.length < 2) continue;
-    let label2 = htmlPath.replace(/^.*?\//, "").replace(/\/[^/]*$/, "").split("/").filter(Boolean).join(" ").replace(/px$/i, "");
-    if (!label2 || /\.html?$/i.test(label2)) label2 = `${width}\xD7${height}`;
+    let label3 = htmlPath.replace(/^.*?\//, "").replace(/\/[^/]*$/, "").split("/").filter(Boolean).join(" ").replace(/px$/i, "");
+    if (!label3 || /\.html?$/i.test(label3)) label3 = `${width}\xD7${height}`;
     let previewHtml;
     try {
       let rewritten = html;
@@ -234475,11 +234818,11 @@ async function reconstructGwdBanners(zip, baseName2) {
     } catch {
     }
     layouts.push({
-      name: `${baseName2} \u2014 ${label2 || `${width}\xD7${height}`}`,
+      name: `${baseName2} \u2014 ${label3 || `${width}\xD7${height}`}`,
       width,
       height,
       config: normalizeFreeformConfig({ kind: "freeform", elements: recognised, ...previewHtml ? { previewHtml } : {} }),
-      variant: label2 || null
+      variant: label3 || null
     });
   }
   return layouts;
@@ -234490,7 +234833,7 @@ init_objectStorage();
 
 // src/lib/claudeReview.ts
 init_sdk();
-import sharp8 from "sharp";
+import sharp9 from "sharp";
 init_logger();
 var CLAUDE_REVIEW_MODEL = "claude-opus-5";
 var REVIEW_FAULTS = [
@@ -234581,7 +234924,7 @@ var REVIEW_SCHEMA = {
   }
 };
 async function toJpeg(png, maxEdge) {
-  const buf = await sharp8(png).resize(maxEdge, maxEdge, { fit: "inside", withoutEnlargement: true }).jpeg({ quality: 85 }).toBuffer();
+  const buf = await sharp9(png).resize(maxEdge, maxEdge, { fit: "inside", withoutEnlargement: true }).jpeg({ quality: 85 }).toBuffer();
   return { data: buf.toString("base64"), media_type: "image/jpeg" };
 }
 function describeElements(config2) {
@@ -234598,12 +234941,12 @@ function describeElements(config2) {
 function describeReference(ex) {
   const lines = ex.config.elements.map((e) => {
     const any2 = e;
-    const pct = (v, of) => `${Math.round(v / of * 100)}%`;
-    const geo = `x=${pct(e.x, ex.width)} y=${pct(e.y, ex.height)} w=${pct(e.w, ex.width)} h=${pct(e.h, ex.height)}`;
+    const pct2 = (v, of) => `${Math.round(v / of * 100)}%`;
+    const geo = `x=${pct2(e.x, ex.width)} y=${pct2(e.y, ex.height)} w=${pct2(e.w, ex.width)} h=${pct2(e.h, ex.height)}`;
     const slot = any2.slot ?? any2.role ?? e.id;
     if (e.type === "text") {
       const t = e;
-      return `  ${slot}: text ${geo} fontSize=${t.fontSize}px (${pct(t.fontSize ?? 0, ex.height)} of height) color=${t.color} align=${t.align}`;
+      return `  ${slot}: text ${geo} fontSize=${t.fontSize}px (${pct2(t.fontSize ?? 0, ex.height)} of height) color=${t.color} align=${t.align}`;
     }
     if (e.type === "rect") return `  ${slot}: rect ${geo} fill=${e.fill}`;
     return `  ${slot}: image ${geo}`;
@@ -234742,9 +235085,9 @@ ${input.measured.map((m) => `- [${m.severity}] ${m.message}${m.elementId ? ` (el
   logger2.info({ verdict: review.verdict, confidence: review.confidence, issues: issues.length, ms: review.ms, tokens: response.usage?.input_tokens }, "claude review finished");
   return review;
 }
-function cleanEdit(raw) {
-  if (!raw || typeof raw !== "object") return null;
-  const r4 = raw;
+function cleanEdit(raw2) {
+  if (!raw2 || typeof raw2 !== "object") return null;
+  const r4 = raw2;
   if (typeof r4.elementId !== "string" || !r4.elementId) return null;
   const setRaw = r4.set && typeof r4.set === "object" ? r4.set : {};
   const set2 = {};
@@ -234776,16 +235119,16 @@ function applyEdits(config2, edits, width, height) {
     if (slot === "logo" || slot === "lockup" || role === "logo") continue;
     const hasCutout = elements.some((e) => e.type === "image" && e.slot === "cutout");
     if (hasCutout && (slot === "cutout" || slot === "photo")) continue;
-    const label2 = String(el.slot ?? el.role ?? el.id);
+    const label3 = String(el.slot ?? el.role ?? el.id);
     if (edit.delete) {
       elements.splice(idx, 1);
-      applied.push({ elementId: edit.elementId, label: label2, changes: {}, deleted: true });
+      applied.push({ elementId: edit.elementId, label: label3, changes: {}, deleted: true });
       continue;
     }
     const changes = {};
-    const setNum = (k, v, lo, hi, round = true) => {
+    const setNum = (k, v, lo, hi, round2 = true) => {
       if (v === void 0) return;
-      const nv = round ? Math.round(clamp2(v, lo, hi)) : clamp2(v, lo, hi);
+      const nv = round2 ? Math.round(clamp2(v, lo, hi)) : clamp2(v, lo, hi);
       if (el[k] !== nv) {
         changes[k] = { from: el[k], to: nv };
         el[k] = nv;
@@ -234831,7 +235174,7 @@ function applyEdits(config2, edits, width, height) {
       setNum("radius", s2.radius, 0, Math.max(width, height));
     }
     setNum("opacity", s2.opacity, 0, 1, false);
-    if (Object.keys(changes).length > 0) applied.push({ elementId: edit.elementId, label: label2, changes });
+    if (Object.keys(changes).length > 0) applied.push({ elementId: edit.elementId, label: label3, changes });
   }
   const hl = applied.find((a) => !a.deleted && a.label === "headline" && (a.changes.x || a.changes.y || a.changes.w || a.changes.h));
   const hlEl = hl ? elements.find((e) => e.id === hl.elementId) : void 0;
@@ -234974,8 +235317,8 @@ async function latestVerdicts(ids) {
 }
 function parse4(row) {
   try {
-    const raw = JSON.parse(row.config || "{}");
-    return isFreeformConfig(raw) ? normalizeFreeformConfig(raw) : null;
+    const raw2 = JSON.parse(row.config || "{}");
+    return isFreeformConfig(raw2) ? normalizeFreeformConfig(raw2) : null;
   } catch {
     return null;
   }
@@ -235022,9 +235365,9 @@ async function rememberedExemplarRows(masterId) {
   const out = [];
   for (const r4 of rows.rows) {
     try {
-      const raw = JSON.parse(String(r4.subject_config));
-      if (!isFreeformConfig(raw)) continue;
-      const config2 = normalizeFreeformConfig(raw);
+      const raw2 = JSON.parse(String(r4.subject_config));
+      if (!isFreeformConfig(raw2)) continue;
+      const config2 = normalizeFreeformConfig(raw2);
       const width = Number(r4.subject_width);
       const height = Number(r4.subject_height);
       if (!width || !height) continue;
@@ -235090,8 +235433,8 @@ async function studioExemplars(width, height, excludeIds = [], limit3 = 3, scope
   for (const r4 of rows.rows) {
     let config2 = null;
     try {
-      const raw = JSON.parse(String(r4.config || "{}"));
-      config2 = isFreeformConfig(raw) ? normalizeFreeformConfig(raw) : null;
+      const raw2 = JSON.parse(String(r4.config || "{}"));
+      config2 = isFreeformConfig(raw2) ? normalizeFreeformConfig(raw2) : null;
     } catch {
       config2 = null;
     }
@@ -235682,7 +236025,7 @@ async function dissectPdfToTemplate(objectPath, page, paletteHexes = [], mode = 
 }
 
 // src/lib/imageDissect.ts
-import sharp10 from "sharp";
+import sharp11 from "sharp";
 init_objectStorage();
 var objectStorageService10 = new ObjectStorageService();
 var MAX_EDGE = 1024;
@@ -235740,13 +236083,13 @@ Rules:
 - Return ONLY the JSON, no commentary.`;
 async function dissectImageToTemplate(objectPath) {
   const bytes2 = await readObjectBytes(objectPath);
-  const meta = await sharp10(bytes2).metadata();
+  const meta = await sharp11(bytes2).metadata();
   let width = meta.width ?? 0;
   let height = meta.height ?? 0;
   if (meta.orientation && meta.orientation >= 5) {
     [width, height] = [height, width];
   }
-  const { data: resized, info } = await sharp10(bytes2).rotate().resize(MAX_EDGE, MAX_EDGE, { fit: "inside", withoutEnlargement: true }).jpeg({ quality: 80 }).toBuffer({ resolveWithObject: true });
+  const { data: resized, info } = await sharp11(bytes2).rotate().resize(MAX_EDGE, MAX_EDGE, { fit: "inside", withoutEnlargement: true }).jpeg({ quality: 80 }).toBuffer({ resolveWithObject: true });
   if (!width || !height) {
     width = info.width;
     height = info.height;
@@ -235794,8 +236137,8 @@ async function dissectImageToTemplate(objectPath) {
     if (el.type === "text") {
       const text3 = String(el.text ?? "").trim();
       if (!text3) return;
-      const pct = Number(el.fontSizePct);
-      const fontSize = Number.isFinite(pct) && pct > 0 ? Math.max(8, Math.round(pct * H2)) : Math.max(12, Math.round(h * 0.7));
+      const pct2 = Number(el.fontSizePct);
+      const fontSize = Number.isFinite(pct2) && pct2 > 0 ? Math.max(8, Math.round(pct2 * H2)) : Math.max(12, Math.round(h * 0.7));
       const role = ["headline", "subhead", "body", "cta", "other"].includes(String(el.role)) ? el.role : "body";
       const align = ["left", "center", "right"].includes(String(el.align)) ? el.align : "left";
       texts.push({
@@ -235866,7 +236209,7 @@ async function dissectImageToTemplate(objectPath) {
 // src/lib/exampleImport.ts
 var import_jszip3 = __toESM(require_lib13(), 1);
 init_objectStorage();
-import sharp12 from "sharp";
+import sharp13 from "sharp";
 
 // ../../node_modules/.pnpm/fast-xml-parser@5.11.0/node_modules/fast-xml-parser/src/util.js
 var nameStartChar = ":A-Za-z_\\u00C0-\\u00D6\\u00D8-\\u00F6\\u00F8-\\u02FF\\u0370-\\u037D\\u037F-\\u1FFF\\u200C-\\u200D\\u2070-\\u218F\\u2C00-\\u2FEF\\u3001-\\uD7FF\\uF900-\\uFDCF\\uFDF0-\\uFFFD";
@@ -236289,11 +236632,11 @@ function mergeEntityMaps(...maps) {
   for (const map3 of maps) {
     if (!map3) continue;
     for (const key of Object.keys(map3)) {
-      const raw = map3[key];
-      if (typeof raw === "string") {
-        out[key] = raw;
-      } else if (raw && typeof raw === "object" && raw.val !== void 0) {
-        const val = raw.val;
+      const raw2 = map3[key];
+      if (typeof raw2 === "string") {
+        out[key] = raw2;
+      } else if (raw2 && typeof raw2 === "object" && raw2.val !== void 0) {
+        const val = raw2.val;
         if (typeof val === "string") {
           out[key] = val;
         }
@@ -236305,11 +236648,11 @@ function mergeEntityMaps(...maps) {
 var LIMIT_TIER_EXTERNAL = "external";
 var LIMIT_TIER_BASE = "base";
 var LIMIT_TIER_ALL = "all";
-function parseLimitTiers(raw) {
-  if (!raw || raw === LIMIT_TIER_EXTERNAL) return /* @__PURE__ */ new Set([LIMIT_TIER_EXTERNAL]);
-  if (raw === LIMIT_TIER_ALL) return /* @__PURE__ */ new Set([LIMIT_TIER_ALL]);
-  if (raw === LIMIT_TIER_BASE) return /* @__PURE__ */ new Set([LIMIT_TIER_BASE]);
-  if (Array.isArray(raw)) return new Set(raw);
+function parseLimitTiers(raw2) {
+  if (!raw2 || raw2 === LIMIT_TIER_EXTERNAL) return /* @__PURE__ */ new Set([LIMIT_TIER_EXTERNAL]);
+  if (raw2 === LIMIT_TIER_ALL) return /* @__PURE__ */ new Set([LIMIT_TIER_ALL]);
+  if (raw2 === LIMIT_TIER_BASE) return /* @__PURE__ */ new Set([LIMIT_TIER_BASE]);
+  if (Array.isArray(raw2)) return new Set(raw2);
   return /* @__PURE__ */ new Set([LIMIT_TIER_EXTERNAL]);
 }
 var NCR_LEVEL = Object.freeze({ allow: 0, leave: 1, remove: 2, throw: 3 });
@@ -239140,10 +239483,10 @@ function normalise(context) {
   return { lists: [context], regex: null };
 }
 function matchList(value, list) {
-  const label2 = list.label ?? "CUSTOM";
+  const label3 = list.label ?? "CUSTOM";
   for (const rule of list) {
     if (rule.pattern.test(value)) {
-      return { context: label2, id: rule.id, description: rule.description, pattern: rule.pattern };
+      return { context: label3, id: rule.id, description: rule.description, pattern: rule.pattern };
     }
   }
   return null;
@@ -239938,9 +240281,9 @@ var XMLParser = class {
 
 // src/lib/idmlParse.ts
 var IDENTITY = [1, 0, 0, 1, 0, 0];
-function parseMatrix(raw) {
-  if (typeof raw !== "string") return IDENTITY;
-  const parts = raw.trim().split(/\s+/).map(Number);
+function parseMatrix(raw2) {
+  if (typeof raw2 !== "string") return IDENTITY;
+  const parts = raw2.trim().split(/\s+/).map(Number);
   return parts.length === 6 && parts.every(Number.isFinite) ? parts : IDENTITY;
 }
 function apply(m, x, y) {
@@ -239997,12 +240340,12 @@ function buildColorTable(graphicXml) {
 }
 function buildParaStyleTable(stylesXml) {
   const table = /* @__PURE__ */ new Map();
-  const raw = /* @__PURE__ */ new Map();
+  const raw2 = /* @__PURE__ */ new Map();
   const collect = (group) => {
     if (!group) return;
     for (const ps of asArray(group.ParagraphStyle)) {
       const self2 = ps?.["@_Self"];
-      if (typeof self2 === "string") raw.set(self2, ps);
+      if (typeof self2 === "string") raw2.set(self2, ps);
     }
     for (const sub of asArray(group.ParagraphStyleGroup)) collect(sub);
   };
@@ -240011,7 +240354,7 @@ function buildParaStyleTable(stylesXml) {
   const resolve2 = (self2, depth = 0) => {
     const cached2 = table.get(self2);
     if (cached2) return cached2;
-    const ps = raw.get(self2);
+    const ps = raw2.get(self2);
     const empty = { name: self2 };
     if (!ps || depth > 4) return empty;
     const basedOnRaw = ps?.Properties?.BasedOn;
@@ -240032,7 +240375,7 @@ function buildParaStyleTable(stylesXml) {
     table.set(self2, style);
     return style;
   };
-  for (const self2 of raw.keys()) resolve2(self2);
+  for (const self2 of raw2.keys()) resolve2(self2);
   return table;
 }
 function normalizeFontFamily(font) {
@@ -240143,12 +240486,12 @@ function compose(parent, child) {
 function itemOpacity(item) {
   const ts = item?.TransparencySetting;
   const blend = ts?.BlendingSetting;
-  const raw = Number(blend?.["@_Opacity"]);
+  const raw2 = Number(blend?.["@_Opacity"]);
   const mode = blend?.["@_BlendMode"];
   const feathered = ts?.GradientFeatherSetting?.["@_Applied"] === "true" || !!ts?.GradientFeatherSetting;
   const blended = typeof mode === "string" && mode !== "Normal";
-  if (Number.isFinite(raw) && raw >= 0 && raw < 100) {
-    return { opacity: raw / 100, feathered, blended };
+  if (Number.isFinite(raw2) && raw2 >= 0 && raw2 < 100) {
+    return { opacity: raw2 / 100, feathered, blended };
   }
   return { opacity: blended ? 0.85 : void 0, feathered, blended };
 }
@@ -240554,16 +240897,16 @@ async function parseIdmlToLayouts(idml, linksByName, brandLogoUrl = null) {
       continue;
     }
     const squashed = elements.filter((e) => e.type === "text").map((e) => String(e.text ?? "")).join(" ").toLowerCase().replace(/[^a-z]/g, "");
-    let label2 = null;
+    let label3 = null;
     const wordHit = squashed.match(VARIANT_WORD_RE)?.[1];
     if (wordHit) {
-      label2 = wordHit[0].toUpperCase() + wordHit.slice(1);
+      label3 = wordHit[0].toUpperCase() + wordHit.slice(1);
     } else if (mainImage.name) {
       const stem = mainImage.name.replace(/\.[^.]+$/, "").replace(/[_\-()]+/g, " ").replace(/\s+/g, " ").trim();
-      label2 = stem ? stem.slice(0, 30) : null;
+      label3 = stem ? stem.slice(0, 30) : null;
     }
-    if (spreadRefs.length > 1 && !label2) label2 = `Page ${spreadIdx + 1}`;
-    results.push({ width: Math.round(pageW), height: Math.round(pageH), elements, warnings, label: label2, spreadIndex: spreadIdx });
+    if (spreadRefs.length > 1 && !label3) label3 = `Page ${spreadIdx + 1}`;
+    results.push({ width: Math.round(pageW), height: Math.round(pageH), elements, warnings, label: label3, spreadIndex: spreadIdx });
   }
   if (results.length === 0) {
     throw new Error(spreadErrors[0] ?? "No importable items found");
@@ -240575,7 +240918,7 @@ async function parseIdmlToLayouts(idml, linksByName, brandLogoUrl = null) {
 // src/lib/indesignPackage.ts
 var import_jszip2 = __toESM(require_lib13(), 1);
 init_objectStorage();
-import sharp11 from "sharp";
+import sharp12 from "sharp";
 
 // src/lib/pdfStripText.ts
 var import_pdf_lib2 = __toESM(require_cjs2(), 1);
@@ -240603,8 +240946,8 @@ function stripOutlinedType(s2, frames) {
   });
   return { out, o };
 }
-function stripFrom(raw, effectNames = [], frames = []) {
-  const s2 = Buffer.from(raw).toString("latin1");
+function stripFrom(raw2, effectNames = [], frames = []) {
+  const s2 = Buffer.from(raw2).toString("latin1");
   let n = 0;
   let e = 0;
   let out = s2.replace(TEXT_OBJECT, () => {
@@ -240635,13 +240978,13 @@ async function stripPdfText(input, options = {}) {
   let effectsRemoved = 0;
   let outlinedRemoved = 0;
   const rewrite = (stream2, effectNames = [], frames = []) => {
-    let raw;
+    let raw2;
     try {
-      raw = (0, import_pdf_lib2.decodePDFRawStream)(stream2).decode();
+      raw2 = (0, import_pdf_lib2.decodePDFRawStream)(stream2).decode();
     } catch {
       return null;
     }
-    const { out, n, e, o } = stripFrom(raw, effectNames, frames);
+    const { out, n, e, o } = stripFrom(raw2, effectNames, frames);
     if (n === 0 && e === 0 && o === 0) return null;
     removed += n;
     effectsRemoved += e;
@@ -240844,7 +241187,7 @@ async function importInDesignPackage(objectPath, brandLogoUrl = null) {
         result.imported.push({ name, objectPath: storedPath, contentType: IMAGE_TYPES2[e], kind: "image" });
         linksByName.set(name, { objectPath: storedPath, kind: "image" });
       } else if (e === ".tif" || e === ".tiff") {
-        const png = await sharp11(bytes2).png().toBuffer();
+        const png = await sharp12(bytes2).png().toBuffer();
         const storedPath = await objectStorageService11.uploadBytes(png, "image/png");
         result.imported.push({
           name: name.replace(/\.tiff?$/i, ".png"),
@@ -240951,7 +241294,7 @@ async function importInDesignPackage(objectPath, brandLogoUrl = null) {
               const width = Math.min(source.width - left, Math.max(1, Math.round(Number(region.w) * scale)));
               const height = Math.min(source.height - top, Math.max(1, Math.round(Number(region.h) * scale)));
               if (width < 1 || height < 1) continue;
-              const crop = await sharp11(source.png).extract({ left, top, width, height }).png().toBuffer();
+              const crop = await sharp12(source.png).extract({ left, top, width, height }).png().toBuffer();
               const storedPath = await objectStorageService11.uploadBytes(crop, "image/png");
               region.type = "image";
               region.src = `/api/storage${storedPath}`;
@@ -241000,7 +241343,7 @@ async function importInDesignPackage(objectPath, brandLogoUrl = null) {
                 src = Buffer.from(await (await objectStorageService11.downloadObject(file3)).arrayBuffer());
                 srcBytesCache.set(objPath, src);
               }
-              const meta = await sharp11(src).metadata();
+              const meta = await sharp12(src).metadata();
               const iw = meta.width ?? 0;
               const ih = meta.height ?? 0;
               if (iw < 2 || ih < 2) continue;
@@ -241008,7 +241351,7 @@ async function importInDesignPackage(objectPath, brandLogoUrl = null) {
               const top = Math.min(ih - 1, Math.max(0, Math.round(rect.y * ih)));
               const width = Math.max(1, Math.min(iw - left, Math.round(rect.w * iw)));
               const height = Math.max(1, Math.min(ih - top, Math.round(rect.h * ih)));
-              const pipeline = sharp11(src).extract({ left, top, width, height });
+              const pipeline = sharp12(src).extract({ left, top, width, height });
               const jpeg = meta.format === "jpeg";
               const out = jpeg ? await pipeline.jpeg({ quality: 95 }).toBuffer() : await pipeline.png().toBuffer();
               croppedPath = await objectStorageService11.uploadBytes(out, jpeg ? "image/jpeg" : "image/png");
@@ -241064,7 +241407,7 @@ function exampleKindFor(fileName) {
   return null;
 }
 async function faithfulImageLayout(bytes2, contentType, name) {
-  const meta = await sharp12(bytes2).metadata();
+  const meta = await sharp13(bytes2).metadata();
   const width = Math.max(16, meta.width ?? 0);
   const height = Math.max(16, meta.height ?? 0);
   const storedPath = await objectStorageService12.uploadBytes(bytes2, contentType);
@@ -241148,11 +241491,11 @@ async function importExample(objectPath, fileName, brandLogoUrl, paletteHexes = 
       const ext2 = /\.(jpe?g|png|webp)$/i.exec(path11)?.[1]?.toLowerCase();
       if (!ext2) continue;
       const bytes3 = Buffer.from(await entry.async("uint8array"));
-      const meta = await sharp12(bytes3).metadata().catch(() => null);
+      const meta = await sharp13(bytes3).metadata().catch(() => null);
       if (!meta?.width || !meta.height) continue;
       if (Math.min(meta.width, meta.height) < 200 || meta.width * meta.height < 15e4) continue;
       if (meta.hasAlpha) {
-        const stats = await sharp12(bytes3).stats().catch(() => null);
+        const stats = await sharp13(bytes3).stats().catch(() => null);
         const alpha = stats?.channels?.[stats.channels.length - 1];
         if (alpha && alpha.mean < 100) continue;
       }
@@ -241245,7 +241588,7 @@ async function importExample(objectPath, fileName, brandLogoUrl, paletteHexes = 
     };
   }
   const isTiff = /\.tiff?$/i.test(fileName);
-  const finalBytes = isTiff ? await sharp12(bytes2).png().toBuffer() : bytes2;
+  const finalBytes = isTiff ? await sharp13(bytes2).png().toBuffer() : bytes2;
   const contentType = isTiff ? "image/png" : /\.png$/i.test(fileName) ? "image/png" : /\.webp$/i.test(fileName) ? "image/webp" : /\.gif$/i.test(fileName) ? "image/gif" : "image/jpeg";
   const layout = await faithfulImageLayout(finalBytes, contentType, baseName2);
   return {
@@ -241309,9 +241652,9 @@ function validatePayload(body, partial2) {
   }
   return null;
 }
-function parseConfig(raw) {
+function parseConfig(raw2) {
   try {
-    const parsed = JSON.parse(raw || "{}");
+    const parsed = JSON.parse(raw2 || "{}");
     if (parsed && parsed.kind === "freeform") {
       const normalized = normalizeFreeformConfig(parsed);
       if (parsed.claudeReview && typeof parsed.claudeReview === "object") normalized.claudeReview = parsed.claudeReview;
@@ -241382,7 +241725,8 @@ async function layeredPanelFill(config2, req) {
     return null;
   }
 }
-async function adaptOne(master, masterConfig, width, height, brandInfo, log, exemplars = [], excludeId, hints = {}, styleOverride) {
+var pct = (n) => `${Math.round(n * 100)}%`;
+async function adaptOne(master, masterConfig, width, height, brandInfo, log, exemplars = [], excludeId, hints = {}, styleOverride, render) {
   let adapted = null;
   let method = "scaled";
   const notes = [];
@@ -241444,6 +241788,21 @@ async function adaptOne(master, masterConfig, width, height, brandInfo, log, exe
   }
   const issues = checkLayout(adapted, width, height);
   const rejected = checkMandatory(masterConfig, { ...adapted, adaptNotes: [...adapted.adaptNotes ?? [], ...notes] }, width, height, styleSpec?.partRules ?? {});
+  const geo = scoreGeometry(masterConfig, master.width, master.height, adapted, width, height);
+  issues.push(...geo.issues);
+  let principles = { ...geo.scores, contrast: null };
+  if (render) {
+    try {
+      const baseline = await contrastBaseline(`${master.id}:${masterConfig.elements.length}`, masterConfig, master.width, master.height, render.loadImage, render.brandFontFamily);
+      const c = await scoreContrast(adapted, width, height, render.loadImage, render.brandFontFamily, baseline);
+      principles = { ...principles, contrast: c.contrast, ...c.detail && c.detail.length ? { contrastDetail: c.detail.slice(0, 8) } : {} };
+      issues.push(...c.issues);
+      rejected.push(...c.rejections);
+    } catch (err) {
+      log?.warn({ err }, "contrast check failed");
+    }
+  }
+  notes.push(`Principles: alignment ${pct(principles.alignment)}, margins ${pct(principles.margins)}, balance ${pct(principles.balance)}${principles.contrast != null ? `, contrast ${principles.contrast.toFixed(1)}:1` : ""}.`);
   let feedbackLine = null;
   try {
     feedbackLine = describeFormatFeedback(await feedbackForFormat(spec.formatClass));
@@ -241460,7 +241819,8 @@ async function adaptOne(master, masterConfig, width, height, brandInfo, log, exe
       ...issues.map((i) => `${i.severity === "error" ? "Check" : "Note"}: ${i.message}`),
       ...feedbackLine ? [feedbackLine] : []
     ],
-    ...rejected.length > 0 ? { rejected } : {}
+    ...rejected.length > 0 ? { rejected } : {},
+    principles
   });
   return { config: config2, method, spec, reference, rejected };
 }
@@ -241553,9 +241913,9 @@ router13.post("/templates/:id/adapt", requireAdmin, async (req, res) => {
   const profileId = Number.isInteger(Number(req.body?.profileId)) && Number(req.body?.profileId) > 0 ? Number(req.body.profileId) : null;
   const resolvedStyle = await resolveStyleSchema({ masterId: master.id, masterName: master.name, sourceTemplateId: master.sourceTemplateId ?? null, profileId });
   if (resolvedStyle.source === "profile") res.setHeader("X-Layout-Profile", String(resolvedStyle.profileId));
-  for (const raw of rawTargets) {
-    if (typeof raw !== "object" || raw === null) continue;
-    const t = raw;
+  for (const raw2 of rawTargets) {
+    if (typeof raw2 !== "object" || raw2 === null) continue;
+    const t = raw2;
     const width = Number(t.width);
     const height = Number(t.height);
     const baked = masterConfig.elements.find((e) => e.type === "image" && e.bakedCopy);
@@ -241572,7 +241932,7 @@ router13.post("/templates/:id/adapt", requireAdmin, async (req, res) => {
       name: typeof t.formatName === "string" ? t.formatName : typeof t.name === "string" ? t.name : null,
       channel: typeof t.channel === "string" ? t.channel : null
     };
-    const { config: adaptedConfig, method, spec, rejected } = await adaptOne(master, masterConfig, width, height, brandInfo, req.log, exemplars, void 0, hints, resolvedStyle.source === "none" ? null : { schema: resolvedStyle.schema, label: resolvedStyle.label });
+    const { config: adaptedConfig, method, spec, rejected } = await adaptOne(master, masterConfig, width, height, brandInfo, req.log, exemplars, void 0, hints, resolvedStyle.source === "none" ? null : { schema: resolvedStyle.schema, label: resolvedStyle.label }, { loadImage: makeImageLoader(req), brandFontFamily: brand?.fontFamily ?? "National 2" });
     if (rejected.length > 0) rejectedCount++;
     let merged = adaptedConfig;
     try {
@@ -241625,7 +241985,7 @@ router13.post("/templates/:id/claude-review", requireAuth, async (req, res) => {
     return;
   }
   const config2 = normalizeFreeformConfig(parsed);
-  const raw = parsed;
+  const raw2 = parsed;
   const [brand] = await db.select().from(brandsTable).orderBy(brandsTable.id).limit(1);
   const masterId = t.sourceTemplateId ?? t.id;
   const cls = classifyAspect(t.width, t.height);
@@ -241660,7 +242020,7 @@ router13.post("/templates/:id/claude-review", requireAuth, async (req, res) => {
       loadImage: makeImageLoader(req),
       exemplars,
       measured,
-      adaptMethod: typeof raw.adaptMethod === "string" ? raw.adaptMethod : null,
+      adaptMethod: typeof raw2.adaptMethod === "string" ? raw2.adaptMethod : null,
       designerNote,
       styleSpec: resolvedStyle.schema ? `${resolvedStyle.label}
 ${describeStyleSchema(resolvedStyle.schema)}` : null,
@@ -241687,11 +242047,11 @@ ${describeStyleSchema(resolvedStyle.schema)}` : null,
     res.status(502).json({ error: err instanceof Error ? err.message : "Claude review failed" });
     return;
   }
-  const priorNotes = Array.isArray(raw.adaptNotes) ? raw.adaptNotes.filter((n) => typeof n === "string") : [];
+  const priorNotes = Array.isArray(raw2.adaptNotes) ? raw2.adaptNotes.filter((n) => typeof n === "string") : [];
   const kept = priorNotes.filter((n) => !n.startsWith("Check: Claude \u2014") && !n.includes("(Claude)"));
   const unfixed = fixed ? fixed.remaining : review.issues.filter((i) => i.severity === "send_back");
   const claudeNotes = unfixed.map((i) => `Check: Claude \u2014 ${i.message.slice(0, 160)}`);
-  const priorFixes = raw.claudeFixes && typeof raw.claudeFixes === "object" ? raw.claudeFixes : null;
+  const priorFixes = raw2.claudeFixes && typeof raw2.claudeFixes === "object" ? raw2.claudeFixes : null;
   const claudeFixes = fixed && fixed.applied.length > 0 ? {
     at: (/* @__PURE__ */ new Date()).toISOString(),
     rounds: fixed.rounds,
@@ -241700,7 +242060,7 @@ ${describeStyleSchema(resolvedStyle.schema)}` : null,
     before: priorFixes?.before ?? config2.elements
   } : priorFixes ?? void 0;
   const next = {
-    ...raw,
+    ...raw2,
     ...fixed ? { elements: fixed.config.elements } : {},
     adaptNotes: [...kept, ...claudeNotes],
     claudeReview: review,
@@ -241716,18 +242076,18 @@ router13.post("/templates/:id/claude-review/undo", requireAuth, async (req, res)
     res.status(404).json({ error: "Template not found" });
     return;
   }
-  let raw;
+  let raw2;
   try {
-    raw = JSON.parse(t.config || "{}");
+    raw2 = JSON.parse(t.config || "{}");
   } catch {
-    raw = {};
+    raw2 = {};
   }
-  const fixes = raw.claudeFixes;
+  const fixes = raw2.claudeFixes;
   if (!fixes || !Array.isArray(fixes.before)) {
     res.status(400).json({ error: "Nothing to undo" });
     return;
   }
-  const { claudeFixes: _drop, claudeReview: _drop2, ...rest } = raw;
+  const { claudeFixes: _drop, claudeReview: _drop2, ...rest } = raw2;
   const notes = Array.isArray(rest.adaptNotes) ? rest.adaptNotes.filter((n) => typeof n === "string" && !n.startsWith("Check: Claude \u2014")) : [];
   const next = { ...rest, elements: fixes.before, adaptNotes: notes };
   const [updated] = await db.update(templatesTable).set({ config: JSON.stringify(next), updatedAt: /* @__PURE__ */ new Date() }).where(eq(templatesTable.id, id)).returning();
@@ -242009,7 +242369,7 @@ router13.post("/templates/:id/trim-layers", requireAdmin, async (req, res) => {
     res.status(400).json({ error: "Config unreadable" });
     return;
   }
-  const sharp14 = (await import("sharp")).default;
+  const sharp15 = (await import("sharp")).default;
   const { ObjectStorageService: ObjectStorageService2 } = await Promise.resolve().then(() => (init_objectStorage(), objectStorage_exports));
   const objectStorageService17 = new ObjectStorageService2();
   let trimmed = 0;
@@ -242023,16 +242383,16 @@ router13.post("/templates/:id/trim-layers", requireAdmin, async (req, res) => {
       const objectPath = el.src.replace(/^\/api\/storage/, "");
       const file2 = await objectStorageService17.getObjectEntityFile(objectPath);
       const bytes2 = Buffer.from(await (await objectStorageService17.downloadObject(file2)).arrayBuffer());
-      const meta = await sharp14(bytes2).metadata();
+      const meta = await sharp15(bytes2).metadata();
       if (!meta.hasAlpha || !meta.width || !meta.height) {
         elements.push(el);
         continue;
       }
-      const raw = await sharp14(bytes2).ensureAlpha().raw().toBuffer();
+      const raw2 = await sharp15(bytes2).ensureAlpha().raw().toBuffer();
       const W2 = meta.width, H2 = meta.height;
       let minX = W2, minY = H2, maxX = -1, maxY = -1;
       for (let py = 0; py < H2; py++) for (let px = 0; px < W2; px++) {
-        if (raw[(py * W2 + px) * 4 + 3] > 16) {
+        if (raw2[(py * W2 + px) * 4 + 3] > 16) {
           if (px < minX) minX = px;
           if (px > maxX) maxX = px;
           if (py < minY) minY = py;
@@ -242044,7 +242404,7 @@ router13.post("/templates/:id/trim-layers", requireAdmin, async (req, res) => {
         elements.push(el);
         continue;
       }
-      const out = Buffer.from(await sharp14(bytes2).extract({ left: minX, top: minY, width: bw, height: bh }).png().toBuffer());
+      const out = Buffer.from(await sharp15(bytes2).extract({ left: minX, top: minY, width: bw, height: bh }).png().toBuffer());
       const stored = await objectStorageService17.uploadBytes(out, "image/png");
       const dispX = (el.w ?? W2) / W2, dispY = (el.h ?? H2) / H2;
       elements.push({
@@ -242111,7 +242471,7 @@ router13.post("/templates/:id/redo", requireAdmin, async (req, res) => {
     await ensureBrandFontsRegistered();
     const exemplars = await approvedExemplars(master.id);
     const redoStyle = await resolveStyleSchema({ masterId: master.id, masterName: master.name, sourceTemplateId: master.sourceTemplateId ?? null });
-    const { config: config2, method, spec, reference } = await adaptOne(master, masterConfig, piece.width, piece.height, brandInfo, req.log, exemplars, piece.id, { name: piece.name }, redoStyle.source === "none" ? null : { schema: redoStyle.schema, label: redoStyle.label });
+    const { config: config2, method, spec, reference } = await adaptOne(master, masterConfig, piece.width, piece.height, brandInfo, req.log, exemplars, piece.id, { name: piece.name }, redoStyle.source === "none" ? null : { schema: redoStyle.schema, label: redoStyle.label }, { loadImage: makeImageLoader(req), brandFontFamily: brand?.fontFamily ?? "National 2" });
     const [updated] = await db.update(templatesTable).set({
       config: JSON.stringify(config2),
       description: `Adapted from "${master.name}" (${master.width}\xD7${master.height}) \xB7 ${method.replace(":", " ")} \xB7 ${spec.formatClass} \xB7 redone ${(/* @__PURE__ */ new Date()).toISOString().slice(0, 10)}`,
@@ -242143,8 +242503,8 @@ router13.post("/templates/clear-wip", requireAdmin, async (req, res) => {
   res.json({ deleted: deletable.length, kept: wip.length - deletable.length });
 });
 router13.post("/templates/delete-many", requireAdmin, async (req, res) => {
-  const raw = Array.isArray(req.body?.ids) ? req.body.ids : [];
-  const ids = [...new Set(raw.map(Number).filter((n) => Number.isInteger(n) && n > 0))].slice(0, 500);
+  const raw2 = Array.isArray(req.body?.ids) ? req.body.ids : [];
+  const ids = [...new Set(raw2.map(Number).filter((n) => Number.isInteger(n) && n > 0))].slice(0, 500);
   if (ids.length === 0) {
     res.status(400).json({ error: "ids is required" });
     return;
@@ -242666,8 +243026,8 @@ router14.post(
 );
 router14.get("/storage/public-objects/*filePath", async (req, res) => {
   try {
-    const raw = req.params.filePath;
-    const filePath = Array.isArray(raw) ? raw.join("/") : raw;
+    const raw2 = req.params.filePath;
+    const filePath = Array.isArray(raw2) ? raw2.join("/") : raw2;
     const file2 = await objectStorageService13.searchPublicObject(filePath);
     if (!file2) {
       res.status(404).json({ error: "File not found" });
@@ -242689,8 +243049,8 @@ router14.get("/storage/public-objects/*filePath", async (req, res) => {
 });
 router14.get("/storage/objects/*path", async (req, res) => {
   try {
-    const raw = req.params.path;
-    const wildcardPath = Array.isArray(raw) ? raw.join("/") : raw;
+    const raw2 = req.params.path;
+    const wildcardPath = Array.isArray(raw2) ? raw2.join("/") : raw2;
     const objectPath = `/objects/${wildcardPath}`;
     const objectFile = await objectStorageService13.getObjectEntityFile(objectPath);
     const response = await objectStorageService13.downloadObject(objectFile);
@@ -243489,10 +243849,10 @@ var share_links_default = router20;
 // src/routes/review-progress.ts
 var import_express22 = __toESM(require_express2(), 1);
 var router21 = (0, import_express22.Router)();
-function parseIds(raw) {
-  if (!raw) return [];
+function parseIds(raw2) {
+  if (!raw2) return [];
   try {
-    const parsed = JSON.parse(raw);
+    const parsed = JSON.parse(raw2);
     if (!Array.isArray(parsed)) return [];
     return Array.from(
       new Set(parsed.filter((n) => Number.isInteger(n) && n > 0))
@@ -243552,7 +243912,7 @@ import { randomBytes } from "node:crypto";
 
 // src/lib/htmlExport.ts
 var import_jszip4 = __toESM(require_lib13(), 1);
-import sharp13 from "sharp";
+import sharp14 from "sharp";
 var ARTWORK_MOTIONS = ["none", "kenburns", "drift", "zoomout", "breathe", "wipe"];
 var COPY_MOTIONS = ["none", "fade", "rise", "pan", "pop", "wipe", "baseline", "tumble", "typewriter", "block"];
 var FONT_FILES2 = [
@@ -243574,7 +243934,7 @@ function safeFileName(src, index, contentType) {
 async function optimizeForExport(bytes2, contentType, boxW, boxH) {
   try {
     if (contentType.includes("svg")) return { bytes: bytes2, contentType };
-    const img = sharp13(bytes2, { failOn: "none" });
+    const img = sharp14(bytes2, { failOn: "none" });
     const meta = await img.metadata();
     const maxW = Math.max(16, Math.round(boxW * 2));
     const maxH = Math.max(16, Math.round(boxH * 2));
@@ -243687,8 +244047,8 @@ async function buildHtmlPackage(opts) {
     const kx = el.w / Math.max(1, m.w0), ky = el.h / Math.max(1, m.h0);
     const fr = (v) => Math.round(v * 100) / 100;
     const stops = m.frames.map((f) => {
-      const pct = fr(f.t * m.dur / Math.max(0.01, kvDur) * 100);
-      return `${pct}%{transform:translate(${fr(f.dx * kx)}px,${fr(f.dy * ky)}px) scale(${fr(f.sx)},${fr(f.sy)});opacity:${fr(f.o)}}`;
+      const pct2 = fr(f.t * m.dur / Math.max(0.01, kvDur) * 100);
+      return `${pct2}%{transform:translate(${fr(f.dx * kx)}px,${fr(f.dy * ky)}px) scale(${fr(f.sx)},${fr(f.sy)});opacity:${fr(f.o)}}`;
     });
     if (m.dur < kvDur - 0.01) {
       const last = m.frames[m.frames.length - 1];
@@ -243721,7 +244081,7 @@ async function buildHtmlPackage(opts) {
   const storyFrames = opts.storyFrames ?? legacy.frames;
   const copyLead = artMotion === "wipe" ? 0.8 : 0.3;
   const isArt = (el) => el.type === "image" && el.role !== "logo";
-  const isCopy = (el) => el.type === "text" || el.type === "image" && el.role === "logo";
+  const isCopy2 = (el) => el.type === "text" || el.type === "image" && el.role === "logo";
   const animFor = (el) => {
     if (useKv) {
       if (el.type === "image" && el.motion && el.motion.frames.length >= 2) return kvAnimFor(el, kvLayers.indexOf(el));
@@ -243782,8 +244142,8 @@ async function buildHtmlPackage(opts) {
     } else if (el.type === "image") {
       let src = "";
       if (el.src) {
-        const raw = await opts.loadAsset(el.src);
-        const asset = raw ? await optimizeForExport(raw.bytes, raw.contentType, el.w, el.h) : null;
+        const raw2 = await opts.loadAsset(el.src);
+        const asset = raw2 ? await optimizeForExport(raw2.bytes, raw2.contentType, el.w, el.h) : null;
         if (asset) {
           if (opts.inline) {
             src = `data:${asset.contentType};base64,${asset.bytes.toString("base64")}`;
@@ -244280,11 +244640,11 @@ async function readSheets(bytes2) {
         const type = c?.["@_t"];
         let value = null;
         const v = c?.v;
-        const raw = typeof v === "object" ? v?.["#text"] : v;
-        if (type === "s") value = shared[Number(raw)] ?? null;
+        const raw2 = typeof v === "object" ? v?.["#text"] : v;
+        if (type === "s") value = shared[Number(raw2)] ?? null;
         else if (type === "inlineStr") value = String(typeof c?.is?.t === "object" ? c.is.t["#text"] : c?.is?.t ?? "");
-        else if (type === "str") value = String(raw ?? "");
-        else if (raw !== void 0 && raw !== null && raw !== "") value = Number(raw);
+        else if (type === "str") value = String(raw2 ?? "");
+        else if (raw2 !== void 0 && raw2 !== null && raw2 !== "") value = Number(raw2);
         rows[rowIdx][ci] = value;
       }
     }
@@ -244293,10 +244653,10 @@ async function readSheets(bytes2) {
   return out;
 }
 var SIZE_RE = /(\d+(?:\.\d+)?)\s*(?:px|mm|pixels)?\s*W?\s*[x×]\s*(\d+(?:\.\d+)?)\s*(px|mm|pixels)?/i;
-function parseSize(raw) {
-  const m = SIZE_RE.exec(raw);
+function parseSize(raw2) {
+  const m = SIZE_RE.exec(raw2);
   if (!m) return null;
-  const unit = /mm/i.test(raw) ? "mm" : "px";
+  const unit = /mm/i.test(raw2) ? "mm" : "px";
   return { w: Math.round(Number(m[1])), h: Math.round(Number(m[2])), unit };
 }
 function text2(c) {
@@ -244309,9 +244669,9 @@ async function parseCollateralBrief(bytes2) {
   for (const [name, rows] of sheets) {
     if (!/glossary/i.test(name)) continue;
     for (const row of rows) {
-      const label2 = text2(row?.[0]);
+      const label3 = text2(row?.[0]);
       const size = parseSize(text2(row?.[1]));
-      if (label2 && size) glossary.set(label2.toLowerCase(), size);
+      if (label3 && size) glossary.set(label3.toLowerCase(), size);
     }
   }
   let campaign = null;
@@ -244475,15 +244835,15 @@ router23.post("/campaigns/build-plan", requireAuth, async (req, res) => {
   const masters = rows.map((r4) => {
     let flat = false;
     try {
-      const raw = JSON.parse(r4.config);
-      if (raw?.kind === "freeform") flat = isFlatArtwork(normalizeFreeformConfig(raw));
+      const raw2 = JSON.parse(r4.config);
+      if (raw2?.kind === "freeform") flat = isFlatArtwork(normalizeFreeformConfig(raw2));
     } catch {
       flat = false;
     }
     let copy = [];
     try {
-      const raw = JSON.parse(r4.config);
-      copy = (raw.elements ?? []).filter((e) => e.type === "text" && typeof e.text === "string").map((e) => e.text);
+      const raw2 = JSON.parse(r4.config);
+      copy = (raw2.elements ?? []).filter((e) => e.type === "text" && typeof e.text === "string").map((e) => e.text);
     } catch {
       copy = [];
     }
@@ -244537,8 +244897,8 @@ router24.put("/layout-profiles/:id/rules", requireAdmin, async (req, res) => {
   res.json(formatProfile(saved));
 });
 router24.post("/layout-profiles/learn", requireAuth, async (req, res) => {
-  const raw = Array.isArray(req.body?.masterTemplateIds) ? req.body.masterTemplateIds : [];
-  const ids = raw.map(Number).filter((n) => Number.isInteger(n) && n > 0).slice(0, 50);
+  const raw2 = Array.isArray(req.body?.masterTemplateIds) ? req.body.masterTemplateIds : [];
+  const ids = raw2.map(Number).filter((n) => Number.isInteger(n) && n > 0).slice(0, 50);
   if (ids.length === 0) {
     res.status(400).json({ error: "masterTemplateIds is required" });
     return;
@@ -244580,8 +244940,8 @@ var layout_profiles_default = router24;
 // src/routes/guidelines.ts
 var import_express26 = __toESM(require_express2(), 1);
 var router25 = (0, import_express26.Router)();
-async function brandIdFrom(raw) {
-  const n = Number(raw);
+async function brandIdFrom(raw2) {
+  const n = Number(raw2);
   if (Number.isInteger(n) && n > 0) return n;
   const [b] = await db.select({ id: brandsTable.id }).from(brandsTable).orderBy(brandsTable.id).limit(1);
   return b?.id ?? null;

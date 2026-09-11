@@ -373,6 +373,20 @@ export default function CompareTemplates() {
                         {verdict === "incorrect" && <Badge variant="outline" className="text-[10px] font-normal border-red-300 text-red-700">wrong</Badge>}
                       </div>
                     </div>
+                    {(() => {
+                      const pr = (t.config as { principles?: { alignment: number; margins: number; balance: number; contrast: number | null } })?.principles;
+                      if (!pr) return null;
+                      const pct = (n: number) => `${Math.round(n * 100)}%`;
+                      const tone = (n: number) => (n >= 0.85 ? "text-emerald-700" : n >= 0.6 ? "text-amber-700" : "text-red-700");
+                      return (
+                        <p className="text-[10px] text-muted-foreground flex flex-wrap gap-x-2" data-testid={`principles-${t.id}`} title="Design principles measured on this size: alignment with the master, margins kept clear, balance of visual weight, and the worst contrast ratio behind copy">
+                          <span>Alignment <b className={tone(pr.alignment)}>{pct(pr.alignment)}</b></span>
+                          <span>Margins <b className={tone(pr.margins)}>{pct(pr.margins)}</b></span>
+                          <span>Balance <b className={tone(pr.balance)}>{pct(pr.balance)}</b></span>
+                          {pr.contrast != null && <span>Contrast <b className={pr.contrast >= 4.5 ? "text-emerald-700" : pr.contrast >= 3 ? "text-amber-700" : "text-red-700"}>{pr.contrast.toFixed(1)}:1</b></span>}
+                        </p>
+                      );
+                    })()}
                     {checks.length > 0 && (
                       <ul className="text-xs text-amber-700 space-y-0.5">
                         {checks.slice(0, 2).map((c, i) => (

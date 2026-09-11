@@ -216,6 +216,24 @@ export interface FreeformElement {
   locked?: boolean;
 }
 
+export type PrincipleScoresContrastDetailItem = {
+  id: string;
+  label: string;
+  ratio: number;
+  floor: number;
+};
+
+/**
+ * Design-principle scores for an automated layout (0..1) and the worst contrast ratio behind copy
+ */
+export interface PrincipleScores {
+  alignment: number;
+  margins: number;
+  balance: number;
+  contrast?: number | null;
+  contrastDetail?: PrincipleScoresContrastDetailItem[];
+}
+
 export interface TemplateConfig {
   contentAlignment?: string;
   textAlign?: string;
@@ -231,6 +249,7 @@ export interface TemplateConfig {
   rejected?: string[];
   /** What the adapt engine decided and what a designer should check */
   adaptNotes?: string[];
+  principles?: PrincipleScores;
 }
 
 export interface Template {

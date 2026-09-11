@@ -9,6 +9,8 @@ import { collectBrandPaletteHexes } from "../lib/colorAdapter";
 import { composeKeyVisualAdaptation } from "../lib/kvAdapt";
 import { recomposeToFormat, shouldRecompose } from "../lib/recompose";
 import { checkLayout, checkMandatory } from "../lib/layoutCheck";
+import { scoreGeometry, scoreContrast, contrastBaseline, type PrincipleScores } from "../lib/principles";
+import type { ImageLoader } from "../lib/renderFreeform";
 import { isImageOnly, hasLayeredSlots, hasPanelParts, splitPanelGraphic, enrichLayeredArtwork, adaptLayered, edgeColour, storageImageLoader } from "../lib/layeredArtwork";
 import { analyseGwdHtml, motionForElements, type GwdLeaf } from "../lib/gwdMotion";
 import { resolveStyleSchema, learnProfile, getProfile } from "../lib/layoutProfile";
@@ -205,6 +207,8 @@ async function layeredPanelFill(config: FreeformConfig, req: any): Promise<strin
   }
 }
 
+const pct = (n: number) => `${Math.round(n * 100)}%`;
+
 async function adaptOne(
   master: { id: number; width: number; height: number; name: string },
   masterConfig: FreeformConfig,
@@ -216,6 +220,7 @@ async function adaptOne(
   excludeId?: number,
   hints: FormatHints = {},
   styleOverride?: { schema: StyleSchema | null; label: string } | null,
+  render?: { loadImage: ImageLoader; brandFontFamily?: string } | null,
 ): Promise<{ config: FreeformConfig; method: string; spec: ReturnType<typeof describeFormat>; reference: Reference | null; rejected: string[] }> {
   let adapted: FreeformConfig | null = null;
   let method = "scaled";
@@ -295,6 +300,24 @@ async function adaptOne(
   // The hard gate: an automated layout that lost a mandatory element,
   // undersized the logo or let copy collide is rejected, not merely noted.
   const rejected = checkMandatory(masterConfig, { ...adapted, adaptNotes: [...(adapted.adaptNotes ?? []), ...notes] }, width, height, (styleSpec?.partRules ?? {}) as Record<string, { minPx?: number; neverOverlap?: string[]; dropWhenTight?: boolean }>);
+  // Design principles: alignment, margins and balance from the geometry;
+  // contrast behind copy from the rendered piece. Low contrast on the
+  // headline or message is a rejection; the rest are checks.
+  const geo = scoreGeometry(masterConfig, master.width, master.height, adapted, width, height);
+  issues.push(...geo.issues);
+  let principles: PrincipleScores = { ...geo.scores, contrast: null };
+  if (render) {
+    try {
+      const baseline = await contrastBaseline(`${master.id}:${masterConfig.elements.length}`, masterConfig, master.width, master.height, render.loadImage, render.brandFontFamily);
+      const c = await scoreContrast(adapted, width, height, render.loadImage, render.brandFontFamily, baseline);
+      principles = { ...principles, contrast: c.contrast, ...(c.detail && c.detail.length ? { contrastDetail: c.detail.slice(0, 8) } : {}) };
+      issues.push(...c.issues);
+      rejected.push(...c.rejections);
+    } catch (err) {
+      log?.warn({ err }, "contrast check failed");
+    }
+  }
+  notes.push(`Principles: alignment ${pct(principles.alignment)}, margins ${pct(principles.margins)}, balance ${pct(principles.balance)}${principles.contrast != null ? `, contrast ${principles.contrast.toFixed(1)}:1` : ""}.`);
   // What designers have said about pieces of this shape so far rides on
   // every new one, so the lesson is in front of whoever reviews it.
   let feedbackLine: string | null = null;
@@ -314,6 +337,7 @@ async function adaptOne(
       ...(feedbackLine ? [feedbackLine] : []),
     ],
     ...(rejected.length > 0 ? { rejected } : {}),
+    principles,
   });
   return { config, method, spec, reference, rejected };
 }
@@ -465,7 +489,7 @@ router.post("/templates/:id/adapt", requireAdmin, async (req, res): Promise<void
       name: typeof t.formatName === "string" ? t.formatName : typeof t.name === "string" ? t.name : null,
       channel: typeof t.channel === "string" ? t.channel : null,
     };
-    const { config: adaptedConfig, method, spec, rejected } = await adaptOne(master, masterConfig, width, height, brandInfo, (req as any).log, exemplars, undefined, hints, resolvedStyle.source === "none" ? null : { schema: resolvedStyle.schema, label: resolvedStyle.label });
+    const { config: adaptedConfig, method, spec, rejected } = await adaptOne(master, masterConfig, width, height, brandInfo, (req as any).log, exemplars, undefined, hints, resolvedStyle.source === "none" ? null : { schema: resolvedStyle.schema, label: resolvedStyle.label }, { loadImage: makeImageLoader(req), brandFontFamily: brand?.fontFamily ?? "National 2" });
     if (rejected.length > 0) rejectedCount++;
     // Guideline reminders for what is on the piece (logo tile, band, photo…).
     let merged = adaptedConfig;
@@ -1061,7 +1085,7 @@ router.post("/templates/:id/redo", requireAdmin, async (req, res): Promise<void>
     // the piece being redone itself.
     const exemplars = await approvedExemplars(master.id);
     const redoStyle = await resolveStyleSchema({ masterId: master.id, masterName: master.name, sourceTemplateId: master.sourceTemplateId ?? null });
-    const { config, method, spec, reference } = await adaptOne(master, masterConfig, piece.width, piece.height, brandInfo, (req as any).log, exemplars, piece.id, { name: piece.name }, redoStyle.source === "none" ? null : { schema: redoStyle.schema, label: redoStyle.label });
+    const { config, method, spec, reference } = await adaptOne(master, masterConfig, piece.width, piece.height, brandInfo, (req as any).log, exemplars, piece.id, { name: piece.name }, redoStyle.source === "none" ? null : { schema: redoStyle.schema, label: redoStyle.label }, { loadImage: makeImageLoader(req), brandFontFamily: brand?.fontFamily ?? "National 2" });
     const [updated] = await db
       .update(templatesTable)
       .set({

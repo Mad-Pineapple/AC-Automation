@@ -2157,6 +2157,8 @@ components:
           type: array
           items: { type: string }
           description: What the adapt engine decided and what a designer should check
+        principles:
+          $ref: "#/components/schemas/PrincipleScores"
 
     Template:
       type: object
@@ -2599,6 +2601,25 @@ components:
           type: integer
       required: [kind, templates, warnings, assetsImported]
 
+    PrincipleScores:
+      type: object
+      description: Design-principle scores for an automated layout (0..1) and the worst contrast ratio behind copy
+      required: [alignment, margins, balance]
+      properties:
+        alignment: { type: number }
+        margins: { type: number }
+        balance: { type: number }
+        contrast: { type: number, nullable: true }
+        contrastDetail:
+          type: array
+          items:
+            type: object
+            required: [id, label, ratio, floor]
+            properties:
+              id: { type: string }
+              label: { type: string }
+              ratio: { type: number }
+              floor: { type: number }
     PartRules:
       type: object
       properties:
