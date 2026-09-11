@@ -252,9 +252,28 @@ export function chooseReference(exemplars: Exemplar[], width: number, height: nu
  * remembered from Right pieces. What the studio has already accepted for a
  * shape is the standard every new piece of that shape is measured against.
  */
-export async function studioExemplars(width: number, height: number, excludeIds: number[] = [], limit = 3): Promise<Exemplar[]> {
+export interface ExemplarScope {
+  /** Only pieces from these masters (the masters themselves, or pieces built from them). */
+  familyIds?: number[];
+  /** Or pieces whose name contains one of these terms (case-insensitive). */
+  nameTerms?: string[];
+}
+
+export async function studioExemplars(width: number, height: number, excludeIds: number[] = [], limit = 3, scope: ExemplarScope = {}): Promise<Exemplar[]> {
   await ensureFeedbackTable();
   const cls = classifyAspect(width, height);
+  const familyIds = (scope.familyIds ?? []).filter((n) => Number.isInteger(n) && n > 0);
+  const nameTerms = (scope.nameTerms ?? []).map((t) => t.toLowerCase().trim()).filter((t) => t.length >= 3);
+  const scoped = familyIds.length > 0 || nameTerms.length > 0;
+  // A campaign's references are its own: another campaign's Right pieces
+  // describe another layout. When a scope is given, only pieces inside it
+  // count; if it has none yet, the schema/profile is the standard.
+  const scopeSql = scoped
+    ? sql`AND (
+        ${familyIds.length ? sql`t.id IN (${sql.join(familyIds.map((i) => sql`${i}`), sql`, `)}) OR t.source_template_id IN (${sql.join(familyIds.map((i) => sql`${i}`), sql`, `)})` : sql`false`}
+        ${nameTerms.length ? sql`OR (${sql.join(nameTerms.map((term) => sql`lower(t.name) LIKE ${"%" + term + "%"}`), sql` OR `)})` : sql``}
+      )`
+    : sql``;
   const rows = await db.execute(sql`
     SELECT t.id, t.name, t.width, t.height, t.config, t.updated_at
     FROM templates t
@@ -269,6 +288,7 @@ export async function studioExemplars(width: number, height: number, excludeIds:
       OR (t.category = 'knowledge' AND (t.config::json ->> 'learnedFromTemplateId') IS NOT NULL)
     )
     ${excludeIds.length ? sql`AND t.id NOT IN (${sql.join(excludeIds.map((i) => sql`${i}`), sql`, `)})` : sql``}
+    ${scopeSql}
     ORDER BY t.updated_at DESC, t.id DESC
     LIMIT 400`);
   const out: Array<Exemplar & { distance: number; sameClass: boolean }> = [];

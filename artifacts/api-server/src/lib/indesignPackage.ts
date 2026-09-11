@@ -270,10 +270,20 @@ export async function importInDesignPackage(
       // Crops come from a TEXT-FREE copy of the PDF: live type is removed from
       // the content streams first, so a crop never bakes in copy that the
       // layout also draws as a live text element (ghosted/doubled headlines).
-      let cropPdf: { bytes: Buffer; removed: number; softMaskedImages: number[] } | null = null;
+      let cropPdf: { bytes: Buffer; removed: number; softMaskedImages: number[]; outlinedRemoved?: number } | null = null;
       if (docPdf) {
         try {
-          cropPdf = await stripPdfText(docPdf.bytes);
+          // The IDML's text frames, per spread, in PDF coordinates: any
+          // outlined type the export left as vector paths inside them is
+          // stripped along with the text objects.
+          const typeFrames = new Map<number, Array<{ x0: number; y0: number; x1: number; y1: number }>>();
+          for (const lay of result.idmlLayouts) {
+            const frames = lay.elements
+              .filter((el) => el.type === "text")
+              .map((el) => ({ x0: Number(el.x), y0: lay.height - (Number(el.y) + Number(el.h)), x1: Number(el.x) + Number(el.w), y1: lay.height - Number(el.y) }));
+            typeFrames.set(lay.spreadIndex, frames);
+          }
+          cropPdf = await stripPdfText(docPdf.bytes, { typeFrames });
         } catch {
           cropPdf = { bytes: docPdf.bytes, removed: 0, softMaskedImages: [] };
         }
@@ -287,7 +297,7 @@ export async function importInDesignPackage(
             const { renderPdfPageToPng } = await import("./pdfRender");
             // pdfjs detaches the buffer it's given — copy per render.
             const pdfBytes = cropPdf ? cropPdf.bytes : docPdf.bytes;
-            const textFree = (cropPdf?.removed ?? 0) > 0;
+            const textFree = (cropPdf?.removed ?? 0) > 0 || (cropPdf?.outlinedRemoved ?? 0) > 0;
             const rendered = await renderPdfPageToPng(Uint8Array.from(pdfBytes), layout.spreadIndex + 1);
             // Photo frames whose link was missing or too large are taken from
             // the PDF too. With the text objects stripped the crop is clean;
@@ -339,7 +349,11 @@ export async function importInDesignPackage(
                   return tx < rx + rw && tx + tw > rx && ty < ry + rh && ty + th > ry;
                 });
                 const effectsOnPage = (cropPdf?.softMaskedImages[layout.spreadIndex] ?? 0) > 0;
-                if (overlapsText && (!textFree || effectsOnPage)) region.bakedCopy = true;
+                // Copy is baked in only when the type could not be stripped
+                // (outlined type). Type effects left behind are a faint ghost
+                // at most: warn, but let sizes be built.
+                if (overlapsText && !textFree) region.bakedCopy = true;
+                else if (overlapsText && effectsOnPage) layout.warnings.push("The photo was cropped from the document PDF with the type removed; a faint ghost of the type's glow or shadow may remain — check the photo zone.");
                 delete region.maskedFrame;
                 delete region.photoFallback;
               } else {

@@ -87628,42 +87628,42 @@ var require_PDFNumber = __commonJS({
     var tslib_1 = (init_tslib_es6(), __toCommonJS(tslib_es6_exports));
     var index_1 = require_utils10();
     var PDFObject_1 = tslib_1.__importDefault(require_PDFObject());
-    var PDFNumber = (
+    var PDFNumber2 = (
       /** @class */
       (function(_super) {
-        tslib_1.__extends(PDFNumber2, _super);
-        function PDFNumber2(value) {
+        tslib_1.__extends(PDFNumber3, _super);
+        function PDFNumber3(value) {
           var _this = _super.call(this) || this;
           _this.numberValue = value;
           _this.stringValue = index_1.numberToString(value);
           return _this;
         }
-        PDFNumber2.prototype.asNumber = function() {
+        PDFNumber3.prototype.asNumber = function() {
           return this.numberValue;
         };
-        PDFNumber2.prototype.value = function() {
+        PDFNumber3.prototype.value = function() {
           return this.numberValue;
         };
-        PDFNumber2.prototype.clone = function() {
-          return PDFNumber2.of(this.numberValue);
+        PDFNumber3.prototype.clone = function() {
+          return PDFNumber3.of(this.numberValue);
         };
-        PDFNumber2.prototype.toString = function() {
+        PDFNumber3.prototype.toString = function() {
           return this.stringValue;
         };
-        PDFNumber2.prototype.sizeInBytes = function() {
+        PDFNumber3.prototype.sizeInBytes = function() {
           return this.stringValue.length;
         };
-        PDFNumber2.prototype.copyBytesInto = function(buffer, offset) {
+        PDFNumber3.prototype.copyBytesInto = function(buffer, offset) {
           offset += index_1.copyStringIntoBuffer(this.stringValue, buffer, offset);
           return this.stringValue.length;
         };
-        PDFNumber2.of = function(value) {
-          return new PDFNumber2(value);
+        PDFNumber3.of = function(value) {
+          return new PDFNumber3(value);
         };
-        return PDFNumber2;
+        return PDFNumber3;
       })(PDFObject_1.default)
     );
-    exports2.default = PDFNumber;
+    exports2.default = PDFNumber2;
   }
 });
 
@@ -234552,9 +234552,16 @@ function chooseReference(exemplars, width, height, excludeId) {
   const note = scale ? `Scaled from the approved "${pick2.e.name}" (${pick2.e.width}\xD7${pick2.e.height}).` : `Follows the approved "${pick2.e.name}" (${pick2.e.width}\xD7${pick2.e.height})${parts.length ? `: ${parts.join(", ")}` : ""}.`;
   return { exemplar: pick2.e, scaleFromExemplar: scale, sameClass: pick2.sameClass, distance: pick2.distance, note };
 }
-async function studioExemplars(width, height, excludeIds = [], limit3 = 3) {
+async function studioExemplars(width, height, excludeIds = [], limit3 = 3, scope = {}) {
   await ensureFeedbackTable();
   const cls = classifyAspect(width, height);
+  const familyIds = (scope.familyIds ?? []).filter((n) => Number.isInteger(n) && n > 0);
+  const nameTerms = (scope.nameTerms ?? []).map((t) => t.toLowerCase().trim()).filter((t) => t.length >= 3);
+  const scoped = familyIds.length > 0 || nameTerms.length > 0;
+  const scopeSql = scoped ? sql`AND (
+        ${familyIds.length ? sql`t.id IN (${sql.join(familyIds.map((i) => sql`${i}`), sql`, `)}) OR t.source_template_id IN (${sql.join(familyIds.map((i) => sql`${i}`), sql`, `)})` : sql`false`}
+        ${nameTerms.length ? sql`OR (${sql.join(nameTerms.map((term) => sql`lower(t.name) LIKE ${"%" + term + "%"}`), sql` OR `)})` : sql``}
+      )` : sql``;
   const rows = await db.execute(sql`
     SELECT t.id, t.name, t.width, t.height, t.config, t.updated_at
     FROM templates t
@@ -234569,6 +234576,7 @@ async function studioExemplars(width, height, excludeIds = [], limit3 = 3) {
       OR (t.category = 'knowledge' AND (t.config::json ->> 'learnedFromTemplateId') IS NOT NULL)
     )
     ${excludeIds.length ? sql`AND t.id NOT IN (${sql.join(excludeIds.map((i) => sql`${i}`), sql`, `)})` : sql``}
+    ${scopeSql}
     ORDER BY t.updated_at DESC, t.id DESC
     LIMIT 400`);
   const out = [];
@@ -240065,30 +240073,72 @@ import sharp11 from "sharp";
 // src/lib/pdfStripText.ts
 var import_pdf_lib2 = __toESM(require_cjs2(), 1);
 var TEXT_OBJECT = /\bBT\b[\s\S]*?\bET\b/g;
-function stripFrom(raw) {
+var CM_BLOCK = /q\s+(-?[\d.]+) (-?[\d.]+) (-?[\d.]+) (-?[\d.]+) (-?[\d.]+) (-?[\d.]+) cm([\s\S]*?)\bQ\b/g;
+function stripOutlinedType(s2, frames) {
+  if (frames.length === 0) return { out: s2, o: 0 };
+  let o = 0;
+  const out = s2.replace(CM_BLOCK, (whole, a, b, c, d, tx, ty, body) => {
+    if (Number(b) !== 0 || Number(c) !== 0) return whole;
+    if (/\b(Do|BT)\b/.test(body) || !/\bf\*?\b/.test(body)) return whole;
+    const sx = Number(a), sy = Number(d), ox = Number(tx), oy = Number(ty);
+    const pts = [];
+    for (const m of body.matchAll(/(-?[\d.]+) (-?[\d.]+) (?:m|l)\b/g)) pts.push([Number(m[1]), Number(m[2])]);
+    for (const m of body.matchAll(/(-?[\d.]+) (-?[\d.]+) (-?[\d.]+) (-?[\d.]+) (-?[\d.]+) (-?[\d.]+) c\b/g)) pts.push([Number(m[5]), Number(m[6])]);
+    for (const m of body.matchAll(/(-?[\d.]+) (-?[\d.]+) (-?[\d.]+) (-?[\d.]+) (?:v|y)\b/g)) pts.push([Number(m[3]), Number(m[4])]);
+    if (pts.length < 4) return whole;
+    const xs = pts.map((p) => ox + p[0] * sx), ys = pts.map((p) => oy + p[1] * sy);
+    const bx0 = Math.min(...xs), bx1 = Math.max(...xs), by0 = Math.min(...ys), by1 = Math.max(...ys);
+    const tol = 4;
+    const inside = frames.some((f) => bx0 >= f.x0 - tol && bx1 <= f.x1 + tol && by0 >= f.y0 - tol && by1 <= f.y1 + tol && bx1 - bx0 >= (f.x1 - f.x0) * 0.25);
+    if (!inside) return whole;
+    o++;
+    return "";
+  });
+  return { out, o };
+}
+function stripFrom(raw, effectNames = [], frames = []) {
   const s2 = Buffer.from(raw).toString("latin1");
   let n = 0;
-  const out = s2.replace(TEXT_OBJECT, () => {
+  let e = 0;
+  let out = s2.replace(TEXT_OBJECT, () => {
     n++;
     return "";
   });
-  return { out: Buffer.from(out, "latin1"), n };
+  const outlined = stripOutlinedType(out, frames);
+  out = outlined.out;
+  const o = outlined.o;
+  for (const name of effectNames) {
+    const re = new RegExp(`/${name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}s+Do\b`, "g");
+    out = out.replace(re, () => {
+      e++;
+      return "";
+    });
+  }
+  return { out: Buffer.from(out, "latin1"), n, e, o };
 }
-async function stripPdfText(input) {
+function imageArea(x) {
+  const num2 = (v) => v instanceof import_pdf_lib2.PDFNumber ? v.asNumber() : 0;
+  return num2(x.dict.get(import_pdf_lib2.PDFName.of("Width"))) * num2(x.dict.get(import_pdf_lib2.PDFName.of("Height")));
+}
+async function stripPdfText(input, options = {}) {
   const doc = await import_pdf_lib2.PDFDocument.load(input, { ignoreEncryption: true, updateMetadata: false });
   const ctx2 = doc.context;
   let removed = 0;
   const softMaskedImages = [];
-  const rewrite = (stream2) => {
+  let effectsRemoved = 0;
+  let outlinedRemoved = 0;
+  const rewrite = (stream2, effectNames = [], frames = []) => {
     let raw;
     try {
       raw = (0, import_pdf_lib2.decodePDFRawStream)(stream2).decode();
     } catch {
       return null;
     }
-    const { out, n } = stripFrom(raw);
-    if (n === 0) return null;
+    const { out, n, e, o } = stripFrom(raw, effectNames, frames);
+    if (n === 0 && e === 0 && o === 0) return null;
     removed += n;
+    effectsRemoved += e;
+    outlinedRemoved += o;
     const fresh = ctx2.flateStream(out);
     const skip = /* @__PURE__ */ new Set([import_pdf_lib2.PDFName.of("Length"), import_pdf_lib2.PDFName.of("Filter"), import_pdf_lib2.PDFName.of("DecodeParms")]);
     for (const [k, v] of stream2.dict.entries()) {
@@ -240097,29 +240147,22 @@ async function stripPdfText(input) {
     }
     return fresh;
   };
-  for (const page of doc.getPages()) {
+  for (const [pageIndex, page] of doc.getPages().entries()) {
     const contentsRef = page.node.get(import_pdf_lib2.PDFName.of("Contents"));
     if (!contentsRef) continue;
-    const contents = ctx2.lookup(contentsRef);
-    const refs = contents instanceof import_pdf_lib2.PDFArray ? contents.asArray() : [contentsRef];
-    const next = refs.map((ref) => {
-      const stream2 = ctx2.lookup(ref);
-      if (!(stream2 instanceof import_pdf_lib2.PDFRawStream)) return ref;
-      const fresh = rewrite(stream2);
-      return fresh ? ctx2.register(fresh) : ref;
-    });
-    page.node.set(import_pdf_lib2.PDFName.of("Contents"), ctx2.obj(next));
-    let smasks = 0;
+    const frames = options.typeFrames?.get(pageIndex) ?? [];
     const resources = page.node.Resources();
     const xobjects = resources?.get(import_pdf_lib2.PDFName.of("XObject"));
     const xdict = xobjects ? ctx2.lookup(xobjects) : null;
+    const pageImages = [];
+    const formImages = /* @__PURE__ */ new Map();
     if (xdict instanceof import_pdf_lib2.PDFDict) {
       for (const [key, ref] of xdict.entries()) {
         const x = ctx2.lookup(ref);
         if (!(x instanceof import_pdf_lib2.PDFRawStream)) continue;
         const subtype = x.dict.get(import_pdf_lib2.PDFName.of("Subtype"));
         if (subtype === import_pdf_lib2.PDFName.of("Image")) {
-          if (x.dict.has(import_pdf_lib2.PDFName.of("SMask"))) smasks++;
+          pageImages.push({ name: key.decodeText(), area: imageArea(x), smask: x.dict.has(import_pdf_lib2.PDFName.of("SMask")) });
           continue;
         }
         if (subtype !== import_pdf_lib2.PDFName.of("Form")) continue;
@@ -240127,20 +240170,68 @@ async function stripPdfText(input) {
         const innerDict = inner ? ctx2.lookup(inner) : null;
         const innerX = innerDict instanceof import_pdf_lib2.PDFDict ? innerDict.get(import_pdf_lib2.PDFName.of("XObject")) : null;
         const innerXDict = innerX ? ctx2.lookup(innerX) : null;
+        const list = [];
         if (innerXDict instanceof import_pdf_lib2.PDFDict) {
-          for (const [, iref] of innerXDict.entries()) {
+          for (const [ikey, iref] of innerXDict.entries()) {
             const ix = ctx2.lookup(iref);
-            if (ix instanceof import_pdf_lib2.PDFRawStream && ix.dict.get(import_pdf_lib2.PDFName.of("Subtype")) === import_pdf_lib2.PDFName.of("Image") && ix.dict.has(import_pdf_lib2.PDFName.of("SMask"))) smasks++;
+            if (ix instanceof import_pdf_lib2.PDFRawStream && ix.dict.get(import_pdf_lib2.PDFName.of("Subtype")) === import_pdf_lib2.PDFName.of("Image")) list.push({ name: ikey.decodeText(), area: imageArea(ix), smask: ix.dict.has(import_pdf_lib2.PDFName.of("SMask")) });
           }
         }
-        const fresh = rewrite(x);
+        formImages.set(key.decodeText(), list);
+      }
+    }
+    const maxArea = Math.max(0, ...pageImages.map((i) => i.area), ...[...formImages.values()].flat().map((i) => i.area));
+    const isEffect = (i) => i.smask && maxArea > 0 && i.area < maxArea * 0.25;
+    const pageEffects = pageImages.filter(isEffect).map((i) => i.name);
+    const contents = ctx2.lookup(contentsRef);
+    const refs = contents instanceof import_pdf_lib2.PDFArray ? contents.asArray() : [contentsRef];
+    const decoded = [];
+    let allDecoded = true;
+    for (const ref of refs) {
+      const stream2 = ctx2.lookup(ref);
+      if (!(stream2 instanceof import_pdf_lib2.PDFRawStream)) {
+        allDecoded = false;
+        break;
+      }
+      try {
+        decoded.push(Buffer.from((0, import_pdf_lib2.decodePDFRawStream)(stream2).decode()));
+      } catch {
+        allDecoded = false;
+        break;
+      }
+    }
+    if (allDecoded && decoded.length > 0) {
+      const joined = Buffer.concat(decoded.flatMap((b, i) => i ? [Buffer.from("\n", "latin1"), b] : [b]));
+      const { out, n, e, o } = stripFrom(joined, pageEffects, frames);
+      removed += n;
+      effectsRemoved += e;
+      outlinedRemoved += o;
+      const fresh = ctx2.flateStream(out);
+      page.node.set(import_pdf_lib2.PDFName.of("Contents"), ctx2.register(fresh));
+    } else {
+      const next = refs.map((ref) => {
+        const stream2 = ctx2.lookup(ref);
+        if (!(stream2 instanceof import_pdf_lib2.PDFRawStream)) return ref;
+        const fresh = rewrite(stream2, pageEffects, frames);
+        return fresh ? ctx2.register(fresh) : ref;
+      });
+      page.node.set(import_pdf_lib2.PDFName.of("Contents"), ctx2.obj(next));
+    }
+    let smasks = pageImages.filter((i) => i.smask && !isEffect(i)).length;
+    if (xdict instanceof import_pdf_lib2.PDFDict) {
+      for (const [key, ref] of xdict.entries()) {
+        const x = ctx2.lookup(ref);
+        if (!(x instanceof import_pdf_lib2.PDFRawStream) || x.dict.get(import_pdf_lib2.PDFName.of("Subtype")) !== import_pdf_lib2.PDFName.of("Form")) continue;
+        const list = formImages.get(key.decodeText()) ?? [];
+        smasks += list.filter((i) => i.smask && !isEffect(i)).length;
+        const fresh = rewrite(x, list.filter(isEffect).map((i) => i.name));
         if (fresh) xdict.set(key, ctx2.register(fresh));
       }
     }
     softMaskedImages.push(smasks);
   }
   const bytes2 = Buffer.from(await doc.save({ useObjectStreams: false }));
-  return { bytes: bytes2, removed, softMaskedImages };
+  return { bytes: bytes2, removed, softMaskedImages, effectsRemoved, outlinedRemoved };
 }
 
 // src/lib/indesignPackage.ts
@@ -240311,7 +240402,12 @@ async function importInDesignPackage(objectPath, brandLogoUrl = null) {
       let cropPdf = null;
       if (docPdf) {
         try {
-          cropPdf = await stripPdfText(docPdf.bytes);
+          const typeFrames = /* @__PURE__ */ new Map();
+          for (const lay of result.idmlLayouts) {
+            const frames = lay.elements.filter((el) => el.type === "text").map((el) => ({ x0: Number(el.x), y0: lay.height - (Number(el.y) + Number(el.h)), x1: Number(el.x) + Number(el.w), y1: lay.height - Number(el.y) }));
+            typeFrames.set(lay.spreadIndex, frames);
+          }
+          cropPdf = await stripPdfText(docPdf.bytes, { typeFrames });
         } catch {
           cropPdf = { bytes: docPdf.bytes, removed: 0, softMaskedImages: [] };
         }
@@ -240324,7 +240420,7 @@ async function importInDesignPackage(objectPath, brandLogoUrl = null) {
           try {
             const { renderPdfPageToPng: renderPdfPageToPng2 } = await Promise.resolve().then(() => (init_pdfRender(), pdfRender_exports));
             const pdfBytes = cropPdf ? cropPdf.bytes : docPdf.bytes;
-            const textFree = (cropPdf?.removed ?? 0) > 0;
+            const textFree = (cropPdf?.removed ?? 0) > 0 || (cropPdf?.outlinedRemoved ?? 0) > 0;
             const rendered = await renderPdfPageToPng2(Uint8Array.from(pdfBytes), layout.spreadIndex + 1);
             let renderedNoType = null;
             if (regions.some((r4) => r4.photoFallback)) {
@@ -240363,7 +240459,8 @@ async function importInDesignPackage(objectPath, brandLogoUrl = null) {
                   return tx < rx + rw && tx + tw > rx && ty < ry + rh && ty + th > ry;
                 });
                 const effectsOnPage = (cropPdf?.softMaskedImages[layout.spreadIndex] ?? 0) > 0;
-                if (overlapsText && (!textFree || effectsOnPage)) region.bakedCopy = true;
+                if (overlapsText && !textFree) region.bakedCopy = true;
+                else if (overlapsText && effectsOnPage) layout.warnings.push("The photo was cropped from the document PDF with the type removed; a faint ghost of the type's glow or shadow may remain \u2014 check the photo zone.");
                 delete region.maskedFrame;
                 delete region.photoFallback;
               } else {
@@ -241023,7 +241120,10 @@ router13.post("/templates/:id/claude-review", requireAuth, async (req, res) => {
     ...family.filter((e) => e.formatClass === cls),
     ...family.filter((e) => e.formatClass !== cls)
   ].slice(0, 3);
-  const exemplars = familyRefs.length >= 3 ? familyRefs : [...familyRefs, ...await studioExemplars(t.width, t.height, [t.id, ...familyRefs.map((e) => e.id)], 3 - familyRefs.length)];
+  const [masterRow] = await db.select({ id: templatesTable.id, name: templatesTable.name, sourceTemplateId: templatesTable.sourceTemplateId }).from(templatesTable).where(eq(templatesTable.id, masterId));
+  const resolvedStyle = await resolveStyleSchema({ masterId, masterName: masterRow?.name ?? t.name, sourceTemplateId: masterRow?.sourceTemplateId ?? null });
+  const familyScope = resolvedStyle.source === "profile" && resolvedStyle.profileId ? { familyIds: [masterId, ...((await getProfile(resolvedStyle.profileId))?.profile.sources ?? []).map((s2) => s2.templateId)] } : resolvedStyle.source === "builtin" && resolvedStyle.schema ? { familyIds: [masterId], nameTerms: resolvedStyle.schema.match } : {};
+  const exemplars = familyRefs.length >= 3 ? familyRefs : [...familyRefs, ...await studioExemplars(t.width, t.height, [t.id, ...familyRefs.map((e) => e.id)], 3 - familyRefs.length, familyScope)];
   const noteRows = await db.execute(sql`SELECT verdict, note FROM feedback
     WHERE subject_type = 'template' AND subject_id = ${t.id} AND element_id IS NULL ORDER BY id DESC LIMIT 1`);
   const lastVerdict = noteRows.rows[0];
@@ -241048,12 +241148,10 @@ router13.post("/templates/:id/claude-review", requireAuth, async (req, res) => {
       measured,
       adaptMethod: typeof raw.adaptMethod === "string" ? raw.adaptMethod : null,
       designerNote,
-      styleSpec: (() => {
-        const sp = styleSchemaFor(t.name);
-        return sp ? describeStyleSchema(sp) : null;
-      })(),
+      styleSpec: resolvedStyle.schema ? `${resolvedStyle.label}
+${describeStyleSchema(resolvedStyle.schema)}` : null,
       headlineMaxH: (() => {
-        const sp = styleSchemaFor(t.name);
+        const sp = resolvedStyle.schema;
         if (!sp || !hasLayeredSlots(config2)) return null;
         const short = Math.min(t.width, t.height);
         const share = t.height > t.width * 0.8 ? sp.parts.headline?.display?.stacked ?? 0.19 : sp.parts.headline?.display?.side ?? 0.38;

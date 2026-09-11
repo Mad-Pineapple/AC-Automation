@@ -11,7 +11,7 @@ import { recomposeToFormat, shouldRecompose } from "../lib/recompose";
 import { checkLayout, checkMandatory } from "../lib/layoutCheck";
 import { isImageOnly, hasLayeredSlots, hasPanelParts, splitPanelGraphic, enrichLayeredArtwork, adaptLayered, edgeColour, storageImageLoader } from "../lib/layeredArtwork";
 import { analyseGwdHtml, motionForElements, type GwdLeaf } from "../lib/gwdMotion";
-import { resolveStyleSchema, learnProfile } from "../lib/layoutProfile";
+import { resolveStyleSchema, learnProfile, getProfile } from "../lib/layoutProfile";
 import type { StyleSchema } from "../lib/styleSpecs/getReadyBurst2";
 import { visibleBounds } from "../lib/gwdImport";
 
@@ -529,9 +529,19 @@ router.post("/templates/:id/claude-review", requireAuth, async (req, res): Promi
     ...family.filter((e) => e.formatClass === cls),
     ...family.filter((e) => e.formatClass !== cls),
   ].slice(0, 3);
+  // The standard is this campaign's: its own Right pieces, then Right pieces
+  // from the same family (the profile's source masters and what was built
+  // from them, or the built-in schema's name terms). Never another campaign.
+  const [masterRow] = await db.select({ id: templatesTable.id, name: templatesTable.name, sourceTemplateId: templatesTable.sourceTemplateId }).from(templatesTable).where(eq(templatesTable.id, masterId));
+  const resolvedStyle = await resolveStyleSchema({ masterId, masterName: masterRow?.name ?? t.name, sourceTemplateId: masterRow?.sourceTemplateId ?? null });
+  const familyScope = resolvedStyle.source === "profile" && resolvedStyle.profileId
+    ? { familyIds: [masterId, ...(((await getProfile(resolvedStyle.profileId))?.profile.sources ?? []).map((s) => s.templateId))] }
+    : resolvedStyle.source === "builtin" && resolvedStyle.schema
+      ? { familyIds: [masterId], nameTerms: resolvedStyle.schema.match }
+      : {};
   const exemplars = familyRefs.length >= 3
     ? familyRefs
-    : [...familyRefs, ...(await studioExemplars(t.width, t.height, [t.id, ...familyRefs.map((e) => e.id)], 3 - familyRefs.length))];
+    : [...familyRefs, ...(await studioExemplars(t.width, t.height, [t.id, ...familyRefs.map((e) => e.id)], 3 - familyRefs.length, familyScope))];
   const noteRows = await db.execute(sql`SELECT verdict, note FROM feedback
     WHERE subject_type = 'template' AND subject_id = ${t.id} AND element_id IS NULL ORDER BY id DESC LIMIT 1`);
   const lastVerdict = (noteRows.rows as any[])[0] as { verdict?: string; note?: string } | undefined;
@@ -559,9 +569,9 @@ router.post("/templates/:id/claude-review", requireAuth, async (req, res): Promi
       measured,
       adaptMethod: typeof raw.adaptMethod === "string" ? raw.adaptMethod : null,
       designerNote,
-      styleSpec: (() => { const sp = styleSchemaFor(t.name); return sp ? describeStyleSchema(sp) : null; })(),
+      styleSpec: resolvedStyle.schema ? `${resolvedStyle.label}\n${describeStyleSchema(resolvedStyle.schema)}` : null,
       headlineMaxH: (() => {
-        const sp = styleSchemaFor(t.name);
+        const sp = resolvedStyle.schema;
         if (!sp || !hasLayeredSlots(config)) return null;
         const short = Math.min(t.width, t.height);
         const share = t.height > t.width * 0.8 ? sp.parts.headline?.display?.stacked ?? 0.19 : sp.parts.headline?.display?.side ?? 0.38;
