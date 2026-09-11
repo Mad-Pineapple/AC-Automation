@@ -1,4 +1,5 @@
 import { Router } from "express";
+import { indexGuidelines, isGuidelineDocument } from "../lib/guidelines";
 import { db } from "@workspace/db";
 import { brandAssetsTable, brandAssetKindValues, brandsTable, templatesTable } from "@workspace/db";
 import { eq, desc } from "drizzle-orm";
@@ -65,6 +66,10 @@ router.post("/brands/:brandId/assets", requireAuth, async (req, res): Promise<vo
       contentType: body.contentType ?? null,
     })
     .returning();
+  // A new guideline document re-indexes the rules read per element.
+  if (isGuidelineDocument(asset.name, asset.contentType)) {
+    indexGuidelines(brandId).then((r) => (req as any).log?.info?.({ total: r.total }, "guideline index rebuilt after upload")).catch((err) => (req as any).log?.warn?.({ err }, "guideline re-index failed"));
+  }
   res.status(201).json(formatBrandAsset(asset));
 });
 

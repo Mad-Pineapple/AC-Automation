@@ -2,6 +2,7 @@ import app from "./app";
 import { logger } from "./lib/logger";
 import { seedDemoData } from "./lib/seed";
 import { ensureSchemaAdditions } from "./lib/schemaGuard";
+import { ensureGuidelineIndex } from "./lib/guidelines";
 import { startScheduler, resetStuckBriefs } from "./lib/scheduler";
 import { ensureStorageDirs } from "./lib/objectStorage";
 
@@ -21,6 +22,7 @@ app.listen(port, async (err) => {
   await ensureStorageDirs();
   await ensureSchemaAdditions();
   await seedDemoData();
+  void ensureGuidelineIndex();
 
   // Generation is an in-process async task; if the server restarts mid-generation,
   // briefs would be stuck in "generating" forever. Reset them so they can be retried.

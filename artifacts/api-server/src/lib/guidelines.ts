@@ -184,6 +184,35 @@ export async function indexGuidelines(brandId: number): Promise<IndexResult> {
   return result;
 }
 
+/** True when the file is a guideline document the index should read. */
+export function isGuidelineDocument(name: string, contentType: string | null | undefined): boolean {
+  return /pdf/i.test(contentType ?? "") && /guideline|brand book|brand standards|style guide/i.test(name);
+}
+
+let ensured: Promise<void> | null = null;
+/**
+ * Index the first brand's guidelines when nothing is indexed yet — so a
+ * fresh database (or the live site after this feature ships) reads its
+ * guideline PDFs without anyone pressing a button. Runs once per process.
+ */
+export function ensureGuidelineIndex(): Promise<void> {
+  if (!ensured) {
+    ensured = (async () => {
+      try {
+        const [brand] = await db.select({ id: brandsTable.id }).from(brandsTable).orderBy(brandsTable.id).limit(1);
+        if (!brand) return;
+        const [row] = await db.select({ n: sql<number>`count(*)::int` }).from(guidelinePassagesTable).where(eq(guidelinePassagesTable.brandId, brand.id));
+        if (Number(row?.n ?? 0) > 0) return;
+        const result = await indexGuidelines(brand.id);
+        logger.info({ brandId: brand.id, total: result.total, sources: result.sources }, "guideline index built on start-up");
+      } catch (err) {
+        logger.warn({ err }, "guideline index on start-up failed");
+      }
+    })();
+  }
+  return ensured;
+}
+
 export async function guidelineStatus(brandId: number): Promise<{ total: number; bySource: Array<{ source: string; passages: number }>; byTopic: Array<{ topic: GuidelineTopic; label: string; passages: number }> }> {
   const rows = await db
     .select({ source: guidelinePassagesTable.source, topic: guidelinePassagesTable.topic, n: sql<number>`count(*)::int` })

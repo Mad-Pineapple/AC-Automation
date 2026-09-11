@@ -234019,6 +234019,27 @@ async function indexGuidelines(brandId) {
   }
   return result;
 }
+function isGuidelineDocument(name, contentType) {
+  return /pdf/i.test(contentType ?? "") && /guideline|brand book|brand standards|style guide/i.test(name);
+}
+var ensured3 = null;
+function ensureGuidelineIndex() {
+  if (!ensured3) {
+    ensured3 = (async () => {
+      try {
+        const [brand] = await db.select({ id: brandsTable.id }).from(brandsTable).orderBy(brandsTable.id).limit(1);
+        if (!brand) return;
+        const [row] = await db.select({ n: sql`count(*)::int` }).from(guidelinePassagesTable).where(eq(guidelinePassagesTable.brandId, brand.id));
+        if (Number(row?.n ?? 0) > 0) return;
+        const result = await indexGuidelines(brand.id);
+        logger2.info({ brandId: brand.id, total: result.total, sources: result.sources }, "guideline index built on start-up");
+      } catch (err) {
+        logger2.warn({ err }, "guideline index on start-up failed");
+      }
+    })();
+  }
+  return ensured3;
+}
 async function guidelineStatus(brandId) {
   const rows = await db.select({ source: guidelinePassagesTable.source, topic: guidelinePassagesTable.topic, n: sql`count(*)::int` }).from(guidelinePassagesTable).where(eq(guidelinePassagesTable.brandId, brandId)).groupBy(guidelinePassagesTable.source, guidelinePassagesTable.topic);
   const bySource = /* @__PURE__ */ new Map();
@@ -242517,6 +242538,9 @@ router15.post("/brands/:brandId/assets", requireAuth, async (req, res) => {
     objectPath: body.objectPath,
     contentType: body.contentType ?? null
   }).returning();
+  if (isGuidelineDocument(asset.name, asset.contentType)) {
+    indexGuidelines(brandId).then((r4) => req.log?.info?.({ total: r4.total }, "guideline index rebuilt after upload")).catch((err) => req.log?.warn?.({ err }, "guideline re-index failed"));
+  }
   res.status(201).json(formatBrandAsset(asset));
 });
 router15.post("/brands/:brandId/assets/import-package", requireAdmin, async (req, res) => {
@@ -244990,6 +245014,7 @@ function initOnce() {
     await ensureStorageDirs();
     await ensureSchemaAdditions();
     await seedDemoData();
+    void ensureGuidelineIndex();
   })().catch((err) => {
     initPromise = null;
     throw err;

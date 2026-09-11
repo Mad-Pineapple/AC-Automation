@@ -3,6 +3,7 @@ import app from "./app";
 import { logger } from "./lib/logger";
 import { seedDemoData } from "./lib/seed";
 import { ensureSchemaAdditions } from "./lib/schemaGuard";
+import { ensureGuidelineIndex } from "./lib/guidelines";
 import { ensureStorageDirs } from "./lib/objectStorage";
 import { runDispatchTick } from "./lib/scheduler";
 import { runInBackground } from "./lib/background";
@@ -25,6 +26,7 @@ function initOnce(): Promise<void> {
     await ensureStorageDirs();
     await ensureSchemaAdditions();
     await seedDemoData();
+    void ensureGuidelineIndex();
   })().catch((err) => {
     initPromise = null; // retry on the next request rather than failing forever
     throw err;
