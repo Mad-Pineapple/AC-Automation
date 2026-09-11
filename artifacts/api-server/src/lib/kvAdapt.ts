@@ -21,6 +21,8 @@ import sharp from "sharp";
 import { ObjectStorageService } from "./objectStorage";
 import { guidelineLogoPlacement } from "./logoRules";
 import { STRIP_MAX_HEIGHT } from "./formatCatalog";
+import { inferSlots } from "./slots";
+import { prepareMeasurement, wrapText, measureLine, type FontSpec } from "./textMeasure";
 import type { FreeformConfig, FreeformElement, FreeformImage, FreeformRect, FreeformText, KvTextBlock } from "./freeform";
 
 const objectStorageService = new ObjectStorageService();
@@ -50,35 +52,6 @@ async function loadArtwork(src: string): Promise<Buffer | null> {
     const buffer = Buffer.from(await response.arrayBuffer());
     artworkCache = { src, buffer };
     return buffer;
-  } catch {
-    return null;
-  }
-}
-
-/** Mean luminance (0-255) of the artwork region behind a canvas-space box,
- * or null when it can't be sampled (missing artwork, box off-image). */
-async function sampleLuminanceBehind(
-  src: string,
-  imgW: number,
-  imgH: number,
-  art: { x: number; y: number; w: number; h: number },
-  box: { x: number; y: number; w: number; h: number },
-): Promise<number | null> {
-  const buffer = await loadArtwork(src);
-  if (!buffer) return null;
-  const s = art.w / imgW; // canvas px per source px
-  const left = Math.round((box.x - art.x) / s);
-  const top = Math.round((box.y - art.y) / s);
-  const width = Math.round(box.w / s);
-  const height = Math.round(box.h / s);
-  const cl = Math.max(0, Math.min(imgW - 1, left));
-  const ct = Math.max(0, Math.min(imgH - 1, top));
-  const cw = Math.max(1, Math.min(imgW - cl, width - (cl - left)));
-  const ch = Math.max(1, Math.min(imgH - ct, height - (ct - top)));
-  try {
-    const stats = await sharp(buffer).extract({ left: cl, top: ct, width: cw, height: ch }).stats();
-    const [r, g, b] = stats.channels;
-    return 0.299 * r.mean + 0.587 * g.mean + 0.114 * b.mean;
   } catch {
     return null;
   }
@@ -125,7 +98,7 @@ async function sampleRegionStats(
   imgH: number,
   art: { x: number; y: number; w: number; h: number },
   box: { x: number; y: number; w: number; h: number },
-): Promise<{ lum: number; busy: number } | null> {
+): Promise<{ lum: number; busy: number; whiteContrast: number } | null> {
   const buffer = await loadArtwork(src);
   if (!buffer) return null;
   const s = art.w / imgW;
@@ -140,9 +113,13 @@ async function sampleRegionStats(
   try {
     const stats = await sharp(buffer).extract({ left: cl, top: ct, width: cw, height: ch }).stats();
     const [r, g, b] = stats.channels;
+    const lin = (v: number) => { const c = v / 255; return c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4); };
+    const rel = 0.2126 * lin(r.mean) + 0.7152 * lin(g.mean) + 0.0722 * lin(b.mean);
     return {
       lum: 0.299 * r.mean + 0.587 * g.mean + 0.114 * b.mean,
       busy: (r.stdev + g.stdev + b.stdev) / 3,
+      // WCAG ratio of white type against this ground.
+      whiteContrast: 1.05 / (rel + 0.05),
     };
   } catch {
     return null;
@@ -174,6 +151,7 @@ export async function composeKeyVisualAdaptation(
 ): Promise<FreeformConfig | null> {
   const bg = findKvBackground(master, srcW, srcH);
   if (!bg) return null;
+  await prepareMeasurement();
 
   const short = Math.min(dstW, dstH);
   const isStrip = dstH <= STRIP_MAX_HEIGHT;
@@ -308,6 +286,25 @@ export async function composeKeyVisualAdaptation(
   // Where the designer put the copy column (fraction of width).
   const headlineXFrac = headline ? headline.x / srcW : 0;
 
+  // The master's call-to-action (pill or button with its label) travels with
+  // the copy: sized by its share of the master's short side, never under
+  // 24px, wide enough for its label. Strips carry it at the right of the
+  // row; every other shape stacks it under the copy.
+  const sem = inferSlots(master, srcW, srcH);
+  const ctaSrc = sem.cta && sem.ctaLabel ? sem.cta : null;
+  const ctaPlan = ctaSrc && sem.ctaLabel
+    ? (() => {
+        const label = sem.ctaLabel!.text.replace(/\s+/g, " ").trim();
+        const h = Math.round(Math.max(24, Math.min(short * 0.16, (ctaSrc.h / srcShort) * short)));
+        const fs = Math.max(9, Math.round(h * 0.42));
+        const padX = Math.round(h * 0.6);
+        const w = Math.round(Math.min(dstW - margin * 2, label.length * fs * 0.56 + padX * 2));
+        const pill = ctaSrc.type === "rect" && (ctaSrc.radius ?? 0) >= ctaSrc.h / 2 - 1;
+        return { label, h, w, fs, padX, pill, fill: ctaSrc.type === "rect" ? ctaSrc.fill : "#ffffff", color: sem.ctaLabel!.color ?? "#11263d", fontFamily: sem.ctaLabel!.fontFamily, fontWeight: sem.ctaLabel!.fontWeight ?? 700 };
+      })()
+    : null;
+  const subLine = !isStrip && sem.subheadline && sem.subheadline.text.trim() ? sem.subheadline : null;
+
   // A translucent/gradient panel behind the copy in the master (a scrim) is
   // part of the design's readability system — carry it into every output.
   const masterScrim = headline
@@ -329,8 +326,12 @@ export async function composeKeyVisualAdaptation(
   const headlineCentreYFrac = headline ? (headline.y + headline.h / 2) / srcH : 0.72;
   const headlineWidthFrac = headline ? Math.min(1, headline.w / srcW) : 0.86;
   // Alignment as designed: a block whose centre sits mid-canvas is centred.
+  // The designer's alignment when the master carries it; a full-width block
+  // whose centre happens to sit mid-canvas is not "centred" if it is set left.
   const headlineCentred = headline
-    ? Math.abs((headline.x + headline.w / 2) / srcW - 0.5) < 0.08
+    ? headline.align
+      ? headline.align === "center"
+      : Math.abs((headline.x + headline.w / 2) / srcW - 0.5) < 0.08
     : true;
 
   const longestLineChars = (text: string) =>
@@ -340,33 +341,26 @@ export async function composeKeyVisualAdaptation(
   // Copy boxes hug their words: after wrapping, shrink the box to the widest
   // actual line (keeping alignment anchored) instead of leaving zone-wide
   // boxes around short copy. Boxes stay full-size only when the text needs it.
-  const fitTextBox = (el: { text: string; x: number; y: number; w: number; fontSize: number; align: string }) => {
-    const CHAR = 0.52; // average glyph advance as a fraction of font size
-    const words = el.text.split(/\s+/).filter(Boolean);
-    if (words.length === 0) return;
-    // Re-wrap at the current width, measure the widest produced line.
-    let line = ""; let widest = 0;
-    for (const word of words) {
-      const cand = line ? `${line} ${word}` : word;
-      if (cand.length * el.fontSize * CHAR > el.w && line) {
-        widest = Math.max(widest, line.length);
-        line = word;
-      } else line = cand;
-    }
-    widest = Math.max(widest, line.length);
-    const fitted = Math.min(el.w, Math.ceil(widest * el.fontSize * CHAR) + Math.ceil(el.fontSize * 0.3));
+  // Copy is measured with the real face (the same measurement the renderer
+  // and the layout check use), so boxes, wraps and stacking match what is
+  // drawn — an estimate here is what let a sub-line run into the button.
+  const specOf = (family?: string, weight?: number): FontSpec => ({ family, weight: weight === 700 ? 700 : 400 });
+  const hlSpec = specOf(headline?.fontFamily, headline?.fontWeight ?? 700);
+  const fitTextBox = (el: { text: string; x: number; y: number; w: number; fontSize: number; align: string }, spec: FontSpec = hlSpec) => {
+    const lines = el.text.split("\n").flatMap((l) => wrapText(l, el.w, spec, el.fontSize));
+    if (lines.length === 0) return;
+    const widest = Math.max(...lines.map((l) => measureLine(l, spec, el.fontSize)), 0);
+    const fitted = Math.min(el.w, Math.ceil(widest) + Math.ceil(el.fontSize * 0.3));
     if (fitted >= el.w) return;
     if (el.align === "center") el.x += Math.round((el.w - fitted) / 2);
     else if (el.align === "right") el.x += el.w - fitted;
     el.w = fitted;
   };
 
-  const wrappedLines = (text: string, fontSize: number, w: number) =>
-    text
-      .split("\n")
-      .reduce((n, line) => n + Math.max(1, Math.ceil((line.trim().length * 0.58 * fontSize) / Math.max(1, w))), 0);
-  const boxHeight = (text: string, fontSize: number, w: number, lineHeight: number) =>
-    Math.round(wrappedLines(text, fontSize, w) * fontSize * lineHeight + fontSize * 0.25);
+  const wrappedLines = (text: string, fontSize: number, w: number, spec: FontSpec = hlSpec) =>
+    text.split("\n").reduce((n, line) => n + Math.max(1, wrapText(line, Math.max(1, w), spec, fontSize).length), 0);
+  const boxHeight = (text: string, fontSize: number, w: number, lineHeight: number, spec: FontSpec = hlSpec) =>
+    Math.round(wrappedLines(text, fontSize, w, spec) * fontSize * lineHeight + fontSize * 0.25);
 
   // 2. Strapline re-set whole on the bottom margin (never cropped). Sized by
   //    the master's own subhead scale when it carried one.
@@ -408,12 +402,17 @@ export async function composeKeyVisualAdaptation(
     const text = isStrip ? headline.text.replace(/\n+/g, " ") : headline.text;
     const lines = text.split("\n").length;
     const designSize = headlineRatio * short;
-    const tileReserve = showLogo ? tile + margin : 0;
+    const tileReserve = (showLogo ? tile + margin : 0) + (isStrip && ctaPlan ? ctaPlan.w + margin : 0);
+    // Room the sub-line and the stacked CTA will need under the headline.
+    const subSize = subLine ? Math.max(10, Math.round((subLine.fontSize / srcShort) * short)) : 0;
+    const subSpec = subLine ? specOf(subLine.fontFamily, subLine.fontWeight ?? 400) : hlSpec;
+    const subReserve = subLine ? boxHeight(subLine.text, subSize, Math.round(dstW * 0.8), 1.25, subSpec) + Math.round(margin / 2) : 0;
+    const ctaReserve = ctaPlan && !isStrip ? ctaPlan.h + margin : 0;
     // Strips carry the tile at full height on the RIGHT (reserved
     // horizontally via tileReserve), so it must not also eat the row's
     // height — that used to push bottomLimit negative and clamp every
     // strip headline to the floor size.
-    const bottomLimit = showStrapline ? straplineTopY - margin : dstH - (showLogo && !isStrip ? tile : margin) - margin;
+    const bottomLimit = (showStrapline ? straplineTopY - margin : dstH - (showLogo && !isStrip ? tile : margin) - margin) - subReserve - ctaReserve;
 
     // Hero box projected into the output canvas (art placement known).
     const fb = bg.focusBox ?? { x: Math.max(0, inferredFocusX - 0.25), y: 0.15, w: 0.5, h: 0.7 };
@@ -430,7 +429,8 @@ export async function composeKeyVisualAdaptation(
 
     type Candidate = { label: string; x: number; y: number; w: number; h: number; fontSize: number; align: "left" | "center" | "right"; color: string; score: number; zone: string };
     const fitFont = (w: number, hAvail: number) => {
-      const fitToWidth = w / (longestLineChars(text) * 0.58);
+      const longest = Math.max(...text.split("\n").map((l) => measureLine(l.trim(), hlSpec, 100)), 1) / 100; // px per font-px
+      const fitToWidth = w / Math.max(0.1, longest);
       const fitToHeight = hAvail / (lines * 1.3);
       const fitCap = Math.min(fitToWidth, fitToHeight);
       return Math.round(Math.max(MIN_HEADLINE_PX, Math.min(fitCap, isStrip || isWide ? Math.max(designSize, fitCap * 0.8) : designSize)));
@@ -531,6 +531,35 @@ export async function composeKeyVisualAdaptation(
       ...(headline.fontFamily ? { fontFamily: headline.fontFamily } : {}),
     } as FreeformElement);
 
+    // Sub-line directly under the headline, same column and alignment.
+    let copyBottom = y + estH;
+    if (subLine) {
+      const sh = boxHeight(subLine.text, subSize, w, 1.25, subSpec);
+      elements.push({
+        id: "kv_subhead", type: "text", role: "subhead", slot: "subheadline", text: subLine.text,
+        x, y: copyBottom + Math.round(margin / 2), w, h: sh, fontSize: subSize,
+        fontWeight: subLine.fontWeight ?? 400, color: subLine.color ?? best.color, align: best.align, lineHeight: 1.25,
+        ...(subLine.fontFamily ? { fontFamily: subLine.fontFamily } : {}),
+      } as FreeformElement);
+      copyBottom += Math.round(margin / 2) + sh;
+    }
+    // Call-to-action: under the copy, aligned with it; on a strip at the
+    // right of the row before the tile, vertically centred.
+    if (ctaPlan) {
+      const cx = isStrip
+        ? dstW - margin - (showLogo ? tile + margin : 0) - ctaPlan.w
+        : best.align === "center" ? Math.round(x + (w - ctaPlan.w) / 2) : best.align === "right" ? x + w - ctaPlan.w : x;
+      const cy = isStrip ? Math.round((dstH - ctaPlan.h) / 2) : Math.min(copyBottom + margin, dstH - margin - ctaPlan.h);
+      elements.push({ id: "kv_cta", type: "rect", slot: "cta", fill: ctaPlan.fill, x: cx, y: cy, w: ctaPlan.w, h: ctaPlan.h, radius: ctaPlan.pill ? ctaPlan.h / 2 : Math.round(ctaPlan.h * 0.12), locked: true } as FreeformElement);
+      elements.push({
+        id: "kv_cta_label", type: "text", role: "cta", slot: "ctaLabel", text: ctaPlan.label,
+        x: cx + ctaPlan.padX, y: cy, w: ctaPlan.w - ctaPlan.padX * 2, h: ctaPlan.h, fontSize: ctaPlan.fs,
+        fontWeight: ctaPlan.fontWeight, color: ctaPlan.color, align: "center", lineHeight: ctaPlan.h / ctaPlan.fs,
+        ...(ctaPlan.fontFamily ? { fontFamily: ctaPlan.fontFamily } : {}), locked: true,
+      } as FreeformElement);
+      if (!isStrip) copyBottom = cy + ctaPlan.h;
+    }
+
     // Keep the runners-up as selectable layout options (distinct positions).
     const seen = new Set<string>();
     layoutOptions = candidates
@@ -545,13 +574,24 @@ export async function composeKeyVisualAdaptation(
         ? Math.max(...masterScrim.gradient.stops.map((s) => s.alpha))
         : (masterScrim.opacity ?? 0.65);
       const color = masterScrim.fill;
+      // A solid (flat-opacity) scrim in the master is reproduced solid at the
+      // same opacity behind the whole copy block; a gradient scrim fades
+      // the same way it did. Copy then reads as it does on the master.
+      const solid = !masterScrim.gradient;
       const mkScrim = (geom: { x: number; y: number; w: number; h: number }, angle: number): FreeformElement =>
-        ({ id: "kv_scrim", type: "rect", fill: color, ...geom, gradient: { angle, stops: [{ color, alpha: strength, at: 0.45 }, { color, alpha: 0, at: 1 }] }, locked: true } as FreeformElement);
+        solid
+          ? ({ id: "kv_scrim", type: "rect", fill: color, ...geom, opacity: strength, locked: true } as FreeformElement)
+          : ({ id: "kv_scrim", type: "rect", fill: color, ...geom, gradient: { angle, stops: [{ color, alpha: strength, at: 0.45 }, { color, alpha: 0, at: 1 }] }, locked: true } as FreeformElement);
       const zone = best.zone === "designer" ? designerSide : best.zone;
       let scrim: FreeformElement;
-      if (zone === "right") scrim = mkScrim({ x: Math.max(0, x - margin * 3), y: 0, w: dstW - Math.max(0, x - margin * 3), h: dstH }, 270);
+      if (solid) {
+        const top = Math.max(0, y - margin), bottom = Math.min(dstH, copyBottom + margin);
+        scrim = zone === "above" || zone === "below" || zone === "bottom" || zone === "centre"
+          ? mkScrim({ x: 0, y: zone === "above" ? 0 : top, w: dstW, h: (zone === "above" ? bottom : bottom - top) }, 0)
+          : mkScrim({ x: Math.max(0, x - margin), y: top, w: Math.min(dstW, w + margin * 2), h: bottom - top }, 0);
+      } else if (zone === "right") scrim = mkScrim({ x: Math.max(0, x - margin * 3), y: 0, w: dstW - Math.max(0, x - margin * 3), h: dstH }, 270);
       else if (zone === "left") scrim = mkScrim({ x: 0, y: 0, w: Math.min(dstW, x + w + margin * 3), h: dstH }, 90);
-      else if (zone === "above") scrim = mkScrim({ x: 0, y: 0, w: dstW, h: Math.min(dstH, y + estH + margin * 3) }, 180);
+      else if (zone === "above") scrim = mkScrim({ x: 0, y: 0, w: dstW, h: Math.min(dstH, copyBottom + margin * 3) }, 180);
       else scrim = mkScrim({ x: 0, y: Math.max(0, y - margin * 3), w: dstW, h: dstH - Math.max(0, y - margin * 3) }, 0);
       elements.splice(1, 0, scrim); // directly above the artwork, below copy
     }
@@ -578,16 +618,21 @@ export async function composeKeyVisualAdaptation(
   //    effect and must pass contrast). Sample the actual artwork behind each
   //    copy block; where white type would fail, slide an Ocean panel between
   //    artwork and type. The artwork itself stays untouched underneath.
-  if (bg.src && !masterScrim) {
+  if (bg.src) {
     const art = { x: artX, y: artY, w: artW, h: artH };
+    const carried = elements.find((el) => el.id === "kv_scrim");
+    const covered = (el: { x: number; y: number; w: number; h: number }) =>
+      !!carried && el.x >= carried.x - 1 && el.y >= carried.y - 1 && el.x + el.w <= carried.x + carried.w + 1 && el.y + el.h <= carried.y + carried.h + 1;
     const copyElements = elements.filter(
       (el): el is FreeformElement & { type: "text" } =>
-        el.type === "text" && (el.id === "kv_headline" || el.id === "kv_strapline"),
+        el.type === "text" && (el.id === "kv_headline" || el.id === "kv_subhead" || el.id === "kv_strapline") && !covered(el),
     );
     const scrims: FreeformElement[] = [];
     for (const el of copyElements) {
-      const lum = await sampleLuminanceBehind(bg.src, srcW, srcH, art, el);
-      if (lum !== null && lum >= SCRIM_LUMINANCE_THRESHOLD) {
+      // White type needs 4.5:1 (3:1 at display sizes) against the ground.
+      const stats = await sampleRegionStats(bg.src, srcW, srcH, art, el);
+      const floor = (el as { fontSize?: number }).fontSize && (el as { fontSize: number }).fontSize >= 18 ? 3 : 4.5;
+      if (stats && stats.whiteContrast < floor) {
         const pad = Math.round(margin / 2);
         scrims.push({
           id: `${el.id}_scrim`,

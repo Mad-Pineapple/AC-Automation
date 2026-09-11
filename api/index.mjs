@@ -231085,439 +231085,6 @@ function guidelineLogoPlacement(w, h) {
   return { tile };
 }
 
-// src/lib/kvAdapt.ts
-var objectStorageService7 = new ObjectStorageService();
-var MIN_HEADLINE_PX = 13;
-var SCRIM_LUMINANCE_THRESHOLD = 140;
-var SCRIM_COLOR = "#11263d";
-var SCRIM_OPACITY = 0.55;
-var artworkCache = null;
-async function loadArtwork(src) {
-  if (artworkCache?.src === src) return artworkCache.buffer;
-  try {
-    const objectPath = src.replace(/^\/api\/storage/, "");
-    const file2 = await objectStorageService7.getObjectEntityFile(objectPath);
-    const response = await objectStorageService7.downloadObject(file2);
-    const buffer = Buffer.from(await response.arrayBuffer());
-    artworkCache = { src, buffer };
-    return buffer;
-  } catch {
-    return null;
-  }
-}
-async function sampleLuminanceBehind(src, imgW, imgH, art, box) {
-  const buffer = await loadArtwork(src);
-  if (!buffer) return null;
-  const s2 = art.w / imgW;
-  const left = Math.round((box.x - art.x) / s2);
-  const top = Math.round((box.y - art.y) / s2);
-  const width = Math.round(box.w / s2);
-  const height = Math.round(box.h / s2);
-  const cl = Math.max(0, Math.min(imgW - 1, left));
-  const ct = Math.max(0, Math.min(imgH - 1, top));
-  const cw = Math.max(1, Math.min(imgW - cl, width - (cl - left)));
-  const ch = Math.max(1, Math.min(imgH - ct, height - (ct - top)));
-  try {
-    const stats = await sharp4(buffer).extract({ left: cl, top: ct, width: cw, height: ch }).stats();
-    const [r4, g, b] = stats.channels;
-    return 0.299 * r4.mean + 0.587 * g.mean + 0.114 * b.mean;
-  } catch {
-    return null;
-  }
-}
-async function sampleEdgeColor(src, imgW, imgH) {
-  const buffer = await loadArtwork(src);
-  if (!buffer) return null;
-  const band = Math.max(1, Math.round(Math.min(imgW, imgH) * 0.04));
-  const strips = [
-    { left: 0, top: 0, width: imgW, height: Math.min(band, imgH) },
-    { left: 0, top: Math.max(0, imgH - band), width: imgW, height: Math.min(band, imgH) },
-    { left: 0, top: 0, width: Math.min(band, imgW), height: imgH },
-    { left: Math.max(0, imgW - band), top: 0, width: Math.min(band, imgW), height: imgH }
-  ];
-  try {
-    let r4 = 0;
-    let g = 0;
-    let b = 0;
-    let n = 0;
-    for (const s2 of strips) {
-      const stats = await sharp4(buffer).extract(s2).stats();
-      r4 += stats.channels[0].mean;
-      g += stats.channels[1].mean;
-      b += stats.channels[2].mean;
-      n++;
-    }
-    if (n === 0) return null;
-    const hex = (v) => Math.max(0, Math.min(255, Math.round(v / n))).toString(16).padStart(2, "0");
-    return `#${hex(r4)}${hex(g)}${hex(b)}`;
-  } catch {
-    return null;
-  }
-}
-async function sampleRegionStats(src, imgW, imgH, art, box) {
-  const buffer = await loadArtwork(src);
-  if (!buffer) return null;
-  const s2 = art.w / imgW;
-  const left = Math.round((box.x - art.x) / s2);
-  const top = Math.round((box.y - art.y) / s2);
-  const width = Math.round(box.w / s2);
-  const height = Math.round(box.h / s2);
-  const cl = Math.max(0, Math.min(imgW - 1, left));
-  const ct = Math.max(0, Math.min(imgH - 1, top));
-  const cw = Math.max(1, Math.min(imgW - cl, width - (cl - left)));
-  const ch = Math.max(1, Math.min(imgH - ct, height - (ct - top)));
-  try {
-    const stats = await sharp4(buffer).extract({ left: cl, top: ct, width: cw, height: ch }).stats();
-    const [r4, g, b] = stats.channels;
-    return {
-      lum: 0.299 * r4.mean + 0.587 * g.mean + 0.114 * b.mean,
-      busy: (r4.stdev + g.stdev + b.stdev) / 3
-    };
-  } catch {
-    return null;
-  }
-}
-function findKvBackground(config2, srcW, srcH) {
-  const first = config2.elements[0];
-  if (!first || first.type !== "image" || !first.src) return null;
-  const img = first;
-  const fullBleed = img.x <= 0 && img.y <= 0 && img.w >= srcW * 0.98 && img.h >= srcH * 0.98;
-  return fullBleed && (img.fit ?? "cover") === "cover" ? img : null;
-}
-function pickBlock(kvText, role) {
-  const byRole2 = kvText.filter((t) => t.role === role);
-  if (byRole2.length > 0) return byRole2.sort((a, b) => b.fontSize - a.fontSize)[0];
-  return void 0;
-}
-async function composeKeyVisualAdaptation(master, srcW, srcH, dstW, dstH, brand) {
-  const bg = findKvBackground(master, srcW, srcH);
-  if (!bg) return null;
-  const short = Math.min(dstW, dstH);
-  const isStrip = dstH <= STRIP_MAX_HEIGHT;
-  const isWide = dstW / dstH > 2.5;
-  const isSocialSquare2 = Math.abs(dstW - dstH) < 2 && dstW >= 600;
-  const tile = isStrip ? dstH : Math.max(24, Math.round(short / 6));
-  const margin = Math.max(6, Math.round(tile / 3));
-  const showLogo = !isSocialSquare2 && !!brand.logoUrl;
-  const showStrapline = !isSocialSquare2 && !isStrip && !isWide && dstH >= 400 && !!brand.strapline;
-  const elements = [];
-  let layoutOptions = void 0;
-  const kvTextAll = bg.kvText ?? [];
-  const textTop = kvTextAll.length > 0 ? Math.min(...kvTextAll.map((t) => t.y)) : srcH;
-  const cleanH = textTop > srcH * 0.35 ? textTop : srcH;
-  const s2 = Math.max(dstW / srcW, dstH / cleanH);
-  const artW = Math.round(srcW * s2);
-  const artH = Math.round(srcH * s2);
-  const visibleRows = dstH / s2;
-  const heroCentre = (bg.focusBox ? bg.focusBox.y + bg.focusBox.h / 2 : bg.focusY ?? 0.45) * srcH;
-  const srcYOffset = Math.min(
-    Math.max(0, heroCentre - visibleRows / 2),
-    Math.max(0, cleanH - visibleRows)
-  );
-  const liveHeadline = master.elements.filter((el) => el.type === "text").sort((a, b) => (b.fontSize ?? 0) - (a.fontSize ?? 0))[0];
-  const inferredFocusX = bg.focusX ?? (liveHeadline ? (liveHeadline.x + liveHeadline.w / 2) / srcW > 0.5 ? 0.28 : 0.72 : 0.5);
-  const visibleCols = dstW / s2;
-  const heroCentreX = (bg.focusBox ? bg.focusBox.x + bg.focusBox.w / 2 : inferredFocusX) * srcW;
-  const srcXOffset = Math.min(Math.max(0, heroCentreX - visibleCols / 2), Math.max(0, srcW - visibleCols));
-  const artX = -Math.round(srcXOffset * s2);
-  const artY = -Math.round(srcYOffset * s2);
-  const hasResettableCopy = kvTextAll.length > 0 || master.elements.some((el) => el.type === "text");
-  const shapeShift = Math.abs(Math.log(dstW / dstH / (srcW / srcH)));
-  if (!hasResettableCopy && shapeShift > 0.22) {
-    const fit = Math.min(dstW / srcW, dstH / srcH);
-    const fitW = Math.round(srcW * fit);
-    const fitH = Math.round(srcH * fit);
-    const field = (bg.src ? await sampleEdgeColor(bg.src, srcW, srcH) : null) ?? "#11263d";
-    elements.push({
-      id: "kv_field",
-      type: "rect",
-      fill: field,
-      x: 0,
-      y: 0,
-      w: dstW,
-      h: dstH,
-      locked: true
-    });
-    elements.push({
-      ...bg,
-      id: "kv_background",
-      x: Math.round((dstW - fitW) / 2),
-      y: Math.round((dstH - fitH) / 2),
-      w: fitW,
-      h: fitH,
-      fit: "contain",
-      locked: true
-    });
-    return {
-      kind: "freeform",
-      elements,
-      ...layoutOptions ? { layoutOptions } : {}
-    };
-  }
-  elements.push({
-    ...bg,
-    id: "kv_background",
-    x: artX,
-    y: artY,
-    w: artW,
-    h: artH,
-    fit: "cover",
-    locked: true
-  });
-  const liveText = master.elements.filter((el) => el.type === "text").map((el) => ({
-    text: el.text,
-    x: el.x,
-    y: el.y,
-    w: el.w,
-    h: el.h,
-    fontSize: el.fontSize ?? 16,
-    ...el.color ? { color: el.color } : {},
-    ...el.role ? { role: el.role } : {},
-    ...el.fontFamily ? { fontFamily: el.fontFamily } : {},
-    ...el.fontWeight ? { fontWeight: el.fontWeight } : {},
-    ...el.align ? { align: el.align } : {}
-  }));
-  const kvText = bg.kvText && bg.kvText.length > 0 ? bg.kvText : liveText;
-  const bySize = (a, b) => b.fontSize - a.fontSize;
-  const headline = pickBlock(kvText, "headline") ?? kvText.slice().sort(bySize)[0];
-  const subhead = pickBlock(kvText, "subhead") ?? (headline ? kvText.filter((b) => b !== headline).sort(bySize)[0] : void 0);
-  const srcShort = Math.min(srcW, srcH);
-  const headlineXFrac = headline ? headline.x / srcW : 0;
-  const masterScrim = headline ? master.elements.find(
-    (el) => el.type === "rect" && (el.gradient !== void 0 || (el.opacity ?? 1) < 1) && el.x < headline.x + headline.w && el.x + el.w > headline.x && el.y < headline.y + headline.h && el.y + el.h > headline.y
-  ) : void 0;
-  const headlineRatio = headline ? headline.fontSize / srcShort : 0.05;
-  const subheadRatio = subhead ? subhead.fontSize / srcShort : headlineRatio * 0.5;
-  const headlineCentreYFrac = headline ? (headline.y + headline.h / 2) / srcH : 0.72;
-  const headlineWidthFrac = headline ? Math.min(1, headline.w / srcW) : 0.86;
-  const headlineCentred = headline ? Math.abs((headline.x + headline.w / 2) / srcW - 0.5) < 0.08 : true;
-  const longestLineChars = (text3) => Math.max(...text3.split("\n").map((l) => l.trim().length), 1);
-  const fitTextBox = (el) => {
-    const CHAR = 0.52;
-    const words = el.text.split(/\s+/).filter(Boolean);
-    if (words.length === 0) return;
-    let line2 = "";
-    let widest = 0;
-    for (const word of words) {
-      const cand = line2 ? `${line2} ${word}` : word;
-      if (cand.length * el.fontSize * CHAR > el.w && line2) {
-        widest = Math.max(widest, line2.length);
-        line2 = word;
-      } else line2 = cand;
-    }
-    widest = Math.max(widest, line2.length);
-    const fitted = Math.min(el.w, Math.ceil(widest * el.fontSize * CHAR) + Math.ceil(el.fontSize * 0.3));
-    if (fitted >= el.w) return;
-    if (el.align === "center") el.x += Math.round((el.w - fitted) / 2);
-    else if (el.align === "right") el.x += el.w - fitted;
-    el.w = fitted;
-  };
-  const wrappedLines = (text3, fontSize, w) => text3.split("\n").reduce((n, line2) => n + Math.max(1, Math.ceil(line2.trim().length * 0.58 * fontSize / Math.max(1, w))), 0);
-  const boxHeight = (text3, fontSize, w, lineHeight) => Math.round(wrappedLines(text3, fontSize, w) * fontSize * lineHeight + fontSize * 0.25);
-  let straplineTopY = dstH;
-  if (showStrapline) {
-    const lines = brand.strapline.split("\n").filter(Boolean).slice(0, 2);
-    const fontSize = Math.max(10, Math.round(subheadRatio * short));
-    const wStrap = Math.max(40, dstW - (showLogo ? tile + margin : 0) - margin * 2);
-    const estH = boxHeight(lines.join("\n"), fontSize, wStrap, 1.3);
-    straplineTopY = dstH - margin - estH;
-    const strapBox = { text: lines.join("\n"), x: margin, y: straplineTopY, w: wStrap, fontSize, align: "left" };
-    fitTextBox(strapBox);
-    elements.push({
-      id: "kv_strapline",
-      type: "text",
-      role: "other",
-      text: lines.join("\n"),
-      x: strapBox.x,
-      y: straplineTopY,
-      w: strapBox.w,
-      h: estH,
-      fontSize,
-      fontWeight: subhead?.fontWeight ?? 700,
-      color: subhead?.color ?? "#ffffff",
-      align: "left",
-      lineHeight: 1.3,
-      ...subhead?.fontFamily ? { fontFamily: subhead.fontFamily } : {},
-      locked: true
-    });
-  }
-  if (headline) {
-    const text3 = isStrip ? headline.text.replace(/\n+/g, " ") : headline.text;
-    const lines = text3.split("\n").length;
-    const designSize = headlineRatio * short;
-    const tileReserve = showLogo ? tile + margin : 0;
-    const bottomLimit = showStrapline ? straplineTopY - margin : dstH - (showLogo && !isStrip ? tile : margin) - margin;
-    const fb = bg.focusBox ?? { x: Math.max(0, inferredFocusX - 0.25), y: 0.15, w: 0.5, h: 0.7 };
-    const hero = {
-      x: artX + fb.x * artW,
-      y: artY + fb.y * artH,
-      w: fb.w * artW,
-      h: fb.h * artH
-    };
-    const heroRight = hero.x + hero.w;
-    const heroBottom = hero.y + hero.h;
-    const designerSide = headlineCentred ? "centre" : headlineXFrac > 0.5 ? "right" : headlineCentreYFrac > 0.6 ? "below" : "left";
-    const fitFont = (w2, hAvail) => {
-      const fitToWidth = w2 / (longestLineChars(text3) * 0.58);
-      const fitToHeight = hAvail / (lines * 1.3);
-      const fitCap = Math.min(fitToWidth, fitToHeight);
-      return Math.round(Math.max(MIN_HEADLINE_PX, Math.min(fitCap, isStrip || isWide ? Math.max(designSize, fitCap * 0.8) : designSize)));
-    };
-    const mk = (label3, zone, zx, zy, zw, zh, align) => {
-      zx = Math.max(margin, zx);
-      zy = Math.max(margin, zy);
-      zw = Math.min(zw, dstW - margin - zx);
-      zh = Math.min(zh, bottomLimit - zy);
-      if (zw < dstW * 0.26 || zh < MIN_HEADLINE_PX * 2.6) return null;
-      const fontSize2 = fitFont(zw, zh);
-      const h = boxHeight(text3, fontSize2, zw, 1.25);
-      if (h > zh + fontSize2 * 0.6) return null;
-      return { label: label3, zone, x: Math.round(zx), y: Math.round(zy), w: Math.round(zw), h, fontSize: fontSize2, align, color: headline.color ?? "#ffffff", score: 0 };
-    };
-    const candidates = [];
-    {
-      const zx = heroRight + margin;
-      const zw = dstW - zx - margin - tileReserve;
-      const c = mk("Copy right of hero", "right", zx, hero.y, zw, Math.max(0, Math.min(heroBottom, bottomLimit) - hero.y), "left");
-      if (c) {
-        c.y = Math.max(margin, Math.min(Math.round(hero.y + hero.h / 2 - c.h / 2), bottomLimit - c.h));
-        candidates.push(c);
-      }
-    }
-    {
-      const zw = hero.x - margin * 2;
-      const c = mk("Copy left of hero", "left", margin, hero.y, zw, Math.max(0, Math.min(heroBottom, bottomLimit) - hero.y), "left");
-      if (c) {
-        c.y = Math.max(margin, Math.min(Math.round(hero.y + hero.h / 2 - c.h / 2), bottomLimit - c.h));
-        candidates.push(c);
-      }
-    }
-    {
-      const zy = heroBottom + margin;
-      const c = mk("Copy below hero", "below", margin, zy, dstW - margin * 2 - (isStrip || isWide ? tileReserve : 0), bottomLimit - zy, headlineCentred ? "center" : "left");
-      if (c) candidates.push(c);
-    }
-    {
-      const c = mk("Copy above hero", "above", margin, margin, dstW - margin * 2 - (isStrip || isWide ? tileReserve : 0), hero.y - margin * 2, headlineCentred ? "center" : "left");
-      if (c) candidates.push(c);
-    }
-    {
-      const w2 = Math.max(40, Math.min(dstW - margin * 2 - tileReserve, Math.round(headlineWidthFrac * dstW)));
-      const x2 = headlineCentred ? Math.round((dstW - w2) / 2) : Math.min(Math.max(margin, Math.round(headlineXFrac * dstW)), dstW - margin - w2);
-      const fontSize2 = fitFont(w2, dstH - margin * 2);
-      const h = boxHeight(text3, fontSize2, w2, 1.25);
-      const y2 = Math.min(Math.max(margin, Math.round(headlineCentreYFrac * dstH - h / 2)), Math.max(margin, bottomLimit - h));
-      candidates.push({ label: "Designer's position", zone: "designer", x: x2, y: y2, w: w2, h, fontSize: fontSize2, align: headlineCentred ? "center" : "left", color: headline.color ?? "#ffffff", score: 0 });
-    }
-    {
-      const w2 = dstW - margin * 2 - (isStrip || isWide ? tileReserve : 0);
-      const fontSize2 = fitFont(w2, dstH - margin * 2);
-      const h = boxHeight(text3, fontSize2, w2, 1.25);
-      candidates.push({ label: "Bottom band", zone: "bottom", x: margin, y: Math.max(margin, bottomLimit - h), w: w2, h, fontSize: fontSize2, align: headlineCentred ? "center" : "left", color: headline.color ?? "#ffffff", score: 0 });
-    }
-    const overlap2 = (c) => {
-      const ix = Math.max(0, Math.min(c.x + c.w, heroRight) - Math.max(c.x, hero.x));
-      const iy = Math.max(0, Math.min(c.y + c.h, heroBottom) - Math.max(c.y, hero.y));
-      return ix * iy / Math.max(1, c.w * c.h);
-    };
-    const art = { x: artX, y: artY, w: artW, h: artH };
-    for (const c of candidates) {
-      const stats = bg.src ? await sampleRegionStats(bg.src, srcW, srcH, art, c) : null;
-      const sizeScore = 100 * Math.min(1, c.fontSize / Math.max(MIN_HEADLINE_PX, designSize));
-      const collision = 220 * overlap2(c);
-      const busy = stats ? Math.min(60, stats.busy * 0.9) : 0;
-      const tone = stats && stats.lum > SCRIM_LUMINANCE_THRESHOLD ? Math.min(50, (stats.lum - SCRIM_LUMINANCE_THRESHOLD) * 0.6) : 0;
-      const prior = c.zone === designerSide || c.zone === "designer" && designerSide !== "centre" ? 18 : 0;
-      c.score = sizeScore - collision - busy - tone + prior;
-      if (stats && stats.lum > 190 && stats.busy < 22) c.color = "#11263d";
-    }
-    candidates.sort((a, b) => b.score - a.score);
-    const best = candidates[0];
-    const hlBox = { text: text3, x: best.x, y: best.y, w: best.w, fontSize: best.fontSize, align: best.align };
-    fitTextBox(hlBox);
-    const x = hlBox.x, y = best.y, w = hlBox.w, estH = best.h, fontSize = best.fontSize;
-    elements.push({
-      id: "kv_headline",
-      type: "text",
-      role: "headline",
-      text: text3,
-      x,
-      y,
-      w,
-      h: estH,
-      fontSize,
-      fontWeight: headline.fontWeight ?? 700,
-      color: best.color,
-      align: best.align,
-      lineHeight: 1.25,
-      ...headline.fontFamily ? { fontFamily: headline.fontFamily } : {}
-    });
-    const seen2 = /* @__PURE__ */ new Set();
-    layoutOptions = candidates.filter((c) => {
-      const k = `${Math.round(c.x / 20)}:${Math.round(c.y / 20)}`;
-      if (seen2.has(k)) return false;
-      seen2.add(k);
-      return true;
-    }).slice(0, 4).map((c) => ({ label: c.label, x: c.x, y: c.y, w: c.w, h: c.h, fontSize: c.fontSize, align: c.align, color: c.color, score: Math.round(c.score) }));
-    if (masterScrim) {
-      const strength = masterScrim.gradient ? Math.max(...masterScrim.gradient.stops.map((s3) => s3.alpha)) : masterScrim.opacity ?? 0.65;
-      const color = masterScrim.fill;
-      const mkScrim = (geom, angle) => ({ id: "kv_scrim", type: "rect", fill: color, ...geom, gradient: { angle, stops: [{ color, alpha: strength, at: 0.45 }, { color, alpha: 0, at: 1 }] }, locked: true });
-      const zone = best.zone === "designer" ? designerSide : best.zone;
-      let scrim;
-      if (zone === "right") scrim = mkScrim({ x: Math.max(0, x - margin * 3), y: 0, w: dstW - Math.max(0, x - margin * 3), h: dstH }, 270);
-      else if (zone === "left") scrim = mkScrim({ x: 0, y: 0, w: Math.min(dstW, x + w + margin * 3), h: dstH }, 90);
-      else if (zone === "above") scrim = mkScrim({ x: 0, y: 0, w: dstW, h: Math.min(dstH, y + estH + margin * 3) }, 180);
-      else scrim = mkScrim({ x: 0, y: Math.max(0, y - margin * 3), w: dstW, h: dstH - Math.max(0, y - margin * 3) }, 0);
-      elements.splice(1, 0, scrim);
-    }
-  }
-  if (showLogo) {
-    const placement = guidelineLogoPlacement(dstW, dstH);
-    if (placement) {
-      elements.push({
-        id: "kv_logo",
-        type: "image",
-        role: "logo",
-        src: brand.logoUrl,
-        fit: "contain",
-        ...placement.tile,
-        locked: true
-      });
-    }
-  }
-  if (bg.src && !masterScrim) {
-    const art = { x: artX, y: artY, w: artW, h: artH };
-    const copyElements = elements.filter(
-      (el) => el.type === "text" && (el.id === "kv_headline" || el.id === "kv_strapline")
-    );
-    const scrims = [];
-    for (const el of copyElements) {
-      const lum = await sampleLuminanceBehind(bg.src, srcW, srcH, art, el);
-      if (lum !== null && lum >= SCRIM_LUMINANCE_THRESHOLD) {
-        const pad = Math.round(margin / 2);
-        scrims.push({
-          id: `${el.id}_scrim`,
-          type: "rect",
-          fill: SCRIM_COLOR,
-          opacity: SCRIM_OPACITY,
-          radius: Math.min(12, pad),
-          x: el.x - pad,
-          y: el.y - pad,
-          w: el.w + pad * 2,
-          h: el.h + pad * 2,
-          locked: true
-        });
-      }
-    }
-    elements.splice(1, 0, ...scrims);
-  }
-  return { kind: "freeform", elements, ...layoutOptions && layoutOptions.length > 1 ? { layoutOptions } : {} };
-}
-
-// src/lib/recompose.ts
-import sharp5 from "sharp";
-
 // src/lib/slots.ts
 function area(b) {
   return Math.max(0, b.w) * Math.max(0, b.h);
@@ -231661,6 +231228,577 @@ function isFlatArtwork(config2) {
   const hasCapturedCopy = config2.elements.some((e) => e.type === "image" && Array.isArray(e.kvText) && e.kvText.length > 0);
   return !hasCapturedCopy;
 }
+
+// src/lib/textMeasure.ts
+init_freeformFonts();
+import { createCanvas as createCanvas2 } from "@napi-rs/canvas";
+var canvas = createCanvas2(4, 4);
+var ctx = canvas.getContext("2d");
+var fontsReady = false;
+async function prepareMeasurement() {
+  if (fontsReady) return;
+  try {
+    await loadNational2();
+    fontsReady = true;
+  } catch {
+    fontsReady = false;
+  }
+}
+function resolveFamily2(family) {
+  if (family && hasFontFamily(family)) return family;
+  return NATIONAL2_FAMILY;
+}
+function setFont(spec, sizePx) {
+  const fam = resolveFamily2(spec.family);
+  ctx.font = `${spec.italic ? "italic" : "normal"} ${spec.weight ?? 400} ${sizePx}px "${fam}"`;
+}
+function measureLine(text3, spec, sizePx) {
+  if (text3.length === 0) return 0;
+  const ls = (spec.letterSpacing ?? 0) * Array.from(text3).length;
+  if (!fontsReady && !hasFontFamily(resolveFamily2(spec.family))) {
+    return text3.length * sizePx * 0.55 + ls;
+  }
+  setFont(spec, sizePx);
+  return ctx.measureText(text3).width + ls;
+}
+function wrapParagraph2(paragraph, maxWidth, spec, sizePx) {
+  const words = paragraph.split(/\s+/).filter(Boolean);
+  if (words.length === 0) return [""];
+  const lines = [];
+  let current = "";
+  for (const word of words) {
+    const candidate = current ? `${current} ${word}` : word;
+    if (!current || measureLine(candidate, spec, sizePx) <= maxWidth + 0.01) {
+      current = candidate;
+    } else {
+      lines.push(current);
+      current = word;
+    }
+  }
+  lines.push(current);
+  return lines;
+}
+function capHeightPx(spec, sizePx) {
+  const fam = resolveFamily2(spec.family);
+  ctx.font = `${spec.italic ? "italic" : "normal"} ${spec.weight ?? 400} ${sizePx}px "${fam}"`;
+  const m = ctx.measureText("H");
+  const asc2 = m.actualBoundingBoxAscent;
+  return Number.isFinite(asc2) && asc2 > 0 ? asc2 : sizePx * 0.7;
+}
+function wrapText(text3, maxWidth, spec, sizePx) {
+  return text3.replace(/\r\n?/g, "\n").split("\n").flatMap((p) => wrapParagraph2(p, maxWidth, spec, sizePx));
+}
+function fitText(text3, box, opts) {
+  const lh = opts.lineHeight ?? 1.15;
+  const lo0 = Math.max(1, Math.floor(opts.minSize));
+  const hi0 = Math.max(lo0, Math.floor(opts.maxSize));
+  const evaluate = (size) => {
+    const lines = wrapText(text3, box.w, opts, size);
+    const width = Math.max(...lines.map((l) => measureLine(l, opts, size)), 0);
+    const height = lines.length * size * lh;
+    const ok = width <= box.w + 0.01 && height <= box.h + 0.01 && (opts.maxLines === void 0 || lines.length <= opts.maxLines);
+    return { size, lines, width, height, ok };
+  };
+  let lo = lo0;
+  let hi = hi0;
+  let best = evaluate(lo0);
+  if (best.ok) {
+    while (lo < hi) {
+      const mid = Math.ceil((lo + hi) / 2);
+      const r4 = evaluate(mid);
+      if (r4.ok) {
+        best = r4;
+        lo = mid;
+      } else {
+        hi = mid - 1;
+      }
+    }
+  }
+  return { fontSize: best.size, lines: best.lines, width: best.width, height: best.height, fits: best.ok };
+}
+
+// src/lib/kvAdapt.ts
+var objectStorageService7 = new ObjectStorageService();
+var MIN_HEADLINE_PX = 13;
+var SCRIM_LUMINANCE_THRESHOLD = 140;
+var SCRIM_COLOR = "#11263d";
+var SCRIM_OPACITY = 0.55;
+var artworkCache = null;
+async function loadArtwork(src) {
+  if (artworkCache?.src === src) return artworkCache.buffer;
+  try {
+    const objectPath = src.replace(/^\/api\/storage/, "");
+    const file2 = await objectStorageService7.getObjectEntityFile(objectPath);
+    const response = await objectStorageService7.downloadObject(file2);
+    const buffer = Buffer.from(await response.arrayBuffer());
+    artworkCache = { src, buffer };
+    return buffer;
+  } catch {
+    return null;
+  }
+}
+async function sampleEdgeColor(src, imgW, imgH) {
+  const buffer = await loadArtwork(src);
+  if (!buffer) return null;
+  const band = Math.max(1, Math.round(Math.min(imgW, imgH) * 0.04));
+  const strips = [
+    { left: 0, top: 0, width: imgW, height: Math.min(band, imgH) },
+    { left: 0, top: Math.max(0, imgH - band), width: imgW, height: Math.min(band, imgH) },
+    { left: 0, top: 0, width: Math.min(band, imgW), height: imgH },
+    { left: Math.max(0, imgW - band), top: 0, width: Math.min(band, imgW), height: imgH }
+  ];
+  try {
+    let r4 = 0;
+    let g = 0;
+    let b = 0;
+    let n = 0;
+    for (const s2 of strips) {
+      const stats = await sharp4(buffer).extract(s2).stats();
+      r4 += stats.channels[0].mean;
+      g += stats.channels[1].mean;
+      b += stats.channels[2].mean;
+      n++;
+    }
+    if (n === 0) return null;
+    const hex = (v) => Math.max(0, Math.min(255, Math.round(v / n))).toString(16).padStart(2, "0");
+    return `#${hex(r4)}${hex(g)}${hex(b)}`;
+  } catch {
+    return null;
+  }
+}
+async function sampleRegionStats(src, imgW, imgH, art, box) {
+  const buffer = await loadArtwork(src);
+  if (!buffer) return null;
+  const s2 = art.w / imgW;
+  const left = Math.round((box.x - art.x) / s2);
+  const top = Math.round((box.y - art.y) / s2);
+  const width = Math.round(box.w / s2);
+  const height = Math.round(box.h / s2);
+  const cl = Math.max(0, Math.min(imgW - 1, left));
+  const ct = Math.max(0, Math.min(imgH - 1, top));
+  const cw = Math.max(1, Math.min(imgW - cl, width - (cl - left)));
+  const ch = Math.max(1, Math.min(imgH - ct, height - (ct - top)));
+  try {
+    const stats = await sharp4(buffer).extract({ left: cl, top: ct, width: cw, height: ch }).stats();
+    const [r4, g, b] = stats.channels;
+    const lin = (v) => {
+      const c = v / 255;
+      return c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4);
+    };
+    const rel = 0.2126 * lin(r4.mean) + 0.7152 * lin(g.mean) + 0.0722 * lin(b.mean);
+    return {
+      lum: 0.299 * r4.mean + 0.587 * g.mean + 0.114 * b.mean,
+      busy: (r4.stdev + g.stdev + b.stdev) / 3,
+      // WCAG ratio of white type against this ground.
+      whiteContrast: 1.05 / (rel + 0.05)
+    };
+  } catch {
+    return null;
+  }
+}
+function findKvBackground(config2, srcW, srcH) {
+  const first = config2.elements[0];
+  if (!first || first.type !== "image" || !first.src) return null;
+  const img = first;
+  const fullBleed = img.x <= 0 && img.y <= 0 && img.w >= srcW * 0.98 && img.h >= srcH * 0.98;
+  return fullBleed && (img.fit ?? "cover") === "cover" ? img : null;
+}
+function pickBlock(kvText, role) {
+  const byRole2 = kvText.filter((t) => t.role === role);
+  if (byRole2.length > 0) return byRole2.sort((a, b) => b.fontSize - a.fontSize)[0];
+  return void 0;
+}
+async function composeKeyVisualAdaptation(master, srcW, srcH, dstW, dstH, brand) {
+  const bg = findKvBackground(master, srcW, srcH);
+  if (!bg) return null;
+  await prepareMeasurement();
+  const short = Math.min(dstW, dstH);
+  const isStrip = dstH <= STRIP_MAX_HEIGHT;
+  const isWide = dstW / dstH > 2.5;
+  const isSocialSquare2 = Math.abs(dstW - dstH) < 2 && dstW >= 600;
+  const tile = isStrip ? dstH : Math.max(24, Math.round(short / 6));
+  const margin = Math.max(6, Math.round(tile / 3));
+  const showLogo = !isSocialSquare2 && !!brand.logoUrl;
+  const showStrapline = !isSocialSquare2 && !isStrip && !isWide && dstH >= 400 && !!brand.strapline;
+  const elements = [];
+  let layoutOptions = void 0;
+  const kvTextAll = bg.kvText ?? [];
+  const textTop = kvTextAll.length > 0 ? Math.min(...kvTextAll.map((t) => t.y)) : srcH;
+  const cleanH = textTop > srcH * 0.35 ? textTop : srcH;
+  const s2 = Math.max(dstW / srcW, dstH / cleanH);
+  const artW = Math.round(srcW * s2);
+  const artH = Math.round(srcH * s2);
+  const visibleRows = dstH / s2;
+  const heroCentre = (bg.focusBox ? bg.focusBox.y + bg.focusBox.h / 2 : bg.focusY ?? 0.45) * srcH;
+  const srcYOffset = Math.min(
+    Math.max(0, heroCentre - visibleRows / 2),
+    Math.max(0, cleanH - visibleRows)
+  );
+  const liveHeadline = master.elements.filter((el) => el.type === "text").sort((a, b) => (b.fontSize ?? 0) - (a.fontSize ?? 0))[0];
+  const inferredFocusX = bg.focusX ?? (liveHeadline ? (liveHeadline.x + liveHeadline.w / 2) / srcW > 0.5 ? 0.28 : 0.72 : 0.5);
+  const visibleCols = dstW / s2;
+  const heroCentreX = (bg.focusBox ? bg.focusBox.x + bg.focusBox.w / 2 : inferredFocusX) * srcW;
+  const srcXOffset = Math.min(Math.max(0, heroCentreX - visibleCols / 2), Math.max(0, srcW - visibleCols));
+  const artX = -Math.round(srcXOffset * s2);
+  const artY = -Math.round(srcYOffset * s2);
+  const hasResettableCopy = kvTextAll.length > 0 || master.elements.some((el) => el.type === "text");
+  const shapeShift = Math.abs(Math.log(dstW / dstH / (srcW / srcH)));
+  if (!hasResettableCopy && shapeShift > 0.22) {
+    const fit = Math.min(dstW / srcW, dstH / srcH);
+    const fitW = Math.round(srcW * fit);
+    const fitH = Math.round(srcH * fit);
+    const field = (bg.src ? await sampleEdgeColor(bg.src, srcW, srcH) : null) ?? "#11263d";
+    elements.push({
+      id: "kv_field",
+      type: "rect",
+      fill: field,
+      x: 0,
+      y: 0,
+      w: dstW,
+      h: dstH,
+      locked: true
+    });
+    elements.push({
+      ...bg,
+      id: "kv_background",
+      x: Math.round((dstW - fitW) / 2),
+      y: Math.round((dstH - fitH) / 2),
+      w: fitW,
+      h: fitH,
+      fit: "contain",
+      locked: true
+    });
+    return {
+      kind: "freeform",
+      elements,
+      ...layoutOptions ? { layoutOptions } : {}
+    };
+  }
+  elements.push({
+    ...bg,
+    id: "kv_background",
+    x: artX,
+    y: artY,
+    w: artW,
+    h: artH,
+    fit: "cover",
+    locked: true
+  });
+  const liveText = master.elements.filter((el) => el.type === "text").map((el) => ({
+    text: el.text,
+    x: el.x,
+    y: el.y,
+    w: el.w,
+    h: el.h,
+    fontSize: el.fontSize ?? 16,
+    ...el.color ? { color: el.color } : {},
+    ...el.role ? { role: el.role } : {},
+    ...el.fontFamily ? { fontFamily: el.fontFamily } : {},
+    ...el.fontWeight ? { fontWeight: el.fontWeight } : {},
+    ...el.align ? { align: el.align } : {}
+  }));
+  const kvText = bg.kvText && bg.kvText.length > 0 ? bg.kvText : liveText;
+  const bySize = (a, b) => b.fontSize - a.fontSize;
+  const headline = pickBlock(kvText, "headline") ?? kvText.slice().sort(bySize)[0];
+  const subhead = pickBlock(kvText, "subhead") ?? (headline ? kvText.filter((b) => b !== headline).sort(bySize)[0] : void 0);
+  const srcShort = Math.min(srcW, srcH);
+  const headlineXFrac = headline ? headline.x / srcW : 0;
+  const sem = inferSlots(master, srcW, srcH);
+  const ctaSrc = sem.cta && sem.ctaLabel ? sem.cta : null;
+  const ctaPlan = ctaSrc && sem.ctaLabel ? (() => {
+    const label3 = sem.ctaLabel.text.replace(/\s+/g, " ").trim();
+    const h = Math.round(Math.max(24, Math.min(short * 0.16, ctaSrc.h / srcShort * short)));
+    const fs5 = Math.max(9, Math.round(h * 0.42));
+    const padX = Math.round(h * 0.6);
+    const w = Math.round(Math.min(dstW - margin * 2, label3.length * fs5 * 0.56 + padX * 2));
+    const pill = ctaSrc.type === "rect" && (ctaSrc.radius ?? 0) >= ctaSrc.h / 2 - 1;
+    return { label: label3, h, w, fs: fs5, padX, pill, fill: ctaSrc.type === "rect" ? ctaSrc.fill : "#ffffff", color: sem.ctaLabel.color ?? "#11263d", fontFamily: sem.ctaLabel.fontFamily, fontWeight: sem.ctaLabel.fontWeight ?? 700 };
+  })() : null;
+  const subLine = !isStrip && sem.subheadline && sem.subheadline.text.trim() ? sem.subheadline : null;
+  const masterScrim = headline ? master.elements.find(
+    (el) => el.type === "rect" && (el.gradient !== void 0 || (el.opacity ?? 1) < 1) && el.x < headline.x + headline.w && el.x + el.w > headline.x && el.y < headline.y + headline.h && el.y + el.h > headline.y
+  ) : void 0;
+  const headlineRatio = headline ? headline.fontSize / srcShort : 0.05;
+  const subheadRatio = subhead ? subhead.fontSize / srcShort : headlineRatio * 0.5;
+  const headlineCentreYFrac = headline ? (headline.y + headline.h / 2) / srcH : 0.72;
+  const headlineWidthFrac = headline ? Math.min(1, headline.w / srcW) : 0.86;
+  const headlineCentred = headline ? headline.align ? headline.align === "center" : Math.abs((headline.x + headline.w / 2) / srcW - 0.5) < 0.08 : true;
+  const longestLineChars = (text3) => Math.max(...text3.split("\n").map((l) => l.trim().length), 1);
+  const specOf = (family, weight) => ({ family, weight: weight === 700 ? 700 : 400 });
+  const hlSpec = specOf(headline?.fontFamily, headline?.fontWeight ?? 700);
+  const fitTextBox = (el, spec = hlSpec) => {
+    const lines = el.text.split("\n").flatMap((l) => wrapText(l, el.w, spec, el.fontSize));
+    if (lines.length === 0) return;
+    const widest = Math.max(...lines.map((l) => measureLine(l, spec, el.fontSize)), 0);
+    const fitted = Math.min(el.w, Math.ceil(widest) + Math.ceil(el.fontSize * 0.3));
+    if (fitted >= el.w) return;
+    if (el.align === "center") el.x += Math.round((el.w - fitted) / 2);
+    else if (el.align === "right") el.x += el.w - fitted;
+    el.w = fitted;
+  };
+  const wrappedLines = (text3, fontSize, w, spec = hlSpec) => text3.split("\n").reduce((n, line2) => n + Math.max(1, wrapText(line2, Math.max(1, w), spec, fontSize).length), 0);
+  const boxHeight = (text3, fontSize, w, lineHeight, spec = hlSpec) => Math.round(wrappedLines(text3, fontSize, w, spec) * fontSize * lineHeight + fontSize * 0.25);
+  let straplineTopY = dstH;
+  if (showStrapline) {
+    const lines = brand.strapline.split("\n").filter(Boolean).slice(0, 2);
+    const fontSize = Math.max(10, Math.round(subheadRatio * short));
+    const wStrap = Math.max(40, dstW - (showLogo ? tile + margin : 0) - margin * 2);
+    const estH = boxHeight(lines.join("\n"), fontSize, wStrap, 1.3);
+    straplineTopY = dstH - margin - estH;
+    const strapBox = { text: lines.join("\n"), x: margin, y: straplineTopY, w: wStrap, fontSize, align: "left" };
+    fitTextBox(strapBox);
+    elements.push({
+      id: "kv_strapline",
+      type: "text",
+      role: "other",
+      text: lines.join("\n"),
+      x: strapBox.x,
+      y: straplineTopY,
+      w: strapBox.w,
+      h: estH,
+      fontSize,
+      fontWeight: subhead?.fontWeight ?? 700,
+      color: subhead?.color ?? "#ffffff",
+      align: "left",
+      lineHeight: 1.3,
+      ...subhead?.fontFamily ? { fontFamily: subhead.fontFamily } : {},
+      locked: true
+    });
+  }
+  if (headline) {
+    const text3 = isStrip ? headline.text.replace(/\n+/g, " ") : headline.text;
+    const lines = text3.split("\n").length;
+    const designSize = headlineRatio * short;
+    const tileReserve = (showLogo ? tile + margin : 0) + (isStrip && ctaPlan ? ctaPlan.w + margin : 0);
+    const subSize = subLine ? Math.max(10, Math.round(subLine.fontSize / srcShort * short)) : 0;
+    const subSpec = subLine ? specOf(subLine.fontFamily, subLine.fontWeight ?? 400) : hlSpec;
+    const subReserve = subLine ? boxHeight(subLine.text, subSize, Math.round(dstW * 0.8), 1.25, subSpec) + Math.round(margin / 2) : 0;
+    const ctaReserve = ctaPlan && !isStrip ? ctaPlan.h + margin : 0;
+    const bottomLimit = (showStrapline ? straplineTopY - margin : dstH - (showLogo && !isStrip ? tile : margin) - margin) - subReserve - ctaReserve;
+    const fb = bg.focusBox ?? { x: Math.max(0, inferredFocusX - 0.25), y: 0.15, w: 0.5, h: 0.7 };
+    const hero = {
+      x: artX + fb.x * artW,
+      y: artY + fb.y * artH,
+      w: fb.w * artW,
+      h: fb.h * artH
+    };
+    const heroRight = hero.x + hero.w;
+    const heroBottom = hero.y + hero.h;
+    const designerSide = headlineCentred ? "centre" : headlineXFrac > 0.5 ? "right" : headlineCentreYFrac > 0.6 ? "below" : "left";
+    const fitFont = (w2, hAvail) => {
+      const longest = Math.max(...text3.split("\n").map((l) => measureLine(l.trim(), hlSpec, 100)), 1) / 100;
+      const fitToWidth = w2 / Math.max(0.1, longest);
+      const fitToHeight = hAvail / (lines * 1.3);
+      const fitCap = Math.min(fitToWidth, fitToHeight);
+      return Math.round(Math.max(MIN_HEADLINE_PX, Math.min(fitCap, isStrip || isWide ? Math.max(designSize, fitCap * 0.8) : designSize)));
+    };
+    const mk = (label3, zone, zx, zy, zw, zh, align) => {
+      zx = Math.max(margin, zx);
+      zy = Math.max(margin, zy);
+      zw = Math.min(zw, dstW - margin - zx);
+      zh = Math.min(zh, bottomLimit - zy);
+      if (zw < dstW * 0.26 || zh < MIN_HEADLINE_PX * 2.6) return null;
+      const fontSize2 = fitFont(zw, zh);
+      const h = boxHeight(text3, fontSize2, zw, 1.25);
+      if (h > zh + fontSize2 * 0.6) return null;
+      return { label: label3, zone, x: Math.round(zx), y: Math.round(zy), w: Math.round(zw), h, fontSize: fontSize2, align, color: headline.color ?? "#ffffff", score: 0 };
+    };
+    const candidates = [];
+    {
+      const zx = heroRight + margin;
+      const zw = dstW - zx - margin - tileReserve;
+      const c = mk("Copy right of hero", "right", zx, hero.y, zw, Math.max(0, Math.min(heroBottom, bottomLimit) - hero.y), "left");
+      if (c) {
+        c.y = Math.max(margin, Math.min(Math.round(hero.y + hero.h / 2 - c.h / 2), bottomLimit - c.h));
+        candidates.push(c);
+      }
+    }
+    {
+      const zw = hero.x - margin * 2;
+      const c = mk("Copy left of hero", "left", margin, hero.y, zw, Math.max(0, Math.min(heroBottom, bottomLimit) - hero.y), "left");
+      if (c) {
+        c.y = Math.max(margin, Math.min(Math.round(hero.y + hero.h / 2 - c.h / 2), bottomLimit - c.h));
+        candidates.push(c);
+      }
+    }
+    {
+      const zy = heroBottom + margin;
+      const c = mk("Copy below hero", "below", margin, zy, dstW - margin * 2 - (isStrip || isWide ? tileReserve : 0), bottomLimit - zy, headlineCentred ? "center" : "left");
+      if (c) candidates.push(c);
+    }
+    {
+      const c = mk("Copy above hero", "above", margin, margin, dstW - margin * 2 - (isStrip || isWide ? tileReserve : 0), hero.y - margin * 2, headlineCentred ? "center" : "left");
+      if (c) candidates.push(c);
+    }
+    {
+      const w2 = Math.max(40, Math.min(dstW - margin * 2 - tileReserve, Math.round(headlineWidthFrac * dstW)));
+      const x2 = headlineCentred ? Math.round((dstW - w2) / 2) : Math.min(Math.max(margin, Math.round(headlineXFrac * dstW)), dstW - margin - w2);
+      const fontSize2 = fitFont(w2, dstH - margin * 2);
+      const h = boxHeight(text3, fontSize2, w2, 1.25);
+      const y2 = Math.min(Math.max(margin, Math.round(headlineCentreYFrac * dstH - h / 2)), Math.max(margin, bottomLimit - h));
+      candidates.push({ label: "Designer's position", zone: "designer", x: x2, y: y2, w: w2, h, fontSize: fontSize2, align: headlineCentred ? "center" : "left", color: headline.color ?? "#ffffff", score: 0 });
+    }
+    {
+      const w2 = dstW - margin * 2 - (isStrip || isWide ? tileReserve : 0);
+      const fontSize2 = fitFont(w2, dstH - margin * 2);
+      const h = boxHeight(text3, fontSize2, w2, 1.25);
+      candidates.push({ label: "Bottom band", zone: "bottom", x: margin, y: Math.max(margin, bottomLimit - h), w: w2, h, fontSize: fontSize2, align: headlineCentred ? "center" : "left", color: headline.color ?? "#ffffff", score: 0 });
+    }
+    const overlap2 = (c) => {
+      const ix = Math.max(0, Math.min(c.x + c.w, heroRight) - Math.max(c.x, hero.x));
+      const iy = Math.max(0, Math.min(c.y + c.h, heroBottom) - Math.max(c.y, hero.y));
+      return ix * iy / Math.max(1, c.w * c.h);
+    };
+    const art = { x: artX, y: artY, w: artW, h: artH };
+    for (const c of candidates) {
+      const stats = bg.src ? await sampleRegionStats(bg.src, srcW, srcH, art, c) : null;
+      const sizeScore = 100 * Math.min(1, c.fontSize / Math.max(MIN_HEADLINE_PX, designSize));
+      const collision = 220 * overlap2(c);
+      const busy = stats ? Math.min(60, stats.busy * 0.9) : 0;
+      const tone = stats && stats.lum > SCRIM_LUMINANCE_THRESHOLD ? Math.min(50, (stats.lum - SCRIM_LUMINANCE_THRESHOLD) * 0.6) : 0;
+      const prior = c.zone === designerSide || c.zone === "designer" && designerSide !== "centre" ? 18 : 0;
+      c.score = sizeScore - collision - busy - tone + prior;
+      if (stats && stats.lum > 190 && stats.busy < 22) c.color = "#11263d";
+    }
+    candidates.sort((a, b) => b.score - a.score);
+    const best = candidates[0];
+    const hlBox = { text: text3, x: best.x, y: best.y, w: best.w, fontSize: best.fontSize, align: best.align };
+    fitTextBox(hlBox);
+    const x = hlBox.x, y = best.y, w = hlBox.w, estH = best.h, fontSize = best.fontSize;
+    elements.push({
+      id: "kv_headline",
+      type: "text",
+      role: "headline",
+      text: text3,
+      x,
+      y,
+      w,
+      h: estH,
+      fontSize,
+      fontWeight: headline.fontWeight ?? 700,
+      color: best.color,
+      align: best.align,
+      lineHeight: 1.25,
+      ...headline.fontFamily ? { fontFamily: headline.fontFamily } : {}
+    });
+    let copyBottom = y + estH;
+    if (subLine) {
+      const sh = boxHeight(subLine.text, subSize, w, 1.25, subSpec);
+      elements.push({
+        id: "kv_subhead",
+        type: "text",
+        role: "subhead",
+        slot: "subheadline",
+        text: subLine.text,
+        x,
+        y: copyBottom + Math.round(margin / 2),
+        w,
+        h: sh,
+        fontSize: subSize,
+        fontWeight: subLine.fontWeight ?? 400,
+        color: subLine.color ?? best.color,
+        align: best.align,
+        lineHeight: 1.25,
+        ...subLine.fontFamily ? { fontFamily: subLine.fontFamily } : {}
+      });
+      copyBottom += Math.round(margin / 2) + sh;
+    }
+    if (ctaPlan) {
+      const cx = isStrip ? dstW - margin - (showLogo ? tile + margin : 0) - ctaPlan.w : best.align === "center" ? Math.round(x + (w - ctaPlan.w) / 2) : best.align === "right" ? x + w - ctaPlan.w : x;
+      const cy = isStrip ? Math.round((dstH - ctaPlan.h) / 2) : Math.min(copyBottom + margin, dstH - margin - ctaPlan.h);
+      elements.push({ id: "kv_cta", type: "rect", slot: "cta", fill: ctaPlan.fill, x: cx, y: cy, w: ctaPlan.w, h: ctaPlan.h, radius: ctaPlan.pill ? ctaPlan.h / 2 : Math.round(ctaPlan.h * 0.12), locked: true });
+      elements.push({
+        id: "kv_cta_label",
+        type: "text",
+        role: "cta",
+        slot: "ctaLabel",
+        text: ctaPlan.label,
+        x: cx + ctaPlan.padX,
+        y: cy,
+        w: ctaPlan.w - ctaPlan.padX * 2,
+        h: ctaPlan.h,
+        fontSize: ctaPlan.fs,
+        fontWeight: ctaPlan.fontWeight,
+        color: ctaPlan.color,
+        align: "center",
+        lineHeight: ctaPlan.h / ctaPlan.fs,
+        ...ctaPlan.fontFamily ? { fontFamily: ctaPlan.fontFamily } : {},
+        locked: true
+      });
+      if (!isStrip) copyBottom = cy + ctaPlan.h;
+    }
+    const seen2 = /* @__PURE__ */ new Set();
+    layoutOptions = candidates.filter((c) => {
+      const k = `${Math.round(c.x / 20)}:${Math.round(c.y / 20)}`;
+      if (seen2.has(k)) return false;
+      seen2.add(k);
+      return true;
+    }).slice(0, 4).map((c) => ({ label: c.label, x: c.x, y: c.y, w: c.w, h: c.h, fontSize: c.fontSize, align: c.align, color: c.color, score: Math.round(c.score) }));
+    if (masterScrim) {
+      const strength = masterScrim.gradient ? Math.max(...masterScrim.gradient.stops.map((s3) => s3.alpha)) : masterScrim.opacity ?? 0.65;
+      const color = masterScrim.fill;
+      const solid = !masterScrim.gradient;
+      const mkScrim = (geom, angle) => solid ? { id: "kv_scrim", type: "rect", fill: color, ...geom, opacity: strength, locked: true } : { id: "kv_scrim", type: "rect", fill: color, ...geom, gradient: { angle, stops: [{ color, alpha: strength, at: 0.45 }, { color, alpha: 0, at: 1 }] }, locked: true };
+      const zone = best.zone === "designer" ? designerSide : best.zone;
+      let scrim;
+      if (solid) {
+        const top = Math.max(0, y - margin), bottom = Math.min(dstH, copyBottom + margin);
+        scrim = zone === "above" || zone === "below" || zone === "bottom" || zone === "centre" ? mkScrim({ x: 0, y: zone === "above" ? 0 : top, w: dstW, h: zone === "above" ? bottom : bottom - top }, 0) : mkScrim({ x: Math.max(0, x - margin), y: top, w: Math.min(dstW, w + margin * 2), h: bottom - top }, 0);
+      } else if (zone === "right") scrim = mkScrim({ x: Math.max(0, x - margin * 3), y: 0, w: dstW - Math.max(0, x - margin * 3), h: dstH }, 270);
+      else if (zone === "left") scrim = mkScrim({ x: 0, y: 0, w: Math.min(dstW, x + w + margin * 3), h: dstH }, 90);
+      else if (zone === "above") scrim = mkScrim({ x: 0, y: 0, w: dstW, h: Math.min(dstH, copyBottom + margin * 3) }, 180);
+      else scrim = mkScrim({ x: 0, y: Math.max(0, y - margin * 3), w: dstW, h: dstH - Math.max(0, y - margin * 3) }, 0);
+      elements.splice(1, 0, scrim);
+    }
+  }
+  if (showLogo) {
+    const placement = guidelineLogoPlacement(dstW, dstH);
+    if (placement) {
+      elements.push({
+        id: "kv_logo",
+        type: "image",
+        role: "logo",
+        src: brand.logoUrl,
+        fit: "contain",
+        ...placement.tile,
+        locked: true
+      });
+    }
+  }
+  if (bg.src) {
+    const art = { x: artX, y: artY, w: artW, h: artH };
+    const carried = elements.find((el) => el.id === "kv_scrim");
+    const covered = (el) => !!carried && el.x >= carried.x - 1 && el.y >= carried.y - 1 && el.x + el.w <= carried.x + carried.w + 1 && el.y + el.h <= carried.y + carried.h + 1;
+    const copyElements = elements.filter(
+      (el) => el.type === "text" && (el.id === "kv_headline" || el.id === "kv_subhead" || el.id === "kv_strapline") && !covered(el)
+    );
+    const scrims = [];
+    for (const el of copyElements) {
+      const stats = await sampleRegionStats(bg.src, srcW, srcH, art, el);
+      const floor = el.fontSize && el.fontSize >= 18 ? 3 : 4.5;
+      if (stats && stats.whiteContrast < floor) {
+        const pad = Math.round(margin / 2);
+        scrims.push({
+          id: `${el.id}_scrim`,
+          type: "rect",
+          fill: SCRIM_COLOR,
+          opacity: SCRIM_OPACITY,
+          radius: Math.min(12, pad),
+          x: el.x - pad,
+          y: el.y - pad,
+          w: el.w + pad * 2,
+          h: el.h + pad * 2,
+          locked: true
+        });
+      }
+    }
+    elements.splice(1, 0, ...scrims);
+  }
+  return { kind: "freeform", elements, ...layoutOptions && layoutOptions.length > 1 ? { layoutOptions } : {} };
+}
+
+// src/lib/recompose.ts
+import sharp5 from "sharp";
 
 // src/lib/recipes.ts
 var ALL2 = ["photo", "headline", "cta", "lockup", "band", "message", "subheadline", "cutout"];
@@ -231831,94 +231969,6 @@ function recipeFor(formatClass, budget) {
     return { ...base, marginFrac: Math.max(base.marginFrac, 0.05) };
   }
   return base;
-}
-
-// src/lib/textMeasure.ts
-init_freeformFonts();
-import { createCanvas as createCanvas2 } from "@napi-rs/canvas";
-var canvas = createCanvas2(4, 4);
-var ctx = canvas.getContext("2d");
-var fontsReady = false;
-async function prepareMeasurement() {
-  if (fontsReady) return;
-  try {
-    await loadNational2();
-    fontsReady = true;
-  } catch {
-    fontsReady = false;
-  }
-}
-function resolveFamily2(family) {
-  if (family && hasFontFamily(family)) return family;
-  return NATIONAL2_FAMILY;
-}
-function setFont(spec, sizePx) {
-  const fam = resolveFamily2(spec.family);
-  ctx.font = `${spec.italic ? "italic" : "normal"} ${spec.weight ?? 400} ${sizePx}px "${fam}"`;
-}
-function measureLine(text3, spec, sizePx) {
-  if (text3.length === 0) return 0;
-  const ls = (spec.letterSpacing ?? 0) * Array.from(text3).length;
-  if (!fontsReady && !hasFontFamily(resolveFamily2(spec.family))) {
-    return text3.length * sizePx * 0.55 + ls;
-  }
-  setFont(spec, sizePx);
-  return ctx.measureText(text3).width + ls;
-}
-function wrapParagraph2(paragraph, maxWidth, spec, sizePx) {
-  const words = paragraph.split(/\s+/).filter(Boolean);
-  if (words.length === 0) return [""];
-  const lines = [];
-  let current = "";
-  for (const word of words) {
-    const candidate = current ? `${current} ${word}` : word;
-    if (!current || measureLine(candidate, spec, sizePx) <= maxWidth + 0.01) {
-      current = candidate;
-    } else {
-      lines.push(current);
-      current = word;
-    }
-  }
-  lines.push(current);
-  return lines;
-}
-function capHeightPx(spec, sizePx) {
-  const fam = resolveFamily2(spec.family);
-  ctx.font = `${spec.italic ? "italic" : "normal"} ${spec.weight ?? 400} ${sizePx}px "${fam}"`;
-  const m = ctx.measureText("H");
-  const asc2 = m.actualBoundingBoxAscent;
-  return Number.isFinite(asc2) && asc2 > 0 ? asc2 : sizePx * 0.7;
-}
-function wrapText(text3, maxWidth, spec, sizePx) {
-  return text3.replace(/\r\n?/g, "\n").split("\n").flatMap((p) => wrapParagraph2(p, maxWidth, spec, sizePx));
-}
-function fitText(text3, box, opts) {
-  const lh = opts.lineHeight ?? 1.15;
-  const lo0 = Math.max(1, Math.floor(opts.minSize));
-  const hi0 = Math.max(lo0, Math.floor(opts.maxSize));
-  const evaluate = (size) => {
-    const lines = wrapText(text3, box.w, opts, size);
-    const width = Math.max(...lines.map((l) => measureLine(l, opts, size)), 0);
-    const height = lines.length * size * lh;
-    const ok = width <= box.w + 0.01 && height <= box.h + 0.01 && (opts.maxLines === void 0 || lines.length <= opts.maxLines);
-    return { size, lines, width, height, ok };
-  };
-  let lo = lo0;
-  let hi = hi0;
-  let best = evaluate(lo0);
-  if (best.ok) {
-    while (lo < hi) {
-      const mid = Math.ceil((lo + hi) / 2);
-      const r4 = evaluate(mid);
-      if (r4.ok) {
-        best = r4;
-        lo = mid;
-      } else {
-        hi = mid - 1;
-      }
-    }
-  }
-  return { fontSize: best.size, lines: best.lines, width: best.width, height: best.height, fits: best.ok };
 }
 
 // src/lib/recompose.ts
@@ -232555,6 +232605,7 @@ function scoreGeometry(master, srcW, srcH, adapted, w, h) {
       const m = rel(a0, b0, tolM);
       if (!m.left && !m.centre && !m.right) continue;
       if (!sameAxisBuild && groupOf(slots[i]) !== groupOf(slots[j])) continue;
+      if (h <= 120 && w / h >= 2.5 && (groupOf(slots[i]) !== "copy" || groupOf(slots[j]) !== "copy")) continue;
       pairs++;
       const r4 = rel(a1, b1, tolA);
       if (m.left && r4.left || m.centre && r4.centre || m.right && r4.right) kept++;
@@ -232716,18 +232767,22 @@ async function scoreContrast(config2, w, h, loadImage, brandFontFamily, baseline
     if (n === 0) continue;
     const r4 = ratio(lc / n, lb / n);
     const t = el.type === "text" ? el : null;
+    const hex = t && /^#?[0-9a-f]{6}$/i.test(t.color) ? t.color.replace("#", "") : null;
+    if (hex && n > 0) lc = relLum(parseInt(hex.slice(0, 2), 16), parseInt(hex.slice(2, 4), 16), parseInt(hex.slice(4, 6), 16)) * n;
+    const r22 = hex ? ratio(lc / n, lb / n) : r4;
     const large = t ? t.fontSize >= 18 : Math.min(el.w, el.h) >= 18;
     const floor = large ? 3 : 4.5;
-    detail.push({ id: el.id, label: label2(el), ratio: round(r4), floor });
-    if (r4 < floor) {
+    detail.push({ id: el.id, label: label2(el), ratio: round(r22), floor });
+    if (r22 < floor) {
+      const r5 = r22;
       const designed = baseline.get(label2(el));
-      if (designed != null && r4 >= designed * 0.8) {
-        issues.push({ severity: "warn", message: `Contrast: ${label2(el)} reads at ${r4.toFixed(1)}:1 \u2014 under the ${floor}:1 floor, but the master reads the same (${designed.toFixed(1)}:1), so as designed.`, elementId: el.id });
+      if (designed != null && r5 >= designed * 0.8) {
+        issues.push({ severity: "warn", message: `Contrast: ${label2(el)} reads at ${r5.toFixed(1)}:1 \u2014 under the ${floor}:1 floor, but the master reads the same (${designed.toFixed(1)}:1), so as designed.`, elementId: el.id });
         continue;
       }
-      const msg = `Contrast: ${label2(el)} reads at ${r4.toFixed(1)}:1 against what is behind it (floor ${floor}:1${designed != null ? `; the master reads ${designed.toFixed(1)}:1` : ""}).`;
+      const msg = `Contrast: ${label2(el)} reads at ${r5.toFixed(1)}:1 against what is behind it (floor ${floor}:1${designed != null ? `; the master reads ${designed.toFixed(1)}:1` : ""}).`;
       if (el.slot === "headline" || el.slot === "message" || t && t.role === "headline") rejections.push(msg);
-      else issues.push({ severity: r4 < floor * 0.7 ? "error" : "warn", message: msg, elementId: el.id });
+      else issues.push({ severity: r5 < floor * 0.7 ? "error" : "warn", message: msg, elementId: el.id });
     }
   }
   detail.sort((a, b) => a.ratio - b.ratio);
@@ -235167,7 +235222,7 @@ ${lines.join("\n")}`;
 }
 async function reviewPiece(input) {
   const started = Date.now();
-  const client = new Anthropic();
+  const client = new Anthropic({ maxRetries: 0 });
   const formatClass = classifyAspect(input.width, input.height);
   const rules = getBrandRules(input.brand.name);
   const candidatePng = await renderFreeformToPng(input.config, input.width, input.height, { scale: 1, loadImage: input.loadImage });
@@ -235241,7 +235296,7 @@ ${input.measured.map((m) => `- [${m.severity}] ${m.message}${m.elementId ? ` (el
   const response = await client.beta.messages.create(
     {
       model: CLAUDE_REVIEW_MODEL,
-      max_tokens: 4e3,
+      max_tokens: 8e3,
       betas: ["server-side-fallback-2026-07-01"],
       fallbacks: "default",
       thinking: { type: "adaptive" },
@@ -235249,10 +235304,13 @@ ${input.measured.map((m) => `- [${m.severity}] ${m.message}${m.elementId ? ` (el
       system,
       messages: [{ role: "user", content }]
     },
-    { timeout: 9e4 }
+    { timeout: 2e5 }
   );
   if (response.stop_reason === "refusal") {
     throw new Error("Claude declined to review this piece");
+  }
+  if (response.stop_reason === "max_tokens") {
+    throw new Error("Claude's review ran out of room before it finished \u2014 try again");
   }
   let answeredBy;
   let text3 = "";
@@ -235264,7 +235322,13 @@ ${input.measured.map((m) => `- [${m.severity}] ${m.message}${m.elementId ? ` (el
   try {
     parsed = JSON.parse(text3);
   } catch {
-    throw new Error("Claude's review was not valid JSON");
+    const start = text3.indexOf("{"), end = text3.lastIndexOf("}");
+    if (start < 0 || end <= start) throw new Error("Claude's review was not valid JSON");
+    try {
+      parsed = JSON.parse(text3.slice(start, end + 1));
+    } catch {
+      throw new Error("Claude's review was not valid JSON");
+    }
   }
   const issues = (Array.isArray(parsed.issues) ? parsed.issues : []).map((i) => ({
     elementId: i.elementId ?? null,
@@ -241958,6 +242022,15 @@ async function adaptOne(master, masterConfig, width, height, brandInfo, log, exe
       adapted = ly.config;
       method = "layered";
       notes.push(...ly.notes);
+    }
+  }
+  const photoLed = !adapted && !!findKvBackground(masterConfig, master.width, master.height) && !masterConfig.elements.some((e) => e.slot === "panel" || e.slot === "band");
+  if (photoLed) {
+    const composed = await composeKeyVisualAdaptation(masterConfig, master.width, master.height, width, height, brandInfo);
+    if (composed) {
+      adapted = composed;
+      method = "key-visual";
+      notes.push("Photo-led master: the photograph stays full-bleed and the copy, call-to-action and tile are re-set on it.");
     }
   }
   if (!adapted && shouldRecompose(masterConfig, master.width, master.height, width, height)) {

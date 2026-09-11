@@ -202,7 +202,9 @@ function describeReference(ex: Exemplar): string {
 
 export async function reviewPiece(input: ReviewInput): Promise<ClaudeReview> {
   const started = Date.now();
-  const client = new Anthropic();
+  // One attempt with room to finish: a retry on top of a 90s timeout could
+  // not complete inside the function's own limit, so it timed out twice.
+  const client = new Anthropic({ maxRetries: 0 });
   const formatClass = classifyAspect(input.width, input.height);
   const rules = getBrandRules(input.brand.name);
 
@@ -276,7 +278,7 @@ export async function reviewPiece(input: ReviewInput): Promise<ClaudeReview> {
   const response = await client.beta.messages.create(
     {
       model: CLAUDE_REVIEW_MODEL,
-      max_tokens: 4000,
+      max_tokens: 8000,
       betas: ["server-side-fallback-2026-07-01"],
       fallbacks: "default",
       thinking: { type: "adaptive" },
@@ -284,11 +286,14 @@ export async function reviewPiece(input: ReviewInput): Promise<ClaudeReview> {
       system,
       messages: [{ role: "user", content }],
     },
-    { timeout: 90_000 },
+    { timeout: 200_000 },
   );
 
   if (response.stop_reason === "refusal") {
     throw new Error("Claude declined to review this piece");
+  }
+  if (response.stop_reason === "max_tokens") {
+    throw new Error("Claude's review ran out of room before it finished — try again");
   }
   let answeredBy: string | undefined;
   let text = "";
@@ -300,7 +305,10 @@ export async function reviewPiece(input: ReviewInput): Promise<ClaudeReview> {
   try {
     parsed = JSON.parse(text);
   } catch {
-    throw new Error("Claude's review was not valid JSON");
+    // Occasionally a sentence precedes the object; take the object itself.
+    const start = text.indexOf("{"), end = text.lastIndexOf("}");
+    if (start < 0 || end <= start) throw new Error("Claude's review was not valid JSON");
+    try { parsed = JSON.parse(text.slice(start, end + 1)); } catch { throw new Error("Claude's review was not valid JSON"); }
   }
   const issues: ReviewIssue[] = (Array.isArray(parsed.issues) ? parsed.issues : []).map((i) => ({
     elementId: i.elementId ?? null,

@@ -82,6 +82,9 @@ export function scoreGeometry(
       const m = rel(a0, b0, tolM);
       if (!m.left && !m.centre && !m.right) continue;
       if (!sameAxisBuild && groupOf(slots[i]) !== groupOf(slots[j])) continue;
+      // On a strip the button and lockup sit at the end of the row by
+      // design; only the copy pair is held to the master's alignment.
+      if (h <= 120 && w / h >= 2.5 && (groupOf(slots[i]) !== "copy" || groupOf(slots[j]) !== "copy")) continue;
       pairs++;
       const r = rel(a1, b1, tolA);
       if ((m.left && r.left) || (m.centre && r.centre) || (m.right && r.right)) kept++;
@@ -246,10 +249,16 @@ export async function scoreContrast(
     if (n === 0) continue;
     const r = ratio(lc / n, lb / n);
     const t = el.type === "text" ? (el as FreeformText) : null;
+    // Known type colour: use it directly rather than antialiased pixels,
+    // which read greyer than the ink at small sizes.
+    const hex = t && /^#?[0-9a-f]{6}$/i.test(t.color) ? t.color.replace("#", "") : null;
+    if (hex && n > 0) lc = relLum(parseInt(hex.slice(0, 2), 16), parseInt(hex.slice(2, 4), 16), parseInt(hex.slice(4, 6), 16)) * n;
+    const r2 = hex ? ratio(lc / n, lb / n) : r;
     const large = t ? t.fontSize >= 18 : Math.min(el.w, el.h) >= 18;
     const floor = large ? 3 : 4.5;
-    detail.push({ id: el.id, label: label(el), ratio: round(r), floor });
-    if (r < floor) {
+    detail.push({ id: el.id, label: label(el), ratio: round(r2), floor });
+    if (r2 < floor) {
+      const r = r2;
       const designed = baseline.get(label(el));
       if (designed != null && r >= designed * 0.8) {
         issues.push({ severity: "warn", message: `Contrast: ${label(el)} reads at ${r.toFixed(1)}:1 — under the ${floor}:1 floor, but the master reads the same (${designed.toFixed(1)}:1), so as designed.`, elementId: el.id });

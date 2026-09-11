@@ -6,7 +6,7 @@ import { optionalAuth, requireAdmin, requireAuth } from "../middlewares/requireA
 import { normalizeFreeformConfig, adaptFreeformConfig, isFreeformConfig, type FreeformConfig, type FreeformElement } from "../lib/freeform";
 import { recomposePanelLayout } from "../lib/panelRecompose";
 import { collectBrandPaletteHexes } from "../lib/colorAdapter";
-import { composeKeyVisualAdaptation } from "../lib/kvAdapt";
+import { composeKeyVisualAdaptation, findKvBackground } from "../lib/kvAdapt";
 import { recomposeToFormat, shouldRecompose } from "../lib/recompose";
 import { checkLayout, checkMandatory } from "../lib/layoutCheck";
 import { scoreGeometry, scoreContrast, contrastBaseline, type PrincipleScores } from "../lib/principles";
@@ -249,6 +249,19 @@ async function adaptOne(
       adapted = ly.config;
       method = "layered";
       notes.push(...ly.notes);
+    }
+  }
+  // A photo-led master (full-bleed photograph, no solid panel) keeps that
+  // design on every shape: the photo stays full-bleed and the copy, CTA and
+  // tile are re-set on it. The panel recipes would invent a half-canvas
+  // colour block the master never had.
+  const photoLed = !adapted && !!findKvBackground(masterConfig, master.width, master.height) && !masterConfig.elements.some((e) => e.slot === "panel" || e.slot === "band");
+  if (photoLed) {
+    const composed = await composeKeyVisualAdaptation(masterConfig, master.width, master.height, width, height, brandInfo);
+    if (composed) {
+      adapted = composed;
+      method = "key-visual";
+      notes.push("Photo-led master: the photograph stays full-bleed and the copy, call-to-action and tile are re-set on it.");
     }
   }
   // 1. Different shape class: rebuild from slots with the class recipe.

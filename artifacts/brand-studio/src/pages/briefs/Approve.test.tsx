@@ -10,7 +10,18 @@ const mocks = vi.hoisted(() => ({
   assets: [] as Array<{ id: number; status: string; templateSize: string }>,
 }));
 
-vi.mock("@workspace/api-client-react", () => ({
+vi.mock("@workspace/api-client-react", async (importOriginal) => {
+  const actual = await importOriginal<Record<string, unknown>>();
+  // Child components import more hooks than this screen exercises: every
+  // real export gets an idle stub (queries empty, mutations no-ops) and the
+  // hooks under test are overridden below.
+  const idle = () => ({ data: undefined, isLoading: false, isPending: false, mutate: vi.fn(), mutateAsync: vi.fn() });
+  const stubs: Record<string, unknown> = {};
+  for (const key of Object.keys(actual)) {
+    stubs[key] = key.startsWith("use") ? idle : key.startsWith("get") ? () => [key] : actual[key];
+  }
+  return {
+    ...stubs,
   useGetBrief: () => ({
     data: { id: 1, campaignName: "Spring Sale", brand: { id: 1, name: "Acme" } },
     isLoading: false,
@@ -27,11 +38,15 @@ vi.mock("@workspace/api-client-react", () => ({
   }),
   useSaveReviewProgress: () => ({ mutate: mocks.saveReviewProgressMutate }),
   useCreateBriefAdTags: () => ({ mutate: vi.fn(), mutateAsync: vi.fn(), isPending: false }),
+  useEditAssetImage: () => ({ mutate: vi.fn(), mutateAsync: vi.fn(), isPending: false }),
   getGetBriefQueryKey: () => ["brief", 1],
   getListAssetsQueryKey: () => ["assets", 1],
   getListBriefsQueryKey: () => ["briefs"],
   getGetReviewProgressQueryKey: () => ["review-progress", 1],
-}));
+  useExportAssetVideo: () => ({ data: undefined, isLoading: false, mutate: vi.fn(), mutateAsync: vi.fn(), isPending: false }),
+  getGetAdTagQueryKey: () => ["getGetAdTagQueryKey"],
+  };
+});
 
 vi.mock("wouter", () => ({
   useParams: () => ({ id: "1" }),
@@ -39,7 +54,9 @@ vi.mock("wouter", () => ({
   Link: ({ children }: { children: React.ReactNode }) => <a>{children}</a>,
 }));
 
-vi.mock("@tanstack/react-query", () => ({
+vi.mock("@tanstack/react-query", async (importOriginal) => ({
+  ...(await importOriginal<Record<string, unknown>>()),
+  useQuery: () => ({ data: undefined, isLoading: false }),
   useQueryClient: () => ({ invalidateQueries: vi.fn(), setQueryData: vi.fn() }),
 }));
 

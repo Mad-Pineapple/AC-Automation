@@ -360,7 +360,18 @@ export async function customFetch<T = unknown>(
 
   const requestInfo = { method, url: resolveUrl(input) };
 
-  const response = await fetch(input, { ...init, method, headers });
+  let response = await fetch(input, { ...init, method, headers });
+
+  // A 401 with a token getter configured usually means the token expired
+  // between being fetched and being checked: ask for a fresh one and retry
+  // once before giving up.
+  if (response.status === 401 && _authTokenGetter && !isRequest(input)) {
+    const fresh = await _authTokenGetter();
+    if (fresh && fresh !== headers.get("authorization")?.replace(/^Bearer /, "")) {
+      headers.set("authorization", `Bearer ${fresh}`);
+      response = await fetch(input, { ...init, method, headers });
+    }
+  }
 
   if (!response.ok) {
     const errorData = await parseErrorBody(response, method);

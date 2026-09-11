@@ -1,5 +1,7 @@
 import { useEffect, useRef } from "react";
-import { ClerkProvider, SignIn, SignUp, useClerk } from "@clerk/react";
+import { ClerkProvider, SignIn, SignUp, useClerk, useAuth } from "@clerk/react";
+import { setAuthTokenGetter } from "@workspace/api-client-react";
+import { apiToken, setClerkTokenSource } from "@/lib/apiAuth";
 import { publishableKeyFromHost } from "@clerk/react/internal";
 import { shadcn } from "@clerk/themes";
 import { Switch, Route, useLocation, Router as WouterRouter } from "wouter";
@@ -38,6 +40,9 @@ import KnowledgeList from "@/pages/knowledge/List";
 import LearnArtwork from "@/pages/knowledge/Learn";
 import KnowledgeGuidelines from "@/pages/knowledge/Guidelines";
 import { TemplateRegistry } from "@/components/TemplateRegistry";
+
+// Every generated API call carries the Clerk session token (see lib/apiAuth).
+setAuthTokenGetter(apiToken);
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -141,6 +146,16 @@ function SignUpPage() {
   );
 }
 
+/** Hands Clerk's getToken to the API layer once Clerk has loaded. */
+function ClerkApiTokenBridge() {
+  const { isLoaded, getToken } = useAuth();
+  useEffect(() => {
+    if (!isLoaded) return;
+    setClerkTokenSource(() => getToken());
+  }, [isLoaded, getToken]);
+  return null;
+}
+
 function ClerkQueryClientCacheInvalidator() {
   const { addListener } = useClerk();
   const qc = useQueryClient();
@@ -230,6 +245,7 @@ function ClerkProviderWithRoutes() {
       <QueryClientProvider client={queryClient}>
         <ThemeProvider>
           <TooltipProvider>
+            <ClerkApiTokenBridge />
             <ClerkQueryClientCacheInvalidator />
             <Switch>
               <Route path="/sign-in/*?" component={SignInPage} />

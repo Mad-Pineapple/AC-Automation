@@ -213,6 +213,8 @@ export default function CompareTemplates() {
       await claudeReview.mutateAsync({ id });
       await queryClient.invalidateQueries({ queryKey: getListTemplatesQueryKey() });
     } catch (err) {
+      const status = (err as { response?: { status?: number }; status?: number })?.response?.status ?? (err as { status?: number })?.status;
+      if (status === 404) return; // deleted while the check was queued
       const detail = (err as { data?: { error?: string } })?.data?.error ?? (err instanceof Error ? err.message : "");
       toast({ title: "Claude couldn't check this piece", description: detail || undefined, variant: "destructive" });
     } finally {
