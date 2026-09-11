@@ -854,6 +854,46 @@ export const ImportExampleArtworkBody = zod.object({
 
 
 /**
+ * @summary Rebuild the element-aware guideline passage index for a brand
+ */
+export const IndexGuidelinesBody = zod.object({
+  "brandId": zod.number().optional()
+})
+
+export const IndexGuidelinesResponse = zod.object({
+  "brandId": zod.number(),
+  "total": zod.number(),
+  "sources": zod.array(zod.object({
+  "source": zod.string(),
+  "passages": zod.number(),
+  "tagged": zod.number()
+}))
+})
+
+
+/**
+ * @summary Passage counts by source and topic
+ */
+export const GetGuidelineStatusQueryParams = zod.object({
+  "brandId": zod.coerce.number().optional()
+})
+
+export const GetGuidelineStatusResponse = zod.object({
+  "brandId": zod.number().nullish(),
+  "total": zod.number(),
+  "bySource": zod.array(zod.object({
+  "source": zod.string(),
+  "passages": zod.number()
+})),
+  "byTopic": zod.array(zod.object({
+  "topic": zod.string(),
+  "label": zod.string(),
+  "passages": zod.number()
+}))
+})
+
+
+/**
  * @summary Match every brief size to the closest-shaped example artwork
  */
 export const PlanCampaignBuildBody = zod.object({

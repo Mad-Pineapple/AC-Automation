@@ -66,13 +66,17 @@ import type {
   EditAssetImageRequest,
   ErrorResponse,
   GenerateBriefRequest,
+  GetGuidelineStatusParams,
   GetMetaPerformanceParams,
   GetRecentActivityParams,
+  GuidelineIndexResult,
+  GuidelineStatus,
   HealthStatus,
   ImportExampleRequest,
   ImportExampleResult,
   ImportPackageRequest,
   ImportPackageResult,
+  IndexGuidelinesBody,
   ListAssetsParams,
   ListBriefsParams,
   ListComparisonNotesParams,
@@ -1641,6 +1645,161 @@ export const useImportExampleArtwork = <TError = ErrorType<unknown>,
       > => {
       return useMutation(getImportExampleArtworkMutationOptions(options));
     }
+
+export const getIndexGuidelinesUrl = () => {
+
+
+
+
+  return `/api/guidelines/index`
+}
+
+/**
+ * @summary Rebuild the element-aware guideline passage index for a brand
+ */
+export const indexGuidelines = async (indexGuidelinesBody?: IndexGuidelinesBody, options?: RequestInit): Promise<GuidelineIndexResult> => {
+
+  return customFetch<GuidelineIndexResult>(getIndexGuidelinesUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      indexGuidelinesBody,)
+  }
+);}
+
+
+
+
+export const getIndexGuidelinesMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof indexGuidelines>>, TError,{data?: BodyType<IndexGuidelinesBody>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof indexGuidelines>>, TError,{data?: BodyType<IndexGuidelinesBody>}, TContext> => {
+
+const mutationKey = ['indexGuidelines'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof indexGuidelines>>, {data?: BodyType<IndexGuidelinesBody>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  indexGuidelines(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type IndexGuidelinesMutationResult = NonNullable<Awaited<ReturnType<typeof indexGuidelines>>>
+    export type IndexGuidelinesMutationBody = BodyType<IndexGuidelinesBody> | undefined
+    export type IndexGuidelinesMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Rebuild the element-aware guideline passage index for a brand
+ */
+export const useIndexGuidelines = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof indexGuidelines>>, TError,{data?: BodyType<IndexGuidelinesBody>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof indexGuidelines>>,
+        TError,
+        {data?: BodyType<IndexGuidelinesBody>},
+        TContext
+      > => {
+      return useMutation(getIndexGuidelinesMutationOptions(options));
+    }
+
+export const getGetGuidelineStatusUrl = (params?: GetGuidelineStatusParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : value.toString())
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/guidelines/status?${stringifiedParams}` : `/api/guidelines/status`
+}
+
+/**
+ * @summary Passage counts by source and topic
+ */
+export const getGuidelineStatus = async (params?: GetGuidelineStatusParams, options?: RequestInit): Promise<GuidelineStatus> => {
+
+  return customFetch<GuidelineStatus>(getGetGuidelineStatusUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetGuidelineStatusQueryKey = (params?: GetGuidelineStatusParams,) => {
+    return [
+    `/api/guidelines/status`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getGetGuidelineStatusQueryOptions = <TData = Awaited<ReturnType<typeof getGuidelineStatus>>, TError = ErrorType<unknown>>(params?: GetGuidelineStatusParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getGuidelineStatus>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetGuidelineStatusQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getGuidelineStatus>>> = ({ signal }) => getGuidelineStatus(params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getGuidelineStatus>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetGuidelineStatusQueryResult = NonNullable<Awaited<ReturnType<typeof getGuidelineStatus>>>
+export type GetGuidelineStatusQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Passage counts by source and topic
+ */
+
+export function useGetGuidelineStatus<TData = Awaited<ReturnType<typeof getGuidelineStatus>>, TError = ErrorType<unknown>>(
+ params?: GetGuidelineStatusParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getGuidelineStatus>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetGuidelineStatusQueryOptions(params,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
 
 export const getPlanCampaignBuildUrl = () => {
 

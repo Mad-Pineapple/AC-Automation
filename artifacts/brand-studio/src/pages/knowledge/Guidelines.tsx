@@ -5,6 +5,9 @@ import {
   useListBrands,
   useAnalyzeBrandGuideline,
   useUpdateBrand,
+  useIndexGuidelines,
+  useGetGuidelineStatus,
+  getGetGuidelineStatusQueryKey,
   getListBrandsQueryKey,
   getGetBrandQueryKey,
   type AnalyzeGuidelineResponse,
@@ -66,6 +69,21 @@ export default function KnowledgeGuidelines() {
 
   const busy = isUploading || analyzeGuideline.isPending;
   const selectedBrand = brands?.find((b) => b.id === brandId) ?? null;
+  const guidelineStatus = useGetGuidelineStatus(brandId ? { brandId } : undefined, { query: { enabled: !!brandId, queryKey: getGetGuidelineStatusQueryKey(brandId ? { brandId } : undefined) } });
+  const indexGuidelines = useIndexGuidelines();
+  const runIndex = () => {
+    if (!brandId) return;
+    indexGuidelines.mutate(
+      { data: { brandId } },
+      {
+        onSuccess: (r) => {
+          queryClient.invalidateQueries({ queryKey: getGetGuidelineStatusQueryKey({ brandId }) });
+          toast({ title: `Guidelines indexed: ${r.total} passages`, description: r.sources.map((x) => `${x.source}: ${x.tagged} passages`).join(" · ") });
+        },
+        onError: (e) => toast({ title: "Could not index the guidelines", description: e instanceof Error ? e.message.slice(0, 160) : undefined, variant: "destructive" }),
+      },
+    );
+  };
   const suggestionEntries = result
     ? (Object.entries(result.suggestions) as [keyof GuidelineSuggestions, string][])
     : [];
@@ -260,6 +278,32 @@ export default function KnowledgeGuidelines() {
                 ? "Analyzing..."
                 : "Upload PDF"}
           </label>
+        </CardContent>
+      </Card>
+
+      <Card className={brandId ? "" : "opacity-60 pointer-events-none"} data-testid="card-guideline-index">
+        <CardHeader className="pb-3">
+          <CardTitle className="text-sm flex items-center gap-2">
+            <BookOpen className="w-4 h-4 text-primary" />
+            Rules read per element
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <p className="text-xs text-muted-foreground max-w-prose">
+            When a piece is checked or built, the studio reads the guideline passages for exactly what is on it: the pōhutukawa tile and logo rules when there is a logo, the kotahitanga pattern rules when there is a band, photography rules when there is a photo, typography and voice when there is live type. The passages come from the guideline PDFs in the Library, the built-in distilled guidelines and the summary above. Re-index after adding a new guideline document.
+          </p>
+          {guidelineStatus.data && guidelineStatus.data.total > 0 ? (
+            <div className="text-xs space-y-1">
+              <p><span className="font-semibold">{guidelineStatus.data.total} passages</span> from {guidelineStatus.data.bySource.map((x) => `${x.source} (${x.passages})`).join(", ")}</p>
+              <p className="text-muted-foreground">{guidelineStatus.data.byTopic.map((t) => `${t.label}: ${t.passages}`).join(" · ")}</p>
+            </div>
+          ) : (
+            <p className="text-xs text-muted-foreground">Not indexed yet. Until then checks read the built-in distilled guidelines.</p>
+          )}
+          <Button type="button" variant="outline" size="sm" className="gap-1.5" onClick={runIndex} disabled={!brandId || indexGuidelines.isPending || !isAdmin} data-testid="button-index-guidelines">
+            {indexGuidelines.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <BookOpen className="w-4 h-4" />}
+            {guidelineStatus.data && guidelineStatus.data.total > 0 ? "Re-index guidelines" : "Index guidelines"}
+          </Button>
         </CardContent>
       </Card>
 

@@ -21,6 +21,7 @@ import reviewProgressRouter from "./review-progress";
 import creativesRouter from "./creatives";
 import collateralRouter from "./collateral";
 import layoutProfilesRouter from "./layout-profiles";
+import guidelinesRouter from "./guidelines";
 import exportsRouter from "./exports";
 import campaignIdeasRouter from "./campaign-ideas";
 import attentionRouter from "./attention";
@@ -70,6 +71,7 @@ router.use(reviewProgressRouter);
 router.use(creativesRouter);
 router.use(collateralRouter);
 router.use(layoutProfilesRouter);
+router.use(guidelinesRouter);
 router.use(statsRouter);
 
 export default router;

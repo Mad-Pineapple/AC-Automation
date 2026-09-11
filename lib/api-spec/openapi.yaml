@@ -504,6 +504,45 @@ paths:
               schema:
                 $ref: "#/components/schemas/ImportExampleResult"
 
+  /guidelines/index:
+    post:
+      operationId: indexGuidelines
+      tags: [guidelines]
+      summary: Rebuild the element-aware guideline passage index for a brand
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                brandId: { type: integer }
+      responses:
+        "200":
+          description: Index rebuilt
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GuidelineIndexResult"
+
+  /guidelines/status:
+    get:
+      operationId: getGuidelineStatus
+      tags: [guidelines]
+      summary: Passage counts by source and topic
+      parameters:
+        - name: brandId
+          in: query
+          required: false
+          schema: { type: integer }
+      responses:
+        "200":
+          description: Status
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GuidelineStatus"
+
   /campaigns/build-plan:
     post:
       operationId: planCampaignBuild
@@ -2505,6 +2544,46 @@ components:
         assetsImported:
           type: integer
       required: [kind, templates, warnings, assetsImported]
+
+    GuidelineIndexResult:
+      type: object
+      properties:
+        brandId: { type: integer }
+        total: { type: integer }
+        sources:
+          type: array
+          items:
+            type: object
+            properties:
+              source: { type: string }
+              passages: { type: integer }
+              tagged: { type: integer }
+            required: [source, passages, tagged]
+      required: [brandId, total, sources]
+
+    GuidelineStatus:
+      type: object
+      properties:
+        brandId: { type: ["integer", "null"] }
+        total: { type: integer }
+        bySource:
+          type: array
+          items:
+            type: object
+            properties:
+              source: { type: string }
+              passages: { type: integer }
+            required: [source, passages]
+        byTopic:
+          type: array
+          items:
+            type: object
+            properties:
+              topic: { type: string }
+              label: { type: string }
+              passages: { type: integer }
+            required: [topic, label, passages]
+      required: [total, bySource, byTopic]
 
     CampaignBuildPlanRequest:
       type: object

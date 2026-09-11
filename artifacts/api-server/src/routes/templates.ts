@@ -12,6 +12,7 @@ import { checkLayout, checkMandatory } from "../lib/layoutCheck";
 import { isImageOnly, hasLayeredSlots, hasPanelParts, splitPanelGraphic, enrichLayeredArtwork, adaptLayered, edgeColour, storageImageLoader } from "../lib/layeredArtwork";
 import { analyseGwdHtml, motionForElements, type GwdLeaf } from "../lib/gwdMotion";
 import { resolveStyleSchema, learnProfile, getProfile } from "../lib/layoutProfile";
+import { guidelinesForConfig, guidelineNotes } from "../lib/guidelines";
 import type { StyleSchema } from "../lib/styleSpecs/getReadyBurst2";
 import { visibleBounds } from "../lib/gwdImport";
 
@@ -464,8 +465,15 @@ router.post("/templates/:id/adapt", requireAdmin, async (req, res): Promise<void
       name: typeof t.formatName === "string" ? t.formatName : typeof t.name === "string" ? t.name : null,
       channel: typeof t.channel === "string" ? t.channel : null,
     };
-    const { config: merged, method, spec, rejected } = await adaptOne(master, masterConfig, width, height, brandInfo, (req as any).log, exemplars, undefined, hints, resolvedStyle.source === "none" ? null : { schema: resolvedStyle.schema, label: resolvedStyle.label });
+    const { config: adaptedConfig, method, spec, rejected } = await adaptOne(master, masterConfig, width, height, brandInfo, (req as any).log, exemplars, undefined, hints, resolvedStyle.source === "none" ? null : { schema: resolvedStyle.schema, label: resolvedStyle.label });
     if (rejected.length > 0) rejectedCount++;
+    // Guideline reminders for what is on the piece (logo tile, band, photo…).
+    let merged = adaptedConfig;
+    try {
+      const gl = await guidelinesForConfig(brand?.id ?? null, adaptedConfig, width, height, 1);
+      const lines = guidelineNotes(gl);
+      if (lines.length) merged = normalizeFreeformConfig({ ...adaptedConfig, adaptNotes: [...(adaptedConfig.adaptNotes ?? []), ...lines] });
+    } catch { /* notes are a bonus */ }
     const name =
       typeof t.name === "string" && t.name.trim()
         ? t.name.trim().slice(0, 120)
@@ -570,6 +578,9 @@ router.post("/templates/:id/claude-review", requireAuth, async (req, res): Promi
       adaptMethod: typeof raw.adaptMethod === "string" ? raw.adaptMethod : null,
       designerNote,
       styleSpec: resolvedStyle.schema ? `${resolvedStyle.label}\n${describeStyleSchema(resolvedStyle.schema)}` : null,
+      // The guideline passages for exactly the elements on this piece: logo
+      // rules when there is a logo tile, pattern rules when there is a band…
+      elementGuidelines: await guidelinesForConfig(brand?.id ?? null, config, t.width, t.height).catch(() => []),
       headlineMaxH: (() => {
         const sp = resolvedStyle.schema;
         if (!sp || !hasLayeredSlots(config)) return null;

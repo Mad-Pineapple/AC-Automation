@@ -14,3 +14,4 @@ export * from "./share-links";
 export * from "./review-progress";
 export * from "./creatives";
 export * from "./layout-profiles";
+export * from "./guideline-passages";

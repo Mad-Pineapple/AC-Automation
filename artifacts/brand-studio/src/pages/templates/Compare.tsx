@@ -47,6 +47,7 @@ interface ClaudeReviewShape {
   issues: Array<{ elementId: string | null; fault: string; message: string; fix: string | null; severity: "send_back" | "fix_next_time"; edit?: unknown }>;
   reviewedAt: string;
   answeredBy?: string;
+  guidelinesApplied?: Array<{ topic: string; label: string; elementIds: string[]; sources: string[]; passages: number }>;
 }
 interface ClaudeFixesShape {
   at: string;
@@ -108,6 +109,12 @@ function ClaudeReviewPanel({ template, busy, onCheck, onUndo, undoing }: { templ
           )}
           {remaining.length > 0 && (
             <p className="text-xs text-amber-700 flex gap-1.5"><AlertTriangle className="w-3.5 h-3.5 shrink-0 mt-0.5" /><span>{remaining.length} thing{remaining.length === 1 ? "" : "s"} still need{remaining.length === 1 ? "s" : ""} a designer: {remaining.map((i) => i.message).join(" ")}</span></p>
+          )}
+          {r.guidelinesApplied && r.guidelinesApplied.length > 0 && (
+            <p className="text-[10px] text-muted-foreground" data-testid={`claude-guidelines-${template.id}`}>
+              Guidelines read for this piece: {r.guidelinesApplied.filter((g) => g.elementIds.length > 0 || g.topic === "social").map((g) => g.label.toLowerCase()).join(", ")}
+              {" · from "}{Array.from(new Set(r.guidelinesApplied.flatMap((g) => g.sources))).join(", ")}
+            </p>
           )}
           <p className="text-[10px] text-muted-foreground">{new Date(r.reviewedAt).toLocaleString("en-NZ")}{r.answeredBy ? ` · answered by ${r.answeredBy}` : ""}</p>
         </>

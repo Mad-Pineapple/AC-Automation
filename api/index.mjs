@@ -15241,9 +15241,9 @@ var require_mime_types = __commonJS({
       return score0 > score1 ? type0 : type1;
     }
     function _preferredTypeLegacy(ext2, type0, type1) {
-      var SOURCE_RANK = ["nginx", "apache", void 0, "iana"];
-      var score0 = type0 ? SOURCE_RANK.indexOf(db2[type0].source) : 0;
-      var score1 = type1 ? SOURCE_RANK.indexOf(db2[type1].source) : 0;
+      var SOURCE_RANK2 = ["nginx", "apache", void 0, "iana"];
+      var score0 = type0 ? SOURCE_RANK2.indexOf(db2[type0].source) : 0;
+      var score1 = type1 ? SOURCE_RANK2.indexOf(db2[type1].source) : 0;
       if (exports2.types[extension] !== "application/octet-stream" && (score0 > score1 || score0 === score1 && exports2.types[extension]?.slice(0, 12) === "application/")) {
         return type0;
       }
@@ -20526,27 +20526,27 @@ var require_router = __commonJS({
     var slice = Array.prototype.slice;
     var flatten = Array.prototype.flat;
     var methods = METHODS.map((method) => method.toLowerCase());
-    module.exports = Router30;
+    module.exports = Router31;
     module.exports.Route = Route;
-    function Router30(options) {
-      if (!(this instanceof Router30)) {
-        return new Router30(options);
+    function Router31(options) {
+      if (!(this instanceof Router31)) {
+        return new Router31(options);
       }
       const opts = options || {};
-      function router30(req, res, next) {
-        router30.handle(req, res, next);
+      function router31(req, res, next) {
+        router31.handle(req, res, next);
       }
-      Object.setPrototypeOf(router30, this);
-      router30.caseSensitive = opts.caseSensitive;
-      router30.mergeParams = opts.mergeParams;
-      router30.params = {};
-      router30.strict = opts.strict;
-      router30.stack = [];
-      return router30;
+      Object.setPrototypeOf(router31, this);
+      router31.caseSensitive = opts.caseSensitive;
+      router31.mergeParams = opts.mergeParams;
+      router31.params = {};
+      router31.strict = opts.strict;
+      router31.stack = [];
+      return router31;
     }
-    Router30.prototype = function() {
+    Router31.prototype = function() {
     };
-    Router30.prototype.param = function param(name, fn) {
+    Router31.prototype.param = function param(name, fn) {
       if (!name) {
         throw new TypeError("argument name is required");
       }
@@ -20566,7 +20566,7 @@ var require_router = __commonJS({
       params.push(fn);
       return this;
     };
-    Router30.prototype.handle = function handle(req, res, callback) {
+    Router31.prototype.handle = function handle(req, res, callback) {
       if (!callback) {
         throw new TypeError("argument callback is required");
       }
@@ -20693,7 +20693,7 @@ var require_router = __commonJS({
         }
       }
     };
-    Router30.prototype.use = function use(handler2) {
+    Router31.prototype.use = function use(handler2) {
       let offset = 0;
       let path11 = "/";
       if (typeof handler2 !== "function") {
@@ -20726,7 +20726,7 @@ var require_router = __commonJS({
       }
       return this;
     };
-    Router30.prototype.route = function route(path11) {
+    Router31.prototype.route = function route(path11) {
       const route2 = new Route(path11);
       const layer = new Layer(path11, {
         sensitive: this.caseSensitive,
@@ -20741,7 +20741,7 @@ var require_router = __commonJS({
       return route2;
     };
     methods.concat("all").forEach(function(method) {
-      Router30.prototype[method] = function(path11) {
+      Router31.prototype[method] = function(path11) {
         const route = this.route(path11);
         route[method].apply(route, slice.call(arguments, 1));
         return this;
@@ -20924,13 +20924,13 @@ var require_application = __commonJS({
     var compileTrust = require_utils3().compileTrust;
     var resolve2 = __require("node:path").resolve;
     var once = require_once();
-    var Router30 = require_router();
+    var Router31 = require_router();
     var slice = Array.prototype.slice;
     var flatten = Array.prototype.flat;
     var app2 = exports2 = module.exports = {};
     var trustProxyDefaultSymbol = "@@symbol:trust_proxy_default";
     app2.init = function init() {
-      var router30 = null;
+      var router31 = null;
       this.cache = /* @__PURE__ */ Object.create(null);
       this.engines = /* @__PURE__ */ Object.create(null);
       this.settings = /* @__PURE__ */ Object.create(null);
@@ -20939,13 +20939,13 @@ var require_application = __commonJS({
         configurable: true,
         enumerable: true,
         get: function getrouter() {
-          if (router30 === null) {
-            router30 = new Router30({
+          if (router31 === null) {
+            router31 = new Router31({
               caseSensitive: this.enabled("case sensitive routing"),
               strict: this.enabled("strict routing")
             });
           }
-          return router30;
+          return router31;
         }
       });
     };
@@ -21016,15 +21016,15 @@ var require_application = __commonJS({
       if (fns.length === 0) {
         throw new TypeError("app.use() requires a middleware function");
       }
-      var router30 = this.router;
+      var router31 = this.router;
       fns.forEach(function(fn2) {
         if (!fn2 || !fn2.handle || !fn2.set) {
-          return router30.use(path11, fn2);
+          return router31.use(path11, fn2);
         }
         debug8(".use app under %s", path11);
         fn2.mountpath = path11;
         fn2.parent = this;
-        router30.use(path11, function mounted_app(req, res, next) {
+        router31.use(path11, function mounted_app(req, res, next) {
           var orig = req.app;
           fn2.handle(req, res, function(err) {
             Object.setPrototypeOf(req, orig.request);
@@ -23597,7 +23597,7 @@ var require_express = __commonJS({
     var EventEmitter2 = __require("node:events").EventEmitter;
     var mixin = require_merge_descriptors();
     var proto = require_application();
-    var Router30 = require_router();
+    var Router31 = require_router();
     var req = require_request();
     var res = require_response();
     exports2 = module.exports = createApplication;
@@ -23619,8 +23619,8 @@ var require_express = __commonJS({
     exports2.application = proto;
     exports2.request = req;
     exports2.response = res;
-    exports2.Route = Router30.Route;
-    exports2.Router = Router30;
+    exports2.Route = Router31.Route;
+    exports2.Router = Router31;
     exports2.json = bodyParser.json;
     exports2.raw = bodyParser.raw;
     exports2.static = require_serve_static();
@@ -181127,7 +181127,7 @@ var require_dist8 = __commonJS({
 });
 
 // src/app.ts
-var import_express31 = __toESM(require_express2(), 1);
+var import_express32 = __toESM(require_express2(), 1);
 var import_cors = __toESM(require_lib3(), 1);
 var import_pino_http = __toESM(require_logger(), 1);
 import { existsSync as existsSync3 } from "fs";
@@ -190479,11 +190479,11 @@ function parsePathRewriteRules(rewriteConfig) {
 var debug4 = Debug.extend("router");
 async function getTarget(req, res, config2) {
   let newTarget;
-  const router30 = config2.router;
-  if (isPlainObject(router30)) {
-    newTarget = getTargetFromProxyTable(req, router30);
-  } else if (typeof router30 === "function") {
-    newTarget = await router30(req, res, config2);
+  const router31 = config2.router;
+  if (isPlainObject(router31)) {
+    newTarget = getTargetFromProxyTable(req, router31);
+  } else if (typeof router31 === "function") {
+    newTarget = await router31(req, res, config2);
   }
   return newTarget;
 }
@@ -190768,7 +190768,7 @@ function clerkProxyMiddleware() {
 }
 
 // src/routes/index.ts
-var import_express29 = __toESM(require_express2(), 1);
+var import_express30 = __toESM(require_express2(), 1);
 
 // src/routes/health.ts
 var import_express = __toESM(require_express2(), 1);
@@ -195353,6 +195353,34 @@ var ImportExampleArtworkBody = objectType({
   "objectPath": stringType().min(1),
   "fileName": stringType().min(1),
   "brandId": numberType().optional()
+});
+var IndexGuidelinesBody = objectType({
+  "brandId": numberType().optional()
+});
+var IndexGuidelinesResponse = objectType({
+  "brandId": numberType(),
+  "total": numberType(),
+  "sources": arrayType(objectType({
+    "source": stringType(),
+    "passages": numberType(),
+    "tagged": numberType()
+  }))
+});
+var GetGuidelineStatusQueryParams = objectType({
+  "brandId": coerce.number().optional()
+});
+var GetGuidelineStatusResponse = objectType({
+  "brandId": numberType().nullish(),
+  "total": numberType(),
+  "bySource": arrayType(objectType({
+    "source": stringType(),
+    "passages": numberType()
+  })),
+  "byTopic": arrayType(objectType({
+    "topic": stringType(),
+    "label": stringType(),
+    "passages": numberType()
+  }))
 });
 var PlanCampaignBuildBody = objectType({
   "masterTemplateIds": arrayType(numberType()),
@@ -203581,6 +203609,7 @@ __export(schema_exports, {
   creativeEventTypeValues: () => creativeEventTypeValues,
   creativeEventsTable: () => creativeEventsTable,
   creativesTable: () => creativesTable,
+  guidelinePassagesTable: () => guidelinePassagesTable,
   insertAssetSchema: () => insertAssetSchema,
   insertBrandAssetSchema: () => insertBrandAssetSchema,
   insertBrandSchema: () => insertBrandSchema,
@@ -215304,6 +215333,19 @@ var layoutProfilesTable = pgTable("layout_profiles", {
   createdBy: text("created_by"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow()
+});
+
+// ../../lib/db/src/schema/guideline-passages.ts
+var guidelinePassagesTable = pgTable("guideline_passages", {
+  id: serial("id").primaryKey(),
+  brandId: integer("brand_id"),
+  source: text("source").notNull(),
+  sourceAssetId: integer("source_asset_id"),
+  topic: text("topic").notNull(),
+  heading: text("heading").notNull().default(""),
+  body: text("body").notNull(),
+  ord: integer("ord").notNull().default(0),
+  createdAt: timestamp("created_at").notNull().defaultNow()
 });
 
 // ../../lib/db/src/index.ts
@@ -233834,6 +233876,223 @@ async function resolveStyleSchema(opts) {
   return { schema: null, source: "none", label: "family defaults" };
 }
 
+// src/lib/brandGuidelines/aucklandCouncilDistilled.ts
+var DISTILLED_GUIDELINES_SOURCE = "AC Brand Guidelines June 2025 (distilled)";
+var DISTILLED_GUIDELINES = '# Auckland Council Brand Guidelines \u2014 distilled reference\n\nSource: *AC Brand Guidelines June 2025* (64pp, `attached_assets/AC_Brand_Guidelines_June_2025_*.pdf`),\n*26-PRO-0516 Brand Guidelines contractors 2026*, and the live Frontify portal\n(https://aucklandcouncil.frontify.com/d/67jM5b5GuoL9). The operational subset lives in\n`brands.guidelines` (DB) and feeds every generation prompt; this file is the full reference.\n\n## Brand idea\n\n- **One purpose, one brand**: create an Auckland we can all be proud of. Every touchpoint uses the\n  p\u014Dhutukawa and kotahitanga patterns so work is attributed back to the council.\n- **Altogether Auckland** is the brand expression; kotahitanga (togetherness) is the core theme.\n- Strapline: **"T\u0101maki Turuki. Altogether Auckland."** \u2014 always lead with the te reo line.\n- P\u014Dhutukawa symbolism: blossom = people coming together (kotahitanga), leaves = guardianship of\n  the environment (kaitiakitanga), waves = the waters that flank T\u0101maki Makaurau. Chosen in 2010\n  when the eight councils amalgamated.\n\n## Voice & tone\n\n- Inclusive: dial up personal pronouns \u2014 you, your, our, we, us.\n- Talk like an Aucklander, not a bureaucrat: *let us know* (not "notify us"), *have your say*\n  (not "consult with us"), *aim/goal* (not "objective").\n- Headlines: no trailing full stop. Full stops on body copy only when there is other punctuation.\n- Supporting copy under a headline: max three lines.\n- Business-unit attribution goes in body copy where required: "Auckland Council Pools and\n  Leisure.", "Auckland Council Holiday Parks.", "Auckland Council Holiday Places.",\n  "Auckland Council Libraries."\n\n## P\u014Dhutukawa tile, grid, logos\n\n- **Master logo** = colour p\u014Dhutukawa in a **white square tile**. The mark is vertically aligned to\n  1/8 of the box (1/8 margin top and bottom), horizontally centred.\n- The tile is the **building block of the grid**: divide the artwork\'s shortest axis by an even\n  number of tiles \u2014 4, 6 or 8 for print ("A" sizes usually 6), **1, 2 or 4 for digital**. One\n  division = tile size. Page margin = **1/3 tile height**.\n- Placement: primarily **bottom-right** of campaign artwork.\n- Colour logo on white or \u226420% colour/image density backgrounds; single-colour (white) version on\n  secondary colours, limited circumstances only.\n- **Corporate logos** (traditional lockups with wordmark) are reserved for: third-party funding\n  acknowledgement, building control, food safety, council/waste vehicles, all signage, uniforms,\n  contractor branding, documents/stationery.\n- Events: "Auckland Council Events" logo when council is majority funder; "Proudly supported by\n  Auckland Council Events" when partially funded. Clear space unit u = p\u014Dhutukawa height / 5;\n  minimum logo height 10mm / 50px. Full-colour versions on white/light backgrounds only.\n- Auckland "A" destination logo: only when >50% of audience is outside Auckland; teal #00a6a7.\n\n## The anther (framing device)\n\n- A large circle on a straight stem: circle centred horizontally with clear space for headline\n  copy above; stem enters from **left, lower-left 45\xB0, or bottom centre \u2014 never 45\xB0 from the\n  lower-right**, and never covered by the p\u014Dhutukawa tile.\n- Size: extend to the margins, as big as reasonably possible, always showing straight stem lines.\n  Cropped anthers are subject to design review.\n- Stroke options: solid (same thickness as the logo\'s wave), gradient (double thickness), or none.\n- As a housing device: either copy inside the anther (image outside) or image inside (copy\n  outside). Backgrounds behind copy get a colour/opacity/multiply effect and must pass\n  accessibility contrast. Full-bleed photography variants: blur outside the anther (image inside in\n  focus) or the anther as a simple intersecting outline.\n- Not used inside carousel frames (makes imagery too small).\n\n## Kotahitanga patterns\n\n- Built from p\u014Dhutukawa elements + three tohu: **Te Ao T\u016Broa** (the enduring world),\n  **Whanaungatanga** (strengthening relationships), **Taonga Tuku Iho** (treasures handed on).\n- Used as subtle background texture: three-row wallpaper 30/20/10% opacity (bottom\u2192top), two-row\n  20/10%, single row 20\u201330%. **Never more than 30% opacity.** Behind mid-artwork images \u226430%.\n- Stamp treatment: 2\u20133 patterns snapped to the grid, usually next to the p\u014Dhutukawa tile.\n- Patterns may use any brand colour.\n\n## Typography\n\n- **National 2** family (Kris Sowersby, Klim Type Foundry).\n  - Headlines: **National 2 Condensed Bold, ALL CAPS**.\n  - Headline support / subheads / CTAs / URLs: **National 2 Bold**.\n  - Body copy: **National 2 Regular**.\n  - **Rocked** script accent: sparingly, events/invite/celebrate collateral only.\n- Strapline treatment: usually two lines ("T\u0101maki Turuki." / "Altogether Auckland."), height = 1/3\n  of the tile, aligned to margins; can run single-line or right-aligned beside the tile. Leading =\n  point size +15%. Te reo always first.\n- **Search-bar CTA**: pill with "Search" in National 2 Regular (tracking \u221210) + phrase in National\n  2 Bold (tracking +10), e.g. "Search dog registration". Can also carry a short URL.\n- **Hotspots**: short ALL-CAPS message set in a kotahitanga circle (e.g. "AK HAVE YOUR SAY");\n  crafted National 2 Condensed Bold product/programme marks (PEST FREE AUCKLAND, LIVE LIGHTLY) are\n  type treatments, **not logos**.\n\n## Colour palette\n\n| Group | Names & hexes |\n|---|---|\n| Core | Ocean `#11263d`, Anther Red `#de0a2b`, P\u014Dhutukawa Leaf `#5b9c33`, Shore `#0073bd`, K\u014Dwhai `#ffe104`, White `#ffffff` |\n| Vibrant | Ultra Violet `#3d2683`, Blush Response `#de006e`, Lemon Lime `#afca0b`, Shore Light `#00a7e5`, Tangerine Dream `#ef7d00` |\n| Dark base | Slate Grey `#3c3c3b`, Mocha `#691837`, Hunua Shadow `#1c473e`, Denim `#183a68`, Dark Chocolate `#4e2926`, Ocean 240 `#273652` (newsprint substitute for Ocean) |\n| Muted | Grey Lynn `#8e9ba4`, Amaranth `#e1a7bf`, Seagrass `#c4d28b`, Sky `#95d3e4`, Mascarpone `#f9e7c4` |\n\nBase every layout on Ocean + white/neutral grey; accents connect comms back to the logo.\n\n## Illustration style\n\n- Simple **flat vector**, snaps to the grid; built from logo elements \u2014 circles/ellipses from the\n  anther, leaf shapes, water curves. Rounded corners; arms as single heavy strokes with round caps.\n- **Three-plane scenes**: background, mid-ground (subject), foreground; a repeated object must be\n  \u226530% bigger in the foreground.\n- Established cast: faceless diverse people; native birds (t\u016B\u012B, p\u012Bwakawaka, kerer\u016B, korimako,\n  tauhou, riroriro, p\u016Bkeko, takah\u0113); animals incl. dogs, ducks, hens, cows, sheep, horses, pigs.\n\n## Photography & video\n\n- Documentary style, the real Auckland: togetherness through diversity, pride, community; prefer\n  more than one person in shot; rich/bright/vibrant colour; playgrounds, beaches, paths, community\n  centres; avoid CBD-centric imagery. Landscapes and drone/aerials welcome. Events: vibrant,\n  upbeat, optimistic.\n- Video: animated p\u014Dhutukawa end-frame with strapline; watermark top-left; name keys are .mogrt\n  Premiere templates; captions required; keep top-left free of hotspots and bottom-right clear\n  (YouTube subscribe).\n\n## Social media rules\n\n- The p\u014Dhutukawa is the profile picture on council channels, so **1080\xD71080 organic/paid social\n  tiles carry no logo**; Facebook cover 820\xD7360: no logo, no patterns.\n- Strapline is **not required** on social statics \u2014 "less is more"; on video it appears in the\n  blurred outro end-frame (4:5 Meta video: whiteout mono p\u014Dhutukawa + strapline PNG on final frame).\n- Meta content: first sentence carries the key message; keep creative single-minded (split multiple\n  messages into versions); ALL-CAPS/exclamation marks in primary copy hurt quality scores;\n  carousels 3\u20134 frames max, no anther in frames; CTA buttons/URLs unnecessary (links are overlaid).\n- Reels = awareness/entertainment (15\u201330s in-feed); Stories = drive a specific action (\u226410\u201315s or\n  add a tap prompt).\n\n## Standard formats seen in guidelines\n\nPrint/posters (A sizes), digital screens 1920\xD71080 & 1080\xD71920, digital ads 300\xD7250, 300\xD7600,\n160\xD7600, 728\xD790, video end-frames, social 1080\xD71350, 1200\xD7628, 1080\xD71080 (no logo), Pinterest\n1000\xD71500, Meta story 1440\xD72560 (safe zones), Facebook cover 820\xD7360.\n\n## Contractors (2026)\n\n- Co-branded clothing on all council jobs; simplified AC logo (no M\u0101ori strapline / "working\n  together with" text). Equal prominence with contractor logo. Placement order: wearer\'s left\n  chest (min 28mm) \u2192 right chest \u2192 under contractor logo \u2192 top of left sleeve. Front of safety\n  wear only, on solid colour. Full colour on white/light, white on dark, black on low-contrast/\n  hi-vis. Direct embroidery.\n';
+
+// src/lib/guidelines.ts
+init_logger();
+var TOPICS = [
+  { id: "logo", label: "P\u014Dhutukawa tile and logos", slots: ["logo", "lockup"], keywords: /p[oō]hutukawa|\blogo\b|\btile\b|lockup|clear ?space|wordmark|emblem|corporate logo|minimum (logo )?(height|size)|bottom[- ]right/i },
+  { id: "pattern", label: "Kotahitanga patterns and bands", slots: ["band", "pattern", "decoration"], keywords: /kotahitanga|pattern|tohu|motif|wallpaper|stamp|texture|band\b/i },
+  { id: "anther", label: "The anther framing device", slots: ["anther", "frame"], keywords: /anther|framing device|circle on a (straight )?stem|stem/i },
+  { id: "photography", label: "Photography and imagery", slots: ["photo", "product", "cutout", "image"], keywords: /photograph|imagery|\bimage\b|crop|talent|model release|stock|video\b|footage/i },
+  { id: "typography", label: "Typography", slots: ["headline", "subheadline", "message", "body", "text", "kicker"], keywords: /typograph|\bfont\b|typeface|national 2|condensed|tracking|leading|sentence case|caps\b|headline|body copy/i },
+  { id: "colour", label: "Colour palette", slots: ["panel", "rect", "scrim"], keywords: /colou?r|palette|#[0-9a-f]{6}|\bhex\b|tint|ocean|k[oō]whai|shore|anther red|pantone|cmyk/i },
+  { id: "voice", label: "Voice and tone", slots: ["headline", "subheadline", "message", "body", "text", "cta"], keywords: /voice|tone|te reo|māori|maori|greeting|kia ora|plain (english|language)|we say|never say|copy\b/i },
+  { id: "social", label: "Social media rules", slots: ["social"], keywords: /social|instagram|facebook|tiktok|linkedin|story\b|reel|profile picture|safe zone|1080/i },
+  { id: "cta", label: "Buttons and calls to action", slots: ["cta", "ctaLabel", "ctaIcon"], keywords: /call to action|\bcta\b|button|pill|search (bar|pill)|find out more|learn more/i },
+  { id: "layout", label: "Grid, margins and formats", slots: ["*"], keywords: /\bgrid\b|margin|format|layout|hierarchy|white ?space|alignment|bleed/i }
+];
+function splitIntoPassages(text3) {
+  const out = [];
+  let heading = "";
+  let buf = [];
+  let ord = 0;
+  const flush = () => {
+    const body = buf.join(" ").replace(/\s+/g, " ").trim();
+    if (body.length >= 40) out.push({ heading, body: body.slice(0, 900), ord: ord++ });
+    buf = [];
+  };
+  for (const rawLine of text3.split(/\r?\n/)) {
+    const line2 = rawLine.replace(/\t/g, " ").trimEnd();
+    const h = /^#{1,4}\s+(.*)$/.exec(line2.trim());
+    if (h) {
+      flush();
+      heading = h[1].replace(/[*_`]/g, "").trim();
+      continue;
+    }
+    if (line2.trim() === "") {
+      flush();
+      continue;
+    }
+    if (/^\s*([-*•]|\d+[.)])\s+/.test(line2)) {
+      flush();
+      buf.push(line2.replace(/^\s*([-*•]|\d+[.)])\s+/, "").replace(/\*\*/g, ""));
+      continue;
+    }
+    buf.push(line2.trim().replace(/\*\*/g, ""));
+  }
+  flush();
+  return out;
+}
+function splitPdfText(text3) {
+  const lines = text3.split(/\r?\n/).map((l) => l.replace(/\s+/g, " ").trim());
+  const out = [];
+  let heading = "";
+  let buf = [];
+  let ord = 0;
+  const flush = () => {
+    const body = buf.join(" ").replace(/\s+/g, " ").trim();
+    if (body.length >= 60) {
+      const sentences = body.match(/[^.!?]+[.!?]+(\s|$)|[^.!?]+$/g) ?? [body];
+      let cur = "";
+      for (const s2 of sentences) {
+        if ((cur + s2).length > 700 && cur) {
+          out.push({ heading, body: cur.trim(), ord: ord++ });
+          cur = "";
+        }
+        cur += s2;
+      }
+      if (cur.trim().length >= 40) out.push({ heading, body: cur.trim().slice(0, 900), ord: ord++ });
+    }
+    buf = [];
+  };
+  for (const line2 of lines) {
+    if (line2 === "") {
+      flush();
+      continue;
+    }
+    const isHeading = line2.length <= 60 && (line2 === line2.toUpperCase() && /[A-Z]/.test(line2) || /^[A-Z][^.]{2,58}$/.test(line2) && buf.length === 0);
+    if (isHeading) {
+      flush();
+      heading = line2;
+      continue;
+    }
+    buf.push(line2);
+  }
+  flush();
+  return out;
+}
+function hitCount(t, hay) {
+  return (hay.match(new RegExp(t.keywords.source, "gi")) ?? []).length;
+}
+function looksLikeDebris(body) {
+  const digits = (body.match(/\d/g) ?? []).length;
+  const words = body.split(/\s+/).length;
+  if (words < 8) return true;
+  if (digits / Math.max(1, body.length) > 0.07) return true;
+  if (/\bcontents\b/i.test(body) && words < 60) return true;
+  if ((body.match(/\b\d{2,4}\s*[x×]\s*\d{2,4}\b/g) ?? []).length >= 2) return true;
+  return false;
+}
+function topicsOf(heading, body, minHits = 1) {
+  const hay = `${heading}
+${body}`;
+  const hits = TOPICS.filter((t) => t.id !== "layout" && hitCount(t, hay) >= minHits).map((t) => t.id);
+  if (hitCount(TOPICS.find((t) => t.id === "layout"), hay) >= minHits) hits.push("layout");
+  return hits;
+}
+async function indexGuidelines(brandId) {
+  const [brand] = await db.select().from(brandsTable).where(eq(brandsTable.id, brandId));
+  if (!brand) throw new Error("Brand not found");
+  const sources = [];
+  sources.push({ source: DISTILLED_GUIDELINES_SOURCE, assetId: null, passages: splitIntoPassages(DISTILLED_GUIDELINES) });
+  if (brand.guidelines && brand.guidelines.trim().length > 40) sources.push({ source: "Brand summary", assetId: null, passages: splitIntoPassages(brand.guidelines) });
+  const files = await db.select({ id: brandAssetsTable.id, name: brandAssetsTable.name, objectPath: brandAssetsTable.objectPath, contentType: brandAssetsTable.contentType }).from(brandAssetsTable).where(and(eq(brandAssetsTable.brandId, brandId), eq(brandAssetsTable.kind, "file")));
+  for (const f of files) {
+    if (!/pdf/i.test(f.contentType ?? "") || !/guideline|brand book|brand standards|style guide/i.test(f.name)) continue;
+    try {
+      const text3 = await extractPdfText(f.objectPath);
+      if (text3.replace(/\s/g, "").length < 200) continue;
+      sources.push({ source: f.name, assetId: f.id, passages: splitPdfText(text3) });
+    } catch (err) {
+      logger2.warn({ err, asset: f.id }, "guideline index: could not read a library PDF");
+    }
+  }
+  await db.delete(guidelinePassagesTable).where(eq(guidelinePassagesTable.brandId, brandId));
+  const result = { sources: [], total: 0 };
+  for (const src of sources) {
+    let tagged = 0;
+    const rows = [];
+    const fromPdf = src.assetId != null;
+    for (const p of src.passages) {
+      if (fromPdf && looksLikeDebris(p.body)) continue;
+      const topics = topicsOf(p.heading, p.body, fromPdf ? 2 : 1);
+      if (topics.length === 0) continue;
+      tagged++;
+      for (const topic of topics) rows.push({ brandId, source: src.source, sourceAssetId: src.assetId, topic, heading: p.heading, body: p.body, ord: p.ord });
+    }
+    for (let i = 0; i < rows.length; i += 200) await db.insert(guidelinePassagesTable).values(rows.slice(i, i + 200));
+    result.sources.push({ source: src.source, passages: src.passages.length, tagged });
+    result.total += rows.length;
+  }
+  return result;
+}
+async function guidelineStatus(brandId) {
+  const rows = await db.select({ source: guidelinePassagesTable.source, topic: guidelinePassagesTable.topic, n: sql`count(*)::int` }).from(guidelinePassagesTable).where(eq(guidelinePassagesTable.brandId, brandId)).groupBy(guidelinePassagesTable.source, guidelinePassagesTable.topic);
+  const bySource = /* @__PURE__ */ new Map();
+  const byTopic = /* @__PURE__ */ new Map();
+  let total = 0;
+  for (const r4 of rows) {
+    bySource.set(r4.source, (bySource.get(r4.source) ?? 0) + Number(r4.n));
+    byTopic.set(r4.topic, (byTopic.get(r4.topic) ?? 0) + Number(r4.n));
+    total += Number(r4.n);
+  }
+  return {
+    total,
+    bySource: [...bySource.entries()].map(([source, passages]) => ({ source, passages })),
+    byTopic: TOPICS.map((t) => ({ topic: t.id, label: t.label, passages: byTopic.get(t.id) ?? 0 })).filter((t) => t.passages > 0)
+  };
+}
+function topicsForConfig(config2, width, height) {
+  const out = [];
+  const hasText = config2.elements.some((e) => e.type === "text" && e.text.trim().length > 0);
+  for (const t of TOPICS) {
+    const ids = config2.elements.filter((e) => {
+      const slot = e.slot ?? "";
+      const role = e.type === "text" || e.type === "image" ? e.role ?? "" : "";
+      if (t.id === "colour") return e.type === "rect" || slot === "panel" || slot === "scrim";
+      if (t.id === "typography" || t.id === "voice") return e.type === "text" && e.text.trim().length > 0 || ["headline", "subheadline", "message", "kicker"].includes(slot);
+      if (t.id === "social") return false;
+      if (t.id === "layout") return false;
+      if (t.id === "anther") return e.type === "image" && (e.radius ?? 0) > 0 && slot !== "logo";
+      return t.slots.includes(slot) || t.slots.includes(role);
+    }).map((e) => e.id);
+    if (t.id === "social" && Math.abs(width - height) < 2 && width >= 600) out.push({ topic: t, elementIds: [] });
+    else if (t.id === "layout") out.push({ topic: t, elementIds: [] });
+    else if (t.id === "voice" && !hasText) continue;
+    else if (ids.length > 0) out.push({ topic: t, elementIds: ids });
+  }
+  return out;
+}
+var SOURCE_RANK = (source) => source === DISTILLED_GUIDELINES_SOURCE ? 0 : source === "Brand summary" ? 2 : 1;
+async function guidelinesForConfig(brandId, config2, width, height, perTopic = 4) {
+  const wanted = topicsForConfig(config2, width, height);
+  if (wanted.length === 0) return [];
+  let rows = [];
+  try {
+    rows = await db.select().from(guidelinePassagesTable).where(and(brandId != null ? or(eq(guidelinePassagesTable.brandId, brandId), isNull(guidelinePassagesTable.brandId)) : isNull(guidelinePassagesTable.brandId), inArray(guidelinePassagesTable.topic, wanted.map((w) => w.topic.id))));
+  } catch {
+    rows = [];
+  }
+  if (rows.length === 0) {
+    const raw = splitIntoPassages(DISTILLED_GUIDELINES);
+    rows = raw.flatMap((p) => topicsOf(p.heading, p.body).map((topic) => ({ id: 0, brandId: null, source: DISTILLED_GUIDELINES_SOURCE, sourceAssetId: null, topic, heading: p.heading, body: p.body, ord: p.ord, createdAt: /* @__PURE__ */ new Date() })));
+  }
+  const out = [];
+  for (const w of wanted) {
+    const mine = rows.filter((r4) => r4.topic === w.topic.id);
+    const score = (r4) => {
+      const hay = `${r4.heading} ${r4.body}`;
+      const own = hitCount(w.topic, hay);
+      const others = TOPICS.filter((t) => t.id !== w.topic.id && t.id !== "layout" && hitCount(t, hay) >= 2).length;
+      const headingBonus = w.topic.keywords.test(r4.heading) ? 6 : 0;
+      return SOURCE_RANK(r4.source) * -100 + headingBonus + own * 3 - others * 4;
+    };
+    const picked = mine.sort((a, b) => score(b) - score(a) || a.ord - b.ord).slice(0, perTopic);
+    if (picked.length === 0) continue;
+    out.push({ topic: w.topic.id, label: w.topic.label, elementIds: w.elementIds, passages: picked.map((r4) => ({ topic: w.topic.id, label: w.topic.label, heading: r4.heading, body: r4.body, source: r4.source })) });
+  }
+  return out;
+}
+function guidelineNotes(items) {
+  return items.filter((g) => g.elementIds.length > 0 && g.passages.length > 0).map((g) => {
+    const first = g.passages[0].body.split(/(?<=[.!?])\s/)[0].slice(0, 160);
+    return `Guideline (${g.label}): ${first}`;
+  });
+}
+
 // src/lib/gwdImport.ts
 init_objectStorage();
 import sharp7 from "sharp";
@@ -234149,7 +234408,9 @@ async function reviewPiece(input) {
     ...rules.layoutRules(input.width, input.height).map((r4) => `- ${r4}`),
     input.brand.fontFamily ? `- Brand font: ${input.brand.fontFamily}.` : "",
     "",
-    input.brand.guidelines ? `BRAND GUIDELINES (operational extract):
+    input.elementGuidelines && input.elementGuidelines.length ? `GUIDELINES FOR THE ELEMENTS ON THIS PIECE \u2014 read from the brand guidelines for exactly the things present (a logo tile, a pattern band, a photograph, live type, a panel colour\u2026). Check each named element against its passages and cite the passage in the issue message when it is broken:
+${input.elementGuidelines.map((g) => `${g.label.toUpperCase()}${g.elementIds.length ? ` (elements ${g.elementIds.slice(0, 6).join(", ")})` : ""}:
+${g.passages.map((p) => `- ${p.heading ? `[${p.heading}] ` : ""}${p.body} (${p.source})`).join("\n")}`).join("\n\n").slice(0, 9e3)}` : input.brand.guidelines ? `BRAND GUIDELINES (operational extract):
 ${input.brand.guidelines.slice(0, 3500)}` : "",
     input.styleSpec ? `
 CAMPAIGN STYLE SPEC \u2014 measured off the signed-off artwork; this is the standard for this piece, above general taste:
@@ -234230,6 +234491,7 @@ ${input.measured.map((m) => `- [${m.severity}] ${m.message}${m.elementId ? ` (el
     reviewedAt: (/* @__PURE__ */ new Date()).toISOString(),
     ms: Date.now() - started,
     exemplarIds: refs.map((r4) => r4.id),
+    ...input.elementGuidelines && input.elementGuidelines.length ? { guidelinesApplied: input.elementGuidelines.map((g) => ({ topic: g.topic, label: g.label, elementIds: g.elementIds, sources: [...new Set(g.passages.map((p) => p.source))], passages: g.passages.length })) } : {},
     ...answeredBy ? { answeredBy } : {}
   };
   logger2.info({ verdict: review.verdict, confidence: review.confidence, issues: issues.length, ms: review.ms, tokens: response.usage?.input_tokens }, "claude review finished");
@@ -241065,8 +241327,15 @@ router13.post("/templates/:id/adapt", requireAdmin, async (req, res) => {
       name: typeof t.formatName === "string" ? t.formatName : typeof t.name === "string" ? t.name : null,
       channel: typeof t.channel === "string" ? t.channel : null
     };
-    const { config: merged, method, spec, rejected } = await adaptOne(master, masterConfig, width, height, brandInfo, req.log, exemplars, void 0, hints, resolvedStyle.source === "none" ? null : { schema: resolvedStyle.schema, label: resolvedStyle.label });
+    const { config: adaptedConfig, method, spec, rejected } = await adaptOne(master, masterConfig, width, height, brandInfo, req.log, exemplars, void 0, hints, resolvedStyle.source === "none" ? null : { schema: resolvedStyle.schema, label: resolvedStyle.label });
     if (rejected.length > 0) rejectedCount++;
+    let merged = adaptedConfig;
+    try {
+      const gl = await guidelinesForConfig(brand?.id ?? null, adaptedConfig, width, height, 1);
+      const lines = guidelineNotes(gl);
+      if (lines.length) merged = normalizeFreeformConfig({ ...adaptedConfig, adaptNotes: [...adaptedConfig.adaptNotes ?? [], ...lines] });
+    } catch {
+    }
     const name = typeof t.name === "string" && t.name.trim() ? t.name.trim().slice(0, 120) : `${master.name} ${spec.entry ? `${spec.label} ` : ""}${width}\xD7${height}`;
     const [template] = await db.insert(templatesTable).values({
       name,
@@ -241150,6 +241419,9 @@ router13.post("/templates/:id/claude-review", requireAuth, async (req, res) => {
       designerNote,
       styleSpec: resolvedStyle.schema ? `${resolvedStyle.label}
 ${describeStyleSchema(resolvedStyle.schema)}` : null,
+      // The guideline passages for exactly the elements on this piece: logo
+      // rules when there is a logo tile, pattern rules when there is a band…
+      elementGuidelines: await guidelinesForConfig(brand?.id ?? null, config2, t.width, t.height).catch(() => []),
       headlineMaxH: (() => {
         const sp = resolvedStyle.schema;
         if (!sp || !hasLayeredSlots(config2)) return null;
@@ -244047,10 +244319,63 @@ router24.delete("/layout-profiles/:id", requireAdmin, async (req, res) => {
 });
 var layout_profiles_default = router24;
 
-// src/routes/campaign-ideas.ts
+// src/routes/guidelines.ts
 var import_express26 = __toESM(require_express2(), 1);
-init_logger();
 var router25 = (0, import_express26.Router)();
+async function brandIdFrom(raw) {
+  const n = Number(raw);
+  if (Number.isInteger(n) && n > 0) return n;
+  const [b] = await db.select({ id: brandsTable.id }).from(brandsTable).orderBy(brandsTable.id).limit(1);
+  return b?.id ?? null;
+}
+router25.post("/guidelines/index", requireAdmin, async (req, res) => {
+  const brandId = await brandIdFrom(req.body?.brandId);
+  if (!brandId) {
+    res.status(400).json({ error: "No brand to index" });
+    return;
+  }
+  try {
+    const result = await indexGuidelines(brandId);
+    res.json({ brandId, ...result });
+  } catch (err) {
+    req.log?.warn?.({ err }, "guideline index failed");
+    res.status(500).json({ error: err instanceof Error ? err.message.slice(0, 200) : "Index failed" });
+  }
+});
+router25.get("/guidelines/status", requireAuth, async (req, res) => {
+  const brandId = await brandIdFrom(req.query.brandId);
+  if (!brandId) {
+    res.json({ brandId: null, total: 0, bySource: [], byTopic: [] });
+    return;
+  }
+  res.json({ brandId, ...await guidelineStatus(brandId) });
+});
+router25.get("/guidelines/for-template/:id", requireAuth, async (req, res) => {
+  const [t] = await db.select().from(templatesTable).where(eq(templatesTable.id, Number(req.params.id)));
+  if (!t) {
+    res.status(404).json({ error: "Template not found" });
+    return;
+  }
+  let parsed;
+  try {
+    parsed = JSON.parse(t.config || "{}");
+  } catch {
+    parsed = {};
+  }
+  if (!isFreeformConfig(parsed)) {
+    res.json({ items: [] });
+    return;
+  }
+  const brandId = await brandIdFrom(req.query.brandId);
+  const items = await guidelinesForConfig(brandId, normalizeFreeformConfig(parsed), t.width, t.height);
+  res.json({ items });
+});
+var guidelines_default = router25;
+
+// src/routes/campaign-ideas.ts
+var import_express27 = __toESM(require_express2(), 1);
+init_logger();
+var router26 = (0, import_express27.Router)();
 var BUILTIN_SIZE_OPTIONS2 = [
   { key: "social_square", label: "Social Square 1080\xD71080 \u2014 Instagram/Facebook feed post" },
   { key: "story", label: "Story 1080\xD71920 \u2014 Instagram/Facebook story, Reels, TikTok" },
@@ -244059,7 +244384,7 @@ var BUILTIN_SIZE_OPTIONS2 = [
   { key: "print_a4", label: "Print A4 \u2014 posters, flyers" },
   { key: "animated_social", label: "Animated Social 1080\xD71080 \u2014 animated social post" }
 ];
-router25.post("/campaign-ideas", requireAuth, async (req, res) => {
+router26.post("/campaign-ideas", requireAuth, async (req, res) => {
   const brandId = Number(req.body?.brandId);
   if (!Number.isInteger(brandId) || brandId <= 0) {
     res.status(400).json({ error: "brandId is required" });
@@ -244119,12 +244444,12 @@ router25.post("/campaign-ideas", requireAuth, async (req, res) => {
     res.status(502).json({ error: "Could not generate campaign ideas right now." });
   }
 });
-var campaign_ideas_default = router25;
+var campaign_ideas_default = router26;
 
 // src/routes/attention.ts
-var import_express27 = __toESM(require_express2(), 1);
-var router26 = (0, import_express27.Router)();
-router26.get("/attention", optionalAuth, async (_req, res) => {
+var import_express28 = __toESM(require_express2(), 1);
+var router27 = (0, import_express28.Router)();
+router27.get("/attention", optionalAuth, async (_req, res) => {
   const items = [];
   const pending = await db.select({ id: briefsTable.id, name: briefsTable.campaignName }).from(briefsTable).where(eq(briefsTable.status, "pending_approval"));
   if (pending.length === 1) {
@@ -244174,24 +244499,24 @@ router26.get("/attention", optionalAuth, async (_req, res) => {
   }
   res.json({ items });
 });
-var attention_default = router26;
+var attention_default = router27;
 
 // src/routes/performance-meta.ts
-var import_express28 = __toESM(require_express2(), 1);
-var router27 = (0, import_express28.Router)();
-router27.get("/performance/meta", optionalAuth, async (req, res) => {
+var import_express29 = __toESM(require_express2(), 1);
+var router28 = (0, import_express29.Router)();
+router28.get("/performance/meta", optionalAuth, async (req, res) => {
   const days = Number(req.query.days ?? 30);
   res.json(await getMetaSummary(Number.isFinite(days) ? days : 30));
 });
-router27.post("/performance/meta/sync", requireAdmin, async (req, res) => {
+router28.post("/performance/meta/sync", requireAdmin, async (req, res) => {
   const days = Number(req.body?.days ?? 30);
   const result = await runMetaSync(Number.isFinite(days) ? days : 30);
   res.status(result.ok ? 200 : 502).json(result);
 });
-var performance_meta_default = router27;
+var performance_meta_default = router28;
 
 // src/routes/index.ts
-var router28 = (0, import_express29.Router)();
+var router29 = (0, import_express30.Router)();
 var PUBLIC_PATHS = [
   /^\/healthz/,
   /^\/share\//,
@@ -244201,44 +244526,45 @@ var PUBLIC_PATHS = [
   /^\/storage\/public-objects\//,
   /^\/me$/
 ];
-router28.use((req, res, next) => {
+router29.use((req, res, next) => {
   if (!clerkConfigured || devAuthBypass) return next();
   if (PUBLIC_PATHS.some((re) => re.test(req.path))) return next();
   return requireAuth(req, res, next);
 });
-router28.use(health_default);
-router28.use(cron_default);
-router28.use(me_default);
-router28.use(users_default);
-router28.use(brands_default);
-router28.use(brand_styles_default);
-router28.use(briefs_default);
-router28.use(assets_default);
-router28.use(campaigns_default);
-router28.use(templates_default);
-router28.use(exports_default);
-router28.use(storage_default);
-router28.use(brand_assets_default);
-router28.use(fonts_default);
-router28.use(brand_analysis_default);
-router28.use(campaign_ideas_default);
-router28.use(attention_default);
-router28.use(feedback_default);
-router28.use(performance_meta_default);
-router28.use(comparison_notes_default);
-router28.use(asset_comments_default);
-router28.use(share_links_default);
-router28.use(review_progress_default);
-router28.use(creatives_default);
-router28.use(collateral_default);
-router28.use(layout_profiles_default);
-router28.use(stats_default);
-var routes_default = router28;
+router29.use(health_default);
+router29.use(cron_default);
+router29.use(me_default);
+router29.use(users_default);
+router29.use(brands_default);
+router29.use(brand_styles_default);
+router29.use(briefs_default);
+router29.use(assets_default);
+router29.use(campaigns_default);
+router29.use(templates_default);
+router29.use(exports_default);
+router29.use(storage_default);
+router29.use(brand_assets_default);
+router29.use(fonts_default);
+router29.use(brand_analysis_default);
+router29.use(campaign_ideas_default);
+router29.use(attention_default);
+router29.use(feedback_default);
+router29.use(performance_meta_default);
+router29.use(comparison_notes_default);
+router29.use(asset_comments_default);
+router29.use(share_links_default);
+router29.use(review_progress_default);
+router29.use(creatives_default);
+router29.use(collateral_default);
+router29.use(layout_profiles_default);
+router29.use(guidelines_default);
+router29.use(stats_default);
+var routes_default = router29;
 
 // src/routes/track.ts
-var import_express30 = __toESM(require_express2(), 1);
+var import_express31 = __toESM(require_express2(), 1);
 init_logger();
-var router29 = (0, import_express30.Router)();
+var router30 = (0, import_express31.Router)();
 var PIXEL = Buffer.from(
   "R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7",
   "base64"
@@ -244283,7 +244609,7 @@ function resolveClickUrl(req, token, hasDestination) {
   }
   return ourClick;
 }
-router29.get("/serve/:token", async (req, res) => {
+router30.get("/serve/:token", async (req, res) => {
   try {
     const tag = await recordEvent(req.params.token, "impression", req);
     if (!tag) {
@@ -244321,7 +244647,7 @@ ${html}`;
     res.status(500).send("Error");
   }
 });
-router29.get("/image/:token", async (req, res) => {
+router30.get("/image/:token", async (req, res) => {
   try {
     const tag = await recordEvent(req.params.token, "impression", req);
     if (!tag) {
@@ -244342,7 +244668,7 @@ router29.get("/image/:token", async (req, res) => {
     res.status(500).send("Error");
   }
 });
-router29.get("/vast/:token", async (req, res) => {
+router30.get("/vast/:token", async (req, res) => {
   try {
     const [tag] = await db.select().from(adTagsTable).where(eq(adTagsTable.token, req.params.token));
     if (!tag) {
@@ -244388,7 +244714,7 @@ router29.get("/vast/:token", async (req, res) => {
     res.status(500).send("Error");
   }
 });
-router29.get("/pixel/:token.gif", async (req, res) => {
+router30.get("/pixel/:token.gif", async (req, res) => {
   try {
     await recordEvent(req.params.token, "impression", req);
   } catch (err) {
@@ -244398,7 +244724,7 @@ router29.get("/pixel/:token.gif", async (req, res) => {
   res.set("Content-Type", "image/gif");
   res.send(PIXEL);
 });
-router29.get("/click/:token", async (req, res) => {
+router30.get("/click/:token", async (req, res) => {
   try {
     const tag = await recordEvent(req.params.token, "click", req);
     if (tag && isSafeHttpUrl(tag.clickUrl)) {
@@ -244436,7 +244762,7 @@ function forwardToGa4(type, creative) {
   }).catch(() => {
   });
 }
-router29.all("/c/:token", async (req, res) => {
+router30.all("/c/:token", async (req, res) => {
   try {
     const type = String(req.query.t ?? "");
     if (CREATIVE_EVENT_TYPES.has(type)) {
@@ -244462,11 +244788,11 @@ router29.all("/c/:token", async (req, res) => {
   res.set("Content-Type", "image/gif");
   res.send(PIXEL);
 });
-var track_default = router29;
+var track_default = router30;
 
 // src/app.ts
 init_logger();
-var app = (0, import_express31.default)();
+var app = (0, import_express32.default)();
 app.use(
   (0, import_pino_http.default)({
     logger: logger2,
@@ -244505,8 +244831,8 @@ app.use(
     }
   })
 );
-app.use(import_express31.default.json({ limit: "1mb" }));
-app.use(import_express31.default.urlencoded({ extended: true, limit: "1mb" }));
+app.use(import_express32.default.json({ limit: "1mb" }));
+app.use(import_express32.default.urlencoded({ extended: true, limit: "1mb" }));
 if (clerkConfigured) {
   app.use(
     clerkMiddleware((req) => ({
@@ -244529,7 +244855,7 @@ var staticDir = process.env.STATIC_DIR || path10.resolve(
 );
 if (existsSync3(staticDir)) {
   app.use(
-    import_express31.default.static(staticDir, {
+    import_express32.default.static(staticDir, {
       setHeaders: (res, filePath) => {
         if (filePath.includes(`${path10.sep}assets${path10.sep}`)) {
           res.setHeader("Cache-Control", "public, max-age=31536000, immutable");
@@ -244625,7 +244951,20 @@ var STATEMENTS = [
     created_at timestamp NOT NULL DEFAULT now(),
     updated_at timestamp NOT NULL DEFAULT now()
   )`,
-  sql`CREATE INDEX IF NOT EXISTS layout_profiles_source_key_idx ON layout_profiles (source_key)`
+  sql`CREATE INDEX IF NOT EXISTS layout_profiles_source_key_idx ON layout_profiles (source_key)`,
+  // 2026-09-11 guideline passages by topic, for element-aware checks.
+  sql`CREATE TABLE IF NOT EXISTS guideline_passages (
+    id serial PRIMARY KEY,
+    brand_id integer,
+    source text NOT NULL,
+    source_asset_id integer,
+    topic text NOT NULL,
+    heading text NOT NULL DEFAULT '',
+    body text NOT NULL,
+    ord integer NOT NULL DEFAULT 0,
+    created_at timestamp NOT NULL DEFAULT now()
+  )`,
+  sql`CREATE INDEX IF NOT EXISTS guideline_passages_brand_topic_idx ON guideline_passages (brand_id, topic)`
 ];
 var done = null;
 function ensureSchemaAdditions() {

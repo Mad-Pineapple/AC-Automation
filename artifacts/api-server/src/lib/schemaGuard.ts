@@ -21,6 +21,19 @@ const STATEMENTS = [
     updated_at timestamp NOT NULL DEFAULT now()
   )`,
   sql`CREATE INDEX IF NOT EXISTS layout_profiles_source_key_idx ON layout_profiles (source_key)`,
+  // 2026-09-11 guideline passages by topic, for element-aware checks.
+  sql`CREATE TABLE IF NOT EXISTS guideline_passages (
+    id serial PRIMARY KEY,
+    brand_id integer,
+    source text NOT NULL,
+    source_asset_id integer,
+    topic text NOT NULL,
+    heading text NOT NULL DEFAULT '',
+    body text NOT NULL,
+    ord integer NOT NULL DEFAULT 0,
+    created_at timestamp NOT NULL DEFAULT now()
+  )`,
+  sql`CREATE INDEX IF NOT EXISTS guideline_passages_brand_topic_idx ON guideline_passages (brand_id, topic)`,
 ];
 
 let done: Promise<void> | null = null;

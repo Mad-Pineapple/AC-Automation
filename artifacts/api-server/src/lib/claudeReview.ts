@@ -63,6 +63,8 @@ export interface ClaudeReview {
   reviewedAt: string;
   ms: number;
   exemplarIds: number[];
+  /** The guideline topics read for this piece's elements (what was checked against). */
+  guidelinesApplied?: Array<{ topic: string; label: string; elementIds: string[]; sources: string[]; passages: number }>;
   /** Set when a safety fallback model answered instead of claude-opus-5. */
   answeredBy?: string;
 }
@@ -158,6 +160,8 @@ export interface ReviewInput {
   designerNote?: string | null;
   /** The campaign's measured style schema, when one matches this piece. */
   styleSpec?: string | null;
+  /** Guideline passages for the elements on the piece (lib/guidelines.ts). */
+  elementGuidelines?: Array<{ topic: string; label: string; elementIds: string[]; passages: Array<{ heading: string; body: string; source: string }> }>;
   /** Layered pieces: the tallest a picture headline may be, in px (campaign share of the short side). */
   headlineMaxH?: number | null;
 }
@@ -215,7 +219,9 @@ export async function reviewPiece(input: ReviewInput): Promise<ClaudeReview> {
     ...rules.layoutRules(input.width, input.height).map((r) => `- ${r}`),
     input.brand.fontFamily ? `- Brand font: ${input.brand.fontFamily}.` : "",
     "",
-    input.brand.guidelines ? `BRAND GUIDELINES (operational extract):\n${input.brand.guidelines.slice(0, 3500)}` : "",
+    input.elementGuidelines && input.elementGuidelines.length
+      ? `GUIDELINES FOR THE ELEMENTS ON THIS PIECE — read from the brand guidelines for exactly the things present (a logo tile, a pattern band, a photograph, live type, a panel colour…). Check each named element against its passages and cite the passage in the issue message when it is broken:\n${input.elementGuidelines.map((g) => `${g.label.toUpperCase()}${g.elementIds.length ? ` (elements ${g.elementIds.slice(0, 6).join(", ")})` : ""}:\n${g.passages.map((p) => `- ${p.heading ? `[${p.heading}] ` : ""}${p.body} (${p.source})`).join("\n")}`).join("\n\n").slice(0, 9000)}`
+      : input.brand.guidelines ? `BRAND GUIDELINES (operational extract):\n${input.brand.guidelines.slice(0, 3500)}` : "",
     input.styleSpec ? `\nCAMPAIGN STYLE SPEC — measured off the signed-off artwork; this is the standard for this piece, above general taste:\n${input.styleSpec.slice(0, 6000)}` : "",
   ].filter((l) => l !== undefined).join("\n");
 
@@ -297,6 +303,9 @@ export async function reviewPiece(input: ReviewInput): Promise<ClaudeReview> {
     reviewedAt: new Date().toISOString(),
     ms: Date.now() - started,
     exemplarIds: refs.map((r) => r.id),
+    ...(input.elementGuidelines && input.elementGuidelines.length
+      ? { guidelinesApplied: input.elementGuidelines.map((g) => ({ topic: g.topic, label: g.label, elementIds: g.elementIds, sources: [...new Set(g.passages.map((p) => p.source))], passages: g.passages.length })) }
+      : {}),
     ...(answeredBy ? { answeredBy } : {}),
   };
   logger.info({ verdict: review.verdict, confidence: review.confidence, issues: issues.length, ms: review.ms, tokens: response.usage?.input_tokens }, "claude review finished");

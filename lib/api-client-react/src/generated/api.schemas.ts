@@ -504,6 +504,37 @@ export interface ImportExampleResult {
   assetsImported: number;
 }
 
+export type GuidelineIndexResultSourcesItem = {
+  source: string;
+  passages: number;
+  tagged: number;
+};
+
+export interface GuidelineIndexResult {
+  brandId: number;
+  total: number;
+  sources: GuidelineIndexResultSourcesItem[];
+}
+
+export type GuidelineStatusBySourceItem = {
+  source: string;
+  passages: number;
+};
+
+export type GuidelineStatusByTopicItem = {
+  topic: string;
+  label: string;
+  passages: number;
+};
+
+export interface GuidelineStatus {
+  /** @nullable */
+  brandId?: number | null;
+  total: number;
+  bySource: GuidelineStatusBySourceItem[];
+  byTopic: GuidelineStatusByTopicItem[];
+}
+
 export type CampaignBuildPlanRequestSizesItem = {
   width: number;
   height: number;
@@ -1154,6 +1185,14 @@ export const ListTemplatesInclude = {
 export type ClearWipTemplates200 = {
   deleted: number;
   kept: number;
+};
+
+export type IndexGuidelinesBody = {
+  brandId?: number;
+};
+
+export type GetGuidelineStatusParams = {
+brandId?: number;
 };
 
 export type ListComparisonNotesParams = {
