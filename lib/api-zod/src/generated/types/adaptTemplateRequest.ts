@@ -9,4 +9,6 @@ import type { AdaptTarget } from './adaptTarget';
 
 export interface AdaptTemplateRequest {
   targets: AdaptTarget[];
+  /** Layout profile (measured from examples) to lay the sizes out with */
+  profileId?: number;
 }

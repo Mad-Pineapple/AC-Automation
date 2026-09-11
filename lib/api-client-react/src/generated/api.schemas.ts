@@ -379,6 +379,8 @@ export interface AdaptTarget {
 
 export interface AdaptTemplateRequest {
   targets: AdaptTarget[];
+  /** Layout profile (measured from examples) to lay the sizes out with */
+  profileId?: number;
 }
 
 export interface VideoExportResult {
@@ -556,11 +558,28 @@ export type CampaignBuildPlanSkippedItem = {
   reason: string;
 };
 
+/**
+ * Layout profile measured from the selected examples (null when none could be measured)
+ * @nullable
+ */
+export type CampaignBuildPlanProfile = {
+  id: number;
+  name: string;
+  measuredClasses: string[];
+  interpolatedClasses: string[];
+  notes: string[];
+} | null;
+
 export interface CampaignBuildPlan {
   jobs: CampaignBuildPlanJobsItem[];
   variants: string[];
   skipped: CampaignBuildPlanSkippedItem[];
   warnings: string[];
+  /**
+     * Layout profile measured from the selected examples (null when none could be measured)
+     * @nullable
+     */
+  profile?: CampaignBuildPlanProfile;
 }
 
 export interface ImportPackageRequest {

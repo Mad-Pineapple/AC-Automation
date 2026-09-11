@@ -8,6 +8,7 @@ import { planCampaignBuild, messageTypeOf, type SizeInput } from "../lib/campaig
 import { normalizeFreeformConfig } from "../lib/freeform";
 import { isFlatArtwork } from "../lib/slots";
 import { ObjectStorageService } from "../lib/objectStorage";
+import { learnProfile } from "../lib/layoutProfile";
 
 const router = Router();
 const objectStorageService = new ObjectStorageService();
@@ -92,7 +93,26 @@ router.post("/campaigns/build-plan", requireAuth, async (req, res): Promise<void
     } catch { copy = []; }
     return { id: r.id, name: r.name, width: r.width, height: r.height, flat, messageType: messageTypeOf(r.name, copy) };
   });
-  res.json(planCampaignBuild(masters, sizes, { campaignName }));
+  const plan = planCampaignBuild(masters, sizes, { campaignName });
+  // The selected examples ARE the campaign: measure them into its layout
+  // profile so every job is built from the family's own numbers.
+  let profile: { id: number; name: string; measuredClasses: string[]; interpolatedClasses: string[]; notes: string[] } | null = null;
+  try {
+    const learned = await learnProfile(masters.map((m) => m.id), campaignName || null, (req as any).clerkUserId ?? null);
+    if (learned) {
+      const z = learned.stored.profile.zones;
+      profile = {
+        id: learned.stored.id,
+        name: learned.stored.name,
+        measuredClasses: (Object.keys(z) as (keyof typeof z)[]).filter((k) => z[k].measured),
+        interpolatedClasses: (Object.keys(z) as (keyof typeof z)[]).filter((k) => !z[k].measured),
+        notes: [...learned.stored.profile.notes, ...learned.skipped],
+      };
+    }
+  } catch (err) {
+    req.log?.warn({ err }, "profile learn in build-plan failed");
+  }
+  res.json({ ...plan, profile });
 });
 
 export default router;

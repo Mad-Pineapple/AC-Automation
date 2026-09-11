@@ -29,6 +29,8 @@ export interface PartRule {
   floorPx?: number;
   /** Fixed pixel asset (display pill) — width×height when the part is a picture that must not scale. */
   fixedPx?: { w: number; h: number };
+  /** Canvas short-side range (px) the fixed asset was measured on; outside it the part scales. */
+  fixedShortRange?: [number, number];
   /** Display (small-canvas) share of the short side, by layout axis — measured off the GWD files. */
   display?: { stacked: number; side: number };
   /** Dropped when the canvas can't hold it. */
@@ -84,6 +86,12 @@ export interface StyleSchema {
   zones: Record<FormatClass, ZoneRule>;
   /** Measured display layouts by axis (see DisplayAxisRule). */
   display?: { stacked: DisplayAxisRule; side: DisplayAxisRule };
+  /** Learned profiles: treat every canvas as a display canvas (the display
+   *  numbers ARE the measurements); the OOH/display split only exists for
+   *  the hand-written Get Ready schema. */
+  alwaysDisplay?: boolean;
+  /** Measured copy-to-cut-out relationship, when the master pair had one. */
+  copyOverCutoutFrac?: number;
   parts: Record<string, PartRule>;
   /** Copy variants the campaign actually shipped — the only copy allowed. */
   variants: Array<{ phase: string; kicker?: string; headline: string; subheadline?: string; message: string; cta: { display: string; ooh: string } }>;

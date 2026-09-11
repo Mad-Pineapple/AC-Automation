@@ -36,6 +36,7 @@ export * from './bulkBriefInput';
 export * from './campaign';
 export * from './campaignBuildPlan';
 export * from './campaignBuildPlanJobsItem';
+export * from './campaignBuildPlanProfile';
 export * from './campaignBuildPlanRequest';
 export * from './campaignBuildPlanRequestSizesItem';
 export * from './campaignBuildPlanSkippedItem';

@@ -220,7 +220,7 @@ export default function CampaignBuild() {
           setBusy(`Producing artwork ${done + 1}–${done + slice.length} of ${jobs.length}…`);
           await new Promise<void>((resolve, reject) =>
             adaptTemplate.mutate(
-              { id: masterId, data: { targets: slice.map((j) => ({ width: j.width, height: j.height, name: j.name, formatName: j.formatLabel, channel: j.channel ?? undefined })) } },
+              { id: masterId, data: { targets: slice.map((j) => ({ width: j.width, height: j.height, name: j.name, formatName: j.formatLabel, channel: j.channel ?? undefined })), ...(build.profile ? { profileId: build.profile.id } : {}) } },
               {
                 onSuccess: (made) => {
                   for (const t of made ?? []) if (((t.config as { rejected?: string[] } | undefined)?.rejected?.length ?? 0) > 0) rejected++;
@@ -422,6 +422,18 @@ export default function CampaignBuild() {
             </div>
           ) : (
             <>
+              {build.profile ? (
+                <div className="rounded-md border border-border/60 bg-muted/30 px-3 py-2 text-xs space-y-0.5" data-testid="build-profile">
+                  <p><span className="font-semibold">Layout profile:</span> {build.profile.name}, measured from your examples.</p>
+                  <p className="text-muted-foreground">
+                    Measured shapes: {build.profile.measuredClasses.join(", ") || "none"}
+                    {build.profile.interpolatedClasses.length > 0 ? ` · interpolated: ${build.profile.interpolatedClasses.join(", ")}` : ""}
+                  </p>
+                  {build.profile.notes.slice(1).map((n, i) => <p key={i} className="text-muted-foreground">{n}</p>)}
+                </div>
+              ) : (
+                <p className="text-xs text-muted-foreground">No layout profile could be measured from these examples; sizes use the family defaults.</p>
+              )}
               <div className="flex flex-wrap items-center gap-2 text-sm">
                 <Badge className="font-normal">{(pickedJobs ? pickedJobs.size : build.jobs.length)} of {build.jobs.length} pieces ticked</Badge>
                 <button type="button" className="text-xs text-primary hover:underline" onClick={() => setPickedJobs(null)}>All</button>

@@ -11,6 +11,8 @@ import { recomposeToFormat, shouldRecompose } from "../lib/recompose";
 import { checkLayout, checkMandatory } from "../lib/layoutCheck";
 import { isImageOnly, hasLayeredSlots, hasPanelParts, splitPanelGraphic, enrichLayeredArtwork, adaptLayered, edgeColour, storageImageLoader } from "../lib/layeredArtwork";
 import { analyseGwdHtml, motionForElements, type GwdLeaf } from "../lib/gwdMotion";
+import { resolveStyleSchema, learnProfile } from "../lib/layoutProfile";
+import type { StyleSchema } from "../lib/styleSpecs/getReadyBurst2";
 import { visibleBounds } from "../lib/gwdImport";
 
 /**
@@ -212,6 +214,7 @@ async function adaptOne(
   exemplars: Exemplar[] = [],
   excludeId?: number,
   hints: FormatHints = {},
+  styleOverride?: { schema: StyleSchema | null; label: string } | null,
 ): Promise<{ config: FreeformConfig; method: string; spec: ReturnType<typeof describeFormat>; reference: Reference | null; rejected: string[] }> {
   let adapted: FreeformConfig | null = null;
   let method = "scaled";
@@ -231,7 +234,8 @@ async function adaptOne(
   // 0.5. Layered image artwork (HTML5 exports): the headline and CTA are
   //      pictures, so place the recognised layers with the class recipe.
   const hasTextHeadline = masterConfig.elements.some((e) => e.type === "text" && e.text.trim().length > 0);
-  const styleSpec = styleSchemaFor(master.name);
+  const styleSpec = styleOverride ? styleOverride.schema : styleSchemaFor(master.name);
+  if (styleOverride?.schema) notes.push(`Layout numbers from ${styleOverride.label}.`);
   if (!adapted && !hasTextHeadline && hasLayeredSlots(masterConfig)) {
     const ly = adaptLayered(masterConfig, master.width, master.height, width, height, { panelFill: brandInfo.panelFill ?? null, logoUrl: brandInfo.logoUrl, spec: styleSpec, formatClass: spec.formatClass });
     if (ly) {
@@ -432,6 +436,11 @@ router.post("/templates/:id/adapt", requireAdmin, async (req, res): Promise<void
   }
   const created: (typeof templatesTable.$inferSelect)[] = [];
   let rejectedCount = 0;
+  // Layout numbers: an explicit measured profile, else the newest profile
+  // this master was measured into, else the hand-written schema by name.
+  const profileId = Number.isInteger(Number(req.body?.profileId)) && Number(req.body?.profileId) > 0 ? Number(req.body.profileId) : null;
+  const resolvedStyle = await resolveStyleSchema({ masterId: master.id, masterName: master.name, sourceTemplateId: master.sourceTemplateId ?? null, profileId });
+  if (resolvedStyle.source === "profile") res.setHeader("X-Layout-Profile", String(resolvedStyle.profileId));
   for (const raw of rawTargets) {
     if (typeof raw !== "object" || raw === null) continue;
     const t = raw as Record<string, unknown>;
@@ -455,7 +464,7 @@ router.post("/templates/:id/adapt", requireAdmin, async (req, res): Promise<void
       name: typeof t.formatName === "string" ? t.formatName : typeof t.name === "string" ? t.name : null,
       channel: typeof t.channel === "string" ? t.channel : null,
     };
-    const { config: merged, method, spec, rejected } = await adaptOne(master, masterConfig, width, height, brandInfo, (req as any).log, exemplars, undefined, hints);
+    const { config: merged, method, spec, rejected } = await adaptOne(master, masterConfig, width, height, brandInfo, (req as any).log, exemplars, undefined, hints, resolvedStyle.source === "none" ? null : { schema: resolvedStyle.schema, label: resolvedStyle.label });
     if (rejected.length > 0) rejectedCount++;
     const name =
       typeof t.name === "string" && t.name.trim()
@@ -746,11 +755,23 @@ router.post("/templates/import-example", requireAdmin, async (req, res): Promise
       created.push(template);
     }
 
+    // Two or more layouts from one package are two shapes of one campaign:
+    // measure them into a layout profile straight away.
+    let profileSummary: { id: number; name: string; notes: string[] } | null = null;
+    if (created.length >= 2) {
+      try {
+        const learned = await learnProfile(created.map((t) => t.id), fileName.replace(/\.[a-z0-9]+$/i, ""), (req as any).clerkUserId ?? null);
+        if (learned) profileSummary = { id: learned.stored.id, name: learned.stored.name, notes: learned.stored.profile.notes };
+      } catch (err) {
+        (req as any).log?.warn?.({ err }, "profile learn after import failed");
+      }
+    }
     res.status(201).json({
       kind: result.kind,
       templates: created.map(formatTemplate),
-      warnings: result.warnings,
+      warnings: [...result.warnings, ...(profileSummary ? [`Layout profile "${profileSummary.name}" measured: ${profileSummary.notes[0] ?? ""}`] : [])],
       assetsImported: result.assets.length,
+      ...(profileSummary ? { layoutProfile: profileSummary } : {}),
     });
   } catch (err) {
     (req as any).log?.error({ err }, "Example import failed");
@@ -1017,7 +1038,8 @@ router.post("/templates/:id/redo", requireAdmin, async (req, res): Promise<void>
     // The corrected, approved pieces of this family are the reference — never
     // the piece being redone itself.
     const exemplars = await approvedExemplars(master.id);
-    const { config, method, spec, reference } = await adaptOne(master, masterConfig, piece.width, piece.height, brandInfo, (req as any).log, exemplars, piece.id, { name: piece.name });
+    const redoStyle = await resolveStyleSchema({ masterId: master.id, masterName: master.name, sourceTemplateId: master.sourceTemplateId ?? null });
+    const { config, method, spec, reference } = await adaptOne(master, masterConfig, piece.width, piece.height, brandInfo, (req as any).log, exemplars, piece.id, { name: piece.name }, redoStyle.source === "none" ? null : { schema: redoStyle.schema, label: redoStyle.label });
     const [updated] = await db
       .update(templatesTable)
       .set({

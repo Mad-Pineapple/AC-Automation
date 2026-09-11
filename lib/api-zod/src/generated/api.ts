@@ -572,7 +572,8 @@ export const AdaptTemplateBody = zod.object({
   "name": zod.string().optional(),
   "formatName": zod.string().optional().describe('The brief\'s deliverable name for the size (decides the format class with the channel)'),
   "channel": zod.string().optional().describe('Brief channel section (DISPLAY, OOH …)')
-}))
+})),
+  "profileId": zod.number().optional().describe('Layout profile (measured from examples) to lay the sizes out with')
 })
 
 
@@ -892,7 +893,14 @@ export const PlanCampaignBuildResponse = zod.object({
   "height": zod.number(),
   "reason": zod.string()
 })),
-  "warnings": zod.array(zod.string())
+  "warnings": zod.array(zod.string()),
+  "profile": zod.object({
+  "id": zod.number(),
+  "name": zod.string(),
+  "measuredClasses": zod.array(zod.string()),
+  "interpolatedClasses": zod.array(zod.string()),
+  "notes": zod.array(zod.string())
+}).nullish().describe('Layout profile measured from the selected examples (null when none could be measured)')
 })
 
 

@@ -2302,6 +2302,9 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/AdaptTarget"
+        profileId:
+          type: integer
+          description: Layout profile (measured from examples) to lay the sizes out with
       required:
         - targets
 
@@ -2566,6 +2569,22 @@ components:
         warnings:
           type: array
           items: { type: string }
+        profile:
+          type: ["object", "null"]
+          description: Layout profile measured from the selected examples (null when none could be measured)
+          properties:
+            id: { type: integer }
+            name: { type: string }
+            measuredClasses:
+              type: array
+              items: { type: string }
+            interpolatedClasses:
+              type: array
+              items: { type: string }
+            notes:
+              type: array
+              items: { type: string }
+          required: [id, name, measuredClasses, interpolatedClasses, notes]
       required: [jobs, variants, skipped, warnings]
 
     ImportPackageRequest:

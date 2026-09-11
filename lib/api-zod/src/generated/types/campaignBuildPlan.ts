@@ -6,6 +6,7 @@
  * OpenAPI spec version: 0.1.0
  */
 import type { CampaignBuildPlanJobsItem } from './campaignBuildPlanJobsItem';
+import type { CampaignBuildPlanProfile } from './campaignBuildPlanProfile';
 import type { CampaignBuildPlanSkippedItem } from './campaignBuildPlanSkippedItem';
 
 export interface CampaignBuildPlan {
@@ -13,4 +14,9 @@ export interface CampaignBuildPlan {
   variants: string[];
   skipped: CampaignBuildPlanSkippedItem[];
   warnings: string[];
+  /**
+     * Layout profile measured from the selected examples (null when none could be measured)
+     * @nullable
+     */
+  profile?: CampaignBuildPlanProfile;
 }

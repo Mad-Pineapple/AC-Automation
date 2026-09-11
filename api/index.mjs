@@ -481,15 +481,15 @@ var require_browser = __commonJS({
       }
     }
     function load() {
-      let r3;
+      let r4;
       try {
-        r3 = exports2.storage.getItem("debug") || exports2.storage.getItem("DEBUG");
+        r4 = exports2.storage.getItem("debug") || exports2.storage.getItem("DEBUG");
       } catch (error40) {
       }
-      if (!r3 && typeof process !== "undefined" && "env" in process) {
-        r3 = process.env.DEBUG;
+      if (!r4 && typeof process !== "undefined" && "env" in process) {
+        r4 = process.env.DEBUG;
       }
-      return r3;
+      return r4;
     }
     function localstorage() {
       try {
@@ -3493,13 +3493,13 @@ var require_dbcs_codec = __commonJS({
         return -1;
       }
       var l = 0;
-      var r3 = table.length;
-      while (l < r3 - 1) {
-        var mid = l + (r3 - l + 1 >> 1);
+      var r4 = table.length;
+      while (l < r4 - 1) {
+        var mid = l + (r4 - l + 1 >> 1);
         if (table[mid] <= val) {
           l = mid;
         } else {
-          r3 = mid;
+          r4 = mid;
         }
       }
       return l;
@@ -20526,27 +20526,27 @@ var require_router = __commonJS({
     var slice = Array.prototype.slice;
     var flatten = Array.prototype.flat;
     var methods = METHODS.map((method) => method.toLowerCase());
-    module.exports = Router29;
+    module.exports = Router30;
     module.exports.Route = Route;
-    function Router29(options) {
-      if (!(this instanceof Router29)) {
-        return new Router29(options);
+    function Router30(options) {
+      if (!(this instanceof Router30)) {
+        return new Router30(options);
       }
       const opts = options || {};
-      function router29(req, res, next) {
-        router29.handle(req, res, next);
+      function router30(req, res, next) {
+        router30.handle(req, res, next);
       }
-      Object.setPrototypeOf(router29, this);
-      router29.caseSensitive = opts.caseSensitive;
-      router29.mergeParams = opts.mergeParams;
-      router29.params = {};
-      router29.strict = opts.strict;
-      router29.stack = [];
-      return router29;
+      Object.setPrototypeOf(router30, this);
+      router30.caseSensitive = opts.caseSensitive;
+      router30.mergeParams = opts.mergeParams;
+      router30.params = {};
+      router30.strict = opts.strict;
+      router30.stack = [];
+      return router30;
     }
-    Router29.prototype = function() {
+    Router30.prototype = function() {
     };
-    Router29.prototype.param = function param(name, fn) {
+    Router30.prototype.param = function param(name, fn) {
       if (!name) {
         throw new TypeError("argument name is required");
       }
@@ -20566,7 +20566,7 @@ var require_router = __commonJS({
       params.push(fn);
       return this;
     };
-    Router29.prototype.handle = function handle(req, res, callback) {
+    Router30.prototype.handle = function handle(req, res, callback) {
       if (!callback) {
         throw new TypeError("argument callback is required");
       }
@@ -20693,7 +20693,7 @@ var require_router = __commonJS({
         }
       }
     };
-    Router29.prototype.use = function use(handler2) {
+    Router30.prototype.use = function use(handler2) {
       let offset = 0;
       let path11 = "/";
       if (typeof handler2 !== "function") {
@@ -20726,7 +20726,7 @@ var require_router = __commonJS({
       }
       return this;
     };
-    Router29.prototype.route = function route(path11) {
+    Router30.prototype.route = function route(path11) {
       const route2 = new Route(path11);
       const layer = new Layer(path11, {
         sensitive: this.caseSensitive,
@@ -20741,7 +20741,7 @@ var require_router = __commonJS({
       return route2;
     };
     methods.concat("all").forEach(function(method) {
-      Router29.prototype[method] = function(path11) {
+      Router30.prototype[method] = function(path11) {
         const route = this.route(path11);
         route[method].apply(route, slice.call(arguments, 1));
         return this;
@@ -20924,13 +20924,13 @@ var require_application = __commonJS({
     var compileTrust = require_utils3().compileTrust;
     var resolve2 = __require("node:path").resolve;
     var once = require_once();
-    var Router29 = require_router();
+    var Router30 = require_router();
     var slice = Array.prototype.slice;
     var flatten = Array.prototype.flat;
     var app2 = exports2 = module.exports = {};
     var trustProxyDefaultSymbol = "@@symbol:trust_proxy_default";
     app2.init = function init() {
-      var router29 = null;
+      var router30 = null;
       this.cache = /* @__PURE__ */ Object.create(null);
       this.engines = /* @__PURE__ */ Object.create(null);
       this.settings = /* @__PURE__ */ Object.create(null);
@@ -20939,13 +20939,13 @@ var require_application = __commonJS({
         configurable: true,
         enumerable: true,
         get: function getrouter() {
-          if (router29 === null) {
-            router29 = new Router29({
+          if (router30 === null) {
+            router30 = new Router30({
               caseSensitive: this.enabled("case sensitive routing"),
               strict: this.enabled("strict routing")
             });
           }
-          return router29;
+          return router30;
         }
       });
     };
@@ -21016,15 +21016,15 @@ var require_application = __commonJS({
       if (fns.length === 0) {
         throw new TypeError("app.use() requires a middleware function");
       }
-      var router29 = this.router;
+      var router30 = this.router;
       fns.forEach(function(fn2) {
         if (!fn2 || !fn2.handle || !fn2.set) {
-          return router29.use(path11, fn2);
+          return router30.use(path11, fn2);
         }
         debug8(".use app under %s", path11);
         fn2.mountpath = path11;
         fn2.parent = this;
-        router29.use(path11, function mounted_app(req, res, next) {
+        router30.use(path11, function mounted_app(req, res, next) {
           var orig = req.app;
           fn2.handle(req, res, function(err) {
             Object.setPrototypeOf(req, orig.request);
@@ -23597,7 +23597,7 @@ var require_express = __commonJS({
     var EventEmitter2 = __require("node:events").EventEmitter;
     var mixin = require_merge_descriptors();
     var proto = require_application();
-    var Router29 = require_router();
+    var Router30 = require_router();
     var req = require_request();
     var res = require_response();
     exports2 = module.exports = createApplication;
@@ -23619,8 +23619,8 @@ var require_express = __commonJS({
     exports2.application = proto;
     exports2.request = req;
     exports2.response = res;
-    exports2.Route = Router29.Route;
-    exports2.Router = Router29;
+    exports2.Route = Router30.Route;
+    exports2.Router = Router30;
     exports2.json = bodyParser.json;
     exports2.raw = bodyParser.raw;
     exports2.static = require_serve_static();
@@ -42182,10 +42182,10 @@ var require_schemas = __commonJS({
       inst["~standard"] = {
         validate: (value) => {
           try {
-            const r3 = (0, parse_js_1.safeParse)(inst, value);
-            return r3.success ? { value: r3.data } : { issues: r3.error?.issues };
+            const r4 = (0, parse_js_1.safeParse)(inst, value);
+            return r4.success ? { value: r4.data } : { issues: r4.error?.issues };
           } catch (_2) {
-            return (0, parse_js_1.safeParseAsync)(inst, value).then((r3) => r3.success ? { value: r3.data } : { issues: r3.error?.issues });
+            return (0, parse_js_1.safeParseAsync)(inst, value).then((r4) => r4.success ? { value: r4.data } : { issues: r4.error?.issues });
           }
         },
         vendor: "zod",
@@ -42773,11 +42773,11 @@ var require_schemas = __commonJS({
           unrecognized.push(key);
           continue;
         }
-        const r3 = _catchall.run({ value: input[key], issues: [] }, ctx2);
-        if (r3 instanceof Promise) {
-          proms.push(r3.then((r4) => handlePropertyResult(r4, payload, key, input)));
+        const r4 = _catchall.run({ value: input[key], issues: [] }, ctx2);
+        if (r4 instanceof Promise) {
+          proms.push(r4.then((r5) => handlePropertyResult(r5, payload, key, input)));
         } else {
-          handlePropertyResult(r3, payload, key, input);
+          handlePropertyResult(r4, payload, key, input);
         }
       }
       if (unrecognized.length) {
@@ -42843,11 +42843,11 @@ var require_schemas = __commonJS({
         const shape = value.shape;
         for (const key of value.keys) {
           const el = shape[key];
-          const r3 = el._zod.run({ value: input[key], issues: [] }, ctx2);
-          if (r3 instanceof Promise) {
-            proms.push(r3.then((r4) => handlePropertyResult(r4, payload, key, input)));
+          const r4 = el._zod.run({ value: input[key], issues: [] }, ctx2);
+          if (r4 instanceof Promise) {
+            proms.push(r4.then((r5) => handlePropertyResult(r5, payload, key, input)));
           } else {
-            handlePropertyResult(r3, payload, key, input);
+            handlePropertyResult(r4, payload, key, input);
           }
         }
         if (!catchall) {
@@ -42939,7 +42939,7 @@ var require_schemas = __commonJS({
           return final;
         }
       }
-      const nonaborted = results.filter((r3) => !util3.aborted(r3));
+      const nonaborted = results.filter((r4) => !util3.aborted(r4));
       if (nonaborted.length === 1) {
         final.value = nonaborted[0].value;
         return nonaborted[0];
@@ -43496,7 +43496,7 @@ var require_schemas = __commonJS({
         if (def.innerType._zod.optin === "optional") {
           const result = def.innerType._zod.run(payload, ctx2);
           if (result instanceof Promise)
-            return result.then((r3) => handleOptionalResult(r3, payload.value));
+            return result.then((r4) => handleOptionalResult(r4, payload.value));
           return handleOptionalResult(result, payload.value);
         }
         if (payload.value === void 0) {
@@ -43905,11 +43905,11 @@ var require_schemas = __commonJS({
       };
       inst._zod.check = (payload) => {
         const input = payload.value;
-        const r3 = def.fn(input);
-        if (r3 instanceof Promise) {
-          return r3.then((r4) => handleRefineResult2(r4, payload, input, inst));
+        const r4 = def.fn(input);
+        if (r4 instanceof Promise) {
+          return r4.then((r5) => handleRefineResult2(r5, payload, input, inst));
         }
-        handleRefineResult2(r3, payload, input, inst);
+        handleRefineResult2(r4, payload, input, inst);
         return;
       };
     });
@@ -64358,11 +64358,11 @@ var require_webidl = __commonJS({
       return x;
     };
     webidl.util.IntegerPart = function(n) {
-      const r3 = Math.floor(Math.abs(n));
+      const r4 = Math.floor(Math.abs(n));
       if (n < 0) {
-        return -1 * r3;
+        return -1 * r4;
       }
-      return r3;
+      return r4;
     };
     webidl.util.Stringify = function(V) {
       const type = webidl.util.Type(V);
@@ -75962,8 +75962,8 @@ var require_cache = __commonJS({
           if (typeof request2 === "string") {
             continue;
           }
-          const r3 = request2[kState];
-          if (!urlIsHttpHttpsScheme(r3.url) || r3.method !== "GET") {
+          const r4 = request2[kState];
+          if (!urlIsHttpHttpsScheme(r4.url) || r4.method !== "GET") {
             throw webidl.errors.exception({
               header: prefix,
               message: "Expected http/s scheme when method is not GET."
@@ -75972,19 +75972,19 @@ var require_cache = __commonJS({
         }
         const fetchControllers = [];
         for (const request2 of requests) {
-          const r3 = new Request2(request2)[kState];
-          if (!urlIsHttpHttpsScheme(r3.url)) {
+          const r4 = new Request2(request2)[kState];
+          if (!urlIsHttpHttpsScheme(r4.url)) {
             throw webidl.errors.exception({
               header: prefix,
               message: "Expected http/s scheme."
             });
           }
-          r3.initiator = "fetch";
-          r3.destination = "subresource";
-          requestList.push(r3);
+          r4.initiator = "fetch";
+          r4.destination = "subresource";
+          requestList.push(r4);
           const responsePromise = createDeferredPromise2();
           fetchControllers.push(fetching({
-            request: r3,
+            request: r4,
             processResponse(response) {
               if (response.type === "error" || response.status === 206 || response.status < 200 || response.status > 299) {
                 responsePromise.reject(webidl.errors.exception({
@@ -76136,20 +76136,20 @@ var require_cache = __commonJS({
         webidl.argumentLengthCheck(arguments, 1, prefix);
         request2 = webidl.converters.RequestInfo(request2, prefix, "request");
         options = webidl.converters.CacheQueryOptions(options, prefix, "options");
-        let r3 = null;
+        let r4 = null;
         if (request2 instanceof Request2) {
-          r3 = request2[kState];
-          if (r3.method !== "GET" && !options.ignoreMethod) {
+          r4 = request2[kState];
+          if (r4.method !== "GET" && !options.ignoreMethod) {
             return false;
           }
         } else {
           assert2(typeof request2 === "string");
-          r3 = new Request2(request2)[kState];
+          r4 = new Request2(request2)[kState];
         }
         const operations = [];
         const operation = {
           type: "delete",
-          request: r3,
+          request: r4,
           options
         };
         operations.push(operation);
@@ -76181,15 +76181,15 @@ var require_cache = __commonJS({
         const prefix = "Cache.keys";
         if (request2 !== void 0) request2 = webidl.converters.RequestInfo(request2, prefix, "request");
         options = webidl.converters.CacheQueryOptions(options, prefix, "options");
-        let r3 = null;
+        let r4 = null;
         if (request2 !== void 0) {
           if (request2 instanceof Request2) {
-            r3 = request2[kState];
-            if (r3.method !== "GET" && !options.ignoreMethod) {
+            r4 = request2[kState];
+            if (r4.method !== "GET" && !options.ignoreMethod) {
               return [];
             }
           } else if (typeof request2 === "string") {
-            r3 = new Request2(request2)[kState];
+            r4 = new Request2(request2)[kState];
           }
         }
         const promise2 = createDeferredPromise2();
@@ -76199,7 +76199,7 @@ var require_cache = __commonJS({
             requests.push(requestResponse[0]);
           }
         } else {
-          const requestResponses = this.#queryCache(r3, options);
+          const requestResponses = this.#queryCache(r4, options);
           for (const requestResponse of requestResponses) {
             requests.push(requestResponse[0]);
           }
@@ -76263,14 +76263,14 @@ var require_cache = __commonJS({
                   message: "put operation should have an associated response"
                 });
               }
-              const r3 = operation.request;
-              if (!urlIsHttpHttpsScheme(r3.url)) {
+              const r4 = operation.request;
+              if (!urlIsHttpHttpsScheme(r4.url)) {
                 throw webidl.errors.exception({
                   header: "Cache.#batchCacheOperations",
                   message: "expected http or https scheme"
                 });
               }
-              if (r3.method !== "GET") {
+              if (r4.method !== "GET") {
                 throw webidl.errors.exception({
                   header: "Cache.#batchCacheOperations",
                   message: "not get method"
@@ -76353,15 +76353,15 @@ var require_cache = __commonJS({
         return true;
       }
       #internalMatchAll(request2, options, maxResponses = Infinity) {
-        let r3 = null;
+        let r4 = null;
         if (request2 !== void 0) {
           if (request2 instanceof Request2) {
-            r3 = request2[kState];
-            if (r3.method !== "GET" && !options.ignoreMethod) {
+            r4 = request2[kState];
+            if (r4.method !== "GET" && !options.ignoreMethod) {
               return [];
             }
           } else if (typeof request2 === "string") {
-            r3 = new Request2(request2)[kState];
+            r4 = new Request2(request2)[kState];
           }
         }
         const responses = [];
@@ -76370,7 +76370,7 @@ var require_cache = __commonJS({
             responses.push(requestResponse[1]);
           }
         } else {
-          const requestResponses = this.#queryCache(r3, options);
+          const requestResponses = this.#queryCache(r4, options);
           for (const requestResponse of requestResponses) {
             responses.push(requestResponse[1]);
           }
@@ -81341,10 +81341,10 @@ function __rest(s2, e) {
   return t;
 }
 function __decorate(decorators, target, key, desc2) {
-  var c = arguments.length, r3 = c < 3 ? target : desc2 === null ? desc2 = Object.getOwnPropertyDescriptor(target, key) : desc2, d;
-  if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r3 = Reflect.decorate(decorators, target, key, desc2);
-  else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r3 = (c < 3 ? d(r3) : c > 3 ? d(target, key, r3) : d(target, key)) || r3;
-  return c > 3 && r3 && Object.defineProperty(target, key, r3), r3;
+  var c = arguments.length, r4 = c < 3 ? target : desc2 === null ? desc2 = Object.getOwnPropertyDescriptor(target, key) : desc2, d;
+  if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r4 = Reflect.decorate(decorators, target, key, desc2);
+  else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r4 = (c < 3 ? d(r4) : c > 3 ? d(target, key, r4) : d(target, key)) || r4;
+  return c > 3 && r4 && Object.defineProperty(target, key, r4), r4;
 }
 function __param(paramIndex, decorator) {
   return function(target, key) {
@@ -81471,14 +81471,14 @@ function __values(o) {
 function __read(o, n) {
   var m = typeof Symbol === "function" && o[Symbol.iterator];
   if (!m) return o;
-  var i = m.call(o), r3, ar = [], e;
+  var i = m.call(o), r4, ar = [], e;
   try {
-    while ((n === void 0 || n-- > 0) && !(r3 = i.next()).done) ar.push(r3.value);
+    while ((n === void 0 || n-- > 0) && !(r4 = i.next()).done) ar.push(r4.value);
   } catch (error40) {
     e = { error: error40 };
   } finally {
     try {
-      if (r3 && !r3.done && (m = i["return"])) m.call(i);
+      if (r4 && !r4.done && (m = i["return"])) m.call(i);
     } finally {
       if (e) throw e.error;
     }
@@ -81492,10 +81492,10 @@ function __spread() {
 }
 function __spreadArrays() {
   for (var s2 = 0, i = 0, il = arguments.length; i < il; i++) s2 += arguments[i].length;
-  for (var r3 = Array(s2), k = 0, i = 0; i < il; i++)
+  for (var r4 = Array(s2), k = 0, i = 0; i < il; i++)
     for (var a = arguments[i], j = 0, jl = a.length; j < jl; j++, k++)
-      r3[k] = a[j];
-  return r3;
+      r4[k] = a[j];
+  return r4;
 }
 function __await(v) {
   return this instanceof __await ? (this.v = v, this) : new __await(v);
@@ -81520,8 +81520,8 @@ function __asyncGenerator(thisArg, _arguments, generator) {
       settle(q[0][3], e);
     }
   }
-  function step(r3) {
-    r3.value instanceof __await ? Promise.resolve(r3.value.v).then(fulfill, reject) : settle(q[0][2], r3);
+  function step(r4) {
+    r4.value instanceof __await ? Promise.resolve(r4.value.v).then(fulfill, reject) : settle(q[0][2], r4);
   }
   function fulfill(value) {
     resume("next", value);
@@ -91272,12 +91272,12 @@ var require_UPNG = __commonJS({
             v = b.w;
             C2 = b.d;
             d = l(b.u, (1 << j) - 1, J + h, N, d, b.v);
-            var r3 = V.V(b.v, 0, J, b.C);
-            X = (1 << r3) - 1;
+            var r4 = V.V(b.v, 0, J, b.C);
+            X = (1 << r4) - 1;
             var S = V.V(b.v, J, h, b.D);
             u = (1 << S) - 1;
-            M(b.C, r3);
-            I2(b.C, r3, v);
+            M(b.C, r4);
+            I2(b.C, r4, v);
             M(b.D, S);
             I2(b.D, S, C2);
           }
@@ -91821,8 +91821,8 @@ var require_UPNG = __commonJS({
         wAs(data, offset, "PLTE");
         offset += 4;
         for (var i = 0; i < dl; i++) {
-          var ti = i * 3, c = nimg.plte[i], r3 = c & 255, g = c >>> 8 & 255, b = c >>> 16 & 255;
-          data[offset + ti + 0] = r3;
+          var ti = i * 3, c = nimg.plte[i], r4 = c & 255, g = c >>> 8 & 255, b = c >>> 16 & 255;
+          data[offset + ti + 0] = r4;
           data[offset + ti + 1] = g;
           data[offset + ti + 2] = b;
         }
@@ -92063,15 +92063,15 @@ var require_UPNG = __commonJS({
         var r0 = frm.rect, r1 = frms[j - 1].rect;
         var miX = Math.min(r0.x, r1.x), miY = Math.min(r0.y, r1.y);
         var maX = Math.max(r0.x + r0.width, r1.x + r1.width), maY = Math.max(r0.y + r0.height, r1.y + r1.height);
-        var r3 = {
+        var r4 = {
           x: miX,
           y: miY,
           width: maX - miX,
           height: maY - miY
         };
         frms[j - 1].dispose = 1;
-        if (j - 1 != 0) UPNG.encode._updateFrame(bufs, w, h, frms, j - 1, r3, evenCrd);
-        UPNG.encode._updateFrame(bufs, w, h, frms, j, r3, evenCrd);
+        if (j - 1 != 0) UPNG.encode._updateFrame(bufs, w, h, frms, j - 1, r4, evenCrd);
+        UPNG.encode._updateFrame(bufs, w, h, frms, j, r4, evenCrd);
       }
       var area3 = 0;
       if (bufs.length != 1) for (var i = 0; i < frms.length; i++) {
@@ -92080,13 +92080,13 @@ var require_UPNG = __commonJS({
       }
       return frms;
     };
-    UPNG.encode._updateFrame = function(bufs, w, h, frms, i, r3, evenCrd) {
+    UPNG.encode._updateFrame = function(bufs, w, h, frms, i, r4, evenCrd) {
       var U8 = Uint8Array, U32 = Uint32Array;
       var pimg = new U8(bufs[i - 1]), pimg32 = new U32(bufs[i - 1]), nimg = i + 1 < bufs.length ? new U8(bufs[i + 1]) : null;
       var cimg = new U8(bufs[i]), cimg32 = new U32(cimg.buffer);
       var mix = w, miy = h, max = -1, may = -1;
-      for (var y = 0; y < r3.height; y++) for (var x = 0; x < r3.width; x++) {
-        var cx = r3.x + x, cy = r3.y + y;
+      for (var y = 0; y < r4.height; y++) for (var x = 0; x < r4.width; x++) {
+        var cx = r4.x + x, cy = r4.y + y;
         var j = cy * w + cx, cc = cimg32[j];
         if (cc == 0 || frms[i - 1].dispose == 0 && pimg32[j] == cc && (nimg == null || nimg[j * 4 + 3] != 0)) {
         } else {
@@ -92101,20 +92101,20 @@ var require_UPNG = __commonJS({
         if ((mix & 1) == 1) mix--;
         if ((miy & 1) == 1) miy--;
       }
-      r3 = {
+      r4 = {
         x: mix,
         y: miy,
         width: max - mix + 1,
         height: may - miy + 1
       };
       var fr = frms[i];
-      fr.rect = r3;
+      fr.rect = r4;
       fr.blend = 1;
-      fr.img = new Uint8Array(r3.width * r3.height * 4);
+      fr.img = new Uint8Array(r4.width * r4.height * 4);
       if (frms[i - 1].dispose == 0) {
-        UPNG._copyTile(pimg, w, h, fr.img, r3.width, r3.height, -r3.x, -r3.y, 0);
-        UPNG.encode._prepareDiff(cimg, w, h, fr.img, r3);
-      } else UPNG._copyTile(cimg, w, h, fr.img, r3.width, r3.height, -r3.x, -r3.y, 0);
+        UPNG._copyTile(pimg, w, h, fr.img, r4.width, r4.height, -r4.x, -r4.y, 0);
+        UPNG.encode._prepareDiff(cimg, w, h, fr.img, r4);
+      } else UPNG._copyTile(cimg, w, h, fr.img, r4.width, r4.height, -r4.x, -r4.y, 0);
     };
     UPNG.encode._prepareDiff = function(cimg, w, h, nimg, rec) {
       UPNG._copyTile(cimg, w, h, nimg, rec.width, rec.height, -rec.x, -rec.y, 2);
@@ -92197,8 +92197,8 @@ var require_UPNG = __commonJS({
       var sb = oimg, tb = nimg32, len = sb.length;
       var inds = new Uint8Array(oimg.length >> 2);
       for (var i = 0; i < len; i += 4) {
-        var r3 = sb[i] * (1 / 255), g = sb[i + 1] * (1 / 255), b = sb[i + 2] * (1 / 255), a = sb[i + 3] * (1 / 255);
-        var nd = UPNG.quantize.getNearest(root, r3, g, b, a);
+        var r4 = sb[i] * (1 / 255), g = sb[i + 1] * (1 / 255), b = sb[i + 2] * (1 / 255), a = sb[i + 3] * (1 / 255);
+        var nd = UPNG.quantize.getNearest(root, r4, g, b, a);
         inds[i >> 2] = nd.ind;
         tb[i >> 2] = nd.est.rgba;
       }
@@ -92276,28 +92276,28 @@ var require_UPNG = __commonJS({
       for (var i = 0; i < leafs.length; i++) leafs[i].ind = i;
       return [root, leafs];
     };
-    UPNG.quantize.getNearest = function(nd, r3, g, b, a) {
+    UPNG.quantize.getNearest = function(nd, r4, g, b, a) {
       if (nd.left == null) {
-        nd.tdst = UPNG.quantize.dist(nd.est.q, r3, g, b, a);
+        nd.tdst = UPNG.quantize.dist(nd.est.q, r4, g, b, a);
         return nd;
       }
-      var planeDst = UPNG.quantize.planeDst(nd.est, r3, g, b, a);
+      var planeDst = UPNG.quantize.planeDst(nd.est, r4, g, b, a);
       var node0 = nd.left, node1 = nd.right;
       if (planeDst > 0) {
         node0 = nd.right;
         node1 = nd.left;
       }
-      var ln = UPNG.quantize.getNearest(node0, r3, g, b, a);
+      var ln = UPNG.quantize.getNearest(node0, r4, g, b, a);
       if (ln.tdst <= planeDst * planeDst) return ln;
-      var rn = UPNG.quantize.getNearest(node1, r3, g, b, a);
+      var rn = UPNG.quantize.getNearest(node1, r4, g, b, a);
       return rn.tdst < ln.tdst ? rn : ln;
     };
-    UPNG.quantize.planeDst = function(est, r3, g, b, a) {
+    UPNG.quantize.planeDst = function(est, r4, g, b, a) {
       var e = est.e;
-      return e[0] * r3 + e[1] * g + e[2] * b + e[3] * a - est.eMq;
+      return e[0] * r4 + e[1] * g + e[2] * b + e[3] * a - est.eMq;
     };
-    UPNG.quantize.dist = function(q, r3, g, b, a) {
-      var d0 = r3 - q[0], d1 = g - q[1], d2 = b - q[2], d3 = a - q[3];
+    UPNG.quantize.dist = function(q, r4, g, b, a) {
+      var d0 = r4 - q[0], d1 = g - q[1], d2 = b - q[2], d3 = a - q[3];
       return d0 * d0 + d1 * d1 + d2 * d2 + d3 * d3;
     };
     UPNG.quantize.splitPixels = function(nimg, nimg32, i0, i1, e, eMq) {
@@ -92325,15 +92325,15 @@ var require_UPNG = __commonJS({
       var m = [0, 0, 0, 0];
       var N = i1 - i0 >> 2;
       for (var i = i0; i < i1; i += 4) {
-        var r3 = nimg[i] * (1 / 255), g = nimg[i + 1] * (1 / 255), b = nimg[i + 2] * (1 / 255), a = nimg[i + 3] * (1 / 255);
-        m[0] += r3;
+        var r4 = nimg[i] * (1 / 255), g = nimg[i + 1] * (1 / 255), b = nimg[i + 2] * (1 / 255), a = nimg[i + 3] * (1 / 255);
+        m[0] += r4;
         m[1] += g;
         m[2] += b;
         m[3] += a;
-        R[0] += r3 * r3;
-        R[1] += r3 * g;
-        R[2] += r3 * b;
-        R[3] += r3 * a;
+        R[0] += r4 * r4;
+        R[1] += r4 * g;
+        R[2] += r4 * b;
+        R[3] += r4 * a;
         R[5] += g * g;
         R[6] += g * b;
         R[7] += g * a;
@@ -92396,9 +92396,9 @@ var require_UPNG = __commonJS({
       for (var i = 0; i < bufs.length; i++) {
         var img = new Uint8Array(bufs[i]), il = img.length;
         for (var j = 0; j < il; j += 4) {
-          var r3 = img[j], g = img[j + 1], b = img[j + 2], a = img[j + 3];
-          if (a == 0) r3 = g = b = 0;
-          nimg[noff + j] = r3;
+          var r4 = img[j], g = img[j + 1], b = img[j + 2], a = img[j + 3];
+          if (a == 0) r4 = g = b = 0;
+          nimg[noff + j] = r4;
           nimg[noff + j + 1] = g;
           nimg[noff + j + 2] = b;
           nimg[noff + j + 3] = a;
@@ -97583,15 +97583,15 @@ var require_rotations = __commonJS({
         degreeAngle = 0;
       }
       var x = rectangle.x, y = rectangle.y, w = rectangle.width, h = rectangle.height;
-      var r3 = exports2.reduceRotation(degreeAngle);
+      var r4 = exports2.reduceRotation(degreeAngle);
       var b = borderWidth / 2;
-      if (r3 === 0)
+      if (r4 === 0)
         return { x: x - b, y: y - b, width: w, height: h };
-      else if (r3 === 90)
+      else if (r4 === 90)
         return { x: x - h + b, y: y - b, width: h, height: w };
-      else if (r3 === 180)
+      else if (r4 === 180)
         return { x: x - w + b, y: y - h + b, width: w, height: h };
-      else if (r3 === 270)
+      else if (r4 === 270)
         return { x: x - b, y: y - w + b, width: h, height: w };
       else
         return { x: x - b, y: y - b, width: w, height: h };
@@ -108575,11 +108575,11 @@ var require_fontkit_umd = __commonJS({
       };
       function findIdx(table, val) {
         if (table[0] > val) return -1;
-        var l = 0, r3 = table.length;
-        while (l < r3 - 1) {
-          var mid = l + Math.floor((r3 - l + 1) / 2);
+        var l = 0, r4 = table.length;
+        while (l < r4 - 1) {
+          var mid = l + Math.floor((r4 - l + 1) / 2);
           if (table[mid] <= val) l = mid;
-          else r3 = mid;
+          else r4 = mid;
         }
         return l;
       }
@@ -129401,12 +129401,12 @@ var require_fontkit_umd = __commonJS({
       function mapOTToAAT(features2) {
         var res = {};
         for (var k in features2) {
-          var r3 = void 0;
-          if (r3 = OTMapping[k]) {
-            if (res[r3[0]] == null) {
-              res[r3[0]] = {};
+          var r4 = void 0;
+          if (r4 = OTMapping[k]) {
+            if (res[r4[0]] == null) {
+              res[r4[0]] = {};
             }
-            res[r3[0]][r3[1]] = features2[k];
+            res[r4[0]][r4[1]] = features2[k];
           }
         }
         return res;
@@ -129429,10 +129429,10 @@ var require_fontkit_umd = __commonJS({
         var res = {};
         if (Array.isArray(features2)) {
           for (var k = 0; k < features2.length; k++) {
-            var r3 = void 0;
+            var r4 = void 0;
             var f = mapFeatureStrings(features2[k]);
-            if (r3 = AATMapping[f[0]] && AATMapping[f[0]][f[1]]) {
-              res[r3] = true;
+            if (r4 = AATMapping[f[0]] && AATMapping[f[0]][f[1]]) {
+              res[r4] = true;
             }
           }
         } else if (typeof features2 === "object") {
@@ -139995,12 +139995,12 @@ function readSfntFamilyName(sfnt) {
     let family = null;
     let preferred = null;
     for (let i = 0; i < count; i++) {
-      const r3 = nameOff + 6 + i * 12;
-      const platformId = buf.readUInt16BE(r3);
-      const nameId = buf.readUInt16BE(r3 + 6);
+      const r4 = nameOff + 6 + i * 12;
+      const platformId = buf.readUInt16BE(r4);
+      const nameId = buf.readUInt16BE(r4 + 6);
       if (nameId !== 1 && nameId !== 16) continue;
-      const length = buf.readUInt16BE(r3 + 8);
-      const start = stringBase + buf.readUInt16BE(r3 + 10);
+      const length = buf.readUInt16BE(r4 + 8);
+      const start = stringBase + buf.readUInt16BE(r4 + 10);
       const raw = Buffer.from(buf.subarray(start, start + length));
       const value = platformId === 3 || platformId === 0 ? raw.swap16().toString("utf16le") : raw.toString("latin1");
       const clean = value.replace(/\0/g, "").trim();
@@ -140983,18 +140983,18 @@ var require_string_decoder = __commonJS({
     }
     StringDecoder.prototype.write = function(buf) {
       if (buf.length === 0) return "";
-      var r3;
+      var r4;
       var i;
       if (this.lastNeed) {
-        r3 = this.fillLast(buf);
-        if (r3 === void 0) return "";
+        r4 = this.fillLast(buf);
+        if (r4 === void 0) return "";
         i = this.lastNeed;
         this.lastNeed = 0;
       } else {
         i = 0;
       }
-      if (i < buf.length) return r3 ? r3 + this.text(buf, i) : this.text(buf, i);
-      return r3 || "";
+      if (i < buf.length) return r4 ? r4 + this.text(buf, i) : this.text(buf, i);
+      return r4 || "";
     };
     StringDecoder.prototype.end = utf8End;
     StringDecoder.prototype.text = utf8Text;
@@ -141058,8 +141058,8 @@ var require_string_decoder = __commonJS({
     }
     function utf8FillLast(buf) {
       var p = this.lastTotal - this.lastNeed;
-      var r3 = utf8CheckExtraBytes(this, buf, p);
-      if (r3 !== void 0) return r3;
+      var r4 = utf8CheckExtraBytes(this, buf, p);
+      if (r4 !== void 0) return r4;
       if (this.lastNeed <= buf.length) {
         buf.copy(this.lastChar, p, 0, this.lastNeed);
         return this.lastChar.toString(this.encoding, 0, this.lastTotal);
@@ -141076,24 +141076,24 @@ var require_string_decoder = __commonJS({
       return buf.toString("utf8", i, end);
     }
     function utf8End(buf) {
-      var r3 = buf && buf.length ? this.write(buf) : "";
-      if (this.lastNeed) return r3 + "\uFFFD";
-      return r3;
+      var r4 = buf && buf.length ? this.write(buf) : "";
+      if (this.lastNeed) return r4 + "\uFFFD";
+      return r4;
     }
     function utf16Text(buf, i) {
       if ((buf.length - i) % 2 === 0) {
-        var r3 = buf.toString("utf16le", i);
-        if (r3) {
-          var c = r3.charCodeAt(r3.length - 1);
+        var r4 = buf.toString("utf16le", i);
+        if (r4) {
+          var c = r4.charCodeAt(r4.length - 1);
           if (c >= 55296 && c <= 56319) {
             this.lastNeed = 2;
             this.lastTotal = 4;
             this.lastChar[0] = buf[buf.length - 2];
             this.lastChar[1] = buf[buf.length - 1];
-            return r3.slice(0, -1);
+            return r4.slice(0, -1);
           }
         }
-        return r3;
+        return r4;
       }
       this.lastNeed = 1;
       this.lastTotal = 2;
@@ -141101,12 +141101,12 @@ var require_string_decoder = __commonJS({
       return buf.toString("utf16le", i, buf.length - 1);
     }
     function utf16End(buf) {
-      var r3 = buf && buf.length ? this.write(buf) : "";
+      var r4 = buf && buf.length ? this.write(buf) : "";
       if (this.lastNeed) {
         var end = this.lastTotal - this.lastNeed;
-        return r3 + this.lastChar.toString("utf16le", 0, end);
+        return r4 + this.lastChar.toString("utf16le", 0, end);
       }
-      return r3;
+      return r4;
     }
     function base64Text(buf, i) {
       var n = (buf.length - i) % 3;
@@ -141122,9 +141122,9 @@ var require_string_decoder = __commonJS({
       return buf.toString("base64", i, buf.length - n);
     }
     function base64End(buf) {
-      var r3 = buf && buf.length ? this.write(buf) : "";
-      if (this.lastNeed) return r3 + this.lastChar.toString("base64", 0, 3 - this.lastNeed);
-      return r3;
+      var r4 = buf && buf.length ? this.write(buf) : "";
+      if (this.lastNeed) return r4 + this.lastChar.toString("base64", 0, 3 - this.lastNeed);
+      return r4;
     }
     function simpleWrite(buf) {
       return buf.toString(this.encoding);
@@ -150578,9 +150578,9 @@ var init_async_queue = __esm({
           return Promise.resolve({ done: true, value: void 0 });
         }
         return new Promise((resolve2) => {
-          const waiter = (r3) => {
+          const waiter = (r4) => {
             signal?.removeEventListener("abort", onAbort);
-            resolve2(r3);
+            resolve2(r4);
           };
           const onAbort = () => {
             const idx = __classPrivateFieldGet3(this, _AsyncQueue_waiters, "f").indexOf(waiter);
@@ -151165,7 +151165,7 @@ var init_SessionToolRunner = __esm({
     async function _SessionToolRunner_drain2() {
       if (__classPrivateFieldGet3(this, _SessionToolRunner_inFlightCount, "f") === 0)
         return;
-      await Promise.race([new Promise((r3) => __classPrivateFieldSet3(this, _SessionToolRunner_onIdle, r3, "f")), sleep3(DRAIN_TIMEOUT_MS)]);
+      await Promise.race([new Promise((r4) => __classPrivateFieldSet3(this, _SessionToolRunner_onIdle, r4, "f")), sleep3(DRAIN_TIMEOUT_MS)]);
       __classPrivateFieldSet3(this, _SessionToolRunner_onIdle, null, "f");
       if (__classPrivateFieldGet3(this, _SessionToolRunner_inFlightCount, "f") > 0) {
         __classPrivateFieldGet3(this, _SessionToolRunner_logger, "f").warn("drain timeout exceeded");
@@ -153422,7 +153422,7 @@ ${out}`;
 
 // ../../node_modules/.pnpm/@anthropic-ai+sdk@0.123.0_zod@4.1.11/node_modules/@anthropic-ai/sdk/lib/environments/worker.mjs
 function hasMemoryStore(session) {
-  return session.resources.some((r3) => r3.type === "memory_store");
+  return session.resources.some((r4) => r4.type === "memory_store");
 }
 function sessionsTokenFromSecret(secret) {
   if (!secret)
@@ -168361,14 +168361,14 @@ var require_jpeg = __commonJS({
         while (k < 64) {
           const rs = decodeHuffman(component2.huffmanTableAC);
           const s2 = rs & 15;
-          const r3 = rs >> 4;
+          const r4 = rs >> 4;
           if (s2 === 0) {
-            if (r3 < 15)
+            if (r4 < 15)
               break;
             k += 16;
             continue;
           }
-          k += r3;
+          k += r4;
           const z = dctZigZag[k];
           zz[z] = receiveAndExtend(s2);
           k++;
@@ -168392,16 +168392,16 @@ var require_jpeg = __commonJS({
         while (k <= e) {
           const rs = decodeHuffman(component2.huffmanTableAC);
           const s2 = rs & 15;
-          const r3 = rs >> 4;
+          const r4 = rs >> 4;
           if (s2 === 0) {
-            if (r3 < 15) {
-              eobrun = receive(r3) + (1 << r3) - 1;
+            if (r4 < 15) {
+              eobrun = receive(r4) + (1 << r4) - 1;
               break;
             }
             k += 16;
             continue;
           }
-          k += r3;
+          k += r4;
           const z = dctZigZag[k];
           zz[z] = receiveAndExtend(s2) * (1 << successive);
           k++;
@@ -168412,7 +168412,7 @@ var require_jpeg = __commonJS({
       function decodeACSuccessive(component2, zz) {
         let k = spectralStart;
         let e = spectralEnd;
-        let r3 = 0;
+        let r4 = 0;
         while (k <= e) {
           const z = dctZigZag[k];
           const direction = zz[z] < 0 ? -1 : 1;
@@ -168420,20 +168420,20 @@ var require_jpeg = __commonJS({
             case 0:
               const rs = decodeHuffman(component2.huffmanTableAC);
               const s2 = rs & 15;
-              r3 = rs >> 4;
+              r4 = rs >> 4;
               if (s2 === 0) {
-                if (r3 < 15) {
-                  eobrun = receive(r3) + (1 << r3);
+                if (r4 < 15) {
+                  eobrun = receive(r4) + (1 << r4);
                   successiveACState = 4;
                 } else {
-                  r3 = 16;
+                  r4 = 16;
                   successiveACState = 1;
                 }
               } else {
                 if (s2 !== 1)
                   throw new Error("invalid ACn encoding");
                 successiveACNextValue = receiveAndExtend(s2);
-                successiveACState = r3 ? 2 : 3;
+                successiveACState = r4 ? 2 : 3;
               }
               continue;
             case 1:
@@ -168442,8 +168442,8 @@ var require_jpeg = __commonJS({
               if (zz[z]) {
                 zz[z] += (readBit() << successive) * direction;
               } else {
-                r3--;
-                if (r3 === 0)
+                r4--;
+                if (r4 === 0)
                   successiveACState = successiveACState == 2 ? 3 : 0;
               }
               break;
@@ -168564,7 +168564,7 @@ var require_jpeg = __commonJS({
       const blocksPerColumn = component.blocksPerColumn;
       const samplesPerLine = blocksPerLine << 3;
       const R = new Int32Array(64);
-      const r3 = new Uint8Array(64);
+      const r4 = new Uint8Array(64);
       function quantizeAndInverse(zz, dataOut, dataIn) {
         const qt = component.quantizationTable;
         const p = dataIn;
@@ -168692,13 +168692,13 @@ var require_jpeg = __commonJS({
         for (let i = 0; i < 8; i++)
           lines.push(new Uint8Array(samplesPerLine));
         for (let blockCol = 0; blockCol < blocksPerLine; blockCol++) {
-          quantizeAndInverse(component.blocks[blockRow][blockCol], r3, R);
+          quantizeAndInverse(component.blocks[blockRow][blockCol], r4, R);
           let offset = 0;
           const sample = blockCol << 3;
           for (let j = 0; j < 8; j++) {
             const line2 = lines[scanLine + j];
             for (let i = 0; i < 8; i++)
-              line2[sample + i] = r3[offset++];
+              line2[sample + i] = r4[offset++];
           }
         }
       }
@@ -172886,10 +172886,10 @@ var require_imageResources = __commonJS({
             const horizontalAlignment = clamped(sliceAlignments, (0, psdReader_1.readUint32)(reader));
             const verticalAlignment = clamped(sliceAlignments, (0, psdReader_1.readUint32)(reader));
             const a = (0, psdReader_1.readUint8)(reader);
-            const r3 = (0, psdReader_1.readUint8)(reader);
+            const r4 = (0, psdReader_1.readUint8)(reader);
             const g = (0, psdReader_1.readUint8)(reader);
             const b = (0, psdReader_1.readUint8)(reader);
-            const backgroundColorType = a + r3 + g + b === 0 ? "none" : a === 0 ? "matte" : "color";
+            const backgroundColorType = a + r4 + g + b === 0 ? "none" : a === 0 ? "matte" : "color";
             slices.push({
               id,
               groupId,
@@ -172907,7 +172907,7 @@ var require_imageResources = __commonJS({
               url: url2,
               bounds: { top: top2, left: left2, bottom: bottom2, right: right2 },
               backgroundColorType,
-              backgroundColor: { r: r3, g, b, a }
+              backgroundColor: { r: r4, g, b, a }
             });
           }
           const desc2 = (0, descriptor_1.readVersionAndDescriptor)(reader);
@@ -172944,12 +172944,12 @@ var require_imageResources = __commonJS({
         (0, psdWriter_1.writeUint32)(writer, slices.length);
         for (let i = 0; i < slices.length; i++) {
           const slice = slices[i];
-          let { a, r: r3, g, b } = slice.backgroundColor;
+          let { a, r: r4, g, b } = slice.backgroundColor;
           if (slice.backgroundColorType === "none") {
-            a = r3 = g = b = 0;
+            a = r4 = g = b = 0;
           } else if (slice.backgroundColorType === "matte") {
             a = 0;
-            r3 = g = b = 255;
+            r4 = g = b = 255;
           }
           (0, psdWriter_1.writeUint32)(writer, slice.id);
           (0, psdWriter_1.writeUint32)(writer, slice.groupId);
@@ -172971,7 +172971,7 @@ var require_imageResources = __commonJS({
           (0, psdWriter_1.writeUint32)(writer, sliceAlignments.indexOf(slice.horizontalAlignment));
           (0, psdWriter_1.writeUint32)(writer, sliceAlignments.indexOf(slice.verticalAlignment));
           (0, psdWriter_1.writeUint8)(writer, a);
-          (0, psdWriter_1.writeUint8)(writer, r3);
+          (0, psdWriter_1.writeUint8)(writer, r4);
           (0, psdWriter_1.writeUint8)(writer, g);
           (0, psdWriter_1.writeUint8)(writer, b);
         }
@@ -172982,8 +172982,8 @@ var require_imageResources = __commonJS({
         slices.forEach((s2) => {
           const slice = Object.assign(Object.assign({ sliceID: s2.id, groupID: s2.groupId, origin: descriptor_1.ESliceOrigin.encode(s2.origin), Type: descriptor_1.ESliceType.encode(s2.type), bounds: boundsToBounds(s2.bounds) }, s2.name ? { "Nm  ": s2.name } : {}), { url: s2.url, null: s2.target, Msge: s2.message, altTag: s2.altTag, cellTextIsHTML: s2.cellTextIsHTML, cellText: s2.cellText, horzAlign: descriptor_1.ESliceHorzAlign.encode(s2.horizontalAlignment), vertAlign: descriptor_1.ESliceVertAlign.encode(s2.verticalAlignment), bgColorType: descriptor_1.ESliceBGColorType.encode(s2.backgroundColorType) });
           if (s2.backgroundColorType === "color") {
-            const { r: r3, g, b, a } = s2.backgroundColor;
-            slice.bgColor = { "Rd  ": r3, "Grn ": g, "Bl  ": b, alpha: a };
+            const { r: r4, g, b, a } = s2.backgroundColor;
+            slice.bgColor = { "Rd  ": r4, "Grn ": g, "Bl  ": b, alpha: a };
           }
           slice.topOutset = s2.topOutset || 0;
           slice.leftOutset = s2.leftOutset || 0;
@@ -174391,11 +174391,11 @@ var require_psdReader = __commonJS({
       const colorSpace = readUint16(reader);
       switch (colorSpace) {
         case 0: {
-          const r3 = readUint16(reader) / 257;
+          const r4 = readUint16(reader) / 257;
           const g = readUint16(reader) / 257;
           const b = readUint16(reader) / 257;
           skipBytes(reader, 2);
-          return { r: r3, g, b };
+          return { r: r4, g, b };
         }
         case 1: {
           const h = readUint16(reader) / 65535;
@@ -175508,11 +175508,11 @@ var require_text3 = __commonJS({
         if (value !== void 0) {
           let identical = false;
           if (Array.isArray(value)) {
-            identical = runs.every((r3) => arraysEqual(r3.style[key], value));
+            identical = runs.every((r4) => arraysEqual(r4.style[key], value));
           } else if (typeof value === "object") {
-            identical = runs.every((r3) => objectsEqual(r3.style[key], value));
+            identical = runs.every((r4) => objectsEqual(r4.style[key], value));
           } else {
-            identical = runs.every((r3) => r3.style[key] === value);
+            identical = runs.every((r4) => r4.style[key] === value);
           }
           if (identical) {
             base[key] = value;
@@ -175520,17 +175520,17 @@ var require_text3 = __commonJS({
         }
         const styleValue = base[key];
         if (styleValue !== void 0) {
-          for (const r3 of runs) {
+          for (const r4 of runs) {
             let same = false;
             if (Array.isArray(value)) {
-              same = arraysEqual(r3.style[key], value);
+              same = arraysEqual(r4.style[key], value);
             } else if (typeof value === "object") {
-              same = objectsEqual(r3.style[key], value);
+              same = objectsEqual(r4.style[key], value);
             } else {
-              same = r3.style[key] === value;
+              same = r4.style[key] === value;
             }
             if (same)
-              delete r3.style[key];
+              delete r4.style[key];
           }
         }
       }
@@ -180134,13 +180134,13 @@ var require_psdWriter = __commonJS({
             realFlags |= 1;
           if (realMask.fromVectorData)
             realFlags |= 8;
-          const r3 = layerData.realMask || {};
+          const r4 = layerData.realMask || {};
           writeUint8(writer, realFlags);
           writeUint8(writer, realMask.defaultColor || 0);
-          writeInt32(writer, r3.top || 0);
-          writeInt32(writer, r3.left || 0);
-          writeInt32(writer, r3.bottom || 0);
-          writeInt32(writer, r3.right || 0);
+          writeInt32(writer, r4.top || 0);
+          writeInt32(writer, r4.left || 0);
+          writeInt32(writer, r4.bottom || 0);
+          writeInt32(writer, r4.right || 0);
         }
         if (params && mask) {
           writeUint8(writer, params);
@@ -180168,9 +180168,9 @@ var require_psdWriter = __commonJS({
         if (ranges) {
           writerBlendingRange(writer, ranges.compositeGrayBlendSource);
           writerBlendingRange(writer, ranges.compositeGraphBlendDestinationRange);
-          for (const r3 of ranges.ranges) {
-            writerBlendingRange(writer, r3.sourceRange);
-            writerBlendingRange(writer, r3.destRange);
+          for (const r4 of ranges.ranges) {
+            writerBlendingRange(writer, r4.sourceRange);
+            writerBlendingRange(writer, r4.destRange);
           }
         }
       });
@@ -181127,7 +181127,7 @@ var require_dist8 = __commonJS({
 });
 
 // src/app.ts
-var import_express30 = __toESM(require_express2(), 1);
+var import_express31 = __toESM(require_express2(), 1);
 var import_cors = __toESM(require_lib3(), 1);
 var import_pino_http = __toESM(require_logger(), 1);
 import { existsSync as existsSync3 } from "fs";
@@ -182369,7 +182369,7 @@ var checkReverificationAuthorization = (params, { factorVerificationAge }) => {
       return factor1FreshEnough && factor2FreshEnough ? "pass" : "fail";
   }
 };
-var combine = (results) => results.some((r3) => r3 === "pass") && results.every((r3) => r3 === "pass" || r3 === "skip");
+var combine = (results) => results.some((r4) => r4 === "pass") && results.every((r4) => r4 === "pass" || r4 === "skip");
 var createCheckAuthorization = (options) => {
   return (params) => {
     if (!options.userId) return false;
@@ -182452,14 +182452,14 @@ var __experimental_JWTPayloadToAuthObjectProperties = (claims) => {
 };
 
 // ../../node_modules/.pnpm/@clerk+shared@4.15.0_react-dom@19.1.0_react@19.1.0__react@19.1.0/node_modules/@clerk/shared/dist/runtime/_chunks/pathToRegexp-CNkSDpje.mjs
-function _(r3) {
-  for (var n = [], e = 0; e < r3.length; ) {
-    var a = r3[e];
+function _(r4) {
+  for (var n = [], e = 0; e < r4.length; ) {
+    var a = r4[e];
     if (a === "*" || a === "+" || a === "?") {
       n.push({
         type: "MODIFIER",
         index: e,
-        value: r3[e++]
+        value: r4[e++]
       });
       continue;
     }
@@ -182467,7 +182467,7 @@ function _(r3) {
       n.push({
         type: "ESCAPED_CHAR",
         index: e++,
-        value: r3[e++]
+        value: r4[e++]
       });
       continue;
     }
@@ -182475,7 +182475,7 @@ function _(r3) {
       n.push({
         type: "OPEN",
         index: e,
-        value: r3[e++]
+        value: r4[e++]
       });
       continue;
     }
@@ -182483,15 +182483,15 @@ function _(r3) {
       n.push({
         type: "CLOSE",
         index: e,
-        value: r3[e++]
+        value: r4[e++]
       });
       continue;
     }
     if (a === ":") {
-      for (var u = "", t = e + 1; t < r3.length; ) {
-        var c = r3.charCodeAt(t);
+      for (var u = "", t = e + 1; t < r4.length; ) {
+        var c = r4.charCodeAt(t);
         if (c >= 48 && c <= 57 || c >= 65 && c <= 90 || c >= 97 && c <= 122 || c === 95) {
-          u += r3[t++];
+          u += r4[t++];
           continue;
         }
         break;
@@ -182506,19 +182506,19 @@ function _(r3) {
     }
     if (a === "(") {
       var o = 1, m = "", t = e + 1;
-      if (r3[t] === "?") throw new TypeError('Pattern cannot start with "?" at '.concat(t));
-      for (; t < r3.length; ) {
-        if (r3[t] === "\\") {
-          m += r3[t++] + r3[t++];
+      if (r4[t] === "?") throw new TypeError('Pattern cannot start with "?" at '.concat(t));
+      for (; t < r4.length; ) {
+        if (r4[t] === "\\") {
+          m += r4[t++] + r4[t++];
           continue;
         }
-        if (r3[t] === ")") {
+        if (r4[t] === ")") {
           if (o--, o === 0) {
             t++;
             break;
           }
-        } else if (r3[t] === "(" && (o++, r3[t + 1] !== "?")) throw new TypeError("Capturing groups are not allowed at ".concat(t));
-        m += r3[t++];
+        } else if (r4[t] === "(" && (o++, r4[t + 1] !== "?")) throw new TypeError("Capturing groups are not allowed at ".concat(t));
+        m += r4[t++];
       }
       if (o) throw new TypeError("Unbalanced pattern at ".concat(e));
       if (!m) throw new TypeError("Missing pattern at ".concat(e));
@@ -182532,7 +182532,7 @@ function _(r3) {
     n.push({
       type: "CHAR",
       index: e,
-      value: r3[e++]
+      value: r4[e++]
     });
   }
   return n.push({
@@ -182541,9 +182541,9 @@ function _(r3) {
     value: ""
   }), n;
 }
-function F(r3, n) {
+function F(r4, n) {
   n === void 0 && (n = {});
-  for (var e = _(r3), a = n.prefixes, u = a === void 0 ? "./" : a, t = n.delimiter, c = t === void 0 ? "/#?" : t, o = [], m = 0, h = 0, p = "", f = function(l) {
+  for (var e = _(r4), a = n.prefixes, u = a === void 0 ? "./" : a, t = n.delimiter, c = t === void 0 ? "/#?" : t, o = [], m = 0, h = 0, p = "", f = function(l) {
     if (h < e.length && e[h].type === l) return e[h++].value;
   }, w = function(l) {
     var v = f(l);
@@ -182597,17 +182597,17 @@ function F(r3, n) {
   }
   return o;
 }
-function H(r3, n) {
+function H(r4, n) {
   var e = [];
-  return I(P(r3, e, n), e, n);
+  return I(P(r4, e, n), e, n);
 }
-function I(r3, n, e) {
+function I(r4, n, e) {
   e === void 0 && (e = {});
   var a = e.decode, u = a === void 0 ? function(t) {
     return t;
   } : a;
   return function(t) {
-    var c = r3.exec(t);
+    var c = r4.exec(t);
     if (!c) return false;
     for (var o = c[0], m = c.index, h = /* @__PURE__ */ Object.create(null), p = function(w) {
       if (c[w] === void 0) return "continue";
@@ -182623,37 +182623,37 @@ function I(r3, n, e) {
     };
   };
 }
-function s(r3) {
-  return r3.replace(/([.+*?=^!:${}()[\]|/\\])/g, "\\$1");
+function s(r4) {
+  return r4.replace(/([.+*?=^!:${}()[\]|/\\])/g, "\\$1");
 }
-function D(r3) {
-  return r3 && r3.sensitive ? "" : "i";
+function D(r4) {
+  return r4 && r4.sensitive ? "" : "i";
 }
-function $(r3, n) {
-  if (!n) return r3;
-  for (var e = /\((?:\?<(.*?)>)?(?!\?)/g, a = 0, u = e.exec(r3.source); u; ) n.push({
+function $(r4, n) {
+  if (!n) return r4;
+  for (var e = /\((?:\?<(.*?)>)?(?!\?)/g, a = 0, u = e.exec(r4.source); u; ) n.push({
     name: u[1] || a++,
     prefix: "",
     suffix: "",
     modifier: "",
     pattern: ""
-  }), u = e.exec(r3.source);
-  return r3;
+  }), u = e.exec(r4.source);
+  return r4;
 }
-function W(r3, n, e) {
-  var a = r3.map(function(u) {
+function W(r4, n, e) {
+  var a = r4.map(function(u) {
     return P(u, n, e).source;
   });
   return new RegExp("(?:".concat(a.join("|"), ")"), D(e));
 }
-function L(r3, n, e) {
-  return U(F(r3, e), n, e);
+function L(r4, n, e) {
+  return U(F(r4, e), n, e);
 }
-function U(r3, n, e) {
+function U(r4, n, e) {
   e === void 0 && (e = {});
   for (var a = e.strict, u = a === void 0 ? false : a, t = e.start, c = t === void 0 ? true : t, o = e.end, m = o === void 0 ? true : o, h = e.encode, p = h === void 0 ? function(v) {
     return v;
-  } : h, f = e.delimiter, w = f === void 0 ? "/#?" : f, d = e.endsWith, M = d === void 0 ? "" : d, A = "[".concat(s(M), "]|$"), T = "[".concat(s(w), "]"), x = c ? "^" : "", C2 = 0, g = r3; C2 < g.length; C2++) {
+  } : h, f = e.delimiter, w = f === void 0 ? "/#?" : f, d = e.endsWith, M = d === void 0 ? "" : d, A = "[".concat(s(M), "]|$"), T = "[".concat(s(w), "]"), x = c ? "^" : "", C2 = 0, g = r4; C2 < g.length; C2++) {
     var i = g[C2];
     if (typeof i == "string") x += s(p(i));
     else {
@@ -182671,13 +182671,13 @@ function U(r3, n, e) {
   }
   if (m) u || (x += "".concat(T, "?")), x += e.endsWith ? "(?=".concat(A, ")") : "$";
   else {
-    var b = r3[r3.length - 1], l = typeof b == "string" ? T.indexOf(b[b.length - 1]) > -1 : b === void 0;
+    var b = r4[r4.length - 1], l = typeof b == "string" ? T.indexOf(b[b.length - 1]) > -1 : b === void 0;
     u || (x += "(?:".concat(T, "(?=").concat(A, "))?")), l || (x += "(?=".concat(T, "|").concat(A, ")"));
   }
   return new RegExp(x, D(e));
 }
-function P(r3, n, e) {
-  return r3 instanceof RegExp ? $(r3, n) : Array.isArray(r3) ? W(r3, n, e) : L(r3, n, e);
+function P(r4, n, e) {
+  return r4 instanceof RegExp ? $(r4, n) : Array.isArray(r4) ? W(r4, n, e) : L(r4, n, e);
 }
 function match(str2, options) {
   try {
@@ -190479,11 +190479,11 @@ function parsePathRewriteRules(rewriteConfig) {
 var debug4 = Debug.extend("router");
 async function getTarget(req, res, config2) {
   let newTarget;
-  const router29 = config2.router;
-  if (isPlainObject(router29)) {
-    newTarget = getTargetFromProxyTable(req, router29);
-  } else if (typeof router29 === "function") {
-    newTarget = await router29(req, res, config2);
+  const router30 = config2.router;
+  if (isPlainObject(router30)) {
+    newTarget = getTargetFromProxyTable(req, router30);
+  } else if (typeof router30 === "function") {
+    newTarget = await router30(req, res, config2);
   }
   return newTarget;
 }
@@ -190768,7 +190768,7 @@ function clerkProxyMiddleware() {
 }
 
 // src/routes/index.ts
-var import_express28 = __toESM(require_express2(), 1);
+var import_express29 = __toESM(require_express2(), 1);
 
 // src/routes/health.ts
 var import_express = __toESM(require_express2(), 1);
@@ -195143,7 +195143,8 @@ var AdaptTemplateBody = objectType({
     "name": stringType().optional(),
     "formatName": stringType().optional().describe("The brief's deliverable name for the size (decides the format class with the channel)"),
     "channel": stringType().optional().describe("Brief channel section (DISPLAY, OOH \u2026)")
-  }))
+  })),
+  "profileId": numberType().optional().describe("Layout profile (measured from examples) to lay the sizes out with")
 });
 var DissectPdfBody = objectType({
   "objectPath": stringType().min(1),
@@ -195389,7 +195390,14 @@ var PlanCampaignBuildResponse = objectType({
     "height": numberType(),
     "reason": stringType()
   })),
-  "warnings": arrayType(stringType())
+  "warnings": arrayType(stringType()),
+  "profile": objectType({
+    "id": numberType(),
+    "name": stringType(),
+    "measuredClasses": arrayType(stringType()),
+    "interpolatedClasses": arrayType(stringType()),
+    "notes": arrayType(stringType())
+  }).nullish().describe("Layout profile measured from the selected examples (null when none could be measured)")
 });
 var ImportBrandPackageParams = objectType({
   "brandId": coerce.number()
@@ -203579,6 +203587,7 @@ __export(schema_exports, {
   insertBriefSchema: () => insertBriefSchema,
   insertCampaignSchema: () => insertCampaignSchema,
   insertTemplateSchema: () => insertTemplateSchema,
+  layoutProfilesTable: () => layoutProfilesTable,
   reviewProgressTable: () => reviewProgressTable,
   shareLinksTable: () => shareLinksTable,
   templateSizeValues: () => templateSizeValues,
@@ -205596,10 +205605,10 @@ var $ZodType = /* @__PURE__ */ $constructor("$ZodType", (inst, def) => {
   inst["~standard"] = {
     validate: (value) => {
       try {
-        const r3 = safeParse(inst, value);
-        return r3.success ? { value: r3.data } : { issues: r3.error?.issues };
+        const r4 = safeParse(inst, value);
+        return r4.success ? { value: r4.data } : { issues: r4.error?.issues };
       } catch (_2) {
-        return safeParseAsync(inst, value).then((r3) => r3.success ? { value: r3.data } : { issues: r3.error?.issues });
+        return safeParseAsync(inst, value).then((r4) => r4.success ? { value: r4.data } : { issues: r4.error?.issues });
       }
     },
     vendor: "zod",
@@ -206280,14 +206289,14 @@ var $ZodObject = /* @__PURE__ */ $constructor("$ZodObject", (inst, def) => {
       const shape = value.shape;
       for (const key of value.keys) {
         const el = shape[key];
-        const r3 = el._zod.run({ value: input[key], issues: [] }, ctx2);
+        const r4 = el._zod.run({ value: input[key], issues: [] }, ctx2);
         const isOptional = el._zod.optin === "optional" && el._zod.optout === "optional";
-        if (r3 instanceof Promise) {
-          proms.push(r3.then((r4) => isOptional ? handleOptionalObjectResult(r4, payload, key, input) : handleObjectResult(r4, payload, key)));
+        if (r4 instanceof Promise) {
+          proms.push(r4.then((r5) => isOptional ? handleOptionalObjectResult(r5, payload, key, input) : handleObjectResult(r5, payload, key)));
         } else if (isOptional) {
-          handleOptionalObjectResult(r3, payload, key, input);
+          handleOptionalObjectResult(r4, payload, key, input);
         } else {
-          handleObjectResult(r3, payload, key);
+          handleObjectResult(r4, payload, key);
         }
       }
     }
@@ -206305,11 +206314,11 @@ var $ZodObject = /* @__PURE__ */ $constructor("$ZodObject", (inst, def) => {
         unrecognized.push(key);
         continue;
       }
-      const r3 = _catchall.run({ value: input[key], issues: [] }, ctx2);
-      if (r3 instanceof Promise) {
-        proms.push(r3.then((r4) => handleObjectResult(r4, payload, key)));
+      const r4 = _catchall.run({ value: input[key], issues: [] }, ctx2);
+      if (r4 instanceof Promise) {
+        proms.push(r4.then((r5) => handleObjectResult(r5, payload, key)));
       } else {
-        handleObjectResult(r3, payload, key);
+        handleObjectResult(r4, payload, key);
       }
     }
     if (unrecognized.length) {
@@ -207122,11 +207131,11 @@ var $ZodCustom = /* @__PURE__ */ $constructor("$ZodCustom", (inst, def) => {
   };
   inst._zod.check = (payload) => {
     const input = payload.value;
-    const r3 = def.fn(input);
-    if (r3 instanceof Promise) {
-      return r3.then((r4) => handleRefineResult(r4, payload, input, inst));
+    const r4 = def.fn(input);
+    if (r4 instanceof Promise) {
+      return r4.then((r5) => handleRefineResult(r5, payload, input, inst));
     }
-    handleRefineResult(r3, payload, input, inst);
+    handleRefineResult(r4, payload, input, inst);
     return;
   };
 });
@@ -215286,6 +215295,17 @@ var creativeEventsTable = pgTable("creative_events", {
   createdAt: timestamp("created_at").notNull().defaultNow()
 });
 
+// ../../lib/db/src/schema/layout-profiles.ts
+var layoutProfilesTable = pgTable("layout_profiles", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  sourceKey: text("source_key").notNull(),
+  profile: text("profile").notNull().default("{}"),
+  createdBy: text("created_by"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow()
+});
+
 // ../../lib/db/src/index.ts
 var { Pool: Pool3 } = esm_default;
 if (!process.env.DATABASE_URL) {
@@ -215429,7 +215449,7 @@ async function runFrontifySync() {
   const cookie = await establishGuestSession(portalUrl);
   const storage3 = new ObjectStorageService();
   const existingRows = await db.select({ name: brandAssetsTable.name, folder: brandAssetsTable.folder }).from(brandAssetsTable).where(eq(brandAssetsTable.brandId, brand.id));
-  const existing = new Set(existingRows.map((r3) => `${r3.folder ?? ""}\0${r3.name}`));
+  const existing = new Set(existingRows.map((r4) => `${r4.folder ?? ""}\0${r4.name}`));
   for (const rule of sources) {
     try {
       let page = 1;
@@ -215807,8 +215827,8 @@ function campaignFromName(name) {
   return base.replace(/\s+\d{2,4}×\d{2,4}\s*$/, "").trim();
 }
 function metaPlacement(width, height) {
-  const r3 = width / height;
-  const near = (target, tol = 0.04) => Math.abs(r3 - target) <= tol;
+  const r4 = width / height;
+  const near = (target, tol = 0.04) => Math.abs(r4 - target) <= tol;
   if (near(1)) return "Feed (1:1)";
   if (near(4 / 5)) return "Feed (4:5)";
   if (near(9 / 16, 0.03)) return "Stories / Reels (9:16)";
@@ -215883,9 +215903,9 @@ function trackingRowsToCsv(rows) {
     "Template id"
   ];
   const lines = [header.map(csvCell).join(",")];
-  for (const r3 of rows) {
+  for (const r4 of rows) {
     lines.push(
-      [r3.adName, r3.fileName, `${r3.width}x${r3.height}`, r3.ratio, r3.formatLabel, r3.variant ?? "", r3.placement, r3.destination, r3.utmParameters, r3.dynamicParameters, r3.templateId].map(csvCell).join(",")
+      [r4.adName, r4.fileName, `${r4.width}x${r4.height}`, r4.ratio, r4.formatLabel, r4.variant ?? "", r4.placement, r4.destination, r4.utmParameters, r4.dynamicParameters, r4.templateId].map(csvCell).join(",")
     );
   }
   return "\uFEFF" + lines.join("\r\n") + "\r\n";
@@ -215993,13 +216013,13 @@ async function runMetaSync(days = 30) {
     return result;
   }
   result.fetched = rows.length;
-  for (const r3 of rows) {
-    if (!r3.ad_id || !r3.date_start) continue;
+  for (const r4 of rows) {
+    if (!r4.ad_id || !r4.date_start) continue;
     try {
       await db.execute(sql`INSERT INTO meta_ad_insights
         (day, ad_id, ad_name, adset_name, campaign_id, campaign_name, impressions, reach, clicks, link_clicks, spend, currency, synced_at)
-        VALUES (${r3.date_start}, ${r3.ad_id}, ${r3.ad_name ?? ""}, ${r3.adset_name ?? null}, ${r3.campaign_id ?? null}, ${r3.campaign_name ?? null},
-                ${int2(r3.impressions)}, ${int2(r3.reach)}, ${int2(r3.clicks)}, ${int2(r3.inline_link_clicks)}, ${money(r3.spend)}, ${r3.account_currency ?? null}, now())
+        VALUES (${r4.date_start}, ${r4.ad_id}, ${r4.ad_name ?? ""}, ${r4.adset_name ?? null}, ${r4.campaign_id ?? null}, ${r4.campaign_name ?? null},
+                ${int2(r4.impressions)}, ${int2(r4.reach)}, ${int2(r4.clicks)}, ${int2(r4.inline_link_clicks)}, ${money(r4.spend)}, ${r4.account_currency ?? null}, now())
         ON CONFLICT (day, ad_id) DO UPDATE SET
           ad_name = EXCLUDED.ad_name, adset_name = EXCLUDED.adset_name, campaign_id = EXCLUDED.campaign_id,
           campaign_name = EXCLUDED.campaign_name, impressions = EXCLUDED.impressions, reach = EXCLUDED.reach,
@@ -216007,7 +216027,7 @@ async function runMetaSync(days = 30) {
           currency = EXCLUDED.currency, synced_at = now()`);
       result.upserted += 1;
     } catch (err) {
-      result.errors.push(`${r3.date_start} ${r3.ad_id}: ${err instanceof Error ? err.message : String(err)}`);
+      result.errors.push(`${r4.date_start} ${r4.ad_id}: ${err instanceof Error ? err.message : String(err)}`);
     }
   }
   logger2.info({ fetched: result.fetched, upserted: result.upserted, errors: result.errors.length }, "Meta insights sync finished");
@@ -216082,20 +216102,20 @@ async function getMetaSummary(days = 30) {
     GROUP BY ad_id ORDER BY sum(impressions) DESC LIMIT 100`);
   const templates = await db.select({ id: templatesTable.id, name: templatesTable.name, width: templatesTable.width, height: templatesTable.height }).from(templatesTable).where(notInArray(templatesTable.category, ["knowledge", "wip"]));
   const briefs = await db.select({ id: briefsTable.id, campaignName: briefsTable.campaignName }).from(briefsTable);
-  const ads = adsRes.rows.map((r3) => {
-    const adName = String(r3.ad_name ?? "");
-    const campaignName = r3.campaign_name == null ? null : String(r3.campaign_name);
-    const imp = Number(r3.impressions ?? 0);
-    const lc = Number(r3.link_clicks ?? 0);
-    const sp = Number(r3.spend ?? 0);
+  const ads = adsRes.rows.map((r4) => {
+    const adName = String(r4.ad_name ?? "");
+    const campaignName = r4.campaign_name == null ? null : String(r4.campaign_name);
+    const imp = Number(r4.impressions ?? 0);
+    const lc = Number(r4.link_clicks ?? 0);
+    const sp = Number(r4.spend ?? 0);
     const m = matchAd(adName, campaignName, templates, briefs);
     return {
-      adId: String(r3.ad_id),
+      adId: String(r4.ad_id),
       adName,
       campaignName,
-      adsetName: r3.adset_name == null ? null : String(r3.adset_name),
+      adsetName: r4.adset_name == null ? null : String(r4.adset_name),
       impressions: imp,
-      reach: Number(r3.reach ?? 0),
+      reach: Number(r4.reach ?? 0),
       linkClicks: lc,
       spend: sp,
       ctr: imp > 0 ? lc / imp : 0,
@@ -216121,11 +216141,11 @@ async function getMetaSummary(days = 30) {
       cpm: impressions > 0 ? spend / impressions * 1e3 : 0,
       cpc: linkClicks > 0 ? spend / linkClicks : 0
     },
-    timeseries: seriesRes.rows.map((r3) => ({
-      day: String(r3.day),
-      impressions: Number(r3.impressions ?? 0),
-      linkClicks: Number(r3.link_clicks ?? 0),
-      spend: Number(r3.spend ?? 0)
+    timeseries: seriesRes.rows.map((r4) => ({
+      day: String(r4.day),
+      impressions: Number(r4.impressions ?? 0),
+      linkClicks: Number(r4.link_clicks ?? 0),
+      spend: Number(r4.spend ?? 0)
     })),
     ads
   };
@@ -226303,7 +226323,7 @@ Writing rules:
 - Use New Zealand English spelling (organise, programme, colour).
 - Headlines: no full stop at the end, sentence case unless the brand guidelines say otherwise.
 - Speak directly to the reader (you/your/we/us); plain words over formal ones.
-${getBrandRules(params.brandName).copyRules(params.templateSize).map((r3) => `- ${r3}`).join("\n")}
+${getBrandRules(params.brandName).copyRules(params.templateSize).map((r4) => `- ${r4}`).join("\n")}
 
 Return ONLY a JSON object with these exact fields:
 - headline: punchy headline (max 8 words for banner, max 12 words otherwise)
@@ -226506,8 +226526,8 @@ ${animationRequirement}
 - Include a styled CTA button (id="cta").
 - Do NOT add clickTag wiring or <a> tags around the ad \u2014 click handling is injected downstream.
 - Professional, production-ready design matching the brand palette.
-${getBrandRules(params.brandName).bannerRules(params.animated ? "animated_social" : "html_banner").map((r3) => `- ${r3}`).join("\n")}
-${getBrandRules(params.brandName).layoutRules(width, height).map((r3) => `- ${r3}`).join("\n")}
+${getBrandRules(params.brandName).bannerRules(params.animated ? "animated_social" : "html_banner").map((r4) => `- ${r4}`).join("\n")}
+${getBrandRules(params.brandName).layoutRules(width, height).map((r4) => `- ${r4}`).join("\n")}
 Output ONLY the raw HTML, no markdown code fences.`;
   const response = await openai.chat.completions.create({
     model: "gpt-4o",
@@ -227031,16 +227051,16 @@ function hexToRgb(hex) {
     b: parseInt(h.slice(4, 6), 16)
   };
 }
-function rgbToHex({ r: r3, g, b }) {
+function rgbToHex({ r: r4, g, b }) {
   const to = (n) => Math.max(0, Math.min(255, Math.round(n))).toString(16).padStart(2, "0");
-  return `#${to(r3)}${to(g)}${to(b)}`;
+  return `#${to(r4)}${to(g)}${to(b)}`;
 }
-function rgbToLab({ r: r3, g, b }) {
+function rgbToLab({ r: r4, g, b }) {
   const lin = (c) => {
     const s2 = c / 255;
     return s2 <= 0.04045 ? s2 / 12.92 : Math.pow((s2 + 0.055) / 1.055, 2.4);
   };
-  const R = lin(r3), G = lin(g), B = lin(b);
+  const R = lin(r4), G = lin(g), B = lin(b);
   const X = R * 0.4124 + G * 0.3576 + B * 0.1805;
   const Y = R * 0.2126 + G * 0.7152 + B * 0.0722;
   const Z = R * 0.0193 + G * 0.1192 + B * 0.9505;
@@ -227087,8 +227107,8 @@ function extractHtmlColors(html) {
     if (c) out.push(c);
   }
   while ((m = rgbRe.exec(html)) !== null) {
-    const r3 = Number(m[1]), g = Number(m[2]), b = Number(m[3]);
-    if (r3 <= 255 && g <= 255 && b <= 255) out.push({ r: r3, g, b });
+    const r4 = Number(m[1]), g = Number(m[2]), b = Number(m[3]);
+    if (r4 <= 255 && g <= 255 && b <= 255) out.push({ r: r4, g, b });
   }
   return out;
 }
@@ -227177,15 +227197,15 @@ async function extractDominantColors(buffer, max = 5) {
     const counts = /* @__PURE__ */ new Map();
     const step = info.channels;
     for (let i = 0; i + 2 < data.length; i += step) {
-      const r3 = Math.round(data[i] / 24) * 24;
+      const r4 = Math.round(data[i] / 24) * 24;
       const g = Math.round(data[i + 1] / 24) * 24;
       const b = Math.round(data[i + 2] / 24) * 24;
-      const key = `${r3},${g},${b}`;
+      const key = `${r4},${g},${b}`;
       counts.set(key, (counts.get(key) ?? 0) + 1);
     }
     return [...counts.entries()].sort((a, b) => b[1] - a[1]).slice(0, max).map(([k]) => {
-      const [r3, g, b] = k.split(",").map(Number);
-      return rgbToHex({ r: r3, g, b });
+      const [r4, g, b] = k.split(",").map(Number);
+      return rgbToHex({ r: r4, g, b });
     });
   } catch {
     return [];
@@ -227370,16 +227390,16 @@ function sanitizeMotion(raw) {
   const frames = [];
   for (const f of m.frames.slice(0, MAX_MOTION_FRAMES)) {
     if (typeof f !== "object" || f === null) continue;
-    const r3 = f;
-    const t = num(r3.t);
+    const r4 = f;
+    const t = num(r4.t);
     if (!(t >= 0 && t <= 1)) continue;
     frames.push({
       t: Math.round(t * 1e4) / 1e4,
-      dx: Math.max(-2e4, Math.min(2e4, num(r3.dx))),
-      dy: Math.max(-2e4, Math.min(2e4, num(r3.dy))),
-      sx: Math.max(0, Math.min(50, num(r3.sx, 1))),
-      sy: Math.max(0, Math.min(50, num(r3.sy, 1))),
-      o: Math.max(0, Math.min(1, num(r3.o, 1)))
+      dx: Math.max(-2e4, Math.min(2e4, num(r4.dx))),
+      dy: Math.max(-2e4, Math.min(2e4, num(r4.dy))),
+      sx: Math.max(0, Math.min(50, num(r4.sx, 1))),
+      sy: Math.max(0, Math.min(50, num(r4.sy, 1))),
+      o: Math.max(0, Math.min(1, num(r4.o, 1)))
     });
   }
   if (frames.length < 2) return void 0;
@@ -227519,7 +227539,7 @@ function normalizeFreeformConfig(raw) {
   const adaptMethod = typeof rawMethod === "string" && /^[\w:-]{1,40}$/.test(rawMethod) ? rawMethod : void 0;
   const rawNotes = raw.adaptNotes;
   const adaptNotes = Array.isArray(rawNotes) ? rawNotes.filter((n) => typeof n === "string" && n.trim().length > 0).slice(0, 16).map((n) => n.slice(0, 240)) : [];
-  const rejected = Array.isArray(raw.rejected) ? raw.rejected.filter((r3) => typeof r3 === "string" && r3.trim().length > 0).map((r3) => r3.slice(0, 300)).slice(0, 20) : [];
+  const rejected = Array.isArray(raw.rejected) ? raw.rejected.filter((r4) => typeof r4 === "string" && r4.trim().length > 0).map((r4) => r4.slice(0, 300)).slice(0, 20) : [];
   return {
     kind: "freeform",
     elements,
@@ -227579,8 +227599,8 @@ function ensureFeedbackTable() {
       FROM templates t
       WHERE f.subject_type = 'template' AND f.subject_id = t.id AND f.subject_width IS NULL`);
     const rows = await db.execute(sql`SELECT id, subject_width, subject_height FROM feedback WHERE format_class IS NULL AND subject_width IS NOT NULL`);
-    for (const r3 of rows.rows) {
-      await db.execute(sql`UPDATE feedback SET format_class = ${classifyAspect(r3.subject_width, r3.subject_height)} WHERE id = ${r3.id}`);
+    for (const r4 of rows.rows) {
+      await db.execute(sql`UPDATE feedback SET format_class = ${classifyAspect(r4.subject_width, r4.subject_height)} WHERE id = ${r4.id}`);
     }
   })().catch((err) => {
     ensured2 = null;
@@ -227620,14 +227640,14 @@ async function feedbackForFormat(formatClass) {
       AND adapt_method IS NOT NULL AND adapt_method <> 'import'
     ORDER BY id DESC LIMIT 200`);
   const value = { formatClass, correct: 0, incorrect: 0, notes: [] };
-  for (const r3 of rows.rows) {
-    if (r3.verdict === "correct") value.correct++;
-    else if (r3.verdict === "incorrect") value.incorrect++;
-    if (r3.verdict === "incorrect" && (r3.note || r3.fault) && value.notes.length < 6) {
-      const size = r3.subject_width && r3.subject_height ? ` (${r3.subject_width}\xD7${r3.subject_height})` : "";
-      const part = r3.element_slot ? `[${r3.element_slot}] ` : r3.element_label ? `[${r3.element_label}] ` : "";
-      const structured = r3.fault ? `${String(r3.fault).replace(/_/g, " ")}${r3.expected ? ` \u2014 expected ${String(r3.expected).trim()}` : ""}` : "";
-      const free = r3.note ? String(r3.note).trim() : "";
+  for (const r4 of rows.rows) {
+    if (r4.verdict === "correct") value.correct++;
+    else if (r4.verdict === "incorrect") value.incorrect++;
+    if (r4.verdict === "incorrect" && (r4.note || r4.fault) && value.notes.length < 6) {
+      const size = r4.subject_width && r4.subject_height ? ` (${r4.subject_width}\xD7${r4.subject_height})` : "";
+      const part = r4.element_slot ? `[${r4.element_slot}] ` : r4.element_label ? `[${r4.element_label}] ` : "";
+      const structured = r4.fault ? `${String(r4.fault).replace(/_/g, " ")}${r4.expected ? ` \u2014 expected ${String(r4.expected).trim()}` : ""}` : "";
+      const free = r4.note ? String(r4.note).trim() : "";
       value.notes.push(`${part}${[structured, free].filter(Boolean).join("; ")}${size}`);
     }
   }
@@ -227713,14 +227733,14 @@ async function backfillRememberedRights(opts = {}) {
     JOIN templates t ON t.id = latest.subject_id AND t.category <> 'knowledge'
     WHERE latest.verdict = 'correct'`);
   const out = { candidates: 0, snapshotted: 0, remembered: 0 };
-  for (const r3 of rows.rows) {
+  for (const r4 of rows.rows) {
     out.candidates += 1;
-    const templateId = Number(r3.subject_id);
+    const templateId = Number(r4.subject_id);
     try {
-      if (r3.needs_snapshot) {
+      if (r4.needs_snapshot) {
         const cfg = await snapshotTemplateConfig(templateId);
         if (cfg) {
-          await db.execute(sql`UPDATE feedback SET subject_config = ${cfg} WHERE id = ${Number(r3.feedback_id)}`);
+          await db.execute(sql`UPDATE feedback SET subject_config = ${cfg} WHERE id = ${Number(r4.feedback_id)}`);
           out.snapshotted += 1;
         }
       }
@@ -227756,9 +227776,9 @@ function hexToRgb2(hex) {
     b: parseInt(h.slice(4, 6), 16)
   };
 }
-function rgbToHex2({ r: r3, g, b }) {
+function rgbToHex2({ r: r4, g, b }) {
   const to = (n) => Math.max(0, Math.min(255, Math.round(n))).toString(16).padStart(2, "0");
-  return `#${to(r3)}${to(g)}${to(b)}`;
+  return `#${to(r4)}${to(g)}${to(b)}`;
 }
 function cmykToRgb(c, m, y, k) {
   const unit = (v) => {
@@ -227766,17 +227786,17 @@ function cmykToRgb(c, m, y, k) {
     return Math.max(0, Math.min(1, n));
   };
   const [C2, M, Y, K] = [unit(c), unit(m), unit(y), unit(k)];
-  const r3 = 255 + C2 * (-4.387332384609988 * C2 + 54.48615194189176 * M + 18.82290502165302 * Y + 212.25662451639585 * K - 285.2331026137004) + M * (1.7149763477362134 * M - 5.6096736904047315 * Y - 17.873870861415444 * K - 5.497006427196366) + Y * (-2.5217340131683033 * Y - 21.248923337353073 * K + 17.5119270841813) + K * (-21.86122147463605 * K - 189.48180835922747);
+  const r4 = 255 + C2 * (-4.387332384609988 * C2 + 54.48615194189176 * M + 18.82290502165302 * Y + 212.25662451639585 * K - 285.2331026137004) + M * (1.7149763477362134 * M - 5.6096736904047315 * Y - 17.873870861415444 * K - 5.497006427196366) + Y * (-2.5217340131683033 * Y - 21.248923337353073 * K + 17.5119270841813) + K * (-21.86122147463605 * K - 189.48180835922747);
   const g = 255 + C2 * (8.841041422036149 * C2 + 60.118027045597366 * M + 6.871425592049007 * Y + 31.159100130055922 * K - 79.2970844816548) + M * (-15.310361306967817 * M + 17.575251261109482 * Y + 131.35250912493976 * K - 190.9453302588951) + Y * (4.444339102852739 * Y + 9.8632861493405 * K - 24.86741582555878) + K * (-20.737325471181034 * K - 187.80453709719578);
   const b = 255 + C2 * (0.8842522430003296 * C2 + 8.078677503112928 * M + 30.89978309703729 * Y - 0.23883238689178934 * K - 14.183576799673286) + M * (10.49593273432072 * M + 63.02378494754052 * Y + 50.606957656360734 * K - 112.23884253719248) + Y * (0.03296041114873217 * Y + 115.60384449646641 * K - 193.58209356861505) + K * (-22.33816807309886 * K - 180.12613974708367);
   const clamp2 = (v) => Math.max(0, Math.min(255, v));
-  return { r: clamp2(r3), g: clamp2(g), b: clamp2(b) };
+  return { r: clamp2(r4), g: clamp2(g), b: clamp2(b) };
 }
 function cmykToHex(c, m, y, k) {
   return rgbToHex2(cmykToRgb(c, m, y, k));
 }
-function rgbToCmyk({ r: r3, g, b }) {
-  const R = Math.max(0, Math.min(255, r3)) / 255;
+function rgbToCmyk({ r: r4, g, b }) {
+  const R = Math.max(0, Math.min(255, r4)) / 255;
   const G = Math.max(0, Math.min(255, g)) / 255;
   const B = Math.max(0, Math.min(255, b)) / 255;
   const k = 1 - Math.max(R, G, B);
@@ -227789,12 +227809,12 @@ function rgbToCmyk({ r: r3, g, b }) {
     k: pct(k)
   };
 }
-function rgbToLab2({ r: r3, g, b }) {
+function rgbToLab2({ r: r4, g, b }) {
   const lin = (c) => {
     const s2 = c / 255;
     return s2 <= 0.04045 ? s2 / 12.92 : Math.pow((s2 + 0.055) / 1.055, 2.4);
   };
-  const R = lin(r3), G = lin(g), B = lin(b);
+  const R = lin(r4), G = lin(g), B = lin(b);
   const X = R * 0.4124 + G * 0.3576 + B * 0.1805;
   const Y = R * 0.2126 + G * 0.7152 + B * 0.0722;
   const Z = R * 0.0193 + G * 0.1192 + B * 0.9505;
@@ -228051,8 +228071,8 @@ function gradientLine(box, angleDeg) {
     y1: cy + dirY * len / 2
   };
 }
-function clampRadius(box, r3) {
-  return Math.max(0, Math.min(r3 ?? 0, box.w / 2, box.h / 2));
+function clampRadius(box, r4) {
+  return Math.max(0, Math.min(r4 ?? 0, box.w / 2, box.h / 2));
 }
 function decodeDataUrl(src) {
   const m = /^data:([^;,]+)?(;base64)?,(.*)$/is.exec(src);
@@ -228077,18 +228097,18 @@ async function fetchImageBytes(src, loader, cache3) {
   }
   return p;
 }
-function roundRectPath(ctx2, box, r3) {
+function roundRectPath(ctx2, box, r4) {
   ctx2.beginPath();
-  if (r3 > 0) ctx2.roundRect(box.x, box.y, box.w, box.h, r3);
+  if (r4 > 0) ctx2.roundRect(box.x, box.y, box.w, box.h, r4);
   else ctx2.rect(box.x, box.y, box.w, box.h);
 }
 function drawRectCanvas(ctx2, el) {
   const box = { x: el.x, y: el.y, w: el.w, h: el.h };
   if (box.w <= 0 || box.h <= 0) return;
-  const r3 = clampRadius(box, el.radius);
+  const r4 = clampRadius(box, el.radius);
   ctx2.save();
   ctx2.globalAlpha = el.opacity ?? 1;
-  roundRectPath(ctx2, box, r3);
+  roundRectPath(ctx2, box, r4);
   const grad = el.gradient;
   if (grad && grad.stops.length >= 2) {
     const line2 = gradientLine(box, grad.angle);
@@ -228210,31 +228230,31 @@ function roundedRectOps(ctx2, box, rPx) {
   const tl = toPage(ctx2, box.x, box.y);
   const w = box.w * ctx2.k;
   const h = box.h * ctx2.k;
-  const r3 = rPx * ctx2.k;
+  const r4 = rPx * ctx2.k;
   const x0 = tl.x;
   const y1 = tl.y;
   const x1 = x0 + w;
   const y0 = y1 - h;
-  if (r3 <= 0) {
+  if (r4 <= 0) {
     return [(0, import_pdf_lib.moveTo)(x0, y0), (0, import_pdf_lib.lineTo)(x1, y0), (0, import_pdf_lib.lineTo)(x1, y1), (0, import_pdf_lib.lineTo)(x0, y1), (0, import_pdf_lib.closePath)()];
   }
-  const c = r3 * 0.5523;
+  const c = r4 * 0.5523;
   return [
-    (0, import_pdf_lib.moveTo)(x0 + r3, y0),
-    (0, import_pdf_lib.lineTo)(x1 - r3, y0),
-    (0, import_pdf_lib.appendBezierCurve)(x1 - r3 + c, y0, x1, y0 + r3 - c, x1, y0 + r3),
-    (0, import_pdf_lib.lineTo)(x1, y1 - r3),
-    (0, import_pdf_lib.appendBezierCurve)(x1, y1 - r3 + c, x1 - r3 + c, y1, x1 - r3, y1),
-    (0, import_pdf_lib.lineTo)(x0 + r3, y1),
-    (0, import_pdf_lib.appendBezierCurve)(x0 + r3 - c, y1, x0, y1 - r3 + c, x0, y1 - r3),
-    (0, import_pdf_lib.lineTo)(x0, y0 + r3),
-    (0, import_pdf_lib.appendBezierCurve)(x0, y0 + r3 - c, x0 + r3 - c, y0, x0 + r3, y0),
+    (0, import_pdf_lib.moveTo)(x0 + r4, y0),
+    (0, import_pdf_lib.lineTo)(x1 - r4, y0),
+    (0, import_pdf_lib.appendBezierCurve)(x1 - r4 + c, y0, x1, y0 + r4 - c, x1, y0 + r4),
+    (0, import_pdf_lib.lineTo)(x1, y1 - r4),
+    (0, import_pdf_lib.appendBezierCurve)(x1, y1 - r4 + c, x1 - r4 + c, y1, x1 - r4, y1),
+    (0, import_pdf_lib.lineTo)(x0 + r4, y1),
+    (0, import_pdf_lib.appendBezierCurve)(x0 + r4 - c, y1, x0, y1 - r4 + c, x0, y1 - r4),
+    (0, import_pdf_lib.lineTo)(x0, y0 + r4),
+    (0, import_pdf_lib.appendBezierCurve)(x0, y0 + r4 - c, x0 + r4 - c, y0, x0 + r4, y0),
     (0, import_pdf_lib.closePath)()
   ];
 }
-function roundedRectSvg(w, h, r3) {
-  if (r3 <= 0) return `M0 0 H${w} V${h} H0 Z`;
-  return `M${r3} 0 H${w - r3} A${r3} ${r3} 0 0 1 ${w} ${r3} V${h - r3} A${r3} ${r3} 0 0 1 ${w - r3} ${h} H${r3} A${r3} ${r3} 0 0 1 0 ${h - r3} V${r3} A${r3} ${r3} 0 0 1 ${r3} 0 Z`;
+function roundedRectSvg(w, h, r4) {
+  if (r4 <= 0) return `M0 0 H${w} V${h} H0 Z`;
+  return `M${r4} 0 H${w - r4} A${r4} ${r4} 0 0 1 ${w} ${r4} V${h - r4} A${r4} ${r4} 0 0 1 ${w - r4} ${h} H${r4} A${r4} ${r4} 0 0 1 0 ${h - r4} V${r4} A${r4} ${r4} 0 0 1 ${r4} 0 Z`;
 }
 function bleedExtendedBox(ctx2, el) {
   const box = { x: el.x, y: el.y, w: el.w, h: el.h };
@@ -228256,16 +228276,16 @@ function bleedExtendedBox(ctx2, el) {
 async function drawRectPdf(ctx2, el) {
   const box = bleedExtendedBox(ctx2, el);
   if (box.w <= 0 || box.h <= 0) return;
-  const r3 = clampRadius(box, el.radius);
+  const r4 = clampRadius(box, el.radius);
   const opacity = el.opacity ?? 1;
   const grad = el.gradient;
   if (grad && grad.stops.length >= 2) {
-    await drawGradientPdf(ctx2, el, box, r3);
+    await drawGradientPdf(ctx2, el, box, r4);
     return;
   }
   const fill = parseColor(el.fill, { r: 255, g: 255, b: 255, a: 1 });
   const tl = toPage(ctx2, box.x, box.y);
-  ctx2.page.drawSvgPath(roundedRectSvg(box.w * ctx2.k, box.h * ctx2.k, r3 * ctx2.k), {
+  ctx2.page.drawSvgPath(roundedRectSvg(box.w * ctx2.k, box.h * ctx2.k, r4 * ctx2.k), {
     x: tl.x,
     y: tl.y,
     color: pdfColor(fill, ctx2.cmyk),
@@ -228275,8 +228295,8 @@ async function drawRectPdf(ctx2, el) {
   if (el.borderWidth && el.borderWidth > 0) {
     const bw = Math.min(el.borderWidth, box.w / 2, box.h / 2);
     const bc = parseColor(el.borderColor ?? "#000000");
-    ctx2.page.pushOperators((0, import_pdf_lib.pushGraphicsState)(), ...roundedRectOps(ctx2, box, r3), (0, import_pdf_lib.clip)(), (0, import_pdf_lib.endPath)());
-    ctx2.page.drawSvgPath(roundedRectSvg(box.w * ctx2.k, box.h * ctx2.k, r3 * ctx2.k), {
+    ctx2.page.pushOperators((0, import_pdf_lib.pushGraphicsState)(), ...roundedRectOps(ctx2, box, r4), (0, import_pdf_lib.clip)(), (0, import_pdf_lib.endPath)());
+    ctx2.page.drawSvgPath(roundedRectSvg(box.w * ctx2.k, box.h * ctx2.k, r4 * ctx2.k), {
       x: tl.x,
       y: tl.y,
       borderColor: pdfColor(bc, ctx2.cmyk),
@@ -228286,7 +228306,7 @@ async function drawRectPdf(ctx2, el) {
     ctx2.page.pushOperators((0, import_pdf_lib.popGraphicsState)());
   }
 }
-async function drawGradientPdf(ctx2, el, box, r3) {
+async function drawGradientPdf(ctx2, el, box, r4) {
   const pxPerTemplatePx = Math.max(1, GRADIENT_RASTER_DPI / 72 * ctx2.k);
   const cw = Math.max(1, Math.min(8e3, Math.round(box.w * pxPerTemplatePx)));
   const ch = Math.max(1, Math.min(8e3, Math.round(box.h * pxPerTemplatePx)));
@@ -228294,7 +228314,7 @@ async function drawGradientPdf(ctx2, el, box, r3) {
   const c2d = canvas2.getContext("2d");
   c2d.scale(cw / box.w, ch / box.h);
   drawRectCanvas(c2d, { ...el, x: 0, y: 0, w: box.w, h: box.h, opacity: 1 });
-  void r3;
+  void r4;
   const img = await ctx2.doc.embedPng(await canvas2.encode("png"));
   const bl = toPage(ctx2, box.x, box.y + box.h);
   ctx2.page.drawImage(img, { x: bl.x, y: bl.y, width: box.w * ctx2.k, height: box.h * ctx2.k, opacity: el.opacity ?? 1 });
@@ -228660,17 +228680,17 @@ async function loadFamily(master, explicitIds) {
   if (explicitIds && explicitIds.length > 0) {
     const ids = Array.from(/* @__PURE__ */ new Set([master.id, ...explicitIds]));
     const rows = await db.select().from(templatesTable);
-    family = rows.filter((r3) => ids.includes(r3.id));
+    family = rows.filter((r4) => ids.includes(r4.id));
   } else {
     const prefix = `Adapted from "${master.name}"`;
     const linked = await db.select().from(templatesTable).where(eq(templatesTable.sourceTemplateId, master.id));
     const adapted = await db.select().from(templatesTable).where(like(templatesTable.description, `${prefix.replace(/[%_\\]/g, (c) => `\\${c}`)}%`));
     const seen2 = /* @__PURE__ */ new Set([master.id]);
     family = [master];
-    for (const r3 of [...linked, ...adapted]) {
-      if (seen2.has(r3.id) || !linked.includes(r3) && !(r3.description ?? "").startsWith(prefix)) continue;
-      seen2.add(r3.id);
-      family.push(r3);
+    for (const r4 of [...linked, ...adapted]) {
+      if (seen2.has(r4.id) || !linked.includes(r4) && !(r4.description ?? "").startsWith(prefix)) continue;
+      seen2.add(r4.id);
+      family.push(r4);
     }
   }
   family.sort((a, b) => a.id === master.id ? -1 : b.id === master.id ? 1 : a.width * a.height - b.width * b.height);
@@ -228701,7 +228721,7 @@ router5.post("/templates/:id/export-family.zip", requireAuth, async (req, res) =
     campaign: typeof body.campaign === "string" ? body.campaign.slice(0, 120) : null,
     clickUrl: typeof body.clickUrl === "string" && /^https?:\/\//i.test(body.clickUrl) ? body.clickUrl.slice(0, 500) : null
   });
-  const fileNameFor = new Map(tracking.map((r3) => [r3.templateId, r3.fileName]));
+  const fileNameFor = new Map(tracking.map((r4) => [r4.templateId, r4.fileName]));
   const loadImage = makeImageLoader(req);
   const zip = new import_jszip.default();
   const manifest = [];
@@ -228848,25 +228868,25 @@ router6.get("/feedback", optionalAuth, async (req, res) => {
             FROM feedback ORDER BY id DESC LIMIT 500`
   );
   res.json({
-    items: rows.rows.map((r3) => ({
-      id: r3.id,
-      subjectType: r3.subject_type,
-      subjectId: r3.subject_id,
-      verdict: r3.verdict,
-      elementId: r3.element_id,
-      elementLabel: r3.element_label,
-      note: r3.note,
-      createdBy: r3.created_by,
-      createdAt: r3.created_at,
-      subjectName: r3.subject_name ?? null,
-      subjectWidth: r3.subject_width ?? null,
-      subjectHeight: r3.subject_height ?? null,
-      formatClass: r3.format_class ?? null,
-      adaptMethod: r3.adapt_method ?? null,
-      elementSlot: r3.element_slot ?? null,
-      fault: r3.fault ?? null,
-      expected: r3.expected ?? null,
-      severity: r3.severity ?? null
+    items: rows.rows.map((r4) => ({
+      id: r4.id,
+      subjectType: r4.subject_type,
+      subjectId: r4.subject_id,
+      verdict: r4.verdict,
+      elementId: r4.element_id,
+      elementLabel: r4.element_label,
+      note: r4.note,
+      createdBy: r4.created_by,
+      createdAt: r4.created_at,
+      subjectName: r4.subject_name ?? null,
+      subjectWidth: r4.subject_width ?? null,
+      subjectHeight: r4.subject_height ?? null,
+      formatClass: r4.format_class ?? null,
+      adaptMethod: r4.adapt_method ?? null,
+      elementSlot: r4.element_slot ?? null,
+      fault: r4.fault ?? null,
+      expected: r4.expected ?? null,
+      severity: r4.severity ?? null
     }))
   });
 });
@@ -228877,10 +228897,10 @@ async function recentIncorrectNotes(limit3 = 8) {
         WHERE verdict = 'incorrect' AND (note IS NOT NULL OR fault IS NOT NULL)
         ORDER BY id DESC LIMIT ${limit3}`
   );
-  return rows.rows.map((r3) => {
-    const part = r3.element_slot ?? r3.element_label;
-    const structured = r3.fault ? `${String(r3.fault).replace(/_/g, " ")}${r3.expected ? ` \u2014 expected ${r3.expected}` : ""}` : "";
-    const text3 = [structured, r3.note ? String(r3.note) : ""].filter(Boolean).join("; ");
+  return rows.rows.map((r4) => {
+    const part = r4.element_slot ?? r4.element_label;
+    const structured = r4.fault ? `${String(r4.fault).replace(/_/g, " ")}${r4.expected ? ` \u2014 expected ${r4.expected}` : ""}` : "";
+    const text3 = [structured, r4.note ? String(r4.note) : ""].filter(Boolean).join("; ");
     return part ? `[${part}] ${text3}` : text3;
   }).filter(Boolean);
 }
@@ -228901,13 +228921,13 @@ function normalizeVariantsInput(raw) {
   const rows = [];
   for (const item of raw.slice(0, MAX_VARIANT_ROWS)) {
     if (typeof item !== "object" || item === null) continue;
-    const r3 = item;
+    const r4 = item;
     const field = (v) => typeof v === "string" && v.trim() ? v.trim().slice(0, MAX_VARIANT_FIELD) : null;
     const row = {
-      label: field(r3.label),
-      headline: field(r3.headline),
-      bodyText: field(r3.bodyText),
-      callToAction: field(r3.callToAction)
+      label: field(r4.label),
+      headline: field(r4.headline),
+      bodyText: field(r4.bodyText),
+      callToAction: field(r4.callToAction)
     };
     if (row.label || row.headline || row.bodyText || row.callToAction) rows.push(row);
   }
@@ -229854,7 +229874,7 @@ router8.get("/assets", optionalAuth, async (req, res) => {
   const rejecter = alias(usersTable, "rejecter");
   const base = db.select().from(assetsTable).leftJoin(rejecter, eq(assetsTable.rejectedBy, rejecter.clerkId));
   const rows = briefId ? await base.where(eq(assetsTable.briefId, Number(briefId))).orderBy(assetsTable.id) : await base.orderBy(assetsTable.id);
-  res.json(await Promise.all(rows.map((r3) => formatAsset(r3.assets, r3.rejecter?.name ?? null))));
+  res.json(await Promise.all(rows.map((r4) => formatAsset(r4.assets, r4.rejecter?.name ?? null))));
 });
 router8.get("/assets/:id", optionalAuth, async (req, res) => {
   const id = Number(req.params.id);
@@ -230454,13 +230474,13 @@ router10.get("/stats/recent-activity", optionalAuth, async (req, res) => {
     generating: "generating",
     draft: "created"
   };
-  const result = recent.map((r3, i) => ({
+  const result = recent.map((r4, i) => ({
     id: i + 1,
-    type: statusTypeMap[r3.status] ?? r3.status,
-    briefId: r3.id,
-    briefName: r3.campaignName,
-    brandName: r3.brandName ?? "Unknown",
-    timestamp: r3.updatedAt.toISOString()
+    type: statusTypeMap[r4.status] ?? r4.status,
+    briefId: r4.id,
+    briefName: r4.campaignName,
+    brandName: r4.brandName ?? "Unknown",
+    timestamp: r4.updatedAt.toISOString()
   }));
   res.json(result);
 });
@@ -230490,18 +230510,18 @@ router10.get("/stats/performance", optionalAuth, async (_req, res) => {
     clicks,
     ctr,
     totalTags: tagCount?.count ?? 0,
-    topAssets: perAssetRows.map((r3) => ({
-      assetId: r3.assetId,
-      templateSize: r3.templateSize ?? "unknown",
-      campaignName: r3.campaignName ?? "Unknown",
-      impressions: r3.impressions,
-      clicks: r3.clicks,
-      ctr: r3.impressions > 0 ? r3.clicks / r3.impressions : 0
+    topAssets: perAssetRows.map((r4) => ({
+      assetId: r4.assetId,
+      templateSize: r4.templateSize ?? "unknown",
+      campaignName: r4.campaignName ?? "Unknown",
+      impressions: r4.impressions,
+      clicks: r4.clicks,
+      ctr: r4.impressions > 0 ? r4.clicks / r4.impressions : 0
     })),
-    timeseries: timeseriesRows.map((r3) => ({
-      day: r3.day,
-      impressions: r3.impressions,
-      clicks: r3.clicks
+    timeseries: timeseriesRows.map((r4) => ({
+      day: r4.day,
+      impressions: r4.impressions,
+      clicks: r4.clicks
     }))
   });
 });
@@ -230824,8 +230844,8 @@ async function sampleLuminanceBehind(src, imgW, imgH, art, box) {
   const ch = Math.max(1, Math.min(imgH - ct, height - (ct - top)));
   try {
     const stats = await sharp4(buffer).extract({ left: cl, top: ct, width: cw, height: ch }).stats();
-    const [r3, g, b] = stats.channels;
-    return 0.299 * r3.mean + 0.587 * g.mean + 0.114 * b.mean;
+    const [r4, g, b] = stats.channels;
+    return 0.299 * r4.mean + 0.587 * g.mean + 0.114 * b.mean;
   } catch {
     return null;
   }
@@ -230841,20 +230861,20 @@ async function sampleEdgeColor(src, imgW, imgH) {
     { left: Math.max(0, imgW - band), top: 0, width: Math.min(band, imgW), height: imgH }
   ];
   try {
-    let r3 = 0;
+    let r4 = 0;
     let g = 0;
     let b = 0;
     let n = 0;
     for (const s2 of strips) {
       const stats = await sharp4(buffer).extract(s2).stats();
-      r3 += stats.channels[0].mean;
+      r4 += stats.channels[0].mean;
       g += stats.channels[1].mean;
       b += stats.channels[2].mean;
       n++;
     }
     if (n === 0) return null;
     const hex = (v) => Math.max(0, Math.min(255, Math.round(v / n))).toString(16).padStart(2, "0");
-    return `#${hex(r3)}${hex(g)}${hex(b)}`;
+    return `#${hex(r4)}${hex(g)}${hex(b)}`;
   } catch {
     return null;
   }
@@ -230873,10 +230893,10 @@ async function sampleRegionStats(src, imgW, imgH, art, box) {
   const ch = Math.max(1, Math.min(imgH - ct, height - (ct - top)));
   try {
     const stats = await sharp4(buffer).extract({ left: cl, top: ct, width: cw, height: ch }).stats();
-    const [r3, g, b] = stats.channels;
+    const [r4, g, b] = stats.channels;
     return {
-      lum: 0.299 * r3.mean + 0.587 * g.mean + 0.114 * b.mean,
-      busy: (r3.stdev + g.stdev + b.stdev) / 3
+      lum: 0.299 * r4.mean + 0.587 * g.mean + 0.114 * b.mean,
+      busy: (r4.stdev + g.stdev + b.stdev) / 3
     };
   } catch {
     return null;
@@ -230890,8 +230910,8 @@ function findKvBackground(config2, srcW, srcH) {
   return fullBleed && (img.fit ?? "cover") === "cover" ? img : null;
 }
 function pickBlock(kvText, role) {
-  const byRole = kvText.filter((t) => t.role === role);
-  if (byRole.length > 0) return byRole.sort((a, b) => b.fontSize - a.fontSize)[0];
+  const byRole2 = kvText.filter((t) => t.role === role);
+  if (byRole2.length > 0) return byRole2.sort((a, b) => b.fontSize - a.fontSize)[0];
   return void 0;
 }
 async function composeKeyVisualAdaptation(master, srcW, srcH, dstW, dstH, brand) {
@@ -231263,7 +231283,7 @@ function inferSlots(config2, width, height) {
   const rects = els.filter((e) => e.type === "rect");
   const texts = els.filter((e) => e.type === "text");
   const bandShaped = (e) => e.h > 0 && e.w > 0 && (e.w / e.h >= 5 || e.h / e.w >= 5) && area(e) < canvasArea * 0.15;
-  let panel = rects.find((r3) => r3.slot === "panel") ?? rects.filter((r3) => unassigned(r3) && !r3.gradient && (r3.opacity ?? 1) >= 0.9).filter((r3) => area(r3) >= canvasArea * 0.2 && (r3.w >= W2 * 0.9 || r3.h >= H2 * 0.9)).sort((a, b) => area(b) - area(a))[0] ?? null;
+  let panel = rects.find((r4) => r4.slot === "panel") ?? rects.filter((r4) => unassigned(r4) && !r4.gradient && (r4.opacity ?? 1) >= 0.9).filter((r4) => area(r4) >= canvasArea * 0.2 && (r4.w >= W2 * 0.9 || r4.h >= H2 * 0.9)).sort((a, b) => area(b) - area(a))[0] ?? null;
   if (panel) panel.slot = "panel";
   let photo = images.find((i) => i.slot === "photo") ?? images.filter((i) => unassigned(i) && i.src && !bandShaped(i)).sort((a, b) => {
     const pa = a.role === "product" ? 1 : 0;
@@ -231273,7 +231293,7 @@ function inferSlots(config2, width, height) {
   if (photo && area(photo) < canvasArea * 0.15) photo = null;
   if (photo) photo.slot = "photo";
   const photoBox = photo ? { x: photo.x, y: photo.y, w: photo.w, h: photo.h } : null;
-  const scrim = rects.find((r3) => r3.slot === "scrim") ?? rects.filter((r3) => unassigned(r3) && (r3.gradient !== void 0 || (r3.opacity ?? 1) < 0.9)).filter((r3) => !photoBox || overlapFrac(r3, photoBox) > 0.3).sort((a, b) => area(b) - area(a))[0] ?? null;
+  const scrim = rects.find((r4) => r4.slot === "scrim") ?? rects.filter((r4) => unassigned(r4) && (r4.gradient !== void 0 || (r4.opacity ?? 1) < 0.9)).filter((r4) => !photoBox || overlapFrac(r4, photoBox) > 0.3).sort((a, b) => area(b) - area(a))[0] ?? null;
   if (scrim) scrim.slot = "scrim";
   const band = images.find((i) => i.slot === "band") ?? images.filter((i) => unassigned(i) && i !== photo && bandShaped(i)).sort((a, b) => area(b) - area(a))[0] ?? null;
   if (band) band.slot = "band";
@@ -231281,7 +231301,7 @@ function inferSlots(config2, width, height) {
   let ctaLabel = texts.find((t) => t.slot === "ctaLabel") ?? null;
   let ctaIcon = images.find((i) => i.slot === "ctaIcon") ?? null;
   if (!cta) {
-    const pill = rects.filter((r3) => unassigned(r3) && (r3.radius ?? 0) > 0 && r3.h < Math.min(W2, H2) * 0.3 && r3.w / Math.max(1, r3.h) >= 2.2).filter((r3) => texts.some((t) => unassigned(t) && centreIn2(t, r3))).sort((a, b) => area(b) - area(a))[0];
+    const pill = rects.filter((r4) => unassigned(r4) && (r4.radius ?? 0) > 0 && r4.h < Math.min(W2, H2) * 0.3 && r4.w / Math.max(1, r4.h) >= 2.2).filter((r4) => texts.some((t) => unassigned(t) && centreIn2(t, r4))).sort((a, b) => area(b) - area(a))[0];
     if (pill) cta = pill;
   }
   if (!cta) {
@@ -231614,9 +231634,9 @@ function fitText(text3, box, opts) {
   if (best.ok) {
     while (lo < hi) {
       const mid = Math.ceil((lo + hi) / 2);
-      const r3 = evaluate(mid);
-      if (r3.ok) {
-        best = r3;
+      const r4 = evaluate(mid);
+      if (r4.ok) {
+        best = r4;
         lo = mid;
       } else {
         hi = mid - 1;
@@ -232404,9 +232424,9 @@ async function splitPanelGraphic(config2, io) {
   };
   const tally = /* @__PURE__ */ new Map();
   const bump = (x, y) => {
-    const [r3, g, b, a] = px(x, y);
+    const [r4, g, b, a] = px(x, y);
     if (a < 200) return;
-    const k = `${r3 >> 3},${g >> 3},${b >> 3}`;
+    const k = `${r4 >> 3},${g >> 3},${b >> 3}`;
     tally.set(k, (tally.get(k) ?? 0) + 1);
   };
   for (let x = 0; x < W2; x++) {
@@ -232421,19 +232441,19 @@ async function splitPanelGraphic(config2, io) {
   const top = [...tally.entries()].sort((a, b) => b[1] - a[1])[0];
   if (!top) return { config: config2, notes };
   const [gr, gg, gb] = top[0].split(",").map((v) => (Number(v) << 3) + 4);
-  const classify = (r3, g, b, a) => {
+  const classify = (r4, g, b, a) => {
     if (a < 40) return "none";
-    if (Math.abs(r3 - gr) + Math.abs(g - gg) + Math.abs(b - gb) < 72) return "ground";
-    if (r3 > 185 && g > 165 && b < 140 && r3 - b > 80) return "yellow";
-    if (r3 > 210 && g > 210 && b > 210) return "white";
+    if (Math.abs(r4 - gr) + Math.abs(g - gg) + Math.abs(b - gb) < 72) return "ground";
+    if (r4 > 185 && g > 165 && b < 140 && r4 - b > 80) return "yellow";
+    if (r4 > 210 && g > 210 && b > 210) return "white";
     return "other";
   };
   const rows = [];
   for (let y = 0; y < H2; y++) {
     const st = { content: 0, yellow: 0, white: 0, other: 0, x0: W2, x1: -1 };
     for (let x = 0; x < W2; x++) {
-      const [r3, g, b, a] = px(x, y);
-      const c = classify(r3, g, b, a);
+      const [r4, g, b, a] = px(x, y);
+      const c = classify(r4, g, b, a);
       if (c === "ground" || c === "none") continue;
       st.content++;
       if (c === "yellow") st.yellow++;
@@ -232545,8 +232565,10 @@ function adaptLayered(master, srcW, srcH, dstW, dstH, opts = {}) {
   const cls = opts.formatClass ?? classifyAspect(dstW, dstH);
   const base = RECIPES[cls];
   const short = Math.min(dstW, dstH);
-  const isDisplayCanvas = short <= 400;
   const spec = opts.spec ?? null;
+  const isDisplayCanvas = spec?.alwaysDisplay ? true : short <= 400;
+  const fixedRange = spec?.parts.cta?.fixedShortRange;
+  const fixedInRange = !fixedRange || short >= fixedRange[0] * 0.75 && short <= fixedRange[1] * 1.35;
   const zone = spec?.zones[cls];
   const zonePhotoFrac = zone ? isDisplayCanvas && zone.displayPhotoFrac != null ? zone.displayPhotoFrac : zone.photoFrac : base.photoFrac;
   const recipe = zone ? { ...base, axis: zone.axis === "row" ? "row" : zone.axis === "side" ? "side" : "stacked", photoFrac: zonePhotoFrac, bandFrac: zone.bandFrac, bandAt: zone.bandAt } : base;
@@ -232740,7 +232762,7 @@ function adaptLayered(master, srcW, srcH, dstW, dstH, opts = {}) {
   const partMessage = by("message").find((i) => i.panelPart) ?? null;
   const partLockup = by("lockup").find((i) => i.panelPart) ?? null;
   const fixedCta = spec?.parts.cta?.fixedPx ?? null;
-  const ctaLooksFixed = !!(cta && fixedCta && Math.abs(cta.h - fixedCta.h) <= 3 && Math.abs(cta.w - fixedCta.w) <= 6);
+  const ctaLooksFixed = !!(cta && fixedCta && fixedInRange && Math.abs(cta.h - fixedCta.h) <= 3 && Math.abs(cta.w - fixedCta.w) <= 6);
   if ((partMessage || partLockup) && !isStrip) {
     const ps = panelImg ? panelZone.w / Math.max(1, panelImg.w) : 1;
     const shallow = panelZone.h < 200;
@@ -232843,7 +232865,7 @@ function adaptLayered(master, srcW, srcH, dstW, dstH, opts = {}) {
       if (cta) {
         const ps = pb.w / Math.max(1, panelImg.w);
         const fixed = spec?.parts.cta?.fixedPx;
-        const looksFixed = !!fixed && Math.abs(cta.h - fixed.h) <= 3 && Math.abs(cta.w - fixed.w) <= 6;
+        const looksFixed = !!fixed && fixedInRange && Math.abs(cta.h - fixed.h) <= 3 && Math.abs(cta.w - fixed.w) <= 6;
         const isDisplayCanvas2 = short <= 400;
         const oohShare = recipe.axis === "stacked" ? 0.075 : 0.125;
         const ctaH = looksFixed && isDisplayCanvas2 ? fixed.h : looksFixed ? r2(short * oohShare) : Math.max(recipe.ctaFloorPx, r2(cta.h * ps));
@@ -232856,9 +232878,9 @@ function adaptLayered(master, srcW, srcH, dstW, dstH, opts = {}) {
       if (panelImg && isStrip) notes.push("Panel graphic dropped for the strip; the CTA sits on the brand panel.");
       if (cta) {
         const fixed = spec?.parts.cta?.fixedPx;
-        const looksFixed = !!fixed && Math.abs(cta.h - fixed.h) <= 3 && Math.abs(cta.w - fixed.w) <= 6;
-        const isFixedAsset = looksFixed && short <= 400 && fixed.h <= panelInner.h && fixed.w <= panelInner.w;
-        const fitFixed = looksFixed && short <= 400 && !isFixedAsset;
+        const looksFixed = !!fixed && fixedInRange && Math.abs(cta.h - fixed.h) <= 3 && Math.abs(cta.w - fixed.w) <= 6;
+        const isFixedAsset = looksFixed && isDisplayCanvas && fixed.h <= panelInner.h && fixed.w <= panelInner.w;
+        const fitFixed = looksFixed && isDisplayCanvas && !isFixedAsset;
         const oohShare = recipe.axis === "stacked" ? 0.075 : 0.125;
         const ctaH = isFixedAsset ? fixed.h : fitFixed ? r2(Math.min(panelInner.h * 0.6, panelInner.w * 0.85 * (fixed.h / fixed.w))) : looksFixed ? r2(Math.min(panelInner.h * 0.6, short * oohShare)) : Math.max(recipe.ctaFloorPx, r2(Math.min(panelInner.h * 0.6, short * recipe.ctaHeightFrac)));
         const ctaW = isFixedAsset ? fixed.w : r2(Math.min(ctaH * (cta.w / Math.max(1, cta.h)), panelInner.w * recipe.ctaMaxWidthFrac));
@@ -233342,175 +233364,6 @@ function partsFor(box, leaves) {
   }));
 }
 
-// src/lib/gwdImport.ts
-init_objectStorage();
-import sharp7 from "sharp";
-var objectStorageService8 = new ObjectStorageService();
-var IMAGE_TYPES = {
-  jpg: "image/jpeg",
-  jpeg: "image/jpeg",
-  png: "image/png",
-  webp: "image/webp"
-};
-async function visibleBounds(bytes2) {
-  const meta = await sharp7(bytes2).metadata();
-  if (!meta.hasAlpha || !meta.width || !meta.height) return null;
-  const raw = await sharp7(bytes2).ensureAlpha().raw().toBuffer();
-  const W2 = meta.width, H2 = meta.height;
-  let minX = W2, minY = H2, maxX = -1, maxY = -1;
-  for (let py = 0; py < H2; py++) {
-    for (let px = 0; px < W2; px++) {
-      if (raw[(py * W2 + px) * 4 + 3] > 16) {
-        if (px < minX) minX = px;
-        if (px > maxX) maxX = px;
-        if (py < minY) minY = py;
-        if (py > maxY) maxY = py;
-      }
-    }
-  }
-  const bw = maxX - minX + 1, bh = maxY - minY + 1;
-  if (maxX < 0 || !(bw < W2 * 0.9 || bh < H2 * 0.9)) return null;
-  return { minX, minY, bw, bh, W: W2, H: H2 };
-}
-async function reconstructGwdBanners(zip, baseName2) {
-  const layouts = [];
-  const htmlEntries = Object.entries(zip.files).filter(
-    ([path11, f]) => !f.dir && path11.endsWith(".html") && !/gwd_preview|preview\.html|__MACOSX/i.test(path11)
-  );
-  for (const [htmlPath, entry] of htmlEntries) {
-    const html = await entry.async("text");
-    if (!html.includes("gwd-page")) continue;
-    const analysis = analyseGwdHtml(html);
-    if (!analysis) continue;
-    const { width, height } = analysis;
-    const dir = htmlPath.slice(0, htmlPath.lastIndexOf("/") + 1);
-    const elements = [];
-    let i = 0;
-    for (const leaf of analysis.leaves) {
-      const { relSrc } = leaf;
-      const restingOpacity = leaf.opacity;
-      if (restingOpacity < 0.1) continue;
-      let x = leaf.x;
-      let y = leaf.y;
-      let w = leaf.w;
-      let h = leaf.h;
-      const visW = Math.min(x + w, width) - Math.max(x, 0);
-      const visH = Math.min(y + h, height) - Math.max(y, 0);
-      if (visW < w * 0.4 || visH < h * 0.4) continue;
-      const assetPath = (dir + relSrc).replace(/\/\.\//g, "/");
-      const assetEntry = zip.file(assetPath) ?? zip.file(relSrc);
-      if (!assetEntry) continue;
-      const ext2 = relSrc.split(".").pop()?.toLowerCase() ?? "";
-      const contentType = IMAGE_TYPES[ext2];
-      if (!contentType) continue;
-      let bytes2 = Buffer.from(await assetEntry.async("uint8array"));
-      try {
-        const vb = await visibleBounds(bytes2);
-        if (vb) {
-          const dispX = w / vb.W, dispY = h / vb.H;
-          bytes2 = Buffer.from(await sharp7(bytes2).extract({ left: vb.minX, top: vb.minY, width: vb.bw, height: vb.bh }).png().toBuffer());
-          x += vb.minX * dispX;
-          y += vb.minY * dispY;
-          w = vb.bw * dispX;
-          h = vb.bh * dispY;
-        }
-      } catch {
-      }
-      const stored = await objectStorageService8.uploadBytes(bytes2, contentType);
-      elements.push({
-        id: `gwd_${i++}`,
-        type: "image",
-        role: "decoration",
-        src: `/api/storage${stored}`,
-        fit: "cover",
-        x: Math.round(x),
-        y: Math.round(y),
-        w: Math.round(w),
-        h: Math.round(h),
-        ...restingOpacity < 1 ? { opacity: Math.round(restingOpacity * 100) / 100 } : {},
-        ...leaf.motion ? { motion: { ...leaf.motion, w0: Math.round(w), h0: Math.round(h) } } : {},
-        ...leaf.groupMotion ? { groupMotion: { ...leaf.groupMotion, w0: Math.round(w), h0: Math.round(h) } } : {},
-        ...leaf.ownMotion ? { ownMotion: { ...leaf.ownMotion, w0: Math.round(w), h0: Math.round(h) } } : {}
-      });
-    }
-    const kept = [];
-    const smallCap = width * height * 0.15;
-    for (let a = 0; a < elements.length; a++) {
-      const ea = elements[a];
-      let covered = false;
-      if (ea.w * ea.h < smallCap) {
-        for (let b = a + 1; b < elements.length && !covered; b++) {
-          const eb = elements[b];
-          if (eb.w * eb.h >= smallCap) continue;
-          const ix = Math.max(0, Math.min(ea.x + ea.w, eb.x + eb.w) - Math.max(ea.x, eb.x));
-          const iy = Math.max(0, Math.min(ea.y + ea.h, eb.y + eb.h) - Math.max(ea.y, eb.y));
-          const inter = ix * iy;
-          const union3 = ea.w * ea.h + eb.w * eb.h - inter;
-          if (union3 > 0 && inter / union3 > 0.75) covered = true;
-        }
-      }
-      if (!covered) kept.push(elements[a]);
-    }
-    if (kept.length < 2) continue;
-    let label2 = htmlPath.replace(/^.*?\//, "").replace(/\/[^/]*$/, "").split("/").filter(Boolean).join(" ").replace(/px$/i, "");
-    if (!label2 || /\.html?$/i.test(label2)) label2 = `${width}\xD7${height}`;
-    let previewHtml;
-    try {
-      let rewritten = html;
-      const uploadedBySrc = /* @__PURE__ */ new Map();
-      const PREVIEW_TYPES = {
-        ...IMAGE_TYPES,
-        js: "application/javascript",
-        css: "text/css",
-        svg: "image/svg+xml",
-        gif: "image/gif",
-        woff: "font/woff",
-        woff2: "font/woff2"
-      };
-      const refs = /* @__PURE__ */ new Set();
-      for (const m of html.matchAll(/(?:source|src|href)="([^"]+)"/g)) {
-        const v = m[1];
-        if (/^(https?:)?\/\//.test(v) || v.startsWith("data:")) continue;
-        refs.add(v);
-      }
-      for (const rel of refs) {
-        const aEntry = zip.file((dir + rel).replace(/\/\.\//g, "/")) ?? zip.file(rel);
-        const aExt = rel.split(".").pop()?.toLowerCase() ?? "";
-        const aType = PREVIEW_TYPES[aExt];
-        if (!aEntry || !aType) continue;
-        const aBytes = Buffer.from(await aEntry.async("uint8array"));
-        const aStored = await objectStorageService8.uploadBytes(aBytes, aType);
-        uploadedBySrc.set(rel, `/api/storage${aStored}`);
-      }
-      for (const [rel, url2] of uploadedBySrc) {
-        rewritten = rewritten.split(`"${rel}"`).join(`"${url2}"`);
-      }
-      const htmlStored = await objectStorageService8.uploadBytes(Buffer.from(rewritten, "utf8"), "text/html");
-      previewHtml = `/api/storage${htmlStored}`;
-    } catch {
-    }
-    let recognised = kept;
-    try {
-      const enriched = await enrichLayeredArtwork(
-        normalizeFreeformConfig({ kind: "freeform", elements: kept }),
-        width,
-        height,
-        { loadImage: storageImageLoader(), uploadBytes: (bytes2, ct) => objectStorageService8.uploadBytes(bytes2, ct) }
-      );
-      if (enriched.changed) recognised = enriched.config.elements;
-    } catch {
-    }
-    layouts.push({
-      name: `${baseName2} \u2014 ${label2 || `${width}\xD7${height}`}`,
-      width,
-      height,
-      config: normalizeFreeformConfig({ kind: "freeform", elements: recognised, ...previewHtml ? { previewHtml } : {} }),
-      variant: label2 || null
-    });
-  }
-  return layouts;
-}
-
 // src/lib/styleSpecs/getReadyBurst2.ts
 var GET_READY_BURST_2 = {
   id: "get-ready-burst-2",
@@ -233718,6 +233571,438 @@ function describeStyleSchema(s2) {
   ].join("\n");
 }
 
+// src/lib/layoutProfile.ts
+var r3 = (v) => Math.round(v * 1e3) / 1e3;
+function byRole(config2, role) {
+  return config2.elements.find((e) => e.slot === role || e.type === "text" && e.role === role || e.type === "image" && e.role === role && role === "logo");
+}
+function allByRole(config2, role) {
+  return config2.elements.filter((e) => e.slot === role || e.type === "text" && e.role === role);
+}
+function measureMaster(config2, W2, H2, name, templateId) {
+  const panel = byRole(config2, "panel");
+  const headlineParts = allByRole(config2, "headline");
+  if (!panel || headlineParts.length === 0) return null;
+  const axis = panel.w >= W2 * 0.9 && panel.y > H2 * 0.2 ? "stacked" : panel.h >= H2 * 0.9 && panel.x > W2 * 0.2 ? "side" : null;
+  if (!axis) return null;
+  const photoZone = axis === "stacked" ? { x: 0, y: 0, w: W2, h: panel.y } : { x: 0, y: 0, w: panel.x, h: H2 };
+  const panelZone = axis === "stacked" ? { x: 0, y: panel.y, w: W2, h: H2 - panel.y } : { x: panel.x, y: 0, w: W2 - panel.x, h: H2 };
+  const short = Math.min(W2, H2);
+  const missing = [];
+  const hx0 = Math.min(...headlineParts.map((e) => e.x)), hy0 = Math.min(...headlineParts.map((e) => e.y));
+  const hl = { x: hx0, y: hy0, w: Math.max(...headlineParts.map((e) => e.x + e.w)) - hx0, h: Math.max(...headlineParts.map((e) => e.y + e.h)) - hy0 };
+  const sub = byRole(config2, "subheadline");
+  const cutout = allByRole(config2, "cutout").sort((a, b) => b.w * b.h - a.w * a.h)[0];
+  const band = byRole(config2, "band");
+  const message = byRole(config2, "message");
+  const cta = byRole(config2, "cta");
+  const lockup = byRole(config2, "lockup") ?? byRole(config2, "logo");
+  const scrim = byRole(config2, "scrim");
+  for (const [k, v] of [["sub-line", sub], ["cut-out", cutout], ["band", band], ["message", message], ["CTA", cta], ["lockup", lockup]]) if (!v) missing.push(k);
+  const copyBottom = sub ? Math.max(hl.y + hl.h, sub.y + sub.h) : hl.y + hl.h;
+  const lastLineH = sub ? sub.h : hl.h;
+  const m = {
+    photoFrac: r3(axis === "stacked" ? panel.y / H2 : panel.x / W2),
+    bandFrac: r3(band ? band.h / H2 : 0),
+    bandH: r3(band ? band.h / panelZone.h : 0),
+    headlineH: r3(hl.h / short),
+    headlineCy: r3((hl.y + hl.h / 2 - photoZone.y) / photoZone.h),
+    headlineW: r3(hl.w / photoZone.w),
+    subW: r3(sub ? sub.w / hl.w : 0.9),
+    subH: r3(sub ? sub.h / hl.h : 0.45),
+    subGap: r3(sub ? (sub.y - (hl.y + hl.h)) / hl.h : 0.07),
+    cutoutW: r3(cutout ? cutout.w / photoZone.w : 0),
+    cutoutCx: r3(cutout ? (cutout.x + cutout.w / 2 - photoZone.x) / photoZone.w : 0.5),
+    // A car that reaches the zone's bottom edge in the master is bottom-
+    // anchored: whatever of it falls below the zone (its water, its shadow)
+    // hides under the panel, so a rebuilt size may let it run past by up to
+    // 60% of its height. A car floating clear of the edge keeps to the zone.
+    cutoutBleed: r3(cutout ? cutout.y + cutout.h >= photoZone.y + photoZone.h - photoZone.h * 0.02 ? 0.6 : 0.06 : 0),
+    copyOverCutoutFrac: cutout ? r3((copyBottom - cutout.y) / Math.max(1, lastLineH)) : null,
+    message: { cy: r3(message ? (message.y + message.h / 2 - panelZone.y) / panelZone.h : 0.36), w: r3(message ? message.w / panelZone.w : 0.7) },
+    cta: { cy: r3(cta ? (cta.y + cta.h / 2 - panelZone.y) / panelZone.h : 0.55) },
+    lockup: { cy: r3(lockup ? (lockup.y + lockup.h / 2 - panelZone.y) / panelZone.h : 0.82), w: r3(lockup ? lockup.w / panelZone.w : 0.7) },
+    ctaPx: cta ? { w: Math.round(cta.w), h: Math.round(cta.h) } : null,
+    short,
+    hasScrim: !!scrim,
+    scrimH: scrim ? r3(scrim.h / photoZone.h) : null
+  };
+  return { templateId, name, width: W2, height: H2, axis, formatClass: classifyFormat(W2, H2, { name }), m, missing };
+}
+var STACKED_CLASSES = ["portrait", "tower", "square"];
+var SIDE_CLASSES = ["wide", "landscape"];
+function averageAxis(ms) {
+  const n = ms.length;
+  const avg = (f) => r3(ms.reduce((a, m) => a + f(m), 0) / n);
+  const cutouts = ms.filter((m) => m.cutoutW > 0);
+  const avgC = (f, fallback) => cutouts.length ? r3(cutouts.reduce((a, m) => a + f(m), 0) / cutouts.length) : fallback;
+  const overs = ms.map((m) => m.copyOverCutoutFrac).filter((v) => v != null);
+  return {
+    photoFrac: avg((m) => m.photoFrac),
+    bandFrac: avg((m) => m.bandFrac),
+    bandH: avg((m) => m.bandH),
+    headlineH: avg((m) => m.headlineH),
+    headlineCy: avg((m) => m.headlineCy),
+    headlineW: avg((m) => m.headlineW),
+    subW: avg((m) => m.subW),
+    subH: avg((m) => m.subH),
+    subGap: avg((m) => m.subGap),
+    cutoutW: avgC((m) => m.cutoutW, 0),
+    cutoutCx: avgC((m) => m.cutoutCx, 0.5),
+    cutoutBleed: avgC((m) => m.cutoutBleed, 0.06),
+    copyOverCutoutFrac: overs.length ? r3(overs.reduce((a, v) => a + v, 0) / overs.length) : null,
+    message: { cy: avg((m) => m.message.cy), w: avg((m) => m.message.w) },
+    cta: { cy: avg((m) => m.cta.cy) },
+    lockup: { cy: avg((m) => m.lockup.cy), w: avg((m) => m.lockup.w) },
+    ctaPx: ms[0].ctaPx,
+    short: Math.round(ms.reduce((a, m) => a + m.short, 0) / n),
+    hasScrim: ms.some((m) => m.hasScrim),
+    scrimH: ms.find((m) => m.scrimH != null)?.scrimH ?? null
+  };
+}
+function buildProfile(measurements, name) {
+  const notes = [];
+  const stacked = measurements.filter((x) => x.axis === "stacked").map((x) => x.m);
+  const side = measurements.filter((x) => x.axis === "side").map((x) => x.m);
+  const sAvg = stacked.length ? averageAxis(stacked) : null;
+  const dAvg = side.length ? averageAxis(side) : null;
+  const measuredClasses = new Set(measurements.map((x) => x.formatClass));
+  const zones = {};
+  for (const cls of STACKED_CLASSES) {
+    const src = sAvg ?? dAvg;
+    zones[cls] = { axis: "stacked", photoFrac: sAvg ? sAvg.photoFrac : cls === "square" ? 0.55 : 0.57, displayPhotoFrac: sAvg ? sAvg.photoFrac : void 0, bandFrac: src ? src.bandFrac : 0.05, bandAt: "seam", tolerance: measuredClasses.has(cls) ? 0.03 : 0.05, measured: measuredClasses.has(cls) };
+  }
+  for (const cls of SIDE_CLASSES) {
+    const src = dAvg ?? sAvg;
+    zones[cls] = { axis: "side", photoFrac: dAvg ? dAvg.photoFrac : cls === "landscape" ? 0.55 : 0.6, displayPhotoFrac: dAvg ? dAvg.photoFrac : void 0, bandFrac: src ? src.bandFrac : 0.15, bandAt: "panelTop", tolerance: measuredClasses.has(cls) ? 0.03 : 0.05, measured: measuredClasses.has(cls) };
+  }
+  zones.strip = { axis: "row", photoFrac: 0.3, bandFrac: 0, bandAt: "none", tolerance: 0.05, measured: measuredClasses.has("strip") };
+  const display = {};
+  if (sAvg) display.stacked = stripAxis(sAvg);
+  if (dAvg) display.side = stripAxis(dAvg);
+  const ctaSizes = measurements.map((x) => x.m.ctaPx).filter((c) => !!c);
+  const cta = {};
+  if (ctaSizes.length >= 1) {
+    const same = ctaSizes.every((c) => Math.abs(c.w - ctaSizes[0].w) <= 3 && Math.abs(c.h - ctaSizes[0].h) <= 3);
+    if (same) {
+      const shorts = measurements.filter((x) => x.m.ctaPx).map((x) => x.m.short);
+      cta.fixedPx = { w: Math.round(ctaSizes.reduce((a, c) => a + c.w, 0) / ctaSizes.length), h: Math.round(ctaSizes.reduce((a, c) => a + c.h, 0) / ctaSizes.length) };
+      cta.fixedShortRange = [Math.min(...shorts), Math.max(...shorts)];
+      notes.push(`Button is a fixed ${cta.fixedPx.w}\xD7${cta.fixedPx.h}px asset on canvases whose short side is ${cta.fixedShortRange[0]}\u2013${cta.fixedShortRange[1]}px; it scales elsewhere.`);
+    }
+  }
+  const overs = measurements.map((x) => x.m.copyOverCutoutFrac).filter((v) => v != null);
+  const copyOverCutoutFrac = overs.length ? r3(overs.reduce((a, v) => a + v, 0) / overs.length) : null;
+  const measuredAxes = [];
+  if (sAvg) measuredAxes.push("stacked");
+  if (dAvg) measuredAxes.push("side");
+  const measuredList = [...measuredClasses].join(", ");
+  const interpolated = Object.keys(zones).filter((c) => !zones[c].measured).join(", ");
+  notes.unshift(`Measured from ${measurements.length} example${measurements.length === 1 ? "" : "s"} (${measuredList}); interpolated: ${interpolated || "none"}.`);
+  if (!sAvg) notes.push("No stacked (tall) example: portrait, tower and square sizes use the family defaults until one is supplied.");
+  if (!dAvg) notes.push("No side (wide) example: wide and landscape sizes use the family defaults until one is supplied.");
+  for (const x of measurements) if (x.missing.length) notes.push(`${x.name}: no ${x.missing.join(", ")} layer recognised.`);
+  return { version: 1, name, sources: measurements.map((x) => ({ templateId: x.templateId, name: x.name, width: x.width, height: x.height, axis: x.axis, formatClass: x.formatClass })), zones, display, measuredAxes, cta, copyOverCutoutFrac, notes };
+}
+function stripAxis(m) {
+  return { headlineH: m.headlineH, headlineCy: m.headlineCy, subW: m.subW, subH: m.subH, subGap: m.subGap, cutoutW: m.cutoutW, cutoutCx: m.cutoutCx, cutoutBleed: m.cutoutBleed, message: m.message, cta: m.cta, lockup: m.lockup, bandH: m.bandH };
+}
+function profileToStyleSchema(profile, id) {
+  const parts = {
+    headline: {
+      role: "headline",
+      zone: "photo",
+      size: { ofShort: profile.display.stacked?.headlineH ?? profile.display.side?.headlineH ?? 0.19 },
+      anchor: { y: profile.display.stacked?.headlineCy ?? 0.45, align: "center" },
+      floorPx: 24,
+      display: { stacked: profile.display.stacked?.headlineH ?? 0.19, side: profile.display.side?.headlineH ?? 0.38 },
+      rule: `Headline height ${Math.round((profile.display.stacked?.headlineH ?? 0.19) * 100)}% of the short side on stacked layouts, ${Math.round((profile.display.side?.headlineH ?? 0.38) * 100)}% on side layouts; block centre at ${Math.round((profile.display.stacked?.headlineCy ?? 0.45) * 100)}% / ${Math.round((profile.display.side?.headlineCy ?? 0.36) * 100)}% of the photo zone (measured).`
+    },
+    subheadline: { role: "subheadline", zone: "photo", size: { ofHeadline: profile.display.stacked?.subH ?? 0.45 }, anchor: { align: "center" }, rule: "Sub-line set at the measured share of the headline, directly under it." },
+    cutout: { role: "cutout", zone: "photo", size: { ofZoneW: profile.display.stacked?.cutoutW ?? 0.8 }, anchor: { y: 1 }, rule: `Cut-out at ${Math.round((profile.display.stacked?.cutoutW ?? 0.8) * 100)}% of the zone width (stacked) / ${Math.round((profile.display.side?.cutoutW ?? 0.47) * 100)}% (side), on the copy's last line as measured.` },
+    message: { role: "message", zone: "panel", size: { ofZoneW: profile.display.stacked?.message.w ?? 0.7 }, anchor: { y: profile.display.stacked?.message.cy ?? 0.36, align: "center" }, floorPx: 11, rule: "Message centred in the panel column at the measured height." },
+    cta: { role: "cta", zone: "panel", size: { ofZoneW: 0.6 }, anchor: { y: profile.display.stacked?.cta.cy ?? 0.55, align: "center" }, floorPx: 24, ...profile.cta.fixedPx ? { fixedPx: profile.cta.fixedPx, fixedShortRange: profile.cta.fixedShortRange } : {}, rule: profile.cta.fixedPx ? `Button is a fixed ${profile.cta.fixedPx.w}\xD7${profile.cta.fixedPx.h}px asset at the measured scale.` : "Button scales with the panel." },
+    lockup: { role: "lockup", zone: "panel", size: { ofZoneW: profile.display.stacked?.lockup.w ?? 0.7 }, anchor: { y: profile.display.stacked?.lockup.cy ?? 0.82, align: "center" }, rule: "Lockup last in the panel column at the measured height." },
+    band: { role: "band", zone: "seam", size: { ofZoneW: 1 }, anchor: {}, droppedWhen: "strips", rule: "Band on the panel's outer edge, full zone width." },
+    photo: { role: "photo", zone: "photo", size: { ofZoneW: 1, ofZoneH: 1 }, anchor: {}, rule: "Covers its zone; the master's framing is kept on same-axis builds." }
+  };
+  const zones = {};
+  for (const k of Object.keys(profile.zones)) {
+    const { measured: _m, ...z } = profile.zones[k];
+    zones[k] = z;
+  }
+  return {
+    id: `profile-${id}`,
+    name: profile.name,
+    match: [],
+    colours: {},
+    type: {},
+    hierarchy: ["headline", "subheadline", "message", "cta", "lockup"],
+    zones,
+    display: { stacked: profile.display.stacked ?? DEFAULT_STACKED, side: profile.display.side ?? DEFAULT_SIDE },
+    alwaysDisplay: true,
+    parts,
+    variants: [],
+    never: [],
+    sizes: [],
+    references: profile.sources.map((s2) => `${s2.name} (${s2.width}\xD7${s2.height})`),
+    ...profile.copyOverCutoutFrac != null ? { copyOverCutoutFrac: profile.copyOverCutoutFrac } : {}
+  };
+}
+var DEFAULT_STACKED = { headlineH: 0.193, headlineCy: 0.422, subW: 0.986, subH: 0.517, subGap: 0.069, cutoutW: 0.8, cutoutCx: 0.41, cutoutBleed: 0.45, message: { cy: 0.36, w: 0.73 }, cta: { cy: 0.55 }, lockup: { cy: 0.82, w: 0.7 }, bandH: 0.147 };
+var DEFAULT_SIDE = { headlineH: 0.396, headlineCy: 0.266, subW: 0.874, subH: 0.404, subGap: 0.07, cutoutW: 0.467, cutoutCx: 0.419, cutoutBleed: 0.6, message: { cy: 0.378, w: 0.7 }, cta: { cy: 0.562 }, lockup: { cy: 0.838, w: 0.7 }, bandH: 0.152 };
+function parseRow(row) {
+  let profile;
+  try {
+    profile = JSON.parse(row.profile);
+  } catch {
+    profile = buildProfile([], row.name);
+  }
+  return { id: row.id, name: row.name, sourceKey: row.sourceKey, profile, updatedAt: row.updatedAt };
+}
+async function learnProfile(masterIds, name, createdBy) {
+  const ids = [...new Set(masterIds.filter((n) => Number.isInteger(n) && n > 0))].sort((a, b) => a - b);
+  if (ids.length === 0) return null;
+  const rows = await db.select().from(templatesTable).where(inArray(templatesTable.id, ids));
+  const measurements = [];
+  const skipped = [];
+  for (const row of rows) {
+    let parsed;
+    try {
+      parsed = JSON.parse(row.config || "{}");
+    } catch {
+      parsed = {};
+    }
+    const cfg = normalizeFreeformConfig(parsed);
+    const m = measureMaster(cfg, row.width, row.height, row.name, row.id);
+    if (m) measurements.push(m);
+    else skipped.push(`${row.name}: no panel and headline recognised, not measured`);
+  }
+  if (measurements.length === 0) return null;
+  const profileName = (name ?? "").trim() || campaignNameFrom(measurements.map((m) => m.name));
+  const profile = buildProfile(measurements, profileName);
+  const sourceKey = measurements.map((m) => m.templateId).sort((a, b) => a - b).join(",");
+  const [existing] = await db.select().from(layoutProfilesTable).where(eq(layoutProfilesTable.sourceKey, sourceKey));
+  let saved;
+  if (existing) {
+    [saved] = await db.update(layoutProfilesTable).set({ name: profileName, profile: JSON.stringify(profile), updatedAt: /* @__PURE__ */ new Date() }).where(eq(layoutProfilesTable.id, existing.id)).returning();
+  } else {
+    [saved] = await db.insert(layoutProfilesTable).values({ name: profileName, sourceKey, profile: JSON.stringify(profile), createdBy: createdBy ?? null }).returning();
+  }
+  return { stored: parseRow(saved), skipped };
+}
+function campaignNameFrom(names) {
+  if (names.length === 0) return "Campaign";
+  let prefix = names[0];
+  for (const n of names.slice(1)) {
+    let i = 0;
+    while (i < prefix.length && i < n.length && prefix[i].toLowerCase() === n[i].toLowerCase()) i++;
+    prefix = prefix.slice(0, i);
+  }
+  const tidy = prefix.replace(/[\s_\-—–:]+$/g, "").replace(/\s{2,}/g, " ").trim();
+  return tidy.length >= 4 ? tidy : names[0].split(/ — /)[0].trim() || "Campaign";
+}
+async function listProfiles() {
+  const rows = await db.select().from(layoutProfilesTable).orderBy(desc(layoutProfilesTable.updatedAt));
+  return rows.map(parseRow);
+}
+async function getProfile(id) {
+  const [row] = await db.select().from(layoutProfilesTable).where(eq(layoutProfilesTable.id, id));
+  return row ? parseRow(row) : null;
+}
+async function deleteProfile(id) {
+  const rows = await db.delete(layoutProfilesTable).where(eq(layoutProfilesTable.id, id)).returning({ id: layoutProfilesTable.id });
+  return rows.length > 0;
+}
+async function profileForMaster(masterId, sourceTemplateId) {
+  const ids = [masterId, ...sourceTemplateId ? [sourceTemplateId] : []];
+  const rows = await db.select().from(layoutProfilesTable).where(sql`string_to_array(${layoutProfilesTable.sourceKey}, ',')::int[] && ${sql.raw(`ARRAY[${ids.map((n) => Number(n)).join(",")}]::int[]`)}`).orderBy(desc(layoutProfilesTable.updatedAt)).limit(1);
+  return rows[0] ? parseRow(rows[0]) : null;
+}
+async function resolveStyleSchema(opts) {
+  if (opts.profileId) {
+    const p = await getProfile(opts.profileId);
+    if (p) return { schema: profileToStyleSchema(p.profile, p.id), source: "profile", profileId: p.id, label: `${p.name} (measured profile)` };
+  }
+  try {
+    const p = await profileForMaster(opts.masterId, opts.sourceTemplateId);
+    if (p) return { schema: profileToStyleSchema(p.profile, p.id), source: "profile", profileId: p.id, label: `${p.name} (measured profile)` };
+  } catch {
+  }
+  const builtin = styleSchemaFor(opts.masterName);
+  if (builtin) return { schema: builtin, source: "builtin", label: `${builtin.name} (built-in schema)` };
+  return { schema: null, source: "none", label: "family defaults" };
+}
+
+// src/lib/gwdImport.ts
+init_objectStorage();
+import sharp7 from "sharp";
+var objectStorageService8 = new ObjectStorageService();
+var IMAGE_TYPES = {
+  jpg: "image/jpeg",
+  jpeg: "image/jpeg",
+  png: "image/png",
+  webp: "image/webp"
+};
+async function visibleBounds(bytes2) {
+  const meta = await sharp7(bytes2).metadata();
+  if (!meta.hasAlpha || !meta.width || !meta.height) return null;
+  const raw = await sharp7(bytes2).ensureAlpha().raw().toBuffer();
+  const W2 = meta.width, H2 = meta.height;
+  let minX = W2, minY = H2, maxX = -1, maxY = -1;
+  for (let py = 0; py < H2; py++) {
+    for (let px = 0; px < W2; px++) {
+      if (raw[(py * W2 + px) * 4 + 3] > 16) {
+        if (px < minX) minX = px;
+        if (px > maxX) maxX = px;
+        if (py < minY) minY = py;
+        if (py > maxY) maxY = py;
+      }
+    }
+  }
+  const bw = maxX - minX + 1, bh = maxY - minY + 1;
+  if (maxX < 0 || !(bw < W2 * 0.9 || bh < H2 * 0.9)) return null;
+  return { minX, minY, bw, bh, W: W2, H: H2 };
+}
+async function reconstructGwdBanners(zip, baseName2) {
+  const layouts = [];
+  const htmlEntries = Object.entries(zip.files).filter(
+    ([path11, f]) => !f.dir && path11.endsWith(".html") && !/gwd_preview|preview\.html|__MACOSX/i.test(path11)
+  );
+  for (const [htmlPath, entry] of htmlEntries) {
+    const html = await entry.async("text");
+    if (!html.includes("gwd-page")) continue;
+    const analysis = analyseGwdHtml(html);
+    if (!analysis) continue;
+    const { width, height } = analysis;
+    const dir = htmlPath.slice(0, htmlPath.lastIndexOf("/") + 1);
+    const elements = [];
+    let i = 0;
+    for (const leaf of analysis.leaves) {
+      const { relSrc } = leaf;
+      const restingOpacity = leaf.opacity;
+      if (restingOpacity < 0.1) continue;
+      let x = leaf.x;
+      let y = leaf.y;
+      let w = leaf.w;
+      let h = leaf.h;
+      const visW = Math.min(x + w, width) - Math.max(x, 0);
+      const visH = Math.min(y + h, height) - Math.max(y, 0);
+      if (visW < w * 0.4 || visH < h * 0.4) continue;
+      const assetPath = (dir + relSrc).replace(/\/\.\//g, "/");
+      const assetEntry = zip.file(assetPath) ?? zip.file(relSrc);
+      if (!assetEntry) continue;
+      const ext2 = relSrc.split(".").pop()?.toLowerCase() ?? "";
+      const contentType = IMAGE_TYPES[ext2];
+      if (!contentType) continue;
+      let bytes2 = Buffer.from(await assetEntry.async("uint8array"));
+      try {
+        const vb = await visibleBounds(bytes2);
+        if (vb) {
+          const dispX = w / vb.W, dispY = h / vb.H;
+          bytes2 = Buffer.from(await sharp7(bytes2).extract({ left: vb.minX, top: vb.minY, width: vb.bw, height: vb.bh }).png().toBuffer());
+          x += vb.minX * dispX;
+          y += vb.minY * dispY;
+          w = vb.bw * dispX;
+          h = vb.bh * dispY;
+        }
+      } catch {
+      }
+      const stored = await objectStorageService8.uploadBytes(bytes2, contentType);
+      elements.push({
+        id: `gwd_${i++}`,
+        type: "image",
+        role: "decoration",
+        src: `/api/storage${stored}`,
+        fit: "cover",
+        x: Math.round(x),
+        y: Math.round(y),
+        w: Math.round(w),
+        h: Math.round(h),
+        ...restingOpacity < 1 ? { opacity: Math.round(restingOpacity * 100) / 100 } : {},
+        ...leaf.motion ? { motion: { ...leaf.motion, w0: Math.round(w), h0: Math.round(h) } } : {},
+        ...leaf.groupMotion ? { groupMotion: { ...leaf.groupMotion, w0: Math.round(w), h0: Math.round(h) } } : {},
+        ...leaf.ownMotion ? { ownMotion: { ...leaf.ownMotion, w0: Math.round(w), h0: Math.round(h) } } : {}
+      });
+    }
+    const kept = [];
+    const smallCap = width * height * 0.15;
+    for (let a = 0; a < elements.length; a++) {
+      const ea = elements[a];
+      let covered = false;
+      if (ea.w * ea.h < smallCap) {
+        for (let b = a + 1; b < elements.length && !covered; b++) {
+          const eb = elements[b];
+          if (eb.w * eb.h >= smallCap) continue;
+          const ix = Math.max(0, Math.min(ea.x + ea.w, eb.x + eb.w) - Math.max(ea.x, eb.x));
+          const iy = Math.max(0, Math.min(ea.y + ea.h, eb.y + eb.h) - Math.max(ea.y, eb.y));
+          const inter = ix * iy;
+          const union3 = ea.w * ea.h + eb.w * eb.h - inter;
+          if (union3 > 0 && inter / union3 > 0.75) covered = true;
+        }
+      }
+      if (!covered) kept.push(elements[a]);
+    }
+    if (kept.length < 2) continue;
+    let label2 = htmlPath.replace(/^.*?\//, "").replace(/\/[^/]*$/, "").split("/").filter(Boolean).join(" ").replace(/px$/i, "");
+    if (!label2 || /\.html?$/i.test(label2)) label2 = `${width}\xD7${height}`;
+    let previewHtml;
+    try {
+      let rewritten = html;
+      const uploadedBySrc = /* @__PURE__ */ new Map();
+      const PREVIEW_TYPES = {
+        ...IMAGE_TYPES,
+        js: "application/javascript",
+        css: "text/css",
+        svg: "image/svg+xml",
+        gif: "image/gif",
+        woff: "font/woff",
+        woff2: "font/woff2"
+      };
+      const refs = /* @__PURE__ */ new Set();
+      for (const m of html.matchAll(/(?:source|src|href)="([^"]+)"/g)) {
+        const v = m[1];
+        if (/^(https?:)?\/\//.test(v) || v.startsWith("data:")) continue;
+        refs.add(v);
+      }
+      for (const rel of refs) {
+        const aEntry = zip.file((dir + rel).replace(/\/\.\//g, "/")) ?? zip.file(rel);
+        const aExt = rel.split(".").pop()?.toLowerCase() ?? "";
+        const aType = PREVIEW_TYPES[aExt];
+        if (!aEntry || !aType) continue;
+        const aBytes = Buffer.from(await aEntry.async("uint8array"));
+        const aStored = await objectStorageService8.uploadBytes(aBytes, aType);
+        uploadedBySrc.set(rel, `/api/storage${aStored}`);
+      }
+      for (const [rel, url2] of uploadedBySrc) {
+        rewritten = rewritten.split(`"${rel}"`).join(`"${url2}"`);
+      }
+      const htmlStored = await objectStorageService8.uploadBytes(Buffer.from(rewritten, "utf8"), "text/html");
+      previewHtml = `/api/storage${htmlStored}`;
+    } catch {
+    }
+    let recognised = kept;
+    try {
+      const enriched = await enrichLayeredArtwork(
+        normalizeFreeformConfig({ kind: "freeform", elements: kept }),
+        width,
+        height,
+        { loadImage: storageImageLoader(), uploadBytes: (bytes2, ct) => objectStorageService8.uploadBytes(bytes2, ct) }
+      );
+      if (enriched.changed) recognised = enriched.config.elements;
+    } catch {
+    }
+    layouts.push({
+      name: `${baseName2} \u2014 ${label2 || `${width}\xD7${height}`}`,
+      width,
+      height,
+      config: normalizeFreeformConfig({ kind: "freeform", elements: recognised, ...previewHtml ? { previewHtml } : {} }),
+      variant: label2 || null
+    });
+  }
+  return layouts;
+}
+
 // src/routes/templates.ts
 init_objectStorage();
 
@@ -233861,7 +234146,7 @@ async function reviewPiece(input) {
     "- confidence is 0 to 1.",
     "",
     "BRAND LAYOUT RULES FOR THIS CANVAS:",
-    ...rules.layoutRules(input.width, input.height).map((r3) => `- ${r3}`),
+    ...rules.layoutRules(input.width, input.height).map((r4) => `- ${r4}`),
     input.brand.fontFamily ? `- Brand font: ${input.brand.fontFamily}.` : "",
     "",
     input.brand.guidelines ? `BRAND GUIDELINES (operational extract):
@@ -233871,15 +234156,15 @@ CAMPAIGN STYLE SPEC \u2014 measured off the signed-off artwork; this is the stan
 ${input.styleSpec.slice(0, 6e3)}` : ""
   ].filter((l) => l !== void 0).join("\n");
   const content = [];
-  refs.forEach((r3, i) => {
-    const ex = input.exemplars.find((e) => e.id === r3.id);
+  refs.forEach((r4, i) => {
+    const ex = input.exemplars.find((e) => e.id === r4.id);
     content.push({
       type: "text",
-      text: `Approved reference ${i + 1} of ${refs.length} \u2014 marked Right by the designers: ${r3.label}` + (ex ? `
+      text: `Approved reference ${i + 1} of ${refs.length} \u2014 marked Right by the designers: ${r4.label}` + (ex ? `
 Its elements (fractions of its own canvas):
 ${describeReference(ex)}` : "")
     });
-    content.push({ type: "image", source: { type: "base64", media_type: r3.image.media_type, data: r3.image.data } });
+    content.push({ type: "image", source: { type: "base64", media_type: r4.image.media_type, data: r4.image.data } });
   });
   if (input.designerNote) {
     content.push({ type: "text", text: `A designer marked this piece Wrong and wrote: "${input.designerNote.slice(0, 500)}". Treat that as the first thing to fix.` });
@@ -233944,7 +234229,7 @@ ${input.measured.map((m) => `- [${m.severity}] ${m.message}${m.elementId ? ` (el
     model: CLAUDE_REVIEW_MODEL,
     reviewedAt: (/* @__PURE__ */ new Date()).toISOString(),
     ms: Date.now() - started,
-    exemplarIds: refs.map((r3) => r3.id),
+    exemplarIds: refs.map((r4) => r4.id),
     ...answeredBy ? { answeredBy } : {}
   };
   logger2.info({ verdict: review.verdict, confidence: review.confidence, issues: issues.length, ms: review.ms, tokens: response.usage?.input_tokens }, "claude review finished");
@@ -233952,9 +234237,9 @@ ${input.measured.map((m) => `- [${m.severity}] ${m.message}${m.elementId ? ` (el
 }
 function cleanEdit(raw) {
   if (!raw || typeof raw !== "object") return null;
-  const r3 = raw;
-  if (typeof r3.elementId !== "string" || !r3.elementId) return null;
-  const setRaw = r3.set && typeof r3.set === "object" ? r3.set : {};
+  const r4 = raw;
+  if (typeof r4.elementId !== "string" || !r4.elementId) return null;
+  const setRaw = r4.set && typeof r4.set === "object" ? r4.set : {};
   const set2 = {};
   const num2 = (k) => {
     const v = setRaw[k];
@@ -233967,9 +234252,9 @@ function cleanEdit(raw) {
   if (setRaw.align === "left" || setRaw.align === "center" || setRaw.align === "right") set2.align = setRaw.align;
   if (setRaw.fontWeight === 400 || setRaw.fontWeight === 700) set2.fontWeight = setRaw.fontWeight;
   if (setRaw.fit === "cover" || setRaw.fit === "contain") set2.fit = setRaw.fit;
-  const del = r3.delete === true;
+  const del = r4.delete === true;
   if (!del && Object.keys(set2).length === 0) return null;
-  return { elementId: r3.elementId, delete: del, set: set2 };
+  return { elementId: r4.elementId, delete: del, set: set2 };
 }
 function applyEdits(config2, edits, width, height) {
   const elements = config2.elements.map((e) => ({ ...e }));
@@ -234157,12 +234442,12 @@ function measureRecipe(config2, width, height) {
     const wf = sem.headline.w / Math.max(1, sem.photoBox.w);
     if (inRange(wf, 0.4, 1)) out.headlineWidthFrac = wf;
     if (sem.subheadline) {
-      const r3 = sem.subheadline.fontSize / sem.headline.fontSize;
-      if (inRange(r3, 0.15, 0.6)) out.subheadRatio = r3;
+      const r4 = sem.subheadline.fontSize / sem.headline.fontSize;
+      if (inRange(r4, 0.15, 0.6)) out.subheadRatio = r4;
     }
     if (sem.message) {
-      const r3 = sem.message.fontSize / sem.headline.fontSize;
-      if (inRange(r3, 0.12, 0.6)) out.messageMaxRatio = r3;
+      const r4 = sem.message.fontSize / sem.headline.fontSize;
+      if (inRange(r4, 0.12, 0.6)) out.messageMaxRatio = r4;
     }
   }
   return out;
@@ -234175,8 +234460,8 @@ async function latestVerdicts(ids) {
     SELECT DISTINCT ON (subject_id) subject_id, verdict FROM feedback
     WHERE subject_type = 'template' AND subject_id IN (${sql.join(ids.map((i) => sql`${i}`), sql`, `)})
     ORDER BY subject_id, id DESC`);
-  for (const r3 of rows.rows) {
-    if (r3.verdict === "correct" || r3.verdict === "incorrect") m.set(Number(r3.subject_id), r3.verdict);
+  for (const r4 of rows.rows) {
+    if (r4.verdict === "correct" || r4.verdict === "incorrect") m.set(Number(r4.subject_id), r4.verdict);
   }
   return m;
 }
@@ -234190,7 +234475,7 @@ function parse4(row) {
 }
 async function approvedExemplars(masterId) {
   const rows = await db.select().from(templatesTable).where(or(eq(templatesTable.id, masterId), eq(templatesTable.sourceTemplateId, masterId)));
-  const verdicts = await latestVerdicts(rows.map((r3) => r3.id));
+  const verdicts = await latestVerdicts(rows.map((r4) => r4.id));
   const out = [];
   const seen2 = /* @__PURE__ */ new Set();
   for (const row of rows) {
@@ -234209,9 +234494,9 @@ async function approvedExemplars(masterId) {
       approvedAt: row.updatedAt ? new Date(row.updatedAt).toISOString() : null
     });
   }
-  for (const r3 of await rememberedExemplarRows(masterId)) {
-    if (seen2.has(r3.id)) continue;
-    out.push(r3);
+  for (const r4 of await rememberedExemplarRows(masterId)) {
+    if (seen2.has(r4.id)) continue;
+    out.push(r4);
   }
   return out;
 }
@@ -234228,23 +234513,23 @@ async function rememberedExemplarRows(masterId) {
     WHERE verdict = 'correct' AND subject_config IS NOT NULL
       AND NOT EXISTS (SELECT 1 FROM templates t WHERE t.id = latest.subject_id)`);
   const out = [];
-  for (const r3 of rows.rows) {
+  for (const r4 of rows.rows) {
     try {
-      const raw = JSON.parse(String(r3.subject_config));
+      const raw = JSON.parse(String(r4.subject_config));
       if (!isFreeformConfig(raw)) continue;
       const config2 = normalizeFreeformConfig(raw);
-      const width = Number(r3.subject_width);
-      const height = Number(r3.subject_height);
+      const width = Number(r4.subject_width);
+      const height = Number(r4.subject_height);
       if (!width || !height) continue;
       out.push({
-        id: Number(r3.subject_id),
-        name: String(r3.subject_name ?? `remembered #${r3.subject_id}`),
+        id: Number(r4.subject_id),
+        name: String(r4.subject_name ?? `remembered #${r4.subject_id}`),
         width,
         height,
         formatClass: classifyAspect(width, height),
         config: config2,
         measured: measureRecipe(config2, width, height),
-        approvedAt: r3.created_at ? new Date(r3.created_at).toISOString() : null
+        approvedAt: r4.created_at ? new Date(r4.created_at).toISOString() : null
       });
     } catch {
     }
@@ -234287,25 +234572,25 @@ async function studioExemplars(width, height, excludeIds = [], limit3 = 3) {
     ORDER BY t.updated_at DESC, t.id DESC
     LIMIT 400`);
   const out = [];
-  for (const r3 of rows.rows) {
+  for (const r4 of rows.rows) {
     let config2 = null;
     try {
-      const raw = JSON.parse(String(r3.config || "{}"));
+      const raw = JSON.parse(String(r4.config || "{}"));
       config2 = isFreeformConfig(raw) ? normalizeFreeformConfig(raw) : null;
     } catch {
       config2 = null;
     }
     if (!config2) continue;
-    const w = Number(r3.width), h = Number(r3.height);
+    const w = Number(r4.width), h = Number(r4.height);
     out.push({
-      id: Number(r3.id),
-      name: String(r3.name),
+      id: Number(r4.id),
+      name: String(r4.name),
       width: w,
       height: h,
       formatClass: classifyAspect(w, h),
       config: config2,
       measured: measureRecipe(config2, w, h),
-      approvedAt: r3.updated_at ? new Date(r3.updated_at).toISOString() : null,
+      approvedAt: r4.updated_at ? new Date(r4.updated_at).toISOString() : null,
       distance: aspectDistance(width, height, w, h),
       sameClass: classifyAspect(w, h) === cls
     });
@@ -234342,9 +234627,9 @@ function bboxFromPoints(pts) {
 function clamp255(n) {
   return Math.max(0, Math.min(255, Math.round(n)));
 }
-function rgbToHex3(r3, g, b) {
+function rgbToHex3(r4, g, b) {
   const h = (n) => clamp255(n).toString(16).padStart(2, "0");
-  return `#${h(r3)}${h(g)}${h(b)}`;
+  return `#${h(r4)}${h(g)}${h(b)}`;
 }
 function colorFromArgs(op, args) {
   const nums = args.filter((v) => typeof v === "number");
@@ -234365,8 +234650,8 @@ function colorFromArgs(op, args) {
 function hexLuminance(hex) {
   const m = /^#([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})$/i.exec(hex);
   if (!m) return 0;
-  const [r3, g, b] = [m[1], m[2], m[3]].map((h) => parseInt(h, 16));
-  return 0.299 * r3 + 0.587 * g + 0.114 * b;
+  const [r4, g, b] = [m[1], m[2], m[3]].map((h) => parseInt(h, 16));
+  return 0.299 * r4 + 0.587 * g + 0.114 * b;
 }
 function majority(items) {
   if (items.length === 0) return void 0;
@@ -234556,39 +234841,39 @@ function extractTextBlocks(content, viewportTransform, pdfjs, textFills) {
   const flush = () => {
     if (!cur.length) return;
     cur.sort((a, b) => a.x - b.x);
-    const fontSize = Math.max(...cur.map((r3) => r3.fontSize));
+    const fontSize = Math.max(...cur.map((r4) => r4.fontSize));
     let text3 = "";
     let prevRight = -Infinity;
-    for (const r3 of cur) {
-      if (text3 && r3.x - prevRight > fontSize * 0.25 && !text3.endsWith(" ")) text3 += " ";
-      text3 += r3.str;
-      prevRight = r3.right;
+    for (const r4 of cur) {
+      if (text3 && r4.x - prevRight > fontSize * 0.25 && !text3.endsWith(" ")) text3 += " ";
+      text3 += r4.str;
+      prevRight = r4.right;
     }
     lines.push({
-      x: Math.min(...cur.map((r3) => r3.x)),
-      top: Math.min(...cur.map((r3) => r3.top)),
-      right: Math.max(...cur.map((r3) => r3.right)),
-      bottom: Math.max(...cur.map((r3) => r3.baseline)),
+      x: Math.min(...cur.map((r4) => r4.x)),
+      top: Math.min(...cur.map((r4) => r4.top)),
+      right: Math.max(...cur.map((r4) => r4.right)),
+      bottom: Math.max(...cur.map((r4) => r4.baseline)),
       fontSize,
-      bold: cur.some((r3) => r3.bold),
-      italic: cur.some((r3) => r3.italic),
-      fontFamily: majority(cur.map((r3) => r3.fontFamily).filter(Boolean)),
-      color: majority(cur.map((r3) => r3.color).filter(Boolean)),
+      bold: cur.some((r4) => r4.bold),
+      italic: cur.some((r4) => r4.italic),
+      fontFamily: majority(cur.map((r4) => r4.fontFamily).filter(Boolean)),
+      color: majority(cur.map((r4) => r4.color).filter(Boolean)),
       text: text3.trim()
     });
     cur = [];
   };
-  for (const r3 of raws) {
+  for (const r4 of raws) {
     if (!cur.length) {
-      cur.push(r3);
+      cur.push(r4);
       continue;
     }
     const ref = cur[cur.length - 1];
-    if (Math.abs(r3.baseline - ref.baseline) <= Math.max(ref.fontSize, r3.fontSize) * 0.5) {
-      cur.push(r3);
+    if (Math.abs(r4.baseline - ref.baseline) <= Math.max(ref.fontSize, r4.fontSize) * 0.5) {
+      cur.push(r4);
     } else {
       flush();
-      cur.push(r3);
+      cur.push(r4);
     }
   }
   flush();
@@ -234616,9 +234901,9 @@ function snapConfigToPalette(config2, paletteHexes) {
   let snapped = 0;
   for (const el of config2.elements) {
     if (el.type === "text") {
-      const r3 = snapper.snap(el.color);
-      if (r3.snapped) {
-        el.color = r3.hex;
+      const r4 = snapper.snap(el.color);
+      if (r4.snapped) {
+        el.color = r4.hex;
         snapped++;
       }
     } else if (el.type === "rect") {
@@ -234670,8 +234955,8 @@ async function renderKeyVisualTemplate(data, pageNum, paletteHexes) {
   const distinctSizes = Array.from(new Set(blocks.map((b) => Math.round(b.fontSize)))).sort((a, b) => b - a);
   const rank = (size) => distinctSizes.indexOf(Math.round(size));
   const roleOf = (b) => {
-    const r3 = rank(b.fontSize);
-    return r3 === 0 ? "headline" : r3 === 1 ? "subhead" : "body";
+    const r4 = rank(b.fontSize);
+    return r4 === 0 ? "headline" : r4 === 1 ? "subhead" : "body";
   };
   let focusY = 0.45;
   const headlineBlock = blocks.slice().sort((a, b) => b.fontSize - a.fontSize)[0];
@@ -234814,8 +235099,8 @@ async function dissectPdfToTemplate(objectPath, page, paletteHexes = [], mode = 
     const isInsideRect = (b) => {
       const cx = (b.x + b.right) / 2;
       const cy = (b.top + b.bottom) / 2;
-      for (const r3 of rects) {
-        if (cx >= r3.x && cx <= r3.x + r3.w && cy >= r3.y && cy <= r3.y + r3.h) return r3;
+      for (const r4 of rects) {
+        if (cx >= r4.x && cx <= r4.x + r4.w && cy >= r4.y && cy <= r4.y + r4.h) return r4;
       }
       return null;
     };
@@ -234828,8 +235113,8 @@ async function dissectPdfToTemplate(objectPath, page, paletteHexes = [], mode = 
         role = "cta";
         color = b.color ?? (hexLuminance(containing.fill) < 140 ? "#ffffff" : "#111827");
       } else {
-        const r3 = rank(b.fontSize);
-        role = r3 === 0 ? "headline" : r3 === 1 ? "subhead" : "body";
+        const r4 = rank(b.fontSize);
+        role = r4 === 0 ? "headline" : r4 === 1 ? "subhead" : "body";
         color = b.color ?? "#111827";
       }
       return {
@@ -234856,14 +235141,14 @@ async function dissectPdfToTemplate(objectPath, page, paletteHexes = [], mode = 
     if (textElements.length === 0 && imageElements.length === 0) {
       warnings.push("No editable text or images were found (the PDF may be a flat scanned image).");
     }
-    const rectElements = rects.map((r3, i) => ({
+    const rectElements = rects.map((r4, i) => ({
       id: `rect_${i}`,
       type: "rect",
-      fill: r3.fill,
-      x: r3.x,
-      y: r3.y,
-      w: r3.w,
-      h: r3.h
+      fill: r4.fill,
+      x: r4.x,
+      y: r4.y,
+      w: r4.w,
+      h: r4.h
     }));
     const config2 = normalizeFreeformConfig({
       kind: "freeform",
@@ -235564,7 +235849,7 @@ var EntityDecoder = class {
     this._limit = options.limit || {};
     this._maxTotalExpansions = this._limit.maxTotalExpansions || 0;
     this._maxExpandedLength = this._limit.maxExpandedLength || 0;
-    this._postCheck = typeof options.postCheck === "function" ? options.postCheck : (r3) => r3;
+    this._postCheck = typeof options.postCheck === "function" ? options.postCheck : (r4) => r4;
     this._limitTiers = parseLimitTiers(this._limit.applyLimitsTo ?? LIMIT_TIER_EXTERNAL);
     this._numericAllowed = options.numericAllowed ?? true;
     this._baseMap = mergeEntityMaps(XML, options.namedEntities || null);
@@ -239355,8 +239640,8 @@ function itemOpacity(item) {
 function isLogoGroup(group, colors) {
   const rects = asArray(group?.Rectangle);
   const polys = asArray(group?.Polygon);
-  const whiteTile = rects.find((r3) => {
-    const fill = typeof r3?.["@_FillColor"] === "string" ? colors.get(r3["@_FillColor"]) : void 0;
+  const whiteTile = rects.find((r4) => {
+    const fill = typeof r4?.["@_FillColor"] === "string" ? colors.get(r4["@_FillColor"]) : void 0;
     return fill && fill.toLowerCase() === "#ffffff";
   });
   const colouredPolys = polys.filter((p) => typeof p?.["@_FillColor"] === "string" && colors.get(p["@_FillColor"]));
@@ -239432,9 +239717,9 @@ function mergeRasterRegions(elements, pad = 8) {
   }
   elements.forEach((e, i) => {
     if (e.type !== "rect" || remove.has(i)) return;
-    const r3 = e;
+    const r4 = e;
     for (const u of unionBoxes) {
-      if (r3.x >= u.x - 1 && r3.y >= u.y - 1 && r3.x + r3.w <= u.x + u.w + 1 && r3.y + r3.h <= u.y + u.h + 1) {
+      if (r4.x >= u.x - 1 && r4.y >= u.y - 1 && r4.x + r4.w <= u.x + u.w + 1 && r4.y + r4.h <= u.y + u.h + 1) {
         remove.add(i);
         return;
       }
@@ -239711,10 +239996,10 @@ async function parseIdmlToLayouts(idml, linksByName, brandLogoUrl = null) {
         }
         const corners = ["TopLeft", "TopRight", "BottomLeft", "BottomRight"].map((c) => {
           const opt = item?.[`@_${c}CornerOption`];
-          const r3 = Number(item?.[`@_${c}CornerRadius`]);
-          return typeof opt === "string" && /rounded/i.test(opt) && Number.isFinite(r3) && r3 > 0 ? r3 : 0;
+          const r4 = Number(item?.[`@_${c}CornerRadius`]);
+          return typeof opt === "string" && /rounded/i.test(opt) && Number.isFinite(r4) && r4 > 0 ? r4 : 0;
         });
-        let radius = corners.every((r3) => r3 > 0) ? Math.min(...corners) : 0;
+        let radius = corners.every((r4) => r4 > 0) ? Math.min(...corners) : 0;
         if (radius === 0) {
           const uniOpt = item?.["@_CornerOption"];
           const uniR = Number(item?.["@_CornerRadius"]);
@@ -240042,7 +240327,7 @@ async function importInDesignPackage(objectPath, brandLogoUrl = null) {
             const textFree = (cropPdf?.removed ?? 0) > 0;
             const rendered = await renderPdfPageToPng2(Uint8Array.from(pdfBytes), layout.spreadIndex + 1);
             let renderedNoType = null;
-            if (regions.some((r3) => r3.photoFallback)) {
+            if (regions.some((r4) => r4.photoFallback)) {
               if (!textFree) {
                 try {
                   renderedNoType = await renderPdfPageToPng2(Uint8Array.from(pdfBytes), layout.spreadIndex + 1, { hideTextLayers: true });
@@ -240493,7 +240778,7 @@ async function layeredPanelFill(config2, req) {
     return null;
   }
 }
-async function adaptOne(master, masterConfig, width, height, brandInfo, log, exemplars = [], excludeId, hints = {}) {
+async function adaptOne(master, masterConfig, width, height, brandInfo, log, exemplars = [], excludeId, hints = {}, styleOverride) {
   let adapted = null;
   let method = "scaled";
   const notes = [];
@@ -240505,7 +240790,8 @@ async function adaptOne(master, masterConfig, width, height, brandInfo, log, exe
     notes.push(reference.note);
   }
   const hasTextHeadline = masterConfig.elements.some((e) => e.type === "text" && e.text.trim().length > 0);
-  const styleSpec = styleSchemaFor(master.name);
+  const styleSpec = styleOverride ? styleOverride.schema : styleSchemaFor(master.name);
+  if (styleOverride?.schema) notes.push(`Layout numbers from ${styleOverride.label}.`);
   if (!adapted && !hasTextHeadline && hasLayeredSlots(masterConfig)) {
     const ly = adaptLayered(masterConfig, master.width, master.height, width, height, { panelFill: brandInfo.panelFill ?? null, logoUrl: brandInfo.logoUrl, spec: styleSpec, formatClass: spec.formatClass });
     if (ly) {
@@ -240564,7 +240850,7 @@ async function adaptOne(master, masterConfig, width, height, brandInfo, log, exe
     ...adapted,
     adaptMethod: adapted.adaptMethod ?? method,
     adaptNotes: [
-      ...rejected.map((r3) => `Rejected: ${r3}`),
+      ...rejected.map((r4) => `Rejected: ${r4}`),
       ...adapted.adaptNotes ?? [],
       ...notes,
       ...issues.map((i) => `${i.severity === "error" ? "Check" : "Note"}: ${i.message}`),
@@ -240660,6 +240946,9 @@ router13.post("/templates/:id/adapt", requireAdmin, async (req, res) => {
   }
   const created = [];
   let rejectedCount = 0;
+  const profileId = Number.isInteger(Number(req.body?.profileId)) && Number(req.body?.profileId) > 0 ? Number(req.body.profileId) : null;
+  const resolvedStyle = await resolveStyleSchema({ masterId: master.id, masterName: master.name, sourceTemplateId: master.sourceTemplateId ?? null, profileId });
+  if (resolvedStyle.source === "profile") res.setHeader("X-Layout-Profile", String(resolvedStyle.profileId));
   for (const raw of rawTargets) {
     if (typeof raw !== "object" || raw === null) continue;
     const t = raw;
@@ -240679,7 +240968,7 @@ router13.post("/templates/:id/adapt", requireAdmin, async (req, res) => {
       name: typeof t.formatName === "string" ? t.formatName : typeof t.name === "string" ? t.name : null,
       channel: typeof t.channel === "string" ? t.channel : null
     };
-    const { config: merged, method, spec, rejected } = await adaptOne(master, masterConfig, width, height, brandInfo, req.log, exemplars, void 0, hints);
+    const { config: merged, method, spec, rejected } = await adaptOne(master, masterConfig, width, height, brandInfo, req.log, exemplars, void 0, hints, resolvedStyle.source === "none" ? null : { schema: resolvedStyle.schema, label: resolvedStyle.label });
     if (rejected.length > 0) rejectedCount++;
     const name = typeof t.name === "string" && t.name.trim() ? t.name.trim().slice(0, 120) : `${master.name} ${spec.entry ? `${spec.label} ` : ""}${width}\xD7${height}`;
     const [template] = await db.insert(templatesTable).values({
@@ -240926,11 +241215,21 @@ router13.post("/templates/import-example", requireAdmin, async (req, res) => {
       }).returning();
       created.push(template);
     }
+    let profileSummary = null;
+    if (created.length >= 2) {
+      try {
+        const learned = await learnProfile(created.map((t) => t.id), fileName.replace(/\.[a-z0-9]+$/i, ""), req.clerkUserId ?? null);
+        if (learned) profileSummary = { id: learned.stored.id, name: learned.stored.name, notes: learned.stored.profile.notes };
+      } catch (err) {
+        req.log?.warn?.({ err }, "profile learn after import failed");
+      }
+    }
     res.status(201).json({
       kind: result.kind,
       templates: created.map(formatTemplate),
-      warnings: result.warnings,
-      assetsImported: result.assets.length
+      warnings: [...result.warnings, ...profileSummary ? [`Layout profile "${profileSummary.name}" measured: ${profileSummary.notes[0] ?? ""}`] : []],
+      assetsImported: result.assets.length,
+      ...profileSummary ? { layoutProfile: profileSummary } : {}
     });
   } catch (err) {
     req.log?.error({ err }, "Example import failed");
@@ -241195,7 +241494,8 @@ router13.post("/templates/:id/redo", requireAdmin, async (req, res) => {
   try {
     await ensureBrandFontsRegistered();
     const exemplars = await approvedExemplars(master.id);
-    const { config: config2, method, spec, reference } = await adaptOne(master, masterConfig, piece.width, piece.height, brandInfo, req.log, exemplars, piece.id, { name: piece.name });
+    const redoStyle = await resolveStyleSchema({ masterId: master.id, masterName: master.name, sourceTemplateId: master.sourceTemplateId ?? null });
+    const { config: config2, method, spec, reference } = await adaptOne(master, masterConfig, piece.width, piece.height, brandInfo, req.log, exemplars, piece.id, { name: piece.name }, redoStyle.source === "none" ? null : { schema: redoStyle.schema, label: redoStyle.label });
     const [updated] = await db.update(templatesTable).set({
       config: JSON.stringify(config2),
       description: `Adapted from "${master.name}" (${master.width}\xD7${master.height}) \xB7 ${method.replace(":", " ")} \xB7 ${spec.formatClass} \xB7 redone ${(/* @__PURE__ */ new Date()).toISOString().slice(0, 10)}`,
@@ -243143,14 +243443,14 @@ async function customFontRefs() {
     const rows = await db.select().from(brandAssetsTable).where(eq(brandAssetsTable.kind, "font"));
     const seen2 = /* @__PURE__ */ new Set();
     const out = [];
-    for (const r3 of rows) {
-      const family = r3.name.split(" (")[0].trim();
+    for (const r4 of rows) {
+      const family = r4.name.split(" (")[0].trim();
       if (!family || seen2.has(family)) continue;
       seen2.add(family);
       out.push({
         family,
-        src: `/api/storage${r3.objectPath}`,
-        format: r3.contentType === "font/otf" ? "opentype" : "truetype"
+        src: `/api/storage${r4.objectPath}`,
+        format: r4.contentType === "font/otf" ? "opentype" : "truetype"
       });
     }
     return out;
@@ -243335,7 +243635,7 @@ async function readSheets(bytes2) {
         shared.push(String(t ?? ""));
       } else if (si?.r) {
         const runs = Array.isArray(si.r) ? si.r : [si.r];
-        shared.push(runs.map((r3) => typeof r3?.t === "object" ? r3.t?.["#text"] ?? "" : r3?.t ?? "").join(""));
+        shared.push(runs.map((r4) => typeof r4?.t === "object" ? r4.t?.["#text"] ?? "" : r4?.t ?? "").join(""));
       } else {
         shared.push("");
       }
@@ -243351,10 +243651,10 @@ async function readSheets(bytes2) {
     const rowsXml = xml?.worksheet?.sheetData?.row;
     const rowsArr = Array.isArray(rowsXml) ? rowsXml : rowsXml ? [rowsXml] : [];
     const rows = [];
-    for (const r3 of rowsArr) {
-      const rowIdx = Number(r3?.["@_r"] ?? rows.length + 1) - 1;
+    for (const r4 of rowsArr) {
+      const rowIdx = Number(r4?.["@_r"] ?? rows.length + 1) - 1;
       while (rows.length <= rowIdx) rows.push([]);
-      const cells = Array.isArray(r3?.c) ? r3.c : r3?.c ? [r3.c] : [];
+      const cells = Array.isArray(r4?.c) ? r4.c : r4?.c ? [r4.c] : [];
       for (const c of cells) {
         const ref = String(c?.["@_r"] ?? "A1");
         const ci = colIndex(ref);
@@ -243399,14 +243699,14 @@ async function parseCollateralBrief(bytes2) {
   let campaignSheetName = "";
   for (const [name, rows] of sheets) {
     if (/glossary|instruction/i.test(name)) continue;
-    if (rows.some((r3) => r3?.some((c) => /project number/i.test(text2(c))))) {
+    if (rows.some((r4) => r4?.some((c) => /project number/i.test(text2(c))))) {
       campaign = rows;
       campaignSheetName = name;
       break;
     }
   }
   if (!campaign) throw new Error("No sheet with a 'Project Number' header found \u2014 is this the Design Studio collateral template?");
-  const headerIdx = campaign.findIndex((r3) => r3?.some((c) => /project number/i.test(text2(c))));
+  const headerIdx = campaign.findIndex((r4) => r4?.some((c) => /project number/i.test(text2(c))));
   const header = campaign[headerIdx] ?? [];
   const sub = campaign[headerIdx + 1] ?? [];
   const findCol = (re, from = 0) => {
@@ -243553,31 +243853,106 @@ router23.post("/campaigns/build-plan", requireAuth, async (req, res) => {
     return;
   }
   const campaignName = typeof req.body?.campaignName === "string" ? req.body.campaignName.trim().slice(0, 80) : "";
-  const masters = rows.map((r3) => {
+  const masters = rows.map((r4) => {
     let flat = false;
     try {
-      const raw = JSON.parse(r3.config);
+      const raw = JSON.parse(r4.config);
       if (raw?.kind === "freeform") flat = isFlatArtwork(normalizeFreeformConfig(raw));
     } catch {
       flat = false;
     }
     let copy = [];
     try {
-      const raw = JSON.parse(r3.config);
+      const raw = JSON.parse(r4.config);
       copy = (raw.elements ?? []).filter((e) => e.type === "text" && typeof e.text === "string").map((e) => e.text);
     } catch {
       copy = [];
     }
-    return { id: r3.id, name: r3.name, width: r3.width, height: r3.height, flat, messageType: messageTypeOf(r3.name, copy) };
+    return { id: r4.id, name: r4.name, width: r4.width, height: r4.height, flat, messageType: messageTypeOf(r4.name, copy) };
   });
-  res.json(planCampaignBuild(masters, sizes, { campaignName }));
+  const plan = planCampaignBuild(masters, sizes, { campaignName });
+  let profile = null;
+  try {
+    const learned = await learnProfile(masters.map((m) => m.id), campaignName || null, req.clerkUserId ?? null);
+    if (learned) {
+      const z = learned.stored.profile.zones;
+      profile = {
+        id: learned.stored.id,
+        name: learned.stored.name,
+        measuredClasses: Object.keys(z).filter((k) => z[k].measured),
+        interpolatedClasses: Object.keys(z).filter((k) => !z[k].measured),
+        notes: [...learned.stored.profile.notes, ...learned.skipped]
+      };
+    }
+  } catch (err) {
+    req.log?.warn({ err }, "profile learn in build-plan failed");
+  }
+  res.json({ ...plan, profile });
 });
 var collateral_default = router23;
 
-// src/routes/campaign-ideas.ts
+// src/routes/layout-profiles.ts
 var import_express25 = __toESM(require_express2(), 1);
-init_logger();
 var router24 = (0, import_express25.Router)();
+function formatProfile(p) {
+  const zones = p.profile.zones;
+  return {
+    id: p.id,
+    name: p.name,
+    sources: p.profile.sources,
+    measuredClasses: Object.keys(zones).filter((k) => zones[k].measured),
+    interpolatedClasses: Object.keys(zones).filter((k) => !zones[k].measured),
+    measuredAxes: p.profile.measuredAxes,
+    notes: p.profile.notes,
+    profile: p.profile,
+    updatedAt: p.updatedAt.toISOString()
+  };
+}
+router24.post("/layout-profiles/learn", requireAuth, async (req, res) => {
+  const raw = Array.isArray(req.body?.masterTemplateIds) ? req.body.masterTemplateIds : [];
+  const ids = raw.map(Number).filter((n) => Number.isInteger(n) && n > 0).slice(0, 50);
+  if (ids.length === 0) {
+    res.status(400).json({ error: "masterTemplateIds is required" });
+    return;
+  }
+  const name = typeof req.body?.name === "string" ? req.body.name.slice(0, 120) : null;
+  try {
+    const learned = await learnProfile(ids, name, req.clerkUserId ?? null);
+    if (!learned) {
+      res.status(422).json({ error: "None of those examples could be measured: each needs a recognised panel and headline." });
+      return;
+    }
+    res.status(201).json({ ...formatProfile(learned.stored), skipped: learned.skipped });
+  } catch (err) {
+    req.log?.warn?.({ err }, "profile learn failed");
+    res.status(500).json({ error: err instanceof Error ? err.message.slice(0, 200) : "Could not learn a profile" });
+  }
+});
+router24.get("/layout-profiles", requireAuth, async (_req, res) => {
+  res.json((await listProfiles()).map(formatProfile));
+});
+router24.get("/layout-profiles/:id", requireAuth, async (req, res) => {
+  const p = await getProfile(Number(req.params.id));
+  if (!p) {
+    res.status(404).json({ error: "Profile not found" });
+    return;
+  }
+  res.json(formatProfile(p));
+});
+router24.delete("/layout-profiles/:id", requireAdmin, async (req, res) => {
+  const ok = await deleteProfile(Number(req.params.id));
+  if (!ok) {
+    res.status(404).json({ error: "Profile not found" });
+    return;
+  }
+  res.status(204).end();
+});
+var layout_profiles_default = router24;
+
+// src/routes/campaign-ideas.ts
+var import_express26 = __toESM(require_express2(), 1);
+init_logger();
+var router25 = (0, import_express26.Router)();
 var BUILTIN_SIZE_OPTIONS2 = [
   { key: "social_square", label: "Social Square 1080\xD71080 \u2014 Instagram/Facebook feed post" },
   { key: "story", label: "Story 1080\xD71920 \u2014 Instagram/Facebook story, Reels, TikTok" },
@@ -243586,7 +243961,7 @@ var BUILTIN_SIZE_OPTIONS2 = [
   { key: "print_a4", label: "Print A4 \u2014 posters, flyers" },
   { key: "animated_social", label: "Animated Social 1080\xD71080 \u2014 animated social post" }
 ];
-router24.post("/campaign-ideas", requireAuth, async (req, res) => {
+router25.post("/campaign-ideas", requireAuth, async (req, res) => {
   const brandId = Number(req.body?.brandId);
   if (!Number.isInteger(brandId) || brandId <= 0) {
     res.status(400).json({ error: "brandId is required" });
@@ -243646,12 +244021,12 @@ router24.post("/campaign-ideas", requireAuth, async (req, res) => {
     res.status(502).json({ error: "Could not generate campaign ideas right now." });
   }
 });
-var campaign_ideas_default = router24;
+var campaign_ideas_default = router25;
 
 // src/routes/attention.ts
-var import_express26 = __toESM(require_express2(), 1);
-var router25 = (0, import_express26.Router)();
-router25.get("/attention", optionalAuth, async (_req, res) => {
+var import_express27 = __toESM(require_express2(), 1);
+var router26 = (0, import_express27.Router)();
+router26.get("/attention", optionalAuth, async (_req, res) => {
   const items = [];
   const pending = await db.select({ id: briefsTable.id, name: briefsTable.campaignName }).from(briefsTable).where(eq(briefsTable.status, "pending_approval"));
   if (pending.length === 1) {
@@ -243701,24 +244076,24 @@ router25.get("/attention", optionalAuth, async (_req, res) => {
   }
   res.json({ items });
 });
-var attention_default = router25;
+var attention_default = router26;
 
 // src/routes/performance-meta.ts
-var import_express27 = __toESM(require_express2(), 1);
-var router26 = (0, import_express27.Router)();
-router26.get("/performance/meta", optionalAuth, async (req, res) => {
+var import_express28 = __toESM(require_express2(), 1);
+var router27 = (0, import_express28.Router)();
+router27.get("/performance/meta", optionalAuth, async (req, res) => {
   const days = Number(req.query.days ?? 30);
   res.json(await getMetaSummary(Number.isFinite(days) ? days : 30));
 });
-router26.post("/performance/meta/sync", requireAdmin, async (req, res) => {
+router27.post("/performance/meta/sync", requireAdmin, async (req, res) => {
   const days = Number(req.body?.days ?? 30);
   const result = await runMetaSync(Number.isFinite(days) ? days : 30);
   res.status(result.ok ? 200 : 502).json(result);
 });
-var performance_meta_default = router26;
+var performance_meta_default = router27;
 
 // src/routes/index.ts
-var router27 = (0, import_express28.Router)();
+var router28 = (0, import_express29.Router)();
 var PUBLIC_PATHS = [
   /^\/healthz/,
   /^\/share\//,
@@ -243728,43 +244103,44 @@ var PUBLIC_PATHS = [
   /^\/storage\/public-objects\//,
   /^\/me$/
 ];
-router27.use((req, res, next) => {
+router28.use((req, res, next) => {
   if (!clerkConfigured || devAuthBypass) return next();
   if (PUBLIC_PATHS.some((re) => re.test(req.path))) return next();
   return requireAuth(req, res, next);
 });
-router27.use(health_default);
-router27.use(cron_default);
-router27.use(me_default);
-router27.use(users_default);
-router27.use(brands_default);
-router27.use(brand_styles_default);
-router27.use(briefs_default);
-router27.use(assets_default);
-router27.use(campaigns_default);
-router27.use(templates_default);
-router27.use(exports_default);
-router27.use(storage_default);
-router27.use(brand_assets_default);
-router27.use(fonts_default);
-router27.use(brand_analysis_default);
-router27.use(campaign_ideas_default);
-router27.use(attention_default);
-router27.use(feedback_default);
-router27.use(performance_meta_default);
-router27.use(comparison_notes_default);
-router27.use(asset_comments_default);
-router27.use(share_links_default);
-router27.use(review_progress_default);
-router27.use(creatives_default);
-router27.use(collateral_default);
-router27.use(stats_default);
-var routes_default = router27;
+router28.use(health_default);
+router28.use(cron_default);
+router28.use(me_default);
+router28.use(users_default);
+router28.use(brands_default);
+router28.use(brand_styles_default);
+router28.use(briefs_default);
+router28.use(assets_default);
+router28.use(campaigns_default);
+router28.use(templates_default);
+router28.use(exports_default);
+router28.use(storage_default);
+router28.use(brand_assets_default);
+router28.use(fonts_default);
+router28.use(brand_analysis_default);
+router28.use(campaign_ideas_default);
+router28.use(attention_default);
+router28.use(feedback_default);
+router28.use(performance_meta_default);
+router28.use(comparison_notes_default);
+router28.use(asset_comments_default);
+router28.use(share_links_default);
+router28.use(review_progress_default);
+router28.use(creatives_default);
+router28.use(collateral_default);
+router28.use(layout_profiles_default);
+router28.use(stats_default);
+var routes_default = router28;
 
 // src/routes/track.ts
-var import_express29 = __toESM(require_express2(), 1);
+var import_express30 = __toESM(require_express2(), 1);
 init_logger();
-var router28 = (0, import_express29.Router)();
+var router29 = (0, import_express30.Router)();
 var PIXEL = Buffer.from(
   "R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7",
   "base64"
@@ -243809,7 +244185,7 @@ function resolveClickUrl(req, token, hasDestination) {
   }
   return ourClick;
 }
-router28.get("/serve/:token", async (req, res) => {
+router29.get("/serve/:token", async (req, res) => {
   try {
     const tag = await recordEvent(req.params.token, "impression", req);
     if (!tag) {
@@ -243847,7 +244223,7 @@ ${html}`;
     res.status(500).send("Error");
   }
 });
-router28.get("/image/:token", async (req, res) => {
+router29.get("/image/:token", async (req, res) => {
   try {
     const tag = await recordEvent(req.params.token, "impression", req);
     if (!tag) {
@@ -243868,7 +244244,7 @@ router28.get("/image/:token", async (req, res) => {
     res.status(500).send("Error");
   }
 });
-router28.get("/vast/:token", async (req, res) => {
+router29.get("/vast/:token", async (req, res) => {
   try {
     const [tag] = await db.select().from(adTagsTable).where(eq(adTagsTable.token, req.params.token));
     if (!tag) {
@@ -243914,7 +244290,7 @@ router28.get("/vast/:token", async (req, res) => {
     res.status(500).send("Error");
   }
 });
-router28.get("/pixel/:token.gif", async (req, res) => {
+router29.get("/pixel/:token.gif", async (req, res) => {
   try {
     await recordEvent(req.params.token, "impression", req);
   } catch (err) {
@@ -243924,7 +244300,7 @@ router28.get("/pixel/:token.gif", async (req, res) => {
   res.set("Content-Type", "image/gif");
   res.send(PIXEL);
 });
-router28.get("/click/:token", async (req, res) => {
+router29.get("/click/:token", async (req, res) => {
   try {
     const tag = await recordEvent(req.params.token, "click", req);
     if (tag && isSafeHttpUrl(tag.clickUrl)) {
@@ -243962,7 +244338,7 @@ function forwardToGa4(type, creative) {
   }).catch(() => {
   });
 }
-router28.all("/c/:token", async (req, res) => {
+router29.all("/c/:token", async (req, res) => {
   try {
     const type = String(req.query.t ?? "");
     if (CREATIVE_EVENT_TYPES.has(type)) {
@@ -243988,11 +244364,11 @@ router28.all("/c/:token", async (req, res) => {
   res.set("Content-Type", "image/gif");
   res.send(PIXEL);
 });
-var track_default = router28;
+var track_default = router29;
 
 // src/app.ts
 init_logger();
-var app = (0, import_express30.default)();
+var app = (0, import_express31.default)();
 app.use(
   (0, import_pino_http.default)({
     logger: logger2,
@@ -244031,8 +244407,8 @@ app.use(
     }
   })
 );
-app.use(import_express30.default.json({ limit: "1mb" }));
-app.use(import_express30.default.urlencoded({ extended: true, limit: "1mb" }));
+app.use(import_express31.default.json({ limit: "1mb" }));
+app.use(import_express31.default.urlencoded({ extended: true, limit: "1mb" }));
 if (clerkConfigured) {
   app.use(
     clerkMiddleware((req) => ({
@@ -244055,7 +244431,7 @@ var staticDir = process.env.STATIC_DIR || path10.resolve(
 );
 if (existsSync3(staticDir)) {
   app.use(
-    import_express30.default.static(staticDir, {
+    import_express31.default.static(staticDir, {
       setHeaders: (res, filePath) => {
         if (filePath.includes(`${path10.sep}assets${path10.sep}`)) {
           res.setHeader("Cache-Control", "public, max-age=31536000, immutable");
@@ -244140,7 +244516,18 @@ async function seedDemoData() {
 // src/lib/schemaGuard.ts
 var STATEMENTS = [
   // 2026-09-02 recomposer: the master an adapted template was derived from.
-  sql`ALTER TABLE templates ADD COLUMN IF NOT EXISTS source_template_id integer`
+  sql`ALTER TABLE templates ADD COLUMN IF NOT EXISTS source_template_id integer`,
+  // 2026-09-11 campaign layout profiles measured from supplied artwork.
+  sql`CREATE TABLE IF NOT EXISTS layout_profiles (
+    id serial PRIMARY KEY,
+    name text NOT NULL,
+    source_key text NOT NULL,
+    profile text NOT NULL DEFAULT '{}',
+    created_by text,
+    created_at timestamp NOT NULL DEFAULT now(),
+    updated_at timestamp NOT NULL DEFAULT now()
+  )`,
+  sql`CREATE INDEX IF NOT EXISTS layout_profiles_source_key_idx ON layout_profiles (source_key)`
 ];
 var done = null;
 function ensureSchemaAdditions() {

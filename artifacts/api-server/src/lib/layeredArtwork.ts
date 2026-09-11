@@ -462,12 +462,16 @@ export function adaptLayered(master: FreeformConfig, srcW: number, srcH: number,
   const cls = opts.formatClass ?? classifyAspect(dstW, dstH);
   const base = RECIPES[cls];
   const short = Math.min(dstW, dstH);
-  // Display-sized canvases (300×600, 970×250, 300×250 …) follow the shipped
-  // display pieces' shares; OOH-sized canvases follow the OOH masters'.
-  const isDisplayCanvas = short <= 400;
   // The campaign schema, when one matches, is the standard: its zone shares
   // and CTA rule replace the class recipe's.
   const spec = opts.spec ?? null;
+  // Display-sized canvases (300×600, 970×250, 300×250 …) follow the shipped
+  // display pieces' shares; OOH-sized canvases follow the OOH masters'. A
+  // learned profile's numbers are the measurements, so they apply everywhere.
+  const isDisplayCanvas = spec?.alwaysDisplay ? true : short <= 400;
+  // A placed (fixed-size) button only at the scale it was measured on.
+  const fixedRange = spec?.parts.cta?.fixedShortRange;
+  const fixedInRange = !fixedRange || (short >= fixedRange[0] * 0.75 && short <= fixedRange[1] * 1.35);
   const zone = spec?.zones[cls];
   const zonePhotoFrac = zone ? (isDisplayCanvas && zone.displayPhotoFrac != null ? zone.displayPhotoFrac : zone.photoFrac) : base.photoFrac;
   const recipe = zone ? { ...base, axis: zone.axis === "row" ? ("row" as const) : zone.axis === "side" ? ("side" as const) : ("stacked" as const), photoFrac: zonePhotoFrac, bandFrac: zone.bandFrac, bandAt: zone.bandAt } : base;
@@ -686,7 +690,7 @@ export function adaptLayered(master: FreeformConfig, srcW: number, srcH: number,
   const partMessage = by("message").find((i) => i.panelPart) ?? null;
   const partLockup = by("lockup").find((i) => i.panelPart) ?? null;
   const fixedCta = spec?.parts.cta?.fixedPx ?? null;
-  const ctaLooksFixed = !!(cta && fixedCta && Math.abs(cta.h - fixedCta.h) <= 3 && Math.abs(cta.w - fixedCta.w) <= 6);
+  const ctaLooksFixed = !!(cta && fixedCta && fixedInRange && Math.abs(cta.h - fixedCta.h) <= 3 && Math.abs(cta.w - fixedCta.w) <= 6);
   if ((partMessage || partLockup) && !isStrip) {
     const ps = panelImg ? panelZone.w / Math.max(1, panelImg.w) : 1;
     // A shallow zone (an MREC's 100px panel) gives up the fixed pill and the
@@ -788,7 +792,7 @@ export function adaptLayered(master: FreeformConfig, srcW: number, srcH: number,
       // that is a fixed asset (181×43 in this campaign) is placed, not scaled.
       const ps = pb.w / Math.max(1, panelImg.w);
       const fixed = spec?.parts.cta?.fixedPx;
-      const looksFixed = !!fixed && Math.abs(cta.h - fixed.h) <= 3 && Math.abs(cta.w - fixed.w) <= 6;
+      const looksFixed = !!fixed && fixedInRange && Math.abs(cta.h - fixed.h) <= 3 && Math.abs(cta.w - fixed.w) <= 6;
       // On display-sized canvases the pill is the fixed asset; on OOH sizes it
       // takes the campaign's share of the short side (7.5% tall / 12.5% wide).
       const isDisplayCanvas = short <= 400; // 300×600, 970×250, 300×250, 320×480 — not OOH-sized canvases
@@ -803,9 +807,9 @@ export function adaptLayered(master: FreeformConfig, srcW: number, srcH: number,
     if (panelImg && isStrip) notes.push("Panel graphic dropped for the strip; the CTA sits on the brand panel.");
     if (cta) {
       const fixed = spec?.parts.cta?.fixedPx;
-      const looksFixed = !!fixed && Math.abs(cta.h - fixed.h) <= 3 && Math.abs(cta.w - fixed.w) <= 6;
-      const isFixedAsset = looksFixed && short <= 400 && fixed!.h <= panelInner.h && fixed!.w <= panelInner.w;
-      const fitFixed = looksFixed && short <= 400 && !isFixedAsset;
+      const looksFixed = !!fixed && fixedInRange && Math.abs(cta.h - fixed.h) <= 3 && Math.abs(cta.w - fixed.w) <= 6;
+      const isFixedAsset = looksFixed && isDisplayCanvas && fixed!.h <= panelInner.h && fixed!.w <= panelInner.w;
+      const fitFixed = looksFixed && isDisplayCanvas && !isFixedAsset;
       const oohShare = recipe.axis === "stacked" ? 0.075 : 0.125;
       const ctaH = isFixedAsset ? fixed!.h : fitFixed ? r(Math.min(panelInner.h * 0.6, panelInner.w * 0.85 * (fixed!.h / fixed!.w))) : looksFixed ? r(Math.min(panelInner.h * 0.6, short * oohShare)) : Math.max(recipe.ctaFloorPx, r(Math.min(panelInner.h * 0.6, short * recipe.ctaHeightFrac)));
       const ctaW = isFixedAsset ? fixed!.w : r(Math.min(ctaH * (cta.w / Math.max(1, cta.h)), panelInner.w * recipe.ctaMaxWidthFrac));
