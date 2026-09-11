@@ -245014,7 +245014,6 @@ function initOnce() {
     await ensureStorageDirs();
     await ensureSchemaAdditions();
     await seedDemoData();
-    void ensureGuidelineIndex();
   })().catch((err) => {
     initPromise = null;
     throw err;
@@ -245039,6 +245038,7 @@ function maybeKickDispatch() {
 }
 async function handler(req, res) {
   await initOnce();
+  runInBackground(() => ensureGuidelineIndex());
   maybeKickDispatch();
   app_default(req, res);
 }

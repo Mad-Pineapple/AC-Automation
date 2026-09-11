@@ -26,7 +26,6 @@ function initOnce(): Promise<void> {
     await ensureStorageDirs();
     await ensureSchemaAdditions();
     await seedDemoData();
-    void ensureGuidelineIndex();
   })().catch((err) => {
     initPromise = null; // retry on the next request rather than failing forever
     throw err;
@@ -59,6 +58,9 @@ export default async function handler(
   res: ServerResponse,
 ): Promise<void> {
   await initOnce();
+  // First request after a deploy: build the guideline index if it is empty.
+  // waitUntil keeps the function alive after the response until it is done.
+  runInBackground(() => ensureGuidelineIndex());
   maybeKickDispatch();
   app(req, res);
 }
