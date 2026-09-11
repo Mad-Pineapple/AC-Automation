@@ -37,7 +37,7 @@ const router: IRouter = Router();
 // few that are meant to be public. Without Clerk the app stays read-only as
 // before (local/preview), and the dev bypass signs everything in.
 const PUBLIC_PATHS: RegExp[] = [
-  /^\/healthz/, /^\/share\//, /^\/fonts\.css$/, /^\/cron\//, /^\/storage\/objects\//, /^\/storage\/public-objects\//, /^\/me$/,
+  /^\/healthz/, /^\/share\//, /^\/fonts\.css$/, /^\/cron\//, /^\/storage\/objects\//, /^\/storage\/public-objects\//, /^\/me$/, /^\/guidelines\/status$/,
 ];
 router.use((req, res, next) => {
   if (!clerkConfigured || devAuthBypass) return next();

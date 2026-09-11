@@ -244548,7 +244548,8 @@ var PUBLIC_PATHS = [
   /^\/cron\//,
   /^\/storage\/objects\//,
   /^\/storage\/public-objects\//,
-  /^\/me$/
+  /^\/me$/,
+  /^\/guidelines\/status$/
 ];
 router29.use((req, res, next) => {
   if (!clerkConfigured || devAuthBypass) return next();
