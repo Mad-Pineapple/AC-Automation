@@ -17,7 +17,7 @@ import {
   ImageIcon,
   Images,
   AlertTriangle,
-  ExternalLink } from "lucide-react";
+  ExternalLink, BookOpen } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useClerk, useUser } from "@clerk/react";
 import { useListBrands } from "@workspace/api-client-react";
@@ -71,6 +71,7 @@ export function Layout({ children }: LayoutProps) {
     { name: "Brands", href: "/brands", icon: Palette, show: true },
     { name: "Library", href: "/library", icon: Images, show: true },
     { name: "Templates", href: "/templates", icon: LayoutTemplate, show: true },
+    { name: "Knowledge", href: "/knowledge", icon: BookOpen, show: true },
     { name: "WIP", href: "/wip", icon: Hammer, show: true },
     { name: "Performance", href: "/performance", icon: BarChart3, show: true },
     { name: "Team", href: "/team", icon: Users, show: isAdmin },
