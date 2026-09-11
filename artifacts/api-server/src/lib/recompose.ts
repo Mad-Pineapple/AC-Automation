@@ -94,12 +94,21 @@ function coverPlace(
   focus: { x: number; y: number },
   oversize: number,
   target: { x: number; y: number },
+  box?: { x: number; y: number; w: number; h: number } | null,
 ): Box {
   const s = Math.max(zone.w / imgW, zone.h / imgH) * oversize;
   const w = imgW * s;
   const h = imgH * s;
-  const x = clamp(zone.x + zone.w * target.x - focus.x * w, zone.x + zone.w - w, zone.x);
-  const y = clamp(zone.y + zone.h * target.y - focus.y * h, zone.y + zone.h - h, zone.y);
+  let x = clamp(zone.x + zone.w * target.x - focus.x * w, zone.x + zone.w - w, zone.x);
+  let y = clamp(zone.y + zone.h * target.y - focus.y * h, zone.y + zone.h - h, zone.y);
+  if (box) {
+    // The subject box (fractions of the image) stays inside the zone when it
+    // fits; when it is wider or taller than the zone the crop centres on it.
+    const bx0 = x + box.x * w, bx1 = bx0 + box.w * w, by0 = y + box.y * h, by1 = by0 + box.h * h;
+    if (box.w * w <= zone.w) { if (bx0 < zone.x) x += zone.x - bx0; else if (bx1 > zone.x + zone.w) x -= bx1 - (zone.x + zone.w); }
+    if (box.h * h <= zone.h) { if (by0 < zone.y) y += zone.y - by0; else if (by1 > zone.y + zone.h) y -= by1 - (zone.y + zone.h); }
+    x = clamp(x, zone.x + zone.w - w, zone.x); y = clamp(y, zone.y + zone.h - h, zone.y);
+  }
   return { x: r(x), y: r(y), w: r(w), h: r(h) };
 }
 
@@ -244,7 +253,12 @@ export async function recomposeToFormat(
     // Tall zones want the subject a touch below centre (headline sits above
     // it); wide zones want it centred.
     const target = recipe.axis === "stacked" ? { x: 0.5, y: 0.55 } : { x: 0.5, y: 0.5 };
-    const placed = coverPlace(photoZone, natural.w, natural.h, focus, recipe.photoOversize, target);
+    const subjectBox = photo.focusSource === "vision" || photo.focusSource === "designer" ? photo.focusBox ?? null : null;
+    const placed = coverPlace(photoZone, natural.w, natural.h, focus, recipe.photoOversize, target, subjectBox);
+    if (subjectBox && photo.subject) {
+      const fits = subjectBox.w * placed.w <= photoZone.w + 0.5 && subjectBox.h * placed.h <= photoZone.h + 0.5;
+      notes.push(fits ? `Photo window keeps ${photo.subject} whole.` : `Check: ${photo.subject} is larger than this photo window; the crop is centred on it.`);
+    }
     elements.push({
       ...photo,
       id: "rc_photo",

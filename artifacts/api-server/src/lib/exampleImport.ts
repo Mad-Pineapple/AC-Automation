@@ -88,7 +88,7 @@ async function faithfulImageLayout(
         h: height,
         locked: true,
         ...(box
-          ? { focusBox: box, focusX: box.x + box.w / 2, focusY: box.y + box.h / 2 }
+          ? { focusBox: box, focusX: box.x + box.w / 2, focusY: box.y + box.h / 2, focusSource: "attention" as const }
           : {}),
       },
     ],

@@ -10,6 +10,7 @@ import { composeKeyVisualAdaptation } from "../lib/kvAdapt";
 import { recomposeToFormat, shouldRecompose } from "../lib/recompose";
 import { checkLayout, checkMandatory } from "../lib/layoutCheck";
 import { scoreGeometry, scoreContrast, contrastBaseline, type PrincipleScores } from "../lib/principles";
+import { ensureSubjects, detectSubject } from "../lib/subjectDetect";
 import type { ImageLoader } from "../lib/renderFreeform";
 import { isImageOnly, hasLayeredSlots, hasPanelParts, splitPanelGraphic, enrichLayeredArtwork, adaptLayered, edgeColour, storageImageLoader } from "../lib/layeredArtwork";
 import { analyseGwdHtml, motionForElements, type GwdLeaf } from "../lib/gwdMotion";
@@ -342,6 +343,40 @@ async function adaptOne(
   return { config, method, spec, reference, rejected };
 }
 
+/**
+ * POST /templates/:id/detect-subject — find (or re-find) the subject of the
+ * master's photographs with Claude vision and store the box on the master.
+ * A designer-set box is kept unless { force: true }.
+ */
+router.post("/templates/:id/detect-subject", requireAdmin, async (req, res): Promise<void> => {
+  const id = Number(req.params.id);
+  const [t] = await db.select().from(templatesTable).where(eq(templatesTable.id, id));
+  if (!t) { res.status(404).json({ error: "Template not found" }); return; }
+  let parsed: unknown;
+  try { parsed = JSON.parse(t.config || "{}"); } catch { parsed = {}; }
+  if (!isFreeformConfig(parsed)) { res.status(400).json({ error: "Only freeform templates carry photographs" }); return; }
+  const cfg = normalizeFreeformConfig(parsed);
+  const force = req.body?.force === true;
+  const loadImage = makeImageLoader(req);
+  const results: Array<{ elementId: string; subject: string; box: { x: number; y: number; w: number; h: number }; keepWhole: boolean; faces: number }> = [];
+  const elements = [...cfg.elements];
+  for (let i = 0; i < elements.length; i++) {
+    const e = elements[i];
+    if (e.type !== "image" || !e.src || e.panelPart || !(e.slot === "photo" || (!e.slot && e.role === "product"))) continue;
+    if (e.focusSource === "designer" && !force) continue;
+    const bytes = await loadImage(e.src);
+    if (!bytes) continue;
+    const found = await detectSubject(bytes);
+    if (!found) continue;
+    elements[i] = { ...e, focusBox: found.box, focusX: Math.round((found.box.x + found.box.w / 2) * 1000) / 1000, focusY: Math.round((found.box.y + found.box.h / 2) * 1000) / 1000, focusSource: "vision", subject: found.subject, ...(found.keepWhole ? { keepWhole: true } : {}) };
+    results.push({ elementId: e.id, ...found });
+  }
+  if (results.length) {
+    await db.update(templatesTable).set({ config: JSON.stringify({ ...(parsed as Record<string, unknown>), elements }), updatedAt: new Date() }).where(eq(templatesTable.id, id));
+  }
+  res.json({ templateId: id, detected: results });
+});
+
 router.post("/templates/:id/adapt", requireAdmin, async (req, res): Promise<void> => {
   const id = Number(req.params.id);
   const [master] = await db.select().from(templatesTable).where(eq(templatesTable.id, id));
@@ -412,6 +447,22 @@ router.post("/templates/:id/adapt", requireAdmin, async (req, res): Promise<void
     } catch (err) {
       (req as any).log?.warn?.({ err, templateId: master.id }, "layered artwork recognition failed; continuing");
     }
+  }
+
+  // A photograph with no cut-out gets its subject found once (Claude
+  // vision) and the box stored on the master, so every size keeps it.
+  const subjectNotes: string[] = [];
+  try {
+    const found = await ensureSubjects(masterConfig, makeImageLoader(req));
+    if (found) {
+      masterConfig = normalizeFreeformConfig({ ...(parsed as Record<string, unknown>), elements: found.config.elements });
+      parsed = { ...(parsed as Record<string, unknown>), elements: masterConfig.elements };
+      await db.update(templatesTable).set({ config: JSON.stringify(parsed), updatedAt: new Date() }).where(eq(templatesTable.id, master.id));
+      subjectNotes.push(...found.notes);
+      (req as any).log?.info?.({ templateId: master.id, notes: found.notes }, "subject detected on the master's photo");
+    }
+  } catch (err) {
+    (req as any).log?.warn?.({ err, templateId: master.id }, "subject detection failed; continuing");
   }
 
   // Key-visual masters get the designer's adapt: artwork re-cropped to its
@@ -492,7 +543,7 @@ router.post("/templates/:id/adapt", requireAdmin, async (req, res): Promise<void
     const { config: adaptedConfig, method, spec, rejected } = await adaptOne(master, masterConfig, width, height, brandInfo, (req as any).log, exemplars, undefined, hints, resolvedStyle.source === "none" ? null : { schema: resolvedStyle.schema, label: resolvedStyle.label }, { loadImage: makeImageLoader(req), brandFontFamily: brand?.fontFamily ?? "National 2" });
     if (rejected.length > 0) rejectedCount++;
     // Guideline reminders for what is on the piece (logo tile, band, photo…).
-    let merged = adaptedConfig;
+    let merged = subjectNotes.length ? normalizeFreeformConfig({ ...adaptedConfig, adaptNotes: [...(adaptedConfig.adaptNotes ?? []), ...subjectNotes] }) : adaptedConfig;
     try {
       const gl = await guidelinesForConfig(brand?.id ?? null, adaptedConfig, width, height, 1);
       const lines = guidelineNotes(gl);

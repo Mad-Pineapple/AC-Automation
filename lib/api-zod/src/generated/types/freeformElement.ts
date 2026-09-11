@@ -44,6 +44,12 @@ export interface FreeformElement {
   focusY?: number;
   /** Hero box in image fractions (0..1) that adapted crops are chosen around */
   focusBox?: FreeformElementFocusBox;
+  /** Who set the hero box: vision (Claude), attention (sharp), designer */
+  focusSource?: string;
+  /** What the photo is of, from subject detection */
+  subject?: string;
+  /** Cropping into the hero box would lose meaning */
+  keepWhole?: boolean;
   /** Rect linear gradient: {angle: deg, stops: [{color, alpha, at}]} */
   gradient?: FreeformElementGradient;
   fill?: string;

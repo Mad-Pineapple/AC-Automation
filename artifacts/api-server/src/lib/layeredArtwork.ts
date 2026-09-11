@@ -18,6 +18,7 @@
  * Right pieces for that shape.
  */
 import sharp from "sharp";
+import { panToKeepBox } from "./subjectDetect";
 import type { FreeformConfig, FreeformElement, FreeformImage } from "./freeform";
 import { classifyAspect, type FormatClass } from "./formatCatalog";
 import { RECIPES } from "./recipes";
@@ -673,6 +674,16 @@ export function adaptLayered(master: FreeformConfig, srcW: number, srcH: number,
         notes.push("Check: the photo's own car may show beside the cut-out at this size.");
       }
     }
+  }
+  if (photo && !cutout && !photoPlaced && photo.focusBox) {
+    // No cut-out: the detected subject box is what every window must keep.
+    const photoAspect = photo.w / Math.max(1, photo.h);
+    let rw = photoZone.w, rh = rw / photoAspect;
+    if (rh < photoZone.h) { rh = photoZone.h; rw = rh * photoAspect; }
+    const fb = photo.focusBox;
+    const kept = panToKeepBox(Math.max(0, rw - photoZone.w), Math.max(0, rh - photoZone.h), { w: photoZone.w, h: photoZone.h }, { x: fb.x * rw, y: fb.y * rh, w: fb.w * rw, h: fb.h * rh }, { x: panX, y: panY });
+    panX = kept.x; panY = kept.y;
+    if (photo.subject) notes.push(kept.whole ? `Photo window keeps ${photo.subject} whole.` : `Check: ${photo.subject} is larger than this window; the crop is centred on it.`);
   }
   if (photo && !photoPlaced) out.push({ ...photo, id: "ly_photo", fit: "cover", focusX: Math.round(panX * 1000) / 1000, focusY: Math.round(panY * 1000) / 1000, x: photoZone.x, y: photoZone.y, w: photoZone.w, h: photoZone.h });
 

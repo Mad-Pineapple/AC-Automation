@@ -125,6 +125,13 @@ export interface FreeformImage extends FreeformBase {
   /** Hero box in image fractions (0..1): the subject that every adapted
    * format's crop window is chosen around. */
   focusBox?: { x: number; y: number; w: number; h: number };
+  /** Who set the hero box: Claude vision, sharp's attention crop, or the
+   * designer (whose box is never replaced). */
+  focusSource?: "vision" | "attention" | "designer";
+  /** What the photo is of, as found by subject detection. */
+  subject?: string;
+  /** Cropping into the hero box would lose meaning (a face, a product). */
+  keepWhole?: boolean;
   /** Key-visual metadata: source text blocks lifted at import. */
   kvText?: KvTextBlock[];
 }
@@ -445,6 +452,9 @@ export function normalizeFreeformConfig(raw: unknown): FreeformConfig {
         ...(focusX !== undefined ? { focusX } : {}),
         ...(focusY !== undefined ? { focusY } : {}),
         ...(focusBox ? { focusBox } : {}),
+        ...(el.focusSource === "vision" || el.focusSource === "attention" || el.focusSource === "designer" ? { focusSource: el.focusSource } : {}),
+        ...(typeof el.subject === "string" && el.subject.trim() ? { subject: el.subject.trim().slice(0, 120) } : {}),
+        ...(el.keepWhole === true ? { keepWhole: true } : {}),
         ...(el.bakedCopy === true ? { bakedCopy: true } : {}),
         ...(el.panelPart === true ? { panelPart: true } : {}),
         ...(kvText && kvText.length > 0 ? { kvText } : {}),

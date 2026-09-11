@@ -290,6 +290,53 @@ paths:
                   kept: { type: integer }
                 required: [deleted, kept]
 
+  /templates/{id}/detect-subject:
+    post:
+      summary: Find the subject of the master's photographs with Claude vision and store the box on the master
+      operationId: detectTemplateSubject
+      tags: [templates]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                force: { type: boolean, description: Replace a designer-set box too }
+      responses:
+        "200":
+          description: Subjects detected
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [templateId, detected]
+                properties:
+                  templateId: { type: integer }
+                  detected:
+                    type: array
+                    items:
+                      type: object
+                      required: [elementId, subject, box, keepWhole, faces]
+                      properties:
+                        elementId: { type: string }
+                        subject: { type: string }
+                        box:
+                          type: object
+                          required: [x, y, w, h]
+                          properties:
+                            x: { type: number }
+                            y: { type: number }
+                            w: { type: number }
+                            h: { type: number }
+                        keepWhole: { type: boolean }
+                        faces: { type: integer }
+        "404":
+          description: Template not found
   /templates/{id}/adapt:
     post:
       operationId: adaptTemplate
@@ -2092,6 +2139,15 @@ components:
               type: number
             h:
               type: number
+        focusSource:
+          type: string
+          description: "Who set the hero box: vision (Claude), attention (sharp), designer"
+        subject:
+          type: string
+          description: What the photo is of, from subject detection
+        keepWhole:
+          type: boolean
+          description: Cropping into the hero box would lose meaning
         gradient:
           type: object
           description: "Rect linear gradient: {angle: deg, stops: [{color, alpha, at}]}"

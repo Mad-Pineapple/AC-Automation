@@ -432,6 +432,7 @@ export async function importInDesignPackage(
           }
           if (box) {
             main.focusBox = box;
+            main.focusSource = "attention";
             // The designer's own in-frame crop (parsed from the IDML) wins;
             // detection only fills the gaps.
             if (main.focusX === undefined) main.focusX = box.x + box.w / 2;

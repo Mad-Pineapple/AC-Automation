@@ -58,6 +58,8 @@ import type {
   ComparisonNote,
   ComparisonNoteInput,
   DashboardStats,
+  DetectTemplateSubject200,
+  DetectTemplateSubjectBody,
   DispatchInput,
   DispatchResult,
   DissectImageRequest,
@@ -1077,6 +1079,78 @@ export const useClearWipTemplates = <TError = ErrorType<unknown>,
         TContext
       > => {
       return useMutation(getClearWipTemplatesMutationOptions(options));
+    }
+
+export const getDetectTemplateSubjectUrl = (id: number,) => {
+
+
+
+
+  return `/api/templates/${id}/detect-subject`
+}
+
+/**
+ * @summary Find the subject of the master's photographs with Claude vision and store the box on the master
+ */
+export const detectTemplateSubject = async (id: number,
+    detectTemplateSubjectBody?: DetectTemplateSubjectBody, options?: RequestInit): Promise<DetectTemplateSubject200> => {
+
+  return customFetch<DetectTemplateSubject200>(getDetectTemplateSubjectUrl(id),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      detectTemplateSubjectBody,)
+  }
+);}
+
+
+
+
+export const getDetectTemplateSubjectMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof detectTemplateSubject>>, TError,{id: number;data?: BodyType<DetectTemplateSubjectBody>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof detectTemplateSubject>>, TError,{id: number;data?: BodyType<DetectTemplateSubjectBody>}, TContext> => {
+
+const mutationKey = ['detectTemplateSubject'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof detectTemplateSubject>>, {id: number;data?: BodyType<DetectTemplateSubjectBody>}> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  detectTemplateSubject(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type DetectTemplateSubjectMutationResult = NonNullable<Awaited<ReturnType<typeof detectTemplateSubject>>>
+    export type DetectTemplateSubjectMutationBody = BodyType<DetectTemplateSubjectBody> | undefined
+    export type DetectTemplateSubjectMutationError = ErrorType<void>
+
+    /**
+ * @summary Find the subject of the master's photographs with Claude vision and store the box on the master
+ */
+export const useDetectTemplateSubject = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof detectTemplateSubject>>, TError,{id: number;data?: BodyType<DetectTemplateSubjectBody>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof detectTemplateSubject>>,
+        TError,
+        {id: number;data?: BodyType<DetectTemplateSubjectBody>},
+        TContext
+      > => {
+      return useMutation(getDetectTemplateSubjectMutationOptions(options));
     }
 
 export const getAdaptTemplateUrl = (id: number,) => {

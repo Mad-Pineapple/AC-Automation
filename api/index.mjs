@@ -145542,17 +145542,17 @@ async function renderHtmlToVideo(html, width, height, format, durationMs = DEFAU
       const frameCount = Math.round(durationMs / 1e3 * GIF_FPS);
       const frameDelayMs = 1e3 / GIF_FPS;
       const frames = [];
-      const sharp15 = (await import("sharp")).default;
+      const sharp16 = (await import("sharp")).default;
       const start = Date.now();
       for (let i = 0; i < frameCount; i++) {
         const due = start + i * frameDelayMs;
         const wait = due - Date.now();
         if (wait > 0) await page2.waitForTimeout(wait);
         const png = await page2.screenshot({ type: "png" });
-        frames.push(await sharp15(png).resize(gifW, gifH).ensureAlpha().raw().toBuffer());
+        frames.push(await sharp16(png).resize(gifW, gifH).ensureAlpha().raw().toBuffer());
       }
       await page2.close();
-      const gif = await sharp15(Buffer.concat(frames), {
+      const gif = await sharp16(Buffer.concat(frames), {
         // Animated raw input: `pages` lives inside `raw` (sharp ≥0.33; the
         // published typings don't know the property yet, hence the cast).
         raw: { width: gifW, height: gifH, channels: 4, pages: frames.length }
@@ -163892,23 +163892,23 @@ var heroBox_exports = {};
 __export(heroBox_exports, {
   detectHeroBox: () => detectHeroBox
 });
-import sharp10 from "sharp";
+import sharp11 from "sharp";
 async function detectHeroBox(image) {
   try {
-    const meta = await sharp10(image).metadata();
+    const meta = await sharp11(image).metadata();
     const imgW = meta.width ?? 0;
     const imgH = meta.height ?? 0;
     if (!imgW || !imgH) return null;
     const side = Math.max(16, Math.round(Math.min(imgW, imgH) * BOX_FRACTION));
-    const { info } = await sharp10(image).resize(side, side, { fit: "cover", position: sharp10.strategy.attention }).toBuffer({ resolveWithObject: true });
+    const { info } = await sharp11(image).resize(side, side, { fit: "cover", position: sharp11.strategy.attention }).toBuffer({ resolveWithObject: true });
     const left = Math.abs(info.cropOffsetLeft ?? 0);
     const top = Math.abs(info.cropOffsetTop ?? 0);
-    const clamp01 = (v) => Math.max(0, Math.min(1, v));
+    const clamp012 = (v) => Math.max(0, Math.min(1, v));
     return {
-      x: clamp01(left / imgW),
-      y: clamp01(top / imgH),
-      w: clamp01(side / imgW),
-      h: clamp01(side / imgH)
+      x: clamp012(left / imgW),
+      y: clamp012(top / imgH),
+      w: clamp012(side / imgW),
+      h: clamp012(side / imgH)
     };
   } catch {
     return null;
@@ -194833,6 +194833,9 @@ var ListTemplatesResponseItem = objectType({
         "w": numberType().optional(),
         "h": numberType().optional()
       }).optional().describe("Hero box in image fractions (0..1) that adapted crops are chosen around"),
+      "focusSource": stringType().optional().describe("Who set the hero box: vision (Claude), attention (sharp), designer"),
+      "subject": stringType().optional().describe("What the photo is of, from subject detection"),
+      "keepWhole": booleanType().optional().describe("Cropping into the hero box would lose meaning"),
       "gradient": objectType({
         "angle": numberType().optional(),
         "stops": arrayType(objectType({
@@ -194912,6 +194915,9 @@ var CreateTemplateBody = objectType({
         "w": numberType().optional(),
         "h": numberType().optional()
       }).optional().describe("Hero box in image fractions (0..1) that adapted crops are chosen around"),
+      "focusSource": stringType().optional().describe("Who set the hero box: vision (Claude), attention (sharp), designer"),
+      "subject": stringType().optional().describe("What the photo is of, from subject detection"),
+      "keepWhole": booleanType().optional().describe("Cropping into the hero box would lose meaning"),
       "gradient": objectType({
         "angle": numberType().optional(),
         "stops": arrayType(objectType({
@@ -194992,6 +194998,9 @@ var GetTemplateResponse = objectType({
         "w": numberType().optional(),
         "h": numberType().optional()
       }).optional().describe("Hero box in image fractions (0..1) that adapted crops are chosen around"),
+      "focusSource": stringType().optional().describe("Who set the hero box: vision (Claude), attention (sharp), designer"),
+      "subject": stringType().optional().describe("What the photo is of, from subject detection"),
+      "keepWhole": booleanType().optional().describe("Cropping into the hero box would lose meaning"),
       "gradient": objectType({
         "angle": numberType().optional(),
         "stops": arrayType(objectType({
@@ -195073,6 +195082,9 @@ var UpdateTemplateBody = objectType({
         "w": numberType().optional(),
         "h": numberType().optional()
       }).optional().describe("Hero box in image fractions (0..1) that adapted crops are chosen around"),
+      "focusSource": stringType().optional().describe("Who set the hero box: vision (Claude), attention (sharp), designer"),
+      "subject": stringType().optional().describe("What the photo is of, from subject detection"),
+      "keepWhole": booleanType().optional().describe("Cropping into the hero box would lose meaning"),
       "gradient": objectType({
         "angle": numberType().optional(),
         "stops": arrayType(objectType({
@@ -195150,6 +195162,9 @@ var UpdateTemplateResponse = objectType({
         "w": numberType().optional(),
         "h": numberType().optional()
       }).optional().describe("Hero box in image fractions (0..1) that adapted crops are chosen around"),
+      "focusSource": stringType().optional().describe("Who set the hero box: vision (Claude), attention (sharp), designer"),
+      "subject": stringType().optional().describe("What the photo is of, from subject detection"),
+      "keepWhole": booleanType().optional().describe("Cropping into the hero box would lose meaning"),
       "gradient": objectType({
         "angle": numberType().optional(),
         "stops": arrayType(objectType({
@@ -195192,6 +195207,27 @@ var DeleteTemplateParams = objectType({
 var ClearWipTemplatesResponse = objectType({
   "deleted": numberType(),
   "kept": numberType()
+});
+var DetectTemplateSubjectParams = objectType({
+  "id": coerce.number()
+});
+var DetectTemplateSubjectBody = objectType({
+  "force": booleanType().optional().describe("Replace a designer-set box too")
+});
+var DetectTemplateSubjectResponse = objectType({
+  "templateId": numberType(),
+  "detected": arrayType(objectType({
+    "elementId": stringType(),
+    "subject": stringType(),
+    "box": objectType({
+      "x": numberType(),
+      "y": numberType(),
+      "w": numberType(),
+      "h": numberType()
+    }),
+    "keepWhole": booleanType(),
+    "faces": numberType()
+  }))
 });
 var AdaptTemplateParams = objectType({
   "id": coerce.number()
@@ -195251,6 +195287,9 @@ var DissectPdfResponse = objectType({
         "w": numberType().optional(),
         "h": numberType().optional()
       }).optional().describe("Hero box in image fractions (0..1) that adapted crops are chosen around"),
+      "focusSource": stringType().optional().describe("Who set the hero box: vision (Claude), attention (sharp), designer"),
+      "subject": stringType().optional().describe("What the photo is of, from subject detection"),
+      "keepWhole": booleanType().optional().describe("Cropping into the hero box would lose meaning"),
       "gradient": objectType({
         "angle": numberType().optional(),
         "stops": arrayType(objectType({
@@ -195326,6 +195365,9 @@ var DissectImageResponse = objectType({
         "w": numberType().optional(),
         "h": numberType().optional()
       }).optional().describe("Hero box in image fractions (0..1) that adapted crops are chosen around"),
+      "focusSource": stringType().optional().describe("Who set the hero box: vision (Claude), attention (sharp), designer"),
+      "subject": stringType().optional().describe("What the photo is of, from subject detection"),
+      "keepWhole": booleanType().optional().describe("Cropping into the hero box would lose meaning"),
       "gradient": objectType({
         "angle": numberType().optional(),
         "stops": arrayType(objectType({
@@ -196601,6 +196643,9 @@ var ClaudeReviewTemplateResponse = objectType({
         "w": numberType().optional(),
         "h": numberType().optional()
       }).optional().describe("Hero box in image fractions (0..1) that adapted crops are chosen around"),
+      "focusSource": stringType().optional().describe("Who set the hero box: vision (Claude), attention (sharp), designer"),
+      "subject": stringType().optional().describe("What the photo is of, from subject detection"),
+      "keepWhole": booleanType().optional().describe("Cropping into the hero box would lose meaning"),
       "gradient": objectType({
         "angle": numberType().optional(),
         "stops": arrayType(objectType({
@@ -196685,6 +196730,9 @@ var UndoClaudeReviewTemplateResponse = objectType({
         "w": numberType().optional(),
         "h": numberType().optional()
       }).optional().describe("Hero box in image fractions (0..1) that adapted crops are chosen around"),
+      "focusSource": stringType().optional().describe("Who set the hero box: vision (Claude), attention (sharp), designer"),
+      "subject": stringType().optional().describe("What the photo is of, from subject detection"),
+      "keepWhole": booleanType().optional().describe("Cropping into the hero box would lose meaning"),
       "gradient": objectType({
         "angle": numberType().optional(),
         "stops": arrayType(objectType({
@@ -226374,12 +226422,12 @@ ${snippet}`;
 async function fetchLogoDataUri(logoUrl, origin) {
   if (!logoUrl) return void 0;
   try {
-    const sharp15 = (await import("sharp")).default;
+    const sharp16 = (await import("sharp")).default;
     const abs = /^https?:\/\//i.test(logoUrl) ? logoUrl : `${origin}${logoUrl}`;
     const res = await fetch(abs);
     if (!res.ok) return void 0;
     const buf = Buffer.from(await res.arrayBuffer());
-    const png = await sharp15(buf).resize(240, 240, { fit: "cover" }).png().toBuffer();
+    const png = await sharp16(buf).resize(240, 240, { fit: "cover" }).png().toBuffer();
     return `data:image/png;base64,${png.toString("base64")}`;
   } catch {
     return void 0;
@@ -227697,6 +227745,9 @@ function normalizeFreeformConfig(raw2) {
         ...focusX !== void 0 ? { focusX } : {},
         ...focusY !== void 0 ? { focusY } : {},
         ...focusBox ? { focusBox } : {},
+        ...el.focusSource === "vision" || el.focusSource === "attention" || el.focusSource === "designer" ? { focusSource: el.focusSource } : {},
+        ...typeof el.subject === "string" && el.subject.trim() ? { subject: el.subject.trim().slice(0, 120) } : {},
+        ...el.keepWhole === true ? { keepWhole: true } : {},
         ...el.bakedCopy === true ? { bakedCopy: true } : {},
         ...el.panelPart === true ? { panelPart: true } : {},
         ...kvText && kvText.length > 0 ? { kvText } : {},
@@ -231893,12 +231944,25 @@ async function defaultImageSize(src) {
 }
 var clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
 var r = (v) => Math.round(v);
-function coverPlace(zone, imgW, imgH, focus, oversize, target) {
+function coverPlace(zone, imgW, imgH, focus, oversize, target, box) {
   const s2 = Math.max(zone.w / imgW, zone.h / imgH) * oversize;
   const w = imgW * s2;
   const h = imgH * s2;
-  const x = clamp(zone.x + zone.w * target.x - focus.x * w, zone.x + zone.w - w, zone.x);
-  const y = clamp(zone.y + zone.h * target.y - focus.y * h, zone.y + zone.h - h, zone.y);
+  let x = clamp(zone.x + zone.w * target.x - focus.x * w, zone.x + zone.w - w, zone.x);
+  let y = clamp(zone.y + zone.h * target.y - focus.y * h, zone.y + zone.h - h, zone.y);
+  if (box) {
+    const bx0 = x + box.x * w, bx1 = bx0 + box.w * w, by0 = y + box.y * h, by1 = by0 + box.h * h;
+    if (box.w * w <= zone.w) {
+      if (bx0 < zone.x) x += zone.x - bx0;
+      else if (bx1 > zone.x + zone.w) x -= bx1 - (zone.x + zone.w);
+    }
+    if (box.h * h <= zone.h) {
+      if (by0 < zone.y) y += zone.y - by0;
+      else if (by1 > zone.y + zone.h) y -= by1 - (zone.y + zone.h);
+    }
+    x = clamp(x, zone.x + zone.w - w, zone.x);
+    y = clamp(y, zone.y + zone.h - h, zone.y);
+  }
   return { x: r(x), y: r(y), w: r(w), h: r(h) };
 }
 function fontSpec(t, scale = 1) {
@@ -231991,7 +232055,12 @@ async function recomposeToFormat(master, srcW, srcH, dstW, dstH, opts) {
     const natural = await loadSize(photo.src) ?? { w: photo.w, h: photo.h };
     const focus = photo.focusBox ? { x: photo.focusBox.x + photo.focusBox.w / 2, y: photo.focusBox.y + photo.focusBox.h / 2 } : { x: photo.focusX ?? 0.5, y: photo.focusY ?? 0.45 };
     const target = recipe.axis === "stacked" ? { x: 0.5, y: 0.55 } : { x: 0.5, y: 0.5 };
-    const placed2 = coverPlace(photoZone, natural.w, natural.h, focus, recipe.photoOversize, target);
+    const subjectBox = photo.focusSource === "vision" || photo.focusSource === "designer" ? photo.focusBox ?? null : null;
+    const placed2 = coverPlace(photoZone, natural.w, natural.h, focus, recipe.photoOversize, target, subjectBox);
+    if (subjectBox && photo.subject) {
+      const fits = subjectBox.w * placed2.w <= photoZone.w + 0.5 && subjectBox.h * placed2.h <= photoZone.h + 0.5;
+      notes.push(fits ? `Photo window keeps ${photo.subject} whole.` : `Check: ${photo.subject} is larger than this photo window; the crop is centred on it.`);
+    }
     elements.push({
       ...photo,
       id: "rc_photo",
@@ -232675,8 +232744,137 @@ async function contrastBaseline(key, master, w, h, loadImage, brandFontFamily) {
   return ratios;
 }
 
-// src/lib/layeredArtwork.ts
+// src/lib/subjectDetect.ts
+init_sdk();
+init_logger();
 import sharp7 from "sharp";
+var SUBJECT_MODEL = "claude-opus-5";
+var SCHEMA = {
+  type: "object",
+  additionalProperties: false,
+  required: ["subject", "box", "keepWhole", "faces"],
+  properties: {
+    subject: { type: "string" },
+    box: {
+      type: "object",
+      additionalProperties: false,
+      required: ["x", "y", "w", "h"],
+      properties: { x: { type: "number" }, y: { type: "number" }, w: { type: "number" }, h: { type: "number" } }
+    },
+    keepWhole: { type: "boolean" },
+    faces: { type: "integer" }
+  }
+};
+var clamp01 = (v) => Math.max(0, Math.min(1, Number(v) || 0));
+async function detectSubject(bytes2) {
+  if (!process.env.ANTHROPIC_API_KEY) return null;
+  const meta = await sharp7(bytes2).metadata();
+  if (!meta.width || !meta.height) return null;
+  const jpeg = await sharp7(bytes2).resize(1200, 1200, { fit: "inside", withoutEnlargement: true }).jpeg({ quality: 82 }).toBuffer();
+  const client = new Anthropic();
+  const response = await client.beta.messages.create(
+    {
+      model: SUBJECT_MODEL,
+      max_tokens: 600,
+      betas: ["server-side-fallback-2026-07-01"],
+      fallbacks: "default",
+      output_config: { effort: "low", format: { type: "json_schema", schema: SCHEMA } },
+      system: [
+        "You locate the subject of an advertising photograph for an automated layout system that will crop the photo into many ad sizes.",
+        "Answer as JSON matching the schema.",
+        "- subject: what the photo is of, in a few words, the way an art director would say it.",
+        "- box: the tightest rectangle that contains the whole subject (every person, the whole product, the whole vehicle, the sign that must be read), as fractions of the image width and height: x and y are the top-left corner, w and h the size. Include a little air around a person's head. The box must lie within 0..1.",
+        "- keepWhole: true when a crop that cuts into the box would damage the meaning (a face or a person, a product, a vehicle, readable text); false for scenery or texture where any crop through it is fine.",
+        "- faces: how many human faces are visible."
+      ].join("\n"),
+      messages: [
+        {
+          role: "user",
+          content: [
+            { type: "text", text: `The photograph is ${meta.width}\xD7${meta.height}px.` },
+            { type: "image", source: { type: "base64", media_type: "image/jpeg", data: jpeg.toString("base64") } }
+          ]
+        }
+      ]
+    },
+    { timeout: 45e3 }
+  );
+  if (response.stop_reason === "refusal") return null;
+  let text3 = "";
+  for (const block of response.content) if (block.type === "text") text3 += String(block.text ?? "");
+  let parsed;
+  try {
+    parsed = JSON.parse(text3);
+  } catch {
+    return null;
+  }
+  const b = parsed.box ?? {};
+  const x = clamp01(b.x), y = clamp01(b.y);
+  const w = Math.max(0.02, Math.min(1 - x, clamp01(b.w))), h = Math.max(0.02, Math.min(1 - y, clamp01(b.h)));
+  return {
+    subject: String(parsed.subject ?? "").slice(0, 120),
+    box: { x: r3(x), y: r3(y), w: r3(w), h: r3(h) },
+    keepWhole: parsed.keepWhole === true,
+    faces: Math.max(0, Math.min(50, Math.round(Number(parsed.faces) || 0)))
+  };
+}
+var r3 = (n) => Math.round(n * 1e3) / 1e3;
+function photosNeedingSubject(config2) {
+  if (config2.elements.some((e) => e.slot === "cutout")) return [];
+  return config2.elements.filter(
+    (e) => e.type === "image" && !!e.src && !e.panelPart && (e.slot === "photo" || !e.slot && e.role === "product") && e.focusSource !== "vision" && e.focusSource !== "designer"
+  );
+}
+async function ensureSubjects(config2, loadImage) {
+  const todo = photosNeedingSubject(config2);
+  if (todo.length === 0) return null;
+  const notes = [];
+  const elements = [...config2.elements];
+  let changed = false;
+  for (const photo of todo) {
+    try {
+      const bytes2 = await loadImage(photo.src);
+      if (!bytes2) continue;
+      const found = await detectSubject(bytes2);
+      if (!found) continue;
+      const idx = elements.findIndex((e) => e.id === photo.id);
+      if (idx < 0) continue;
+      elements[idx] = {
+        ...photo,
+        focusBox: found.box,
+        focusX: r3(found.box.x + found.box.w / 2),
+        focusY: r3(found.box.y + found.box.h / 2),
+        focusSource: "vision",
+        subject: found.subject,
+        ...found.keepWhole ? { keepWhole: true } : {}
+      };
+      changed = true;
+      notes.push(`Subject found by Claude vision: ${found.subject || "the subject"}${found.faces ? ` (${found.faces} face${found.faces === 1 ? "" : "s"})` : ""}; every size keeps it in frame.`);
+    } catch (err) {
+      logger2.warn({ err, elementId: photo.id }, "subject detection failed; keeping the photo's existing focus");
+    }
+  }
+  return changed ? { config: { ...config2, elements }, notes } : null;
+}
+function panToKeepBox(slackX, slackY, window2, boxPx, fallback) {
+  const axis = (slack, win, b0, bw, fb) => {
+    if (slack <= 0) return { p: fb, whole: bw <= win + 0.5 };
+    const centre = Math.max(0, Math.min(slack, b0 + bw / 2 - win / 2));
+    if (bw <= win) {
+      const lo = Math.max(0, b0 + bw - win), hi = Math.min(slack, b0);
+      const cur = fb * slack;
+      const p = cur >= lo && cur <= hi ? cur : Math.max(lo, Math.min(hi, centre));
+      return { p: p / slack, whole: true };
+    }
+    return { p: centre / slack, whole: false };
+  };
+  const ax = axis(slackX, window2.w, boxPx.x, boxPx.w, fallback.x);
+  const ay = axis(slackY, window2.h, boxPx.y, boxPx.h, fallback.y);
+  return { x: r3(ax.p), y: r3(ay.p), whole: ax.whole && ay.whole };
+}
+
+// src/lib/layeredArtwork.ts
+import sharp8 from "sharp";
 init_objectStorage();
 init_logger();
 var area2 = (b) => Math.max(0, b.w) * Math.max(0, b.h);
@@ -232773,7 +232971,7 @@ function inferImageSlots(config2, W2, H2) {
 }
 async function edgeColour(bytes2) {
   try {
-    const { data, info } = await sharp7(bytes2).resize(16, 16, { fit: "fill" }).removeAlpha().raw().toBuffer({ resolveWithObject: true });
+    const { data, info } = await sharp8(bytes2).resize(16, 16, { fit: "fill" }).removeAlpha().raw().toBuffer({ resolveWithObject: true });
     const px = [];
     for (let y = 0; y < info.height; y++) for (let x = 0; x < info.width; x++) {
       if (x === 0 || y === 0 || x === info.width - 1 || y === info.height - 1) {
@@ -232821,11 +233019,11 @@ async function mergeGlyphRun(config2, ids, io) {
     if (!g.src) continue;
     const bytes2 = await io.loadImage(g.src);
     if (!bytes2) continue;
-    const resized = await sharp7(bytes2).resize(Math.max(1, r2(g.w * scale)), Math.max(1, r2(g.h * scale)), { fit: "fill" }).png().toBuffer();
+    const resized = await sharp8(bytes2).resize(Math.max(1, r2(g.w * scale)), Math.max(1, r2(g.h * scale)), { fit: "fill" }).png().toBuffer();
     layers.push({ input: resized, left: r2((g.x - x0) * scale), top: r2((g.y - y0) * scale) });
   }
   if (!layers.length) return config2;
-  const merged = await sharp7({ create: { width: Math.max(1, (x1 - x0) * scale), height: Math.max(1, (y1 - y0) * scale), channels: 4, background: { r: 0, g: 0, b: 0, alpha: 0 } } }).composite(layers).png().toBuffer();
+  const merged = await sharp8({ create: { width: Math.max(1, (x1 - x0) * scale), height: Math.max(1, (y1 - y0) * scale), channels: 4, background: { r: 0, g: 0, b: 0, alpha: 0 } } }).composite(layers).png().toBuffer();
   const stored = await io.uploadBytes(merged, "image/png");
   const first = run[0];
   const runMotion = run.map((g) => g.groupMotion ?? g.motion).find(Boolean);
@@ -232883,10 +233081,10 @@ async function splitPanelGraphic(config2, io) {
   if (!panel) return { config: config2, notes };
   const bytes2 = await io.loadImage(panel.src);
   if (!bytes2) return { config: config2, notes };
-  const meta = await sharp7(bytes2).metadata();
+  const meta = await sharp8(bytes2).metadata();
   if (!meta.width || !meta.height) return { config: config2, notes };
   const W2 = meta.width, H2 = meta.height;
-  const raw2 = await sharp7(bytes2).ensureAlpha().raw().toBuffer();
+  const raw2 = await sharp8(bytes2).ensureAlpha().raw().toBuffer();
   const px = (x, y) => {
     const i = (y * W2 + x) * 4;
     return [raw2[i], raw2[i + 1], raw2[i + 2], raw2[i + 3]];
@@ -232975,7 +233173,7 @@ async function splitPanelGraphic(config2, io) {
     const x0 = Math.max(0, seg.x0 - pad), y0 = Math.max(0, seg.y0 - pad);
     const x1 = Math.min(W2 - 1, seg.x1 + pad), y1 = Math.min(H2 - 1, seg.y1 + pad);
     const cw = x1 - x0 + 1, ch = y1 - y0 + 1;
-    const buf = await sharp7(bytes2).extract({ left: x0, top: y0, width: cw, height: ch }).png().toBuffer();
+    const buf = await sharp8(bytes2).extract({ left: x0, top: y0, width: cw, height: ch }).png().toBuffer();
     const stored = await io.uploadBytes(buf, "image/png");
     const w = cw * sx, h = ch * sy;
     const el = {
@@ -233222,6 +233420,19 @@ function adaptLayered(master, srcW, srcH, dstW, dstH, opts = {}) {
         notes.push("Check: the photo's own car may show beside the cut-out at this size.");
       }
     }
+  }
+  if (photo && !cutout && !photoPlaced && photo.focusBox) {
+    const photoAspect = photo.w / Math.max(1, photo.h);
+    let rw = photoZone.w, rh = rw / photoAspect;
+    if (rh < photoZone.h) {
+      rh = photoZone.h;
+      rw = rh * photoAspect;
+    }
+    const fb = photo.focusBox;
+    const kept = panToKeepBox(Math.max(0, rw - photoZone.w), Math.max(0, rh - photoZone.h), { w: photoZone.w, h: photoZone.h }, { x: fb.x * rw, y: fb.y * rh, w: fb.w * rw, h: fb.h * rh }, { x: panX, y: panY });
+    panX = kept.x;
+    panY = kept.y;
+    if (photo.subject) notes.push(kept.whole ? `Photo window keeps ${photo.subject} whole.` : `Check: ${photo.subject} is larger than this window; the crop is centred on it.`);
   }
   if (photo && !photoPlaced) out.push({ ...photo, id: "ly_photo", fit: "cover", focusX: Math.round(panX * 1e3) / 1e3, focusY: Math.round(panY * 1e3) / 1e3, x: photoZone.x, y: photoZone.y, w: photoZone.w, h: photoZone.h });
   const scrim = by("scrim")[0];
@@ -234100,7 +234311,7 @@ function mergeRules(profile, edits) {
   }
   return base;
 }
-var r3 = (v) => Math.round(v * 1e3) / 1e3;
+var r32 = (v) => Math.round(v * 1e3) / 1e3;
 function byRole(config2, role) {
   return config2.elements.find((e) => e.slot === role || e.type === "text" && e.role === role || e.type === "image" && e.role === role && role === "logo");
 }
@@ -234130,30 +234341,30 @@ function measureMaster(config2, W2, H2, name, templateId) {
   const copyBottom = sub ? Math.max(hl.y + hl.h, sub.y + sub.h) : hl.y + hl.h;
   const lastLineH = sub ? sub.h : hl.h;
   const m = {
-    photoFrac: r3(axis === "stacked" ? panel.y / H2 : panel.x / W2),
-    bandFrac: r3(band ? band.h / H2 : 0),
-    bandH: r3(band ? band.h / panelZone.h : 0),
-    headlineH: r3(hl.h / short),
-    headlineCy: r3((hl.y + hl.h / 2 - photoZone.y) / photoZone.h),
-    headlineW: r3(hl.w / photoZone.w),
-    subW: r3(sub ? sub.w / hl.w : 0.9),
-    subH: r3(sub ? sub.h / hl.h : 0.45),
-    subGap: r3(sub ? (sub.y - (hl.y + hl.h)) / hl.h : 0.07),
-    cutoutW: r3(cutout ? cutout.w / photoZone.w : 0),
-    cutoutCx: r3(cutout ? (cutout.x + cutout.w / 2 - photoZone.x) / photoZone.w : 0.5),
+    photoFrac: r32(axis === "stacked" ? panel.y / H2 : panel.x / W2),
+    bandFrac: r32(band ? band.h / H2 : 0),
+    bandH: r32(band ? band.h / panelZone.h : 0),
+    headlineH: r32(hl.h / short),
+    headlineCy: r32((hl.y + hl.h / 2 - photoZone.y) / photoZone.h),
+    headlineW: r32(hl.w / photoZone.w),
+    subW: r32(sub ? sub.w / hl.w : 0.9),
+    subH: r32(sub ? sub.h / hl.h : 0.45),
+    subGap: r32(sub ? (sub.y - (hl.y + hl.h)) / hl.h : 0.07),
+    cutoutW: r32(cutout ? cutout.w / photoZone.w : 0),
+    cutoutCx: r32(cutout ? (cutout.x + cutout.w / 2 - photoZone.x) / photoZone.w : 0.5),
     // A car that reaches the zone's bottom edge in the master is bottom-
     // anchored: whatever of it falls below the zone (its water, its shadow)
     // hides under the panel, so a rebuilt size may let it run past by up to
     // 60% of its height. A car floating clear of the edge keeps to the zone.
-    cutoutBleed: r3(cutout ? cutout.y + cutout.h >= photoZone.y + photoZone.h - photoZone.h * 0.02 ? 0.6 : 0.06 : 0),
-    copyOverCutoutFrac: cutout ? r3((copyBottom - cutout.y) / Math.max(1, lastLineH)) : null,
-    message: { cy: r3(message ? (message.y + message.h / 2 - panelZone.y) / panelZone.h : 0.36), w: r3(message ? message.w / panelZone.w : 0.7) },
-    cta: { cy: r3(cta ? (cta.y + cta.h / 2 - panelZone.y) / panelZone.h : 0.55) },
-    lockup: { cy: r3(lockup ? (lockup.y + lockup.h / 2 - panelZone.y) / panelZone.h : 0.82), w: r3(lockup ? lockup.w / panelZone.w : 0.7) },
+    cutoutBleed: r32(cutout ? cutout.y + cutout.h >= photoZone.y + photoZone.h - photoZone.h * 0.02 ? 0.6 : 0.06 : 0),
+    copyOverCutoutFrac: cutout ? r32((copyBottom - cutout.y) / Math.max(1, lastLineH)) : null,
+    message: { cy: r32(message ? (message.y + message.h / 2 - panelZone.y) / panelZone.h : 0.36), w: r32(message ? message.w / panelZone.w : 0.7) },
+    cta: { cy: r32(cta ? (cta.y + cta.h / 2 - panelZone.y) / panelZone.h : 0.55) },
+    lockup: { cy: r32(lockup ? (lockup.y + lockup.h / 2 - panelZone.y) / panelZone.h : 0.82), w: r32(lockup ? lockup.w / panelZone.w : 0.7) },
     ctaPx: cta ? { w: Math.round(cta.w), h: Math.round(cta.h) } : null,
     short,
     hasScrim: !!scrim,
-    scrimH: scrim ? r3(scrim.h / photoZone.h) : null
+    scrimH: scrim ? r32(scrim.h / photoZone.h) : null
   };
   return { templateId, name, width: W2, height: H2, axis, formatClass: classifyFormat(W2, H2, { name }), m, missing };
 }
@@ -234161,9 +234372,9 @@ var STACKED_CLASSES = ["portrait", "tower", "square"];
 var SIDE_CLASSES = ["wide", "landscape"];
 function averageAxis(ms) {
   const n = ms.length;
-  const avg = (f) => r3(ms.reduce((a, m) => a + f(m), 0) / n);
+  const avg = (f) => r32(ms.reduce((a, m) => a + f(m), 0) / n);
   const cutouts = ms.filter((m) => m.cutoutW > 0);
-  const avgC = (f, fallback) => cutouts.length ? r3(cutouts.reduce((a, m) => a + f(m), 0) / cutouts.length) : fallback;
+  const avgC = (f, fallback) => cutouts.length ? r32(cutouts.reduce((a, m) => a + f(m), 0) / cutouts.length) : fallback;
   const overs = ms.map((m) => m.copyOverCutoutFrac).filter((v) => v != null);
   return {
     photoFrac: avg((m) => m.photoFrac),
@@ -234178,7 +234389,7 @@ function averageAxis(ms) {
     cutoutW: avgC((m) => m.cutoutW, 0),
     cutoutCx: avgC((m) => m.cutoutCx, 0.5),
     cutoutBleed: avgC((m) => m.cutoutBleed, 0.06),
-    copyOverCutoutFrac: overs.length ? r3(overs.reduce((a, v) => a + v, 0) / overs.length) : null,
+    copyOverCutoutFrac: overs.length ? r32(overs.reduce((a, v) => a + v, 0) / overs.length) : null,
     message: { cy: avg((m) => m.message.cy), w: avg((m) => m.message.w) },
     cta: { cy: avg((m) => m.cta.cy) },
     lockup: { cy: avg((m) => m.lockup.cy), w: avg((m) => m.lockup.w) },
@@ -234220,7 +234431,7 @@ function buildProfile(measurements, name) {
     }
   }
   const overs = measurements.map((x) => x.m.copyOverCutoutFrac).filter((v) => v != null);
-  const copyOverCutoutFrac = overs.length ? r3(overs.reduce((a, v) => a + v, 0) / overs.length) : null;
+  const copyOverCutoutFrac = overs.length ? r32(overs.reduce((a, v) => a + v, 0) / overs.length) : null;
   const measuredAxes = [];
   if (sAvg) measuredAxes.push("stacked");
   if (dAvg) measuredAxes.push("side");
@@ -234661,7 +234872,7 @@ function guidelineNotes(items) {
 
 // src/lib/gwdImport.ts
 init_objectStorage();
-import sharp8 from "sharp";
+import sharp9 from "sharp";
 var objectStorageService8 = new ObjectStorageService();
 var IMAGE_TYPES = {
   jpg: "image/jpeg",
@@ -234670,9 +234881,9 @@ var IMAGE_TYPES = {
   webp: "image/webp"
 };
 async function visibleBounds(bytes2) {
-  const meta = await sharp8(bytes2).metadata();
+  const meta = await sharp9(bytes2).metadata();
   if (!meta.hasAlpha || !meta.width || !meta.height) return null;
-  const raw2 = await sharp8(bytes2).ensureAlpha().raw().toBuffer();
+  const raw2 = await sharp9(bytes2).ensureAlpha().raw().toBuffer();
   const W2 = meta.width, H2 = meta.height;
   let minX = W2, minY = H2, maxX = -1, maxY = -1;
   for (let py = 0; py < H2; py++) {
@@ -234725,7 +234936,7 @@ async function reconstructGwdBanners(zip, baseName2) {
         const vb = await visibleBounds(bytes2);
         if (vb) {
           const dispX = w / vb.W, dispY = h / vb.H;
-          bytes2 = Buffer.from(await sharp8(bytes2).extract({ left: vb.minX, top: vb.minY, width: vb.bw, height: vb.bh }).png().toBuffer());
+          bytes2 = Buffer.from(await sharp9(bytes2).extract({ left: vb.minX, top: vb.minY, width: vb.bw, height: vb.bh }).png().toBuffer());
           x += vb.minX * dispX;
           y += vb.minY * dispY;
           w = vb.bw * dispX;
@@ -234833,7 +235044,7 @@ init_objectStorage();
 
 // src/lib/claudeReview.ts
 init_sdk();
-import sharp9 from "sharp";
+import sharp10 from "sharp";
 init_logger();
 var CLAUDE_REVIEW_MODEL = "claude-opus-5";
 var REVIEW_FAULTS = [
@@ -234924,7 +235135,7 @@ var REVIEW_SCHEMA = {
   }
 };
 async function toJpeg(png, maxEdge) {
-  const buf = await sharp9(png).resize(maxEdge, maxEdge, { fit: "inside", withoutEnlargement: true }).jpeg({ quality: 85 }).toBuffer();
+  const buf = await sharp10(png).resize(maxEdge, maxEdge, { fit: "inside", withoutEnlargement: true }).jpeg({ quality: 85 }).toBuffer();
   return { data: buf.toString("base64"), media_type: "image/jpeg" };
 }
 function describeElements(config2) {
@@ -236025,7 +236236,7 @@ async function dissectPdfToTemplate(objectPath, page, paletteHexes = [], mode = 
 }
 
 // src/lib/imageDissect.ts
-import sharp11 from "sharp";
+import sharp12 from "sharp";
 init_objectStorage();
 var objectStorageService10 = new ObjectStorageService();
 var MAX_EDGE = 1024;
@@ -236083,13 +236294,13 @@ Rules:
 - Return ONLY the JSON, no commentary.`;
 async function dissectImageToTemplate(objectPath) {
   const bytes2 = await readObjectBytes(objectPath);
-  const meta = await sharp11(bytes2).metadata();
+  const meta = await sharp12(bytes2).metadata();
   let width = meta.width ?? 0;
   let height = meta.height ?? 0;
   if (meta.orientation && meta.orientation >= 5) {
     [width, height] = [height, width];
   }
-  const { data: resized, info } = await sharp11(bytes2).rotate().resize(MAX_EDGE, MAX_EDGE, { fit: "inside", withoutEnlargement: true }).jpeg({ quality: 80 }).toBuffer({ resolveWithObject: true });
+  const { data: resized, info } = await sharp12(bytes2).rotate().resize(MAX_EDGE, MAX_EDGE, { fit: "inside", withoutEnlargement: true }).jpeg({ quality: 80 }).toBuffer({ resolveWithObject: true });
   if (!width || !height) {
     width = info.width;
     height = info.height;
@@ -236209,7 +236420,7 @@ async function dissectImageToTemplate(objectPath) {
 // src/lib/exampleImport.ts
 var import_jszip3 = __toESM(require_lib13(), 1);
 init_objectStorage();
-import sharp13 from "sharp";
+import sharp14 from "sharp";
 
 // ../../node_modules/.pnpm/fast-xml-parser@5.11.0/node_modules/fast-xml-parser/src/util.js
 var nameStartChar = ":A-Za-z_\\u00C0-\\u00D6\\u00D8-\\u00F6\\u00F8-\\u02FF\\u0370-\\u037D\\u037F-\\u1FFF\\u200C-\\u200D\\u2070-\\u218F\\u2C00-\\u2FEF\\u3001-\\uD7FF\\uF900-\\uFDCF\\uFDF0-\\uFFFD";
@@ -240764,11 +240975,11 @@ async function parseIdmlToLayouts(idml, linksByName, brandLogoUrl = null) {
             const cw = Math.max(...pts.map((p) => p[0])) - pageX - cx;
             const ch = Math.max(...pts.map((p) => p[1])) - pageY - cy;
             if (cw > 1 && ch > 1) {
-              const clamp01 = (v) => Math.max(0, Math.min(1, v));
-              const rx = clamp01((x - cx) / cw);
-              const ry = clamp01((y - cy) / ch);
-              const rw = clamp01(bounds.w / cw);
-              const rh = clamp01(bounds.h / ch);
+              const clamp012 = (v) => Math.max(0, Math.min(1, v));
+              const rx = clamp012((x - cx) / cw);
+              const ry = clamp012((y - cy) / ch);
+              const rw = clamp012(bounds.w / cw);
+              const rh = clamp012(bounds.h / ch);
               if (rw < 0.985 || rh < 0.985) srcRect = { x: rx, y: ry, w: Math.max(0.01, rw), h: Math.max(0.01, rh) };
             }
           }
@@ -240918,7 +241129,7 @@ async function parseIdmlToLayouts(idml, linksByName, brandLogoUrl = null) {
 // src/lib/indesignPackage.ts
 var import_jszip2 = __toESM(require_lib13(), 1);
 init_objectStorage();
-import sharp12 from "sharp";
+import sharp13 from "sharp";
 
 // src/lib/pdfStripText.ts
 var import_pdf_lib2 = __toESM(require_cjs2(), 1);
@@ -241187,7 +241398,7 @@ async function importInDesignPackage(objectPath, brandLogoUrl = null) {
         result.imported.push({ name, objectPath: storedPath, contentType: IMAGE_TYPES2[e], kind: "image" });
         linksByName.set(name, { objectPath: storedPath, kind: "image" });
       } else if (e === ".tif" || e === ".tiff") {
-        const png = await sharp12(bytes2).png().toBuffer();
+        const png = await sharp13(bytes2).png().toBuffer();
         const storedPath = await objectStorageService11.uploadBytes(png, "image/png");
         result.imported.push({
           name: name.replace(/\.tiff?$/i, ".png"),
@@ -241294,7 +241505,7 @@ async function importInDesignPackage(objectPath, brandLogoUrl = null) {
               const width = Math.min(source.width - left, Math.max(1, Math.round(Number(region.w) * scale)));
               const height = Math.min(source.height - top, Math.max(1, Math.round(Number(region.h) * scale)));
               if (width < 1 || height < 1) continue;
-              const crop = await sharp12(source.png).extract({ left, top, width, height }).png().toBuffer();
+              const crop = await sharp13(source.png).extract({ left, top, width, height }).png().toBuffer();
               const storedPath = await objectStorageService11.uploadBytes(crop, "image/png");
               region.type = "image";
               region.src = `/api/storage${storedPath}`;
@@ -241343,7 +241554,7 @@ async function importInDesignPackage(objectPath, brandLogoUrl = null) {
                 src = Buffer.from(await (await objectStorageService11.downloadObject(file3)).arrayBuffer());
                 srcBytesCache.set(objPath, src);
               }
-              const meta = await sharp12(src).metadata();
+              const meta = await sharp13(src).metadata();
               const iw = meta.width ?? 0;
               const ih = meta.height ?? 0;
               if (iw < 2 || ih < 2) continue;
@@ -241351,7 +241562,7 @@ async function importInDesignPackage(objectPath, brandLogoUrl = null) {
               const top = Math.min(ih - 1, Math.max(0, Math.round(rect.y * ih)));
               const width = Math.max(1, Math.min(iw - left, Math.round(rect.w * iw)));
               const height = Math.max(1, Math.min(ih - top, Math.round(rect.h * ih)));
-              const pipeline = sharp12(src).extract({ left, top, width, height });
+              const pipeline = sharp13(src).extract({ left, top, width, height });
               const jpeg = meta.format === "jpeg";
               const out = jpeg ? await pipeline.jpeg({ quality: 95 }).toBuffer() : await pipeline.png().toBuffer();
               croppedPath = await objectStorageService11.uploadBytes(out, jpeg ? "image/jpeg" : "image/png");
@@ -241381,6 +241592,7 @@ async function importInDesignPackage(objectPath, brandLogoUrl = null) {
           }
           if (box) {
             main.focusBox = box;
+            main.focusSource = "attention";
             if (main.focusX === void 0) main.focusX = box.x + box.w / 2;
             if (main.focusY === void 0) main.focusY = box.y + box.h / 2;
           }
@@ -241407,7 +241619,7 @@ function exampleKindFor(fileName) {
   return null;
 }
 async function faithfulImageLayout(bytes2, contentType, name) {
-  const meta = await sharp13(bytes2).metadata();
+  const meta = await sharp14(bytes2).metadata();
   const width = Math.max(16, meta.width ?? 0);
   const height = Math.max(16, meta.height ?? 0);
   const storedPath = await objectStorageService12.uploadBytes(bytes2, contentType);
@@ -241426,7 +241638,7 @@ async function faithfulImageLayout(bytes2, contentType, name) {
         w: width,
         h: height,
         locked: true,
-        ...box ? { focusBox: box, focusX: box.x + box.w / 2, focusY: box.y + box.h / 2 } : {}
+        ...box ? { focusBox: box, focusX: box.x + box.w / 2, focusY: box.y + box.h / 2, focusSource: "attention" } : {}
       }
     ]
   });
@@ -241491,11 +241703,11 @@ async function importExample(objectPath, fileName, brandLogoUrl, paletteHexes = 
       const ext2 = /\.(jpe?g|png|webp)$/i.exec(path11)?.[1]?.toLowerCase();
       if (!ext2) continue;
       const bytes3 = Buffer.from(await entry.async("uint8array"));
-      const meta = await sharp13(bytes3).metadata().catch(() => null);
+      const meta = await sharp14(bytes3).metadata().catch(() => null);
       if (!meta?.width || !meta.height) continue;
       if (Math.min(meta.width, meta.height) < 200 || meta.width * meta.height < 15e4) continue;
       if (meta.hasAlpha) {
-        const stats = await sharp13(bytes3).stats().catch(() => null);
+        const stats = await sharp14(bytes3).stats().catch(() => null);
         const alpha = stats?.channels?.[stats.channels.length - 1];
         if (alpha && alpha.mean < 100) continue;
       }
@@ -241588,7 +241800,7 @@ async function importExample(objectPath, fileName, brandLogoUrl, paletteHexes = 
     };
   }
   const isTiff = /\.tiff?$/i.test(fileName);
-  const finalBytes = isTiff ? await sharp13(bytes2).png().toBuffer() : bytes2;
+  const finalBytes = isTiff ? await sharp14(bytes2).png().toBuffer() : bytes2;
   const contentType = isTiff ? "image/png" : /\.png$/i.test(fileName) ? "image/png" : /\.webp$/i.test(fileName) ? "image/webp" : /\.gif$/i.test(fileName) ? "image/gif" : "image/jpeg";
   const layout = await faithfulImageLayout(finalBytes, contentType, baseName2);
   return {
@@ -241824,6 +242036,44 @@ async function adaptOne(master, masterConfig, width, height, brandInfo, log, exe
   });
   return { config: config2, method, spec, reference, rejected };
 }
+router13.post("/templates/:id/detect-subject", requireAdmin, async (req, res) => {
+  const id = Number(req.params.id);
+  const [t] = await db.select().from(templatesTable).where(eq(templatesTable.id, id));
+  if (!t) {
+    res.status(404).json({ error: "Template not found" });
+    return;
+  }
+  let parsed;
+  try {
+    parsed = JSON.parse(t.config || "{}");
+  } catch {
+    parsed = {};
+  }
+  if (!isFreeformConfig(parsed)) {
+    res.status(400).json({ error: "Only freeform templates carry photographs" });
+    return;
+  }
+  const cfg = normalizeFreeformConfig(parsed);
+  const force = req.body?.force === true;
+  const loadImage = makeImageLoader(req);
+  const results = [];
+  const elements = [...cfg.elements];
+  for (let i = 0; i < elements.length; i++) {
+    const e = elements[i];
+    if (e.type !== "image" || !e.src || e.panelPart || !(e.slot === "photo" || !e.slot && e.role === "product")) continue;
+    if (e.focusSource === "designer" && !force) continue;
+    const bytes2 = await loadImage(e.src);
+    if (!bytes2) continue;
+    const found = await detectSubject(bytes2);
+    if (!found) continue;
+    elements[i] = { ...e, focusBox: found.box, focusX: Math.round((found.box.x + found.box.w / 2) * 1e3) / 1e3, focusY: Math.round((found.box.y + found.box.h / 2) * 1e3) / 1e3, focusSource: "vision", subject: found.subject, ...found.keepWhole ? { keepWhole: true } : {} };
+    results.push({ elementId: e.id, ...found });
+  }
+  if (results.length) {
+    await db.update(templatesTable).set({ config: JSON.stringify({ ...parsed, elements }), updatedAt: /* @__PURE__ */ new Date() }).where(eq(templatesTable.id, id));
+  }
+  res.json({ templateId: id, detected: results });
+});
 router13.post("/templates/:id/adapt", requireAdmin, async (req, res) => {
   const id = Number(req.params.id);
   const [master] = await db.select().from(templatesTable).where(eq(templatesTable.id, id));
@@ -241883,6 +242133,19 @@ router13.post("/templates/:id/adapt", requireAdmin, async (req, res) => {
       req.log?.warn?.({ err, templateId: master.id }, "layered artwork recognition failed; continuing");
     }
   }
+  const subjectNotes = [];
+  try {
+    const found = await ensureSubjects(masterConfig, makeImageLoader(req));
+    if (found) {
+      masterConfig = normalizeFreeformConfig({ ...parsed, elements: found.config.elements });
+      parsed = { ...parsed, elements: masterConfig.elements };
+      await db.update(templatesTable).set({ config: JSON.stringify(parsed), updatedAt: /* @__PURE__ */ new Date() }).where(eq(templatesTable.id, master.id));
+      subjectNotes.push(...found.notes);
+      req.log?.info?.({ templateId: master.id, notes: found.notes }, "subject detected on the master's photo");
+    }
+  } catch (err) {
+    req.log?.warn?.({ err, templateId: master.id }, "subject detection failed; continuing");
+  }
   const [brand] = await db.select().from(brandsTable).orderBy(brandsTable.id).limit(1);
   const rawTargets = Array.isArray(req.body?.targets) ? req.body.targets.slice(0, 60) : [];
   const brandInfo = { logoUrl: brand?.logoUrl ?? null, strapline: brand?.strapline ?? null, panelFill: brand?.primaryColor ?? null };
@@ -241934,7 +242197,7 @@ router13.post("/templates/:id/adapt", requireAdmin, async (req, res) => {
     };
     const { config: adaptedConfig, method, spec, rejected } = await adaptOne(master, masterConfig, width, height, brandInfo, req.log, exemplars, void 0, hints, resolvedStyle.source === "none" ? null : { schema: resolvedStyle.schema, label: resolvedStyle.label }, { loadImage: makeImageLoader(req), brandFontFamily: brand?.fontFamily ?? "National 2" });
     if (rejected.length > 0) rejectedCount++;
-    let merged = adaptedConfig;
+    let merged = subjectNotes.length ? normalizeFreeformConfig({ ...adaptedConfig, adaptNotes: [...adaptedConfig.adaptNotes ?? [], ...subjectNotes] }) : adaptedConfig;
     try {
       const gl = await guidelinesForConfig(brand?.id ?? null, adaptedConfig, width, height, 1);
       const lines = guidelineNotes(gl);
@@ -242369,7 +242632,7 @@ router13.post("/templates/:id/trim-layers", requireAdmin, async (req, res) => {
     res.status(400).json({ error: "Config unreadable" });
     return;
   }
-  const sharp15 = (await import("sharp")).default;
+  const sharp16 = (await import("sharp")).default;
   const { ObjectStorageService: ObjectStorageService2 } = await Promise.resolve().then(() => (init_objectStorage(), objectStorage_exports));
   const objectStorageService17 = new ObjectStorageService2();
   let trimmed = 0;
@@ -242383,12 +242646,12 @@ router13.post("/templates/:id/trim-layers", requireAdmin, async (req, res) => {
       const objectPath = el.src.replace(/^\/api\/storage/, "");
       const file2 = await objectStorageService17.getObjectEntityFile(objectPath);
       const bytes2 = Buffer.from(await (await objectStorageService17.downloadObject(file2)).arrayBuffer());
-      const meta = await sharp15(bytes2).metadata();
+      const meta = await sharp16(bytes2).metadata();
       if (!meta.hasAlpha || !meta.width || !meta.height) {
         elements.push(el);
         continue;
       }
-      const raw2 = await sharp15(bytes2).ensureAlpha().raw().toBuffer();
+      const raw2 = await sharp16(bytes2).ensureAlpha().raw().toBuffer();
       const W2 = meta.width, H2 = meta.height;
       let minX = W2, minY = H2, maxX = -1, maxY = -1;
       for (let py = 0; py < H2; py++) for (let px = 0; px < W2; px++) {
@@ -242404,7 +242667,7 @@ router13.post("/templates/:id/trim-layers", requireAdmin, async (req, res) => {
         elements.push(el);
         continue;
       }
-      const out = Buffer.from(await sharp15(bytes2).extract({ left: minX, top: minY, width: bw, height: bh }).png().toBuffer());
+      const out = Buffer.from(await sharp16(bytes2).extract({ left: minX, top: minY, width: bw, height: bh }).png().toBuffer());
       const stored = await objectStorageService17.uploadBytes(out, "image/png");
       const dispX = (el.w ?? W2) / W2, dispY = (el.h ?? H2) / H2;
       elements.push({
@@ -243912,7 +244175,7 @@ import { randomBytes } from "node:crypto";
 
 // src/lib/htmlExport.ts
 var import_jszip4 = __toESM(require_lib13(), 1);
-import sharp14 from "sharp";
+import sharp15 from "sharp";
 var ARTWORK_MOTIONS = ["none", "kenburns", "drift", "zoomout", "breathe", "wipe"];
 var COPY_MOTIONS = ["none", "fade", "rise", "pan", "pop", "wipe", "baseline", "tumble", "typewriter", "block"];
 var FONT_FILES2 = [
@@ -243934,7 +244197,7 @@ function safeFileName(src, index, contentType) {
 async function optimizeForExport(bytes2, contentType, boxW, boxH) {
   try {
     if (contentType.includes("svg")) return { bytes: bytes2, contentType };
-    const img = sharp14(bytes2, { failOn: "none" });
+    const img = sharp15(bytes2, { failOn: "none" });
     const meta = await img.metadata();
     const maxW = Math.max(16, Math.round(boxW * 2));
     const maxH = Math.max(16, Math.round(boxH * 2));

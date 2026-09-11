@@ -205,6 +205,12 @@ export interface FreeformElement {
   focusY?: number;
   /** Hero box in image fractions (0..1) that adapted crops are chosen around */
   focusBox?: FreeformElementFocusBox;
+  /** Who set the hero box: vision (Claude), attention (sharp), designer */
+  focusSource?: string;
+  /** What the photo is of, from subject detection */
+  subject?: string;
+  /** Cropping into the hero box would lose meaning */
+  keepWhole?: boolean;
   /** Rect linear gradient: {angle: deg, stops: [{color, alpha, at}]} */
   gradient?: FreeformElementGradient;
   fill?: string;
@@ -1267,6 +1273,31 @@ export const ListTemplatesInclude = {
 export type ClearWipTemplates200 = {
   deleted: number;
   kept: number;
+};
+
+export type DetectTemplateSubjectBody = {
+  /** Replace a designer-set box too */
+  force?: boolean;
+};
+
+export type DetectTemplateSubject200DetectedItemBox = {
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+};
+
+export type DetectTemplateSubject200DetectedItem = {
+  elementId: string;
+  subject: string;
+  box: DetectTemplateSubject200DetectedItemBox;
+  keepWhole: boolean;
+  faces: number;
+};
+
+export type DetectTemplateSubject200 = {
+  templateId: number;
+  detected: DetectTemplateSubject200DetectedItem[];
 };
 
 export type UpdateLayoutProfileRulesBodyRules = {[key: string]: PartRules};

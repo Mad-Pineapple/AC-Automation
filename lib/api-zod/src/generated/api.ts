@@ -228,6 +228,9 @@ export const ListTemplatesResponseItem = zod.object({
   "w": zod.number().optional(),
   "h": zod.number().optional()
 }).optional().describe('Hero box in image fractions (0..1) that adapted crops are chosen around'),
+  "focusSource": zod.string().optional().describe('Who set the hero box: vision (Claude), attention (sharp), designer'),
+  "subject": zod.string().optional().describe('What the photo is of, from subject detection'),
+  "keepWhole": zod.boolean().optional().describe('Cropping into the hero box would lose meaning'),
   "gradient": zod.object({
   "angle": zod.number().optional(),
   "stops": zod.array(zod.object({
@@ -312,6 +315,9 @@ export const CreateTemplateBody = zod.object({
   "w": zod.number().optional(),
   "h": zod.number().optional()
 }).optional().describe('Hero box in image fractions (0..1) that adapted crops are chosen around'),
+  "focusSource": zod.string().optional().describe('Who set the hero box: vision (Claude), attention (sharp), designer'),
+  "subject": zod.string().optional().describe('What the photo is of, from subject detection'),
+  "keepWhole": zod.boolean().optional().describe('Cropping into the hero box would lose meaning'),
   "gradient": zod.object({
   "angle": zod.number().optional(),
   "stops": zod.array(zod.object({
@@ -398,6 +404,9 @@ export const GetTemplateResponse = zod.object({
   "w": zod.number().optional(),
   "h": zod.number().optional()
 }).optional().describe('Hero box in image fractions (0..1) that adapted crops are chosen around'),
+  "focusSource": zod.string().optional().describe('Who set the hero box: vision (Claude), attention (sharp), designer'),
+  "subject": zod.string().optional().describe('What the photo is of, from subject detection'),
+  "keepWhole": zod.boolean().optional().describe('Cropping into the hero box would lose meaning'),
   "gradient": zod.object({
   "angle": zod.number().optional(),
   "stops": zod.array(zod.object({
@@ -485,6 +494,9 @@ export const UpdateTemplateBody = zod.object({
   "w": zod.number().optional(),
   "h": zod.number().optional()
 }).optional().describe('Hero box in image fractions (0..1) that adapted crops are chosen around'),
+  "focusSource": zod.string().optional().describe('Who set the hero box: vision (Claude), attention (sharp), designer'),
+  "subject": zod.string().optional().describe('What the photo is of, from subject detection'),
+  "keepWhole": zod.boolean().optional().describe('Cropping into the hero box would lose meaning'),
   "gradient": zod.object({
   "angle": zod.number().optional(),
   "stops": zod.array(zod.object({
@@ -563,6 +575,9 @@ export const UpdateTemplateResponse = zod.object({
   "w": zod.number().optional(),
   "h": zod.number().optional()
 }).optional().describe('Hero box in image fractions (0..1) that adapted crops are chosen around'),
+  "focusSource": zod.string().optional().describe('Who set the hero box: vision (Claude), attention (sharp), designer'),
+  "subject": zod.string().optional().describe('What the photo is of, from subject detection'),
+  "keepWhole": zod.boolean().optional().describe('Cropping into the hero box would lose meaning'),
   "gradient": zod.object({
   "angle": zod.number().optional(),
   "stops": zod.array(zod.object({
@@ -615,6 +630,34 @@ export const DeleteTemplateParams = zod.object({
 export const ClearWipTemplatesResponse = zod.object({
   "deleted": zod.number(),
   "kept": zod.number()
+})
+
+
+/**
+ * @summary Find the subject of the master's photographs with Claude vision and store the box on the master
+ */
+export const DetectTemplateSubjectParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const DetectTemplateSubjectBody = zod.object({
+  "force": zod.boolean().optional().describe('Replace a designer-set box too')
+})
+
+export const DetectTemplateSubjectResponse = zod.object({
+  "templateId": zod.number(),
+  "detected": zod.array(zod.object({
+  "elementId": zod.string(),
+  "subject": zod.string(),
+  "box": zod.object({
+  "x": zod.number(),
+  "y": zod.number(),
+  "w": zod.number(),
+  "h": zod.number()
+}),
+  "keepWhole": zod.boolean(),
+  "faces": zod.number()
+}))
 })
 
 
@@ -690,6 +733,9 @@ export const DissectPdfResponse = zod.object({
   "w": zod.number().optional(),
   "h": zod.number().optional()
 }).optional().describe('Hero box in image fractions (0..1) that adapted crops are chosen around'),
+  "focusSource": zod.string().optional().describe('Who set the hero box: vision (Claude), attention (sharp), designer'),
+  "subject": zod.string().optional().describe('What the photo is of, from subject detection'),
+  "keepWhole": zod.boolean().optional().describe('Cropping into the hero box would lose meaning'),
   "gradient": zod.object({
   "angle": zod.number().optional(),
   "stops": zod.array(zod.object({
@@ -774,6 +820,9 @@ export const DissectImageResponse = zod.object({
   "w": zod.number().optional(),
   "h": zod.number().optional()
 }).optional().describe('Hero box in image fractions (0..1) that adapted crops are chosen around'),
+  "focusSource": zod.string().optional().describe('Who set the hero box: vision (Claude), attention (sharp), designer'),
+  "subject": zod.string().optional().describe('What the photo is of, from subject detection'),
+  "keepWhole": zod.boolean().optional().describe('Cropping into the hero box would lose meaning'),
   "gradient": zod.object({
   "angle": zod.number().optional(),
   "stops": zod.array(zod.object({
@@ -2444,6 +2493,9 @@ export const ClaudeReviewTemplateResponse = zod.object({
   "w": zod.number().optional(),
   "h": zod.number().optional()
 }).optional().describe('Hero box in image fractions (0..1) that adapted crops are chosen around'),
+  "focusSource": zod.string().optional().describe('Who set the hero box: vision (Claude), attention (sharp), designer'),
+  "subject": zod.string().optional().describe('What the photo is of, from subject detection'),
+  "keepWhole": zod.boolean().optional().describe('Cropping into the hero box would lose meaning'),
   "gradient": zod.object({
   "angle": zod.number().optional(),
   "stops": zod.array(zod.object({
@@ -2534,6 +2586,9 @@ export const UndoClaudeReviewTemplateResponse = zod.object({
   "w": zod.number().optional(),
   "h": zod.number().optional()
 }).optional().describe('Hero box in image fractions (0..1) that adapted crops are chosen around'),
+  "focusSource": zod.string().optional().describe('Who set the hero box: vision (Claude), attention (sharp), designer'),
+  "subject": zod.string().optional().describe('What the photo is of, from subject detection'),
+  "keepWhole": zod.boolean().optional().describe('Cropping into the hero box would lose meaning'),
   "gradient": zod.object({
   "angle": zod.number().optional(),
   "stops": zod.array(zod.object({
