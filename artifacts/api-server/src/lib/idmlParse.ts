@@ -410,9 +410,12 @@ const VARIANT_WORD_RE =
 
 /** Merge adjacent rasterRegion fragments (one per vector shape) into whole
  * regions — a pattern band or logo lockup is hundreds of tiny shapes but ONE
- * crop from the document PDF. Mutates `elements`: the first fragment of each
- * cluster becomes the union box, the rest (and any plain rects living fully
- * inside a cluster, which are fragments of the same art) are removed.
+ * crop from the document PDF. Fragments may only merge with fragments from
+ * the same InDesign layer. Without that boundary, nearby artwork from two
+ * layers becomes one composite PDF crop and reappears in WIP as a duplicated
+ * "decoration" artifact. Mutates `elements`: the first fragment of each
+ * cluster becomes the union box, the rest (and any plain rects from the same
+ * layer living fully inside a cluster) are removed.
  * Returns the number of merged regions. */
 function mergeRasterRegions(elements: Record<string, unknown>[], pad = 8): number {
   const idx: number[] = [];
@@ -424,12 +427,15 @@ function mergeRasterRegions(elements: Record<string, unknown>[], pad = 8): numbe
   if (idx.length === 0) return 0;
   const parent = idx.map((_, i) => i);
   const find = (a: number): number => (parent[a] === a ? a : (parent[a] = find(parent[a])));
-  const box = (i: number) => elements[idx[i]] as { x: number; y: number; w: number; h: number };
+  const box = (i: number) => elements[idx[i]] as { x: number; y: number; w: number; h: number; layerName?: string };
+  const sameLayer = (a: ReturnType<typeof box>, b: ReturnType<typeof box>): boolean =>
+    typeof a.layerName === "string" && a.layerName.length > 0 && a.layerName === b.layerName;
   for (let a = 0; a < idx.length; a++) {
     for (let b = a + 1; b < idx.length; b++) {
       const A = box(a);
       const B = box(b);
       if (
+        sameLayer(A, B) &&
         A.x - pad < B.x + B.w + pad &&
         B.x - pad < A.x + A.w + pad &&
         A.y - pad < B.y + B.h + pad &&
@@ -449,7 +455,7 @@ function mergeRasterRegions(elements: Record<string, unknown>[], pad = 8): numbe
     clusters.set(root, list);
   }
   const remove = new Set<number>();
-  const unionBoxes: { x: number; y: number; w: number; h: number }[] = [];
+  const unionBoxes: { x: number; y: number; w: number; h: number; layerName?: string }[] = [];
   for (const members of clusters.values()) {
     const keep = Math.min(...members.map((m) => idx[m]));
     let x1 = Infinity;
@@ -464,7 +470,8 @@ function mergeRasterRegions(elements: Record<string, unknown>[], pad = 8): numbe
       y2 = Math.max(y2, b.y + b.h);
       if (idx[m] !== keep) remove.add(idx[m]);
     }
-    const union = { x: x1, y: y1, w: Math.max(1, x2 - x1), h: Math.max(1, y2 - y1) };
+    const layerName = box(members[0]).layerName;
+    const union = { x: x1, y: y1, w: Math.max(1, x2 - x1), h: Math.max(1, y2 - y1), ...(layerName ? { layerName } : {}) };
     Object.assign(elements[keep], union);
     unionBoxes.push(union);
   }
@@ -473,9 +480,9 @@ function mergeRasterRegions(elements: Record<string, unknown>[], pad = 8): numbe
   // would double the art.
   elements.forEach((e, i) => {
     if (e.type !== "rect" || remove.has(i)) return;
-    const r = e as unknown as { x: number; y: number; w: number; h: number };
+    const r = e as unknown as { x: number; y: number; w: number; h: number; layerName?: string };
     for (const u of unionBoxes) {
-      if (r.x >= u.x - 1 && r.y >= u.y - 1 && r.x + r.w <= u.x + u.w + 1 && r.y + r.h <= u.y + u.h + 1) {
+      if (r.layerName === u.layerName && r.x >= u.x - 1 && r.y >= u.y - 1 && r.x + r.w <= u.x + u.w + 1 && r.y + r.h <= u.y + u.h + 1) {
         remove.add(i);
         return;
       }

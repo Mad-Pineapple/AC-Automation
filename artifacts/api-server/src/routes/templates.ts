@@ -420,6 +420,13 @@ router.post("/templates/:id/adapt", requireAdmin, async (req, res): Promise<void
     return;
   }
   let masterConfig = normalizeFreeformConfig(parsed);
+  // Keep an untouched snapshot for exact-size duplication. Generating the
+  // master's own dimensions is a copy operation, not an adaptation: no slot
+  // inference, panel splitting, subject detection, AI fixing or layout rules
+  // may alter it.
+  const exactCloneConfig = JSON.parse(JSON.stringify(parsed)) as Record<string, unknown>;
+  // The production glossary offers ~50 formats — allow adapting to all of them in one go.
+  const rawTargets: unknown[] = Array.isArray(req.body?.targets) ? req.body.targets.slice(0, 60) : [];
 
   // Masters imported from an HTML example before motion capture: lift the
   // choreography from the stored original so the pieces built now carry it.
@@ -495,9 +502,6 @@ router.post("/templates/:id/adapt", requireAdmin, async (req, res): Promise<void
   // Key-visual masters get the designer's adapt: artwork re-cropped to its
   // focal point, copy/strapline/logo RE-SET on each format's brand grid.
   const [brand] = await db.select().from(brandsTable).orderBy(brandsTable.id).limit(1);
-  // The production glossary offers ~50 formats — allow adapting to all of them in one go.
-  const rawTargets: unknown[] = Array.isArray(req.body?.targets) ? req.body.targets.slice(0, 60) : [];
-
   const brandInfo: BrandInfo = { logoUrl: brand?.logoUrl ?? null, strapline: brand?.strapline ?? null, panelFill: brand?.primaryColor ?? null };
   // Layered masters: the panel ground takes its colour from the baked panel
   // graphic's own edge, so the graphic sits on it seamlessly.
@@ -551,6 +555,34 @@ router.post("/templates/:id/adapt", requireAdmin, async (req, res): Promise<void
     const t = raw as Record<string, unknown>;
     const width = Number(t.width);
     const height = Number(t.height);
+    if (!Number.isInteger(width) || !Number.isInteger(height) || width < 16 || height < 16 || width > 8000 || height > 8000) {
+      continue;
+    }
+    const requestedName =
+      typeof t.name === "string" && t.name.trim()
+        ? t.name.trim().slice(0, 120)
+        : `${master.name} ${width}×${height}`;
+
+    // Same dimensions must reproduce the imported master exactly. In
+    // particular, do not send it through adaptOne or Artwork Guard, both of
+    // which are allowed to move or resize elements for a genuinely new size.
+    if (width === master.width && height === master.height) {
+      const [template] = await db
+        .insert(templatesTable)
+        .values({
+          name: requestedName,
+          description: `Exact-size duplicate of "${master.name}" (${master.width}×${master.height})`,
+          category: "wip",
+          width,
+          height,
+          config: JSON.stringify(exactCloneConfig),
+          sourceTemplateId: master.id,
+          createdBy: (req as any).clerkUserId ?? null,
+        })
+        .returning();
+      created.push(template);
+      continue;
+    }
     // A photo reproduced from the document PDF carries the original copy
     // baked into its pixels. Re-setting the headline elsewhere would draw it
     // over a ghost of itself — refuse rather than ship a wrong size.
@@ -561,9 +593,6 @@ router.post("/templates/:id/adapt", requireAdmin, async (req, res): Promise<void
           "This master's photo was reproduced from the document PDF (its Links file was missing or too large) and carries the original copy baked in. Re-import the package with a flattened JPEG/PNG for that photo before building sizes.",
       });
       return;
-    }
-    if (!Number.isInteger(width) || !Number.isInteger(height) || width < 16 || height < 16 || width > 8000 || height > 8000) {
-      continue;
     }
     const hints: FormatHints = {
       name: typeof t.formatName === "string" ? t.formatName : typeof t.name === "string" ? t.name : null,
@@ -581,7 +610,7 @@ router.post("/templates/:id/adapt", requireAdmin, async (req, res): Promise<void
     } catch { /* notes are a bonus */ }
     const name =
       typeof t.name === "string" && t.name.trim()
-        ? t.name.trim().slice(0, 120)
+        ? requestedName
         : `${master.name} ${spec.entry ? `${spec.label} ` : ""}${width}×${height}`;
     let guardReview: ClaudeReview | null = null;
     let guardFixes: { at: string; rounds: number; applied: unknown[]; before: FreeformConfig["elements"] } | null = null;

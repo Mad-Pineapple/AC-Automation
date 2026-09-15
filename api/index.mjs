@@ -241134,11 +241134,12 @@ function mergeRasterRegions(elements, pad = 8) {
   const parent = idx.map((_2, i) => i);
   const find = (a) => parent[a] === a ? a : parent[a] = find(parent[a]);
   const box = (i) => elements[idx[i]];
+  const sameLayer = (a, b) => typeof a.layerName === "string" && a.layerName.length > 0 && a.layerName === b.layerName;
   for (let a = 0; a < idx.length; a++) {
     for (let b = a + 1; b < idx.length; b++) {
       const A = box(a);
       const B = box(b);
-      if (A.x - pad < B.x + B.w + pad && B.x - pad < A.x + A.w + pad && A.y - pad < B.y + B.h + pad && B.y - pad < A.y + A.h + pad) {
+      if (sameLayer(A, B) && A.x - pad < B.x + B.w + pad && B.x - pad < A.x + A.w + pad && A.y - pad < B.y + B.h + pad && B.y - pad < A.y + A.h + pad) {
         const ra = find(a);
         const rb = find(b);
         if (ra !== rb) parent[rb] = ra;
@@ -241168,7 +241169,8 @@ function mergeRasterRegions(elements, pad = 8) {
       y2 = Math.max(y2, b.y + b.h);
       if (idx[m] !== keep) remove.add(idx[m]);
     }
-    const union3 = { x: x1, y: y1, w: Math.max(1, x2 - x1), h: Math.max(1, y2 - y1) };
+    const layerName = box(members[0]).layerName;
+    const union3 = { x: x1, y: y1, w: Math.max(1, x2 - x1), h: Math.max(1, y2 - y1), ...layerName ? { layerName } : {} };
     Object.assign(elements[keep], union3);
     unionBoxes.push(union3);
   }
@@ -241176,7 +241178,7 @@ function mergeRasterRegions(elements, pad = 8) {
     if (e.type !== "rect" || remove.has(i)) return;
     const r4 = e;
     for (const u of unionBoxes) {
-      if (r4.x >= u.x - 1 && r4.y >= u.y - 1 && r4.x + r4.w <= u.x + u.w + 1 && r4.y + r4.h <= u.y + u.h + 1) {
+      if (r4.layerName === u.layerName && r4.x >= u.x - 1 && r4.y >= u.y - 1 && r4.x + r4.w <= u.x + u.w + 1 && r4.y + r4.h <= u.y + u.h + 1) {
         remove.add(i);
         return;
       }
@@ -242534,6 +242536,8 @@ router13.post("/templates/:id/adapt", requireAdmin, async (req, res) => {
     return;
   }
   let masterConfig = normalizeFreeformConfig(parsed);
+  const exactCloneConfig = JSON.parse(JSON.stringify(parsed));
+  const rawTargets = Array.isArray(req.body?.targets) ? req.body.targets.slice(0, 60) : [];
   try {
     const withMotion = await backfillKeyVisualMotion(masterConfig);
     if (withMotion) {
@@ -242589,7 +242593,6 @@ router13.post("/templates/:id/adapt", requireAdmin, async (req, res) => {
     req.log?.warn?.({ err, templateId: master.id }, "subject detection failed; continuing");
   }
   const [brand] = await db.select().from(brandsTable).orderBy(brandsTable.id).limit(1);
-  const rawTargets = Array.isArray(req.body?.targets) ? req.body.targets.slice(0, 60) : [];
   const brandInfo = { logoUrl: brand?.logoUrl ?? null, strapline: brand?.strapline ?? null, panelFill: brand?.primaryColor ?? null };
   brandInfo.panelFill = await layeredPanelFill(masterConfig, req) ?? brandInfo.panelFill;
   await ensureBrandFontsRegistered();
@@ -242625,15 +242628,30 @@ router13.post("/templates/:id/adapt", requireAdmin, async (req, res) => {
     const t = raw2;
     const width = Number(t.width);
     const height = Number(t.height);
+    if (!Number.isInteger(width) || !Number.isInteger(height) || width < 16 || height < 16 || width > 8e3 || height > 8e3) {
+      continue;
+    }
+    const requestedName = typeof t.name === "string" && t.name.trim() ? t.name.trim().slice(0, 120) : `${master.name} ${width}\xD7${height}`;
+    if (width === master.width && height === master.height) {
+      const [template2] = await db.insert(templatesTable).values({
+        name: requestedName,
+        description: `Exact-size duplicate of "${master.name}" (${master.width}\xD7${master.height})`,
+        category: "wip",
+        width,
+        height,
+        config: JSON.stringify(exactCloneConfig),
+        sourceTemplateId: master.id,
+        createdBy: req.clerkUserId ?? null
+      }).returning();
+      created.push(template2);
+      continue;
+    }
     const baked = masterConfig.elements.find((e) => e.type === "image" && e.bakedCopy);
     if (baked) {
       res.status(422).json({
         error: "This master's photo was reproduced from the document PDF (its Links file was missing or too large) and carries the original copy baked in. Re-import the package with a flattened JPEG/PNG for that photo before building sizes."
       });
       return;
-    }
-    if (!Number.isInteger(width) || !Number.isInteger(height) || width < 16 || height < 16 || width > 8e3 || height > 8e3) {
-      continue;
     }
     const hints = {
       name: typeof t.formatName === "string" ? t.formatName : typeof t.name === "string" ? t.name : null,
@@ -242649,7 +242667,7 @@ router13.post("/templates/:id/adapt", requireAdmin, async (req, res) => {
       if (lines.length) merged = normalizeFreeformConfig({ ...adaptedConfig, adaptNotes: [...adaptedConfig.adaptNotes ?? [], ...lines] });
     } catch {
     }
-    const name = typeof t.name === "string" && t.name.trim() ? t.name.trim().slice(0, 120) : `${master.name} ${spec.entry ? `${spec.label} ` : ""}${width}\xD7${height}`;
+    const name = typeof t.name === "string" && t.name.trim() ? requestedName : `${master.name} ${spec.entry ? `${spec.label} ` : ""}${width}\xD7${height}`;
     let guardReview = null;
     let guardFixes = null;
     let finalRejected = [...rejected];
