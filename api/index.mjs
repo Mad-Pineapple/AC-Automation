@@ -30321,7 +30321,7 @@ var require_parse3 = __commonJS({
     };
     var splitTopLevel = (input) => {
       const parts = [];
-      let bracket = 0;
+      let bracket2 = 0;
       let paren = 0;
       let quote = 0;
       let value = "";
@@ -30344,10 +30344,10 @@ var require_parse3 = __commonJS({
         }
         if (quote === 0) {
           if (ch === "[") {
-            bracket++;
-          } else if (ch === "]" && bracket > 0) {
-            bracket--;
-          } else if (bracket === 0) {
+            bracket2++;
+          } else if (ch === "]" && bracket2 > 0) {
+            bracket2--;
+          } else if (bracket2 === 0) {
             if (ch === "(") {
               paren++;
             } else if (ch === ")" && paren > 0) {
@@ -30417,7 +30417,7 @@ var require_parse3 = __commonJS({
       if (pattern[0] !== "+" && pattern[0] !== "*" || pattern[1] !== "(") {
         return;
       }
-      let bracket = 0;
+      let bracket2 = 0;
       let paren = 0;
       let quote = 0;
       let escaped = false;
@@ -30439,14 +30439,14 @@ var require_parse3 = __commonJS({
           continue;
         }
         if (ch === "[") {
-          bracket++;
+          bracket2++;
           continue;
         }
-        if (ch === "]" && bracket > 0) {
-          bracket--;
+        if (ch === "]" && bracket2 > 0) {
+          bracket2--;
           continue;
         }
-        if (bracket > 0) {
+        if (bracket2 > 0) {
           continue;
         }
         if (ch === "(") {
@@ -234373,30 +234373,69 @@ function byRole(config2, role) {
 function allByRole(config2, role) {
   return config2.elements.filter((e) => e.slot === role || e.type === "text" && e.role === role);
 }
+function geometryKeyed(config2, W2, H2) {
+  const semantic = inferSlots(config2, W2, H2);
+  const groups = /* @__PURE__ */ new Map();
+  for (const e of semantic.elements) {
+    const slot = e.slot && e.slot !== "other" ? e.slot : e.type === "image" ? `image:${e.role}` : e.type === "text" ? `text:${e.role}` : "rect:other";
+    groups.set(slot, [...groups.get(slot) ?? [], e]);
+  }
+  const out = {};
+  for (const [slot, elements] of groups) {
+    elements.sort((a, b) => a.y - b.y || a.x - b.x || b.w * b.h - a.w * a.h);
+    elements.forEach((e, index) => {
+      const toleranceX = Math.max(2, W2 * 0.012);
+      const toleranceY = Math.max(2, H2 * 0.012);
+      const edges = [];
+      if (e.x <= toleranceX) edges.push("left");
+      if (e.x + e.w >= W2 - toleranceX) edges.push("right");
+      if (e.y <= toleranceY) edges.push("top");
+      if (e.y + e.h >= H2 - toleranceY) edges.push("bottom");
+      out[`${slot}:${index}`] = {
+        x: r32(e.x / W2),
+        y: r32(e.y / H2),
+        w: r32(e.w / W2),
+        h: r32(e.h / H2),
+        aspect: r32(e.w / Math.max(1, e.h)),
+        edges,
+        ...e.type === "text" ? { fontSize: r32(e.fontSize / Math.min(W2, H2)) } : {}
+      };
+    });
+  }
+  return out;
+}
+function geometryMaster(config2, W2, H2, name, templateId, mode) {
+  return { templateId, name, width: W2, height: H2, aspect: W2 / H2, formatClass: classifyFormat(W2, H2, { name }), mode, elements: geometryKeyed(config2, W2, H2) };
+}
 function measureMaster(config2, W2, H2, name, templateId) {
-  const panel = byRole(config2, "panel");
-  const headlineParts = allByRole(config2, "headline");
-  if (!panel || headlineParts.length === 0) return null;
-  const axis = panel.w >= W2 * 0.9 && panel.y > H2 * 0.2 ? "stacked" : panel.h >= H2 * 0.9 && panel.x > W2 * 0.2 ? "side" : null;
-  if (!axis) return null;
-  const photoZone = axis === "stacked" ? { x: 0, y: 0, w: W2, h: panel.y } : { x: 0, y: 0, w: panel.x, h: H2 };
-  const panelZone = axis === "stacked" ? { x: 0, y: panel.y, w: W2, h: H2 - panel.y } : { x: panel.x, y: 0, w: W2 - panel.x, h: H2 };
+  const semantic = inferSlots(config2, W2, H2);
+  const measuredConfig = { ...config2, elements: semantic.elements };
+  const panel = byRole(measuredConfig, "panel");
+  const headlineParts = allByRole(measuredConfig, "headline");
+  if (headlineParts.length === 0) return null;
+  const panelAxis = panel ? panel.w >= W2 * 0.9 && panel.y > H2 * 0.2 ? "stacked" : panel.h >= H2 * 0.9 && panel.x > W2 * 0.2 ? "side" : null : null;
+  const axis = panelAxis ?? (W2 / H2 >= 1.12 ? "side" : "stacked");
+  const mode = panelAxis ? "panel" : "free";
+  const fallbackPhotoFrac = axis === "stacked" ? 0.58 : 0.56;
+  const split2 = panelAxis && panel ? axis === "stacked" ? panel.y : panel.x : axis === "stacked" ? H2 * fallbackPhotoFrac : W2 * fallbackPhotoFrac;
+  const photoZone = axis === "stacked" ? { x: 0, y: 0, w: W2, h: split2 } : { x: 0, y: 0, w: split2, h: H2 };
+  const panelZone = axis === "stacked" ? { x: 0, y: split2, w: W2, h: H2 - split2 } : { x: split2, y: 0, w: W2 - split2, h: H2 };
   const short = Math.min(W2, H2);
   const missing = [];
   const hx0 = Math.min(...headlineParts.map((e) => e.x)), hy0 = Math.min(...headlineParts.map((e) => e.y));
   const hl = { x: hx0, y: hy0, w: Math.max(...headlineParts.map((e) => e.x + e.w)) - hx0, h: Math.max(...headlineParts.map((e) => e.y + e.h)) - hy0 };
-  const sub = byRole(config2, "subheadline");
-  const cutout = allByRole(config2, "cutout").sort((a, b) => b.w * b.h - a.w * a.h)[0];
-  const band = byRole(config2, "band");
-  const message = byRole(config2, "message");
-  const cta = byRole(config2, "cta");
-  const lockup = byRole(config2, "lockup") ?? byRole(config2, "logo");
-  const scrim = byRole(config2, "scrim");
+  const sub = byRole(measuredConfig, "subheadline");
+  const cutout = allByRole(measuredConfig, "cutout").sort((a, b) => b.w * b.h - a.w * a.h)[0];
+  const band = byRole(measuredConfig, "band");
+  const message = byRole(measuredConfig, "message");
+  const cta = byRole(measuredConfig, "cta");
+  const lockup = byRole(measuredConfig, "lockup") ?? byRole(measuredConfig, "logo");
+  const scrim = byRole(measuredConfig, "scrim");
   for (const [k, v] of [["sub-line", sub], ["cut-out", cutout], ["band", band], ["message", message], ["CTA", cta], ["lockup", lockup]]) if (!v) missing.push(k);
   const copyBottom = sub ? Math.max(hl.y + hl.h, sub.y + sub.h) : hl.y + hl.h;
   const lastLineH = sub ? sub.h : hl.h;
   const m = {
-    photoFrac: r32(axis === "stacked" ? panel.y / H2 : panel.x / W2),
+    photoFrac: r32(axis === "stacked" ? split2 / H2 : split2 / W2),
     bandFrac: r32(band ? band.h / H2 : 0),
     bandH: r32(band ? band.h / panelZone.h : 0),
     headlineH: r32(hl.h / short),
@@ -234421,7 +234460,7 @@ function measureMaster(config2, W2, H2, name, templateId) {
     hasScrim: !!scrim,
     scrimH: scrim ? r32(scrim.h / photoZone.h) : null
   };
-  return { templateId, name, width: W2, height: H2, axis, formatClass: classifyFormat(W2, H2, { name }), m, missing };
+  return { templateId, name, width: W2, height: H2, axis, formatClass: classifyFormat(W2, H2, { name }), m, missing, geometry: geometryMaster(measuredConfig, W2, H2, name, templateId, mode), mode };
 }
 var STACKED_CLASSES = ["portrait", "tower", "square"];
 var SIDE_CLASSES = ["wide", "landscape"];
@@ -234493,10 +234532,11 @@ function buildProfile(measurements, name) {
   const measuredList = [...measuredClasses].join(", ");
   const interpolated = Object.keys(zones).filter((c) => !zones[c].measured).join(", ");
   notes.unshift(`Measured from ${measurements.length} example${measurements.length === 1 ? "" : "s"} (${measuredList}); interpolated: ${interpolated || "none"}.`);
+  if (measurements.some((x) => x.mode === "free")) notes.push("Free-form key visual geometry measured by semantic layer, no panel required. Images remain proportional and live text keeps editable boxes.");
   if (!sAvg) notes.push("No stacked (tall) example: portrait, tower and square sizes use the family defaults until one is supplied.");
   if (!dAvg) notes.push("No side (wide) example: wide and landscape sizes use the family defaults until one is supplied.");
   for (const x of measurements) if (x.missing.length) notes.push(`${x.name}: no ${x.missing.join(", ")} layer recognised.`);
-  return { version: 1, name, sources: measurements.map((x) => ({ templateId: x.templateId, name: x.name, width: x.width, height: x.height, axis: x.axis, formatClass: x.formatClass })), zones, display, measuredAxes, cta, copyOverCutoutFrac, notes };
+  return { version: 2, name, sources: measurements.map((x) => ({ templateId: x.templateId, name: x.name, width: x.width, height: x.height, axis: x.axis, formatClass: x.formatClass })), zones, display, measuredAxes, cta, copyOverCutoutFrac, notes, geometryMasters: measurements.map((x) => x.geometry) };
 }
 function stripAxis(m) {
   return { headlineH: m.headlineH, headlineCy: m.headlineCy, subW: m.subW, subH: m.subH, subGap: m.subGap, cutoutW: m.cutoutW, cutoutCx: m.cutoutCx, cutoutBleed: m.cutoutBleed, message: m.message, cta: m.cta, lockup: m.lockup, bandH: m.bandH };
@@ -234579,7 +234619,7 @@ async function learnProfile(masterIds, name, createdBy) {
     const cfg = normalizeFreeformConfig(parsed);
     const m = measureMaster(cfg, row.width, row.height, row.name, row.id);
     if (m) measurements.push(m);
-    else skipped.push(`${row.name}: no panel and headline recognised, not measured`);
+    else skipped.push(`${row.name}: no headline recognised, not measured`);
   }
   if (measurements.length === 0) return null;
   const profileName = (name ?? "").trim() || campaignNameFrom(measurements.map((m) => m.name));
@@ -234630,16 +234670,124 @@ async function profileForMaster(masterId, sourceTemplateId) {
 async function resolveStyleSchema(opts) {
   if (opts.profileId) {
     const p = await getProfile(opts.profileId);
-    if (p) return { schema: profileToStyleSchema(p.profile, p.id), source: "profile", profileId: p.id, label: `${p.name} (measured profile)` };
+    if (p) return { schema: profileToStyleSchema(p.profile, p.id), source: "profile", profileId: p.id, label: `${p.name} (measured profile)`, profile: p.profile };
   }
   try {
     const p = await profileForMaster(opts.masterId, opts.sourceTemplateId);
-    if (p) return { schema: profileToStyleSchema(p.profile, p.id), source: "profile", profileId: p.id, label: `${p.name} (measured profile)` };
+    if (p) return { schema: profileToStyleSchema(p.profile, p.id), source: "profile", profileId: p.id, label: `${p.name} (measured profile)`, profile: p.profile };
   } catch {
   }
   const builtin = styleSchemaFor(opts.masterName);
   if (builtin) return { schema: builtin, source: "builtin", label: `${builtin.name} (built-in schema)` };
   return { schema: null, source: "none", label: "family defaults" };
+}
+
+// src/lib/geometryAdapt.ts
+function keyElements(config2, width, height) {
+  const semantic = inferSlots(config2, width, height);
+  const groups = /* @__PURE__ */ new Map();
+  for (const e of semantic.elements) {
+    const slot = e.slot && e.slot !== "other" ? e.slot : e.type === "image" ? `image:${e.role}` : e.type === "text" ? `text:${e.role}` : "rect:other";
+    groups.set(slot, [...groups.get(slot) ?? [], e]);
+  }
+  const keyed = [];
+  for (const [slot, elements] of groups) {
+    elements.sort((a, b) => a.y - b.y || a.x - b.x || b.w * b.h - a.w * a.h);
+    elements.forEach((element, index) => keyed.push({ key: `${slot}:${index}`, element }));
+  }
+  return keyed;
+}
+var lerp = (a, b, t) => a + (b - a) * t;
+function interpolate(a, b, t) {
+  const edges = ["left", "right", "top", "bottom"].filter((edge) => a.edges.includes(edge) && b.edges.includes(edge));
+  return {
+    x: lerp(a.x, b.x, t),
+    y: lerp(a.y, b.y, t),
+    w: lerp(a.w, b.w, t),
+    h: lerp(a.h, b.h, t),
+    aspect: lerp(a.aspect, b.aspect, t),
+    edges,
+    ...a.fontSize != null || b.fontSize != null ? { fontSize: lerp(a.fontSize ?? b.fontSize, b.fontSize ?? a.fontSize, t) } : {}
+  };
+}
+function bracket(masters, aspect) {
+  const sorted = [...masters].sort((a, b) => Math.log(a.aspect) - Math.log(b.aspect));
+  const target = Math.log(aspect);
+  if (target <= Math.log(sorted[0].aspect)) return { a: sorted[0], b: sorted[0], t: 0, outside: true };
+  const last = sorted[sorted.length - 1];
+  if (target >= Math.log(last.aspect)) return { a: last, b: last, t: 0, outside: true };
+  for (let i = 0; i < sorted.length - 1; i++) {
+    const lo = Math.log(sorted[i].aspect), hi = Math.log(sorted[i + 1].aspect);
+    if (target >= lo && target <= hi) return { a: sorted[i], b: sorted[i + 1], t: (target - lo) / Math.max(1e-4, hi - lo), outside: false };
+  }
+  return { a: last, b: last, t: 0, outside: true };
+}
+function targetBox(a, b, key, t) {
+  const x = a.elements[key], y = b.elements[key];
+  if (x && y) return interpolate(x, y, t);
+  return x ?? y ?? null;
+}
+function fitText2(el, proposed, width, height) {
+  const floor = el.slot === "headline" || el.role === "headline" ? 12 : 8;
+  let size = Math.max(floor, proposed);
+  for (let i = 0; i < 40; i++) {
+    const lines = wrapText(el.text, width, { family: el.fontFamily, weight: el.fontWeight, letterSpacing: el.letterSpacing }, size);
+    const widest = Math.max(0, ...lines.map((line2) => measureLine(line2, { family: el.fontFamily, weight: el.fontWeight, letterSpacing: el.letterSpacing }, size)));
+    const blockH = lines.length * size * (el.lineHeight ?? 1.2);
+    if (widest <= width * 1.01 && blockH <= height * 1.02) break;
+    size *= 0.96;
+  }
+  return Math.max(floor, Math.round(size * 10) / 10);
+}
+function placeImage2(el, measured, dstW, dstH) {
+  const box = { x: measured.x * dstW, y: measured.y * dstH, w: measured.w * dstW, h: measured.h * dstH };
+  const fullBleed = measured.edges.length === 4 && measured.w * measured.h > 0.65;
+  if (fullBleed) return { ...el, x: 0, y: 0, w: dstW, h: dstH, fit: "cover" };
+  const aspect = el.w / Math.max(1, el.h);
+  let scale = Math.min(box.w / Math.max(1, el.w), box.h / Math.max(1, el.h));
+  if (measured.edges.includes("left") && measured.edges.includes("right")) scale = box.w / Math.max(1, el.w);
+  else if (measured.edges.includes("top") && measured.edges.includes("bottom")) scale = box.h / Math.max(1, el.h);
+  const w = Math.max(1, el.w * scale), h = Math.max(1, w / aspect);
+  let x = box.x + (box.w - w) / 2, y = box.y + (box.h - h) / 2;
+  if (measured.edges.includes("left")) x = box.x;
+  if (measured.edges.includes("right")) x = box.x + box.w - w;
+  if (measured.edges.includes("top")) y = box.y;
+  if (measured.edges.includes("bottom")) y = box.y + box.h - h;
+  return { ...el, x: Math.round(x), y: Math.round(y), w: Math.round(w), h: Math.round(h), fit: el.fit ?? "contain" };
+}
+function adaptGeometryProfile(master, srcW, srcH, dstW, dstH, profile) {
+  const masters = profile.geometryMasters ?? [];
+  if (masters.length === 0 || !masters.some((m) => m.mode === "free")) return null;
+  const keyed = keyElements(master, srcW, srcH);
+  if (!keyed.some(({ element }) => element.slot === "headline" || element.type === "text" && element.role === "headline")) return null;
+  const { a, b, t, outside } = bracket(masters, dstW / dstH);
+  const fallback = adaptFreeformConfig(master, srcW, srcH, dstW, dstH);
+  const fallbackById = new Map(fallback.elements.map((e) => [e.id, e]));
+  const short = Math.min(dstW, dstH);
+  let matched = 0;
+  const elements = keyed.map(({ key, element }) => {
+    const measured = targetBox(a, b, key, t);
+    if (!measured) return fallbackById.get(element.id) ?? element;
+    matched++;
+    const x = Math.round(measured.x * dstW), y = Math.round(measured.y * dstH);
+    const w = Math.max(1, Math.round(measured.w * dstW)), h = Math.max(1, Math.round(measured.h * dstH));
+    if (element.type === "image") return placeImage2(element, measured, dstW, dstH);
+    if (element.type === "text") {
+      const proposed = (measured.fontSize ?? element.fontSize / Math.min(srcW, srcH)) * short;
+      return { ...element, x, y, w, h, fontSize: fitText2(element, proposed, w, h), ...element.letterSpacing !== void 0 ? { letterSpacing: element.letterSpacing * (short / Math.min(srcW, srcH)) } : {} };
+    }
+    return { ...element, x, y, w, h };
+  });
+  if (matched < Math.min(3, keyed.length)) return null;
+  const relation = a.templateId === b.templateId ? `nearest ${a.width}\xD7${a.height} master` : `${a.width}\xD7${a.height} and ${b.width}\xD7${b.height} masters`;
+  return {
+    config: { ...master, elements, adaptMethod: "geometry-profile" },
+    notes: [
+      `Layer positions measured from the ${relation}.`,
+      "Raster artwork was scaled proportionally, never stretched; live text was fitted inside its measured box.",
+      ...outside ? ["Target shape is outside the supplied portrait-to-landscape range, so the nearest master geometry was edge-anchored and flagged for review."] : []
+    ]
+  };
 }
 
 // src/lib/brandGuidelines/aucklandCouncilDistilled.ts
@@ -242013,6 +242161,14 @@ async function adaptOne(master, masterConfig, width, height, brandInfo, log, exe
     method = "scaled:approved";
     notes.push(reference.note);
   }
+  if (!adapted && styleOverride?.profile) {
+    const geometric = adaptGeometryProfile(masterConfig, master.width, master.height, width, height, styleOverride.profile);
+    if (geometric) {
+      adapted = geometric.config;
+      method = "geometry-profile";
+      notes.push(...geometric.notes);
+    }
+  }
   const hasTextHeadline = masterConfig.elements.some((e) => e.type === "text" && e.text.trim().length > 0);
   const styleSpec = styleOverride ? styleOverride.schema : styleSchemaFor(master.name);
   if (styleOverride?.schema) notes.push(`Layout numbers from ${styleOverride.label}.`);
@@ -242268,7 +242424,7 @@ router13.post("/templates/:id/adapt", requireAdmin, async (req, res) => {
       name: typeof t.formatName === "string" ? t.formatName : typeof t.name === "string" ? t.name : null,
       channel: typeof t.channel === "string" ? t.channel : null
     };
-    const { config: adaptedConfig, method, spec, rejected } = await adaptOne(master, masterConfig, width, height, brandInfo, req.log, exemplars, void 0, hints, resolvedStyle.source === "none" ? null : { schema: resolvedStyle.schema, label: resolvedStyle.label }, { loadImage: makeImageLoader(req), brandFontFamily: brand?.fontFamily ?? "National 2" });
+    const { config: adaptedConfig, method, spec, rejected } = await adaptOne(master, masterConfig, width, height, brandInfo, req.log, exemplars, void 0, hints, resolvedStyle.source === "none" ? null : { schema: resolvedStyle.schema, label: resolvedStyle.label, profile: resolvedStyle.profile }, { loadImage: makeImageLoader(req), brandFontFamily: brand?.fontFamily ?? "National 2" });
     if (rejected.length > 0) rejectedCount++;
     let merged = subjectNotes.length ? normalizeFreeformConfig({ ...adaptedConfig, adaptNotes: [...adaptedConfig.adaptNotes ?? [], ...subjectNotes] }) : adaptedConfig;
     try {
@@ -242807,7 +242963,7 @@ router13.post("/templates/:id/redo", requireAdmin, async (req, res) => {
     await ensureBrandFontsRegistered();
     const exemplars = await approvedExemplars(master.id);
     const redoStyle = await resolveStyleSchema({ masterId: master.id, masterName: master.name, sourceTemplateId: master.sourceTemplateId ?? null });
-    const { config: config2, method, spec, reference } = await adaptOne(master, masterConfig, piece.width, piece.height, brandInfo, req.log, exemplars, piece.id, { name: piece.name }, redoStyle.source === "none" ? null : { schema: redoStyle.schema, label: redoStyle.label }, { loadImage: makeImageLoader(req), brandFontFamily: brand?.fontFamily ?? "National 2" });
+    const { config: config2, method, spec, reference } = await adaptOne(master, masterConfig, piece.width, piece.height, brandInfo, req.log, exemplars, piece.id, { name: piece.name }, redoStyle.source === "none" ? null : { schema: redoStyle.schema, label: redoStyle.label, profile: redoStyle.profile }, { loadImage: makeImageLoader(req), brandFontFamily: brand?.fontFamily ?? "National 2" });
     const [updated] = await db.update(templatesTable).set({
       config: JSON.stringify(config2),
       description: `Adapted from "${master.name}" (${master.width}\xD7${master.height}) \xB7 ${method.replace(":", " ")} \xB7 ${spec.formatClass} \xB7 redone ${(/* @__PURE__ */ new Date()).toISOString().slice(0, 10)}`,
@@ -245508,7 +245664,7 @@ router24.post("/layout-profiles/learn", requireAuth, async (req, res) => {
   try {
     const learned = await learnProfile(ids, name, req.clerkUserId ?? null);
     if (!learned) {
-      res.status(422).json({ error: "None of those examples could be measured: each needs a recognised panel and headline." });
+      res.status(422).json({ error: "None of those examples could be measured: each needs a recognised headline or headline layer." });
       return;
     }
     res.status(201).json({ ...formatProfile(learned.stored), skipped: learned.skipped });
