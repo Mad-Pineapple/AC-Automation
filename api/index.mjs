@@ -194811,6 +194811,7 @@ var ListTemplatesResponseItem = objectType({
       "y": numberType().optional(),
       "w": numberType().optional(),
       "h": numberType().optional(),
+      "layerName": stringType().optional().describe("Original source-layer name, for example art:headline"),
       "slot": stringType().optional().describe("Composition slot: photo | cutout | scrim | panel | band | headline | subheadline | message | cta | ctaLabel | ctaIcon | lockup | logo"),
       "role": stringType().optional(),
       "text": stringType().optional(),
@@ -194893,6 +194894,7 @@ var CreateTemplateBody = objectType({
       "y": numberType().optional(),
       "w": numberType().optional(),
       "h": numberType().optional(),
+      "layerName": stringType().optional().describe("Original source-layer name, for example art:headline"),
       "slot": stringType().optional().describe("Composition slot: photo | cutout | scrim | panel | band | headline | subheadline | message | cta | ctaLabel | ctaIcon | lockup | logo"),
       "role": stringType().optional(),
       "text": stringType().optional(),
@@ -194976,6 +194978,7 @@ var GetTemplateResponse = objectType({
       "y": numberType().optional(),
       "w": numberType().optional(),
       "h": numberType().optional(),
+      "layerName": stringType().optional().describe("Original source-layer name, for example art:headline"),
       "slot": stringType().optional().describe("Composition slot: photo | cutout | scrim | panel | band | headline | subheadline | message | cta | ctaLabel | ctaIcon | lockup | logo"),
       "role": stringType().optional(),
       "text": stringType().optional(),
@@ -195060,6 +195063,7 @@ var UpdateTemplateBody = objectType({
       "y": numberType().optional(),
       "w": numberType().optional(),
       "h": numberType().optional(),
+      "layerName": stringType().optional().describe("Original source-layer name, for example art:headline"),
       "slot": stringType().optional().describe("Composition slot: photo | cutout | scrim | panel | band | headline | subheadline | message | cta | ctaLabel | ctaIcon | lockup | logo"),
       "role": stringType().optional(),
       "text": stringType().optional(),
@@ -195140,6 +195144,7 @@ var UpdateTemplateResponse = objectType({
       "y": numberType().optional(),
       "w": numberType().optional(),
       "h": numberType().optional(),
+      "layerName": stringType().optional().describe("Original source-layer name, for example art:headline"),
       "slot": stringType().optional().describe("Composition slot: photo | cutout | scrim | panel | band | headline | subheadline | message | cta | ctaLabel | ctaIcon | lockup | logo"),
       "role": stringType().optional(),
       "text": stringType().optional(),
@@ -195269,6 +195274,7 @@ var DissectPdfResponse = objectType({
       "y": numberType().optional(),
       "w": numberType().optional(),
       "h": numberType().optional(),
+      "layerName": stringType().optional().describe("Original source-layer name, for example art:headline"),
       "slot": stringType().optional().describe("Composition slot: photo | cutout | scrim | panel | band | headline | subheadline | message | cta | ctaLabel | ctaIcon | lockup | logo"),
       "role": stringType().optional(),
       "text": stringType().optional(),
@@ -195347,6 +195353,7 @@ var DissectImageResponse = objectType({
       "y": numberType().optional(),
       "w": numberType().optional(),
       "h": numberType().optional(),
+      "layerName": stringType().optional().describe("Original source-layer name, for example art:headline"),
       "slot": stringType().optional().describe("Composition slot: photo | cutout | scrim | panel | band | headline | subheadline | message | cta | ctaLabel | ctaIcon | lockup | logo"),
       "role": stringType().optional(),
       "text": stringType().optional(),
@@ -196625,6 +196632,7 @@ var ClaudeReviewTemplateResponse = objectType({
       "y": numberType().optional(),
       "w": numberType().optional(),
       "h": numberType().optional(),
+      "layerName": stringType().optional().describe("Original source-layer name, for example art:headline"),
       "slot": stringType().optional().describe("Composition slot: photo | cutout | scrim | panel | band | headline | subheadline | message | cta | ctaLabel | ctaIcon | lockup | logo"),
       "role": stringType().optional(),
       "text": stringType().optional(),
@@ -196712,6 +196720,7 @@ var UndoClaudeReviewTemplateResponse = objectType({
       "y": numberType().optional(),
       "w": numberType().optional(),
       "h": numberType().optional(),
+      "layerName": stringType().optional().describe("Original source-layer name, for example art:headline"),
       "slot": stringType().optional().describe("Composition slot: photo | cutout | scrim | panel | band | headline | subheadline | message | cta | ctaLabel | ctaIcon | lockup | logo"),
       "role": stringType().optional(),
       "text": stringType().optional(),
@@ -227587,10 +227596,16 @@ function sanitizeSrc(v) {
   return null;
 }
 var SAFE_FONT_FAMILY = /^[\w\s,'-]{1,100}$/;
+var SAFE_LAYER_NAME = /^[\p{L}\p{N}\s:._()&+\/-]{1,120}$/u;
 function sanitizeFontFamily(v) {
   if (typeof v !== "string") return void 0;
   const s2 = v.trim();
   return s2.length > 0 && SAFE_FONT_FAMILY.test(s2) ? s2 : void 0;
+}
+function sanitizeLayerName(v) {
+  if (typeof v !== "string") return void 0;
+  const s2 = v.trim();
+  return s2.length > 0 && SAFE_LAYER_NAME.test(s2) ? s2 : void 0;
 }
 function clampOpacity(v) {
   if (v === void 0 || v === null) return void 0;
@@ -227684,6 +227699,7 @@ function normalizeFreeformConfig(raw2) {
       y: num(el.y),
       w: Math.max(0, num(el.w)),
       h: Math.max(0, num(el.h)),
+      ...sanitizeLayerName(el.layerName) ? { layerName: sanitizeLayerName(el.layerName) } : {},
       ...el.locked === true ? { locked: true } : {},
       ...SLOT_ROLES.includes(el.slot) && el.slot !== "other" ? { slot: el.slot } : {}
     };
@@ -241186,11 +241202,38 @@ async function parseIdmlToLayouts(idml, linksByName, brandLogoUrl = null) {
   const paraStyles = buildParaStyleTable(await readXml("Resources/Styles.xml"));
   const designMap = await readXml("designmap.xml");
   const hiddenLayers = /* @__PURE__ */ new Set();
+  const layerNames = /* @__PURE__ */ new Map();
   for (const layer of asArray(designMap?.Document?.Layer)) {
+    if (typeof layer?.["@_Self"] === "string" && typeof layer?.["@_Name"] === "string") {
+      layerNames.set(layer["@_Self"], layer["@_Name"].trim());
+    }
     if (layer?.["@_Visible"] === "false" && typeof layer?.["@_Self"] === "string") {
       hiddenLayers.add(layer["@_Self"]);
     }
   }
+  const semanticLayer = (layerRef) => {
+    const name = layerRef ? layerNames.get(layerRef) : void 0;
+    if (!name) return null;
+    return name.replace(/^art\s*[:_/-]\s*/i, "").trim().toLowerCase();
+  };
+  const layerMetadata = (layerRef) => {
+    const layerName = layerRef ? layerNames.get(layerRef) : void 0;
+    if (!layerName) return {};
+    const key = semanticLayer(layerRef);
+    const slots = {
+      hero: "photo",
+      photo: "photo",
+      headline: "headline",
+      subheadline: "subheadline",
+      subhead: "subheadline",
+      body: "message",
+      message: "message",
+      cta: "cta",
+      logo: "logo",
+      lockup: "lockup"
+    };
+    return { layerName, ...key && slots[key] ? { slot: slots[key] } : {} };
+  };
   const spreadRefs = asArray(designMap?.Document?.["idPkg:Spread"]).map((s2) => s2?.["@_src"]).filter(Boolean);
   if (spreadRefs.length === 0) {
     throw new Error("IDML has no spreads");
@@ -241241,6 +241284,8 @@ async function parseIdmlToLayouts(idml, linksByName, brandLogoUrl = null) {
     const mainImage = { name: null, area: 0 };
     walkItems(spread, colors, ({ kind, item, matrix, layer, logoTile }) => {
       if (layer && hiddenLayers.has(layer)) return;
+      const sourceLayer = layerMetadata(layer);
+      const sourceLayerRole = semanticLayer(layer);
       const boundsSource = logoTile ?? item;
       const bounds = itemBounds(boundsSource, matrix);
       if (!bounds) return;
@@ -241255,9 +241300,11 @@ async function parseIdmlToLayouts(idml, linksByName, brandLogoUrl = null) {
       if (logoTile) {
         if (brandLogoUrl) {
           elements.push({
+            ...sourceLayer,
             id: `idml_logo_${idCounter2++}`,
             type: "image",
             role: "logo",
+            slot: "logo",
             src: brandLogoUrl,
             fit: "contain",
             x,
@@ -241274,12 +241321,13 @@ async function parseIdmlToLayouts(idml, linksByName, brandLogoUrl = null) {
         const storySelf = item?.["@_ParentStory"];
         const story = typeof storySelf === "string" ? storyCache.get(storySelf) : null;
         if (!story) return;
-        const roleGuess = story.fontSize >= 30 ? "headline" : story.fontSize >= 18 ? "subhead" : "body";
+        const roleGuess = sourceLayerRole === "headline" ? "headline" : sourceLayerRole === "subheadline" || sourceLayerRole === "subhead" ? "subhead" : sourceLayerRole === "body" || sourceLayerRole === "message" ? "body" : sourceLayerRole === "cta" ? "cta" : story.fontSize >= 30 ? "headline" : story.fontSize >= 18 ? "subhead" : "body";
         const capFit = !story.text.includes("\n") && bounds.h > story.fontSize * 0.45 && bounds.h < story.fontSize * 1.05;
         const grace = bounds.w * (story.mixedWeights ? 0.08 : 0.02);
         const boxX = story.align === "center" ? x - grace / 2 : story.align === "right" ? x - grace : x;
         const letterSpacing = story.tracking ? Math.round(story.tracking / 1e3 * story.fontSize * 100) / 100 : 0;
         elements.push({
+          ...sourceLayer,
           ...capFit ? { baselineFit: "cap" } : {},
           id: `idml_txt_${idCounter2++}`,
           type: "text",
@@ -241303,6 +241351,7 @@ async function parseIdmlToLayouts(idml, linksByName, brandLogoUrl = null) {
       const placed2 = [...asArray(item?.Image), ...asArray(item?.PDF), ...asArray(item?.EPS)];
       if (placed2.length > 0 && (kind === "Oval" || kind === "Polygon")) {
         elements.push({
+          ...sourceLayer,
           id: `idml_img_${idCounter2++}`,
           type: "rasterRegion",
           photoFallback: true,
@@ -241356,9 +241405,10 @@ async function parseIdmlToLayouts(idml, linksByName, brandLogoUrl = null) {
             }
           }
           elements.push({
+            ...sourceLayer,
             id: `idml_img_${idCounter2++}`,
             type: "image",
-            role: "product",
+            role: sourceLayerRole === "logo" ? "logo" : sourceLayerRole === "decoration" ? "decoration" : "product",
             src: `/api/storage${match2.objectPath}`,
             fit: "cover",
             x,
@@ -241375,6 +241425,7 @@ async function parseIdmlToLayouts(idml, linksByName, brandLogoUrl = null) {
             mainImage.name = name;
           }
           elements.push({
+            ...sourceLayer,
             id: `idml_img_${idCounter2++}`,
             type: "rasterRegion",
             photoFallback: true,
@@ -241394,6 +241445,7 @@ async function parseIdmlToLayouts(idml, linksByName, brandLogoUrl = null) {
       if (kind === "Polygon" || kind === "Oval" || kind === "GraphicLine") {
         if (fill || hasStroke) {
           elements.push({
+            ...sourceLayer,
             id: `idml_raster_${idCounter2++}`,
             type: "rasterRegion",
             x,
@@ -241447,6 +241499,7 @@ async function parseIdmlToLayouts(idml, linksByName, brandLogoUrl = null) {
           if (typeof uniOpt === "string" && /rounded/i.test(uniOpt) && Number.isFinite(uniR) && uniR > 0) radius = uniR;
         }
         elements.push({
+          ...sourceLayer,
           id: `idml_rect_${idCounter2++}`,
           type: "rect",
           fill,

@@ -2089,6 +2089,9 @@ components:
           type: number
         h:
           type: number
+        layerName:
+          type: string
+          description: Original source-layer name, for example art:headline
         slot:
           type: string
           description: "Composition slot: photo | cutout | scrim | panel | band | headline | subheadline | message | cta | ctaLabel | ctaIcon | lockup | logo"

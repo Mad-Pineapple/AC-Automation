@@ -1157,8 +1157,12 @@ function Layers({
       <div ref={listRef} className="space-y-1 max-h-64 overflow-auto relative">
         {[...els].reverse().map((el) => {
           const isSel = !!el.id && selectedSet.has(el.id);
-          const label = el.type === "text" ? el.text || "Text" : el.type === "rect" ? "Shape" : "Image";
-          const slot = (el as { slot?: string }).slot;
+          const { slot, layerName } = el as { slot?: string; layerName?: string };
+          const semanticLayer = layerName
+            ?.replace(/^art\s*[:_/-]\s*/i, "")
+            .replace(/[_-]+/g, " ")
+            .trim();
+          const label = semanticLayer || slot || (el.type === "text" ? el.text || "Text" : el.type === "rect" ? "Shape" : "Image");
           return (
             <div
               key={el.id}
@@ -1185,7 +1189,7 @@ function Layers({
               </button>
               <span className="font-mono uppercase text-[10px] w-9 shrink-0 text-muted-foreground">{el.type}</span>
               <span className="truncate flex-1">{label}</span>
-              {slot && <span className="text-[10px] px-1 rounded bg-muted text-muted-foreground shrink-0">{slot}</span>}
+              {slot && slot.toLowerCase() !== label.toLowerCase() && <span className="text-[10px] px-1 rounded bg-muted text-muted-foreground shrink-0">{slot}</span>}
               <button
                 type="button"
                 className="p-0.5 hover:text-foreground text-muted-foreground"

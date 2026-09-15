@@ -519,11 +519,38 @@ export async function parseIdmlToLayouts(
 
   // Layer visibility: items on hidden layers (guides, backups) are skipped.
   const hiddenLayers = new Set<string>();
+  const layerNames = new Map<string, string>();
   for (const layer of asArray(designMap?.Document?.Layer)) {
+    if (typeof layer?.["@_Self"] === "string" && typeof layer?.["@_Name"] === "string") {
+      layerNames.set(layer["@_Self"], layer["@_Name"].trim());
+    }
     if (layer?.["@_Visible"] === "false" && typeof layer?.["@_Self"] === "string") {
       hiddenLayers.add(layer["@_Self"]);
     }
   }
+  const semanticLayer = (layerRef: string | null): string | null => {
+    const name = layerRef ? layerNames.get(layerRef) : undefined;
+    if (!name) return null;
+    return name.replace(/^art\s*[:_/-]\s*/i, "").trim().toLowerCase();
+  };
+  const layerMetadata = (layerRef: string | null): Record<string, string> => {
+    const layerName = layerRef ? layerNames.get(layerRef) : undefined;
+    if (!layerName) return {};
+    const key = semanticLayer(layerRef);
+    const slots: Record<string, string> = {
+      hero: "photo",
+      photo: "photo",
+      headline: "headline",
+      subheadline: "subheadline",
+      subhead: "subheadline",
+      body: "message",
+      message: "message",
+      cta: "cta",
+      logo: "logo",
+      lockup: "lockup",
+    };
+    return { layerName, ...(key && slots[key] ? { slot: slots[key] } : {}) };
+  };
   const spreadRefs = asArray(designMap?.Document?.["idPkg:Spread"]).map((s: any) => s?.["@_src"]).filter(Boolean);
   if (spreadRefs.length === 0) {
     throw new Error("IDML has no spreads");
@@ -586,6 +613,8 @@ export async function parseIdmlToLayouts(
 
   walkItems(spread, colors, ({ kind, item, matrix, layer, logoTile }) => {
     if (layer && hiddenLayers.has(layer)) return;
+    const sourceLayer = layerMetadata(layer);
+    const sourceLayerRole = semanticLayer(layer);
     // The logo lockup group imports as ONE brand-logo image at its tile.
     const boundsSource = logoTile ?? item;
     const bounds = itemBounds(boundsSource, matrix);
@@ -608,9 +637,11 @@ export async function parseIdmlToLayouts(
         // baked in): drawn as-is at the designer's tile position — never
         // wrapped in another box, inset, or moved.
         elements.push({
+          ...sourceLayer,
           id: `idml_logo_${idCounter++}`,
           type: "image",
           role: "logo",
+          slot: "logo",
           src: brandLogoUrl,
           fit: "contain",
           x,
@@ -628,7 +659,12 @@ export async function parseIdmlToLayouts(
       const storySelf = item?.["@_ParentStory"];
       const story = typeof storySelf === "string" ? storyCache.get(storySelf) : null;
       if (!story) return;
-      const roleGuess = story.fontSize >= 30 ? "headline" : story.fontSize >= 18 ? "subhead" : "body";
+      const roleGuess =
+        sourceLayerRole === "headline" ? "headline" :
+        sourceLayerRole === "subheadline" || sourceLayerRole === "subhead" ? "subhead" :
+        sourceLayerRole === "body" || sourceLayerRole === "message" ? "body" :
+        sourceLayerRole === "cta" ? "cta" :
+        story.fontSize >= 30 ? "headline" : story.fontSize >= 18 ? "subhead" : "body";
       // InDesign auto-sized frames hug the cap height: frame top = cap top,
       // frame bottom = baseline. Flag them so the renderer sets the first
       // baseline at the frame bottom instead of CSS line-box maths.
@@ -644,6 +680,7 @@ export async function parseIdmlToLayouts(
       const boxX = story.align === "center" ? x - grace / 2 : story.align === "right" ? x - grace : x;
       const letterSpacing = story.tracking ? Math.round((story.tracking / 1000) * story.fontSize * 100) / 100 : 0;
       elements.push({
+        ...sourceLayer,
         ...(capFit ? { baselineFit: "cap" } : {}),
         id: `idml_txt_${idCounter++}`,
         type: "text",
@@ -672,6 +709,7 @@ export async function parseIdmlToLayouts(
       // expressed as a rectangular image element — the render would show the
       // square photo. Reproduce the frame from the document PDF instead.
       elements.push({
+        ...sourceLayer,
         id: `idml_img_${idCounter++}`,
         type: "rasterRegion",
         photoFallback: true,
@@ -733,9 +771,10 @@ export async function parseIdmlToLayouts(
           }
         }
         elements.push({
+          ...sourceLayer,
           id: `idml_img_${idCounter++}`,
           type: "image",
-          role: "product",
+          role: sourceLayerRole === "logo" ? "logo" : sourceLayerRole === "decoration" ? "decoration" : "product",
           src: `/api/storage${match.objectPath}`,
           fit: "cover",
           x,
@@ -755,6 +794,7 @@ export async function parseIdmlToLayouts(
           mainImage.name = name;
         }
         elements.push({
+          ...sourceLayer,
           id: `idml_img_${idCounter++}`,
           type: "rasterRegion",
           photoFallback: true,
@@ -780,6 +820,7 @@ export async function parseIdmlToLayouts(
     if (kind === "Polygon" || kind === "Oval" || kind === "GraphicLine") {
       if (fill || hasStroke) {
         elements.push({
+          ...sourceLayer,
           id: `idml_raster_${idCounter++}`,
           type: "rasterRegion",
           x,
@@ -844,6 +885,7 @@ export async function parseIdmlToLayouts(
         if (typeof uniOpt === "string" && /rounded/i.test(uniOpt) && Number.isFinite(uniR) && uniR > 0) radius = uniR;
       }
       elements.push({
+        ...sourceLayer,
         id: `idml_rect_${idCounter++}`,
         type: "rect",
         fill,

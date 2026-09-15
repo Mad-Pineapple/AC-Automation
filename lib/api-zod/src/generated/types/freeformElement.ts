@@ -19,6 +19,8 @@ export interface FreeformElement {
   y?: number;
   w?: number;
   h?: number;
+  /** Original source-layer name, for example art:headline */
+  layerName?: string;
   /** Composition slot: photo | cutout | scrim | panel | band | headline | subheadline | message | cta | ctaLabel | ctaIcon | lockup | logo */
   slot?: string;
   role?: string;

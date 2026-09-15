@@ -43,6 +43,9 @@ export interface FreeformBase {
   y: number;
   w: number;
   h: number;
+  /** Original source-layer name, for example art:headline. Preserved so the
+   * WIP editor and layout engine do not lose the designer's semantics. */
+  layerName?: string;
   /**
    * Locked elements are pinned brand furniture (logo, strapline, margins):
    * role-based copy/imagery substitution skips them and editors treat them
@@ -223,11 +226,18 @@ function sanitizeSrc(v: unknown): string | null {
 // fontFamily lands in a React `style` attribute, so whitelist it tightly to
 // avoid CSS injection (no parens, semicolons, braces or angle brackets).
 const SAFE_FONT_FAMILY = /^[\w\s,'-]{1,100}$/;
+const SAFE_LAYER_NAME = /^[\p{L}\p{N}\s:._()&+\/-]{1,120}$/u;
 
 function sanitizeFontFamily(v: unknown): string | undefined {
   if (typeof v !== "string") return undefined;
   const s = v.trim();
   return s.length > 0 && SAFE_FONT_FAMILY.test(s) ? s : undefined;
+}
+
+function sanitizeLayerName(v: unknown): string | undefined {
+  if (typeof v !== "string") return undefined;
+  const s = v.trim();
+  return s.length > 0 && SAFE_LAYER_NAME.test(s) ? s : undefined;
 }
 
 function clampOpacity(v: unknown): number | undefined {
@@ -368,6 +378,7 @@ export function normalizeFreeformConfig(raw: unknown): FreeformConfig {
       y: num(el.y),
       w: Math.max(0, num(el.w)),
       h: Math.max(0, num(el.h)),
+      ...(sanitizeLayerName(el.layerName) ? { layerName: sanitizeLayerName(el.layerName) } : {}),
       ...(el.locked === true ? { locked: true } : {}),
       ...(SLOT_ROLES.includes(el.slot as SlotRole) && el.slot !== "other" ? { slot: el.slot as SlotRole } : {}),
     };
