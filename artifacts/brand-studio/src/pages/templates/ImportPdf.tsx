@@ -3,19 +3,14 @@ import { useLocation, Link } from "wouter";
 import { useQueryClient } from "@tanstack/react-query";
 import {
   useCreateTemplate,
-  useAdaptTemplate,
   useDissectPdf,
-  useImportBrandPackage,
   useImportExampleArtwork,
   useListBrands,
   getListTemplatesQueryKey,
-  getListBrandAssetsQueryKey,
   Brand,
   DissectPdfResult,
   FreeformElement,
 } from "@workspace/api-client-react";
-import { ADAPT_PRESETS } from "@/lib/adaptPresets";
-import { SizePicker } from "@/components/SizePicker";
 import { useUpload } from "@workspace/object-storage-web";
 import { useToast } from "@/hooks/use-toast";
 import { useMe } from "@/hooks/use-me";
@@ -43,15 +38,7 @@ export default function ImportPdf() {
   const dissect = useDissectPdf();
   const { uploadFile, isUploading } = useUpload();
 
-  const [mode, setMode] = useState<"elements" | "keyVisual">("elements");
   const [result, setResult] = useState<DissectPdfResult | null>(null);
-  // Output sizes generated alongside the master on save (digital set on by
-  // default; print off since the master usually IS the print artwork).
-  const [outputSizes, setOutputSizes] = useState<Set<string>>(
-    new Set(["social_square", "story", "mrec", "banner"]),
-  );
-  const adaptTemplate = useAdaptTemplate();
-  const importPackage = useImportBrandPackage();
   const importExample = useImportExampleArtwork();
   const [editedElements, setEditedElements] = useState<FreeformElement[]>([]);
   const [editorKey, setEditorKey] = useState(0);
@@ -83,28 +70,7 @@ export default function ImportPdf() {
 
   if (isLoadingMe || !isAdmin) return null;
 
-  const busy = isUploading || dissect.isPending || importPackage.isPending || importExample.isPending;
-
-  const runDissect = (objectPath: string, friendlyName: string) => {
-    dissect.mutate(
-      { data: { objectPath, mode } },
-      {
-        onSuccess: (res) => {
-          setResult(res);
-          setEditedElements(res.config.elements ?? []);
-          setEditorKey((k) => k + 1);
-          setName(friendlyName || res.name);
-          setDescription("");
-        },
-        onError: () =>
-          toast({
-            title: "Could not read that PDF",
-            description: "The file may be encrypted or unsupported. Try another.",
-            variant: "destructive",
-          }),
-      },
-    );
-  };
+  const busy = isUploading || dissect.isPending || importExample.isPending;
 
   const handleFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -153,7 +119,7 @@ export default function ImportPdf() {
     }
 
     dissect.mutate(
-      { data: { objectPath: uploaded.objectPath, mode } },
+      { data: { objectPath: uploaded.objectPath, mode: "keyVisual" } },
       {
         onSuccess: (res) => {
           setResult(res);
@@ -186,11 +152,6 @@ export default function ImportPdf() {
       toast({ title: "Name is required", variant: "destructive" });
       return;
     }
-    const targets = ADAPT_PRESETS.filter((p) => outputSizes.has(p.key)).map((p) => ({
-      width: p.width,
-      height: p.height,
-      name: `${name.trim()} — ${p.label}`,
-    }));
     createTemplate.mutate(
       {
         data: {
@@ -203,34 +164,13 @@ export default function ImportPdf() {
         },
       },
       {
-        onSuccess: (created) => {
+        onSuccess: () => {
           queryClient.invalidateQueries({ queryKey: getListTemplatesQueryKey() });
-          if (targets.length === 0) {
-            toast({ title: category === "wip" ? "Artwork imported to Work in progress" : "Template created from PDF" });
-            setLocation(category === "wip" ? "/wip" : "/templates");
-            return;
-          }
-          adaptTemplate.mutate(
-            { id: created.id, data: { targets } },
-            {
-              onSuccess: (adapted) => {
-                queryClient.invalidateQueries({ queryKey: getListTemplatesQueryKey() });
-                toast({
-                  title: `Master + ${adapted.length} size${adapted.length === 1 ? "" : "s"} created`,
-                  description: category === "wip" ? "All in Work in progress — review them, then Make template on the ones you keep." : "Each size is a normal template — fine-tune any of them in the editor.",
-                });
-                setLocation(category === "wip" ? "/wip" : "/templates");
-              },
-              onError: () => {
-                toast({
-                  title: "Master saved, but size adaptation failed",
-                  description: "Open the template and use Adapt to other sizes.",
-                  variant: "destructive",
-                });
-                setLocation(category === "wip" ? "/wip" : "/templates");
-              },
-            },
-          );
+          toast({
+            title: "Artwork added to WIP",
+            description: "The master is ready to review or select when building a campaign.",
+          });
+          setLocation("/wip");
         },
         onError: () => toast({ title: "Failed to save template", variant: "destructive" }),
       },
@@ -244,9 +184,9 @@ export default function ImportPdf() {
           <ChevronLeft className="w-5 h-5" />
         </Link>
         <div>
-          <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight">Import From PDF</h1>
+          <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight">Upload artwork</h1>
           <p className="text-muted-foreground mt-1.5">
-            Dissect A Design Into An Editable Template
+            One place for every master artwork file
           </p>
         </div>
       </div>
@@ -254,36 +194,6 @@ export default function ImportPdf() {
       {!result ? (
         <Card className="border-border/50">
           <CardContent className="py-12 space-y-6">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-w-2xl mx-auto">
-              <button
-                type="button"
-                onClick={() => setMode("elements")}
-                className={`rounded-xl border-2 p-4 text-left transition-colors ${
-                  mode === "elements" ? "border-primary bg-primary/5" : "border-border/60 hover:border-primary/40"
-                }`}
-                data-testid="mode-elements"
-              >
-                <p className="font-semibold text-sm">Editable elements</p>
-                <p className="text-xs text-muted-foreground mt-1">
-                  Extracts text, images and colour blocks as separate editable pieces. Best for
-                  text-led layouts you want to rewrite per campaign.
-                </p>
-              </button>
-              <button
-                type="button"
-                onClick={() => setMode("keyVisual")}
-                className={`rounded-xl border-2 p-4 text-left transition-colors ${
-                  mode === "keyVisual" ? "border-primary bg-primary/5" : "border-border/60 hover:border-primary/40"
-                }`}
-                data-testid="mode-key-visual"
-              >
-                <p className="font-semibold text-sm">Recreate artwork</p>
-                <p className="text-xs text-muted-foreground mt-1">
-                  A pixel-faithful copy of the page — the artwork is never modified. Layered PDFs
-                  get their type lifted off as live text; flat PDFs import exactly as designed.
-                </p>
-              </button>
-            </div>
             <label
               className={`flex flex-col items-center justify-center text-center gap-4 rounded-xl border-2 border-dashed border-border/60 p-12 transition-colors ${
                 busy ? "opacity-60 pointer-events-none" : "cursor-pointer hover:border-primary/50 hover:bg-muted/30"
@@ -308,15 +218,13 @@ export default function ImportPdf() {
                 <p className="font-semibold">
                   {isUploading
                     ? "Uploading…"
-                    : importPackage.isPending
-                      ? "Unpacking your InDesign package…"
-                      : dissect.isPending
-                        ? "Reading your PDF…"
-                        : "Upload a PDF or InDesign package (.zip)"}
+                    : dissect.isPending
+                      ? "Reading your artwork…"
+                      : "Choose artwork file"}
                 </p>
                 <p className="text-sm text-muted-foreground mt-1 max-w-sm">
-                  A zipped InDesign package imports every linked asset into the Library, then opens
-                  the document PDF here. A plain PDF imports directly.
+                  PDF, zipped InDesign package, IDML, PSD, PNG, JPG, WebP or TIFF. The platform
+                  automatically uses the most accurate import method and stores the result in WIP.
                 </p>
               </div>
             </label>
@@ -340,12 +248,12 @@ export default function ImportPdf() {
 
           <Card className="border-border/50">
             <CardHeader>
-              <CardTitle className="text-base">Template Details</CardTitle>
+              <CardTitle className="text-base">Artwork details</CardTitle>
             </CardHeader>
             <CardContent className="space-y-5">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="tpl-name">Template Name</Label>
+                  <Label htmlFor="tpl-name">Artwork name</Label>
                   <Input
                     id="tpl-name"
                     value={name}
@@ -356,7 +264,7 @@ export default function ImportPdf() {
                 </div>
                 <div className="space-y-2">
                   <Label>Where it goes</Label>
-                  <p className="text-sm text-muted-foreground h-10 flex items-center">Work in progress — promote it with Make template when finished.</p>
+                  <p className="text-sm text-muted-foreground h-10 flex items-center">Artwork WIP, your central working area.</p>
                 </div>
               </div>
               <div className="space-y-2">
@@ -378,38 +286,6 @@ export default function ImportPdf() {
                 <Badge variant="secondary">{counts.image} image</Badge>
                 <Badge variant="secondary">{counts.rect} shape</Badge>
               </div>
-            </CardContent>
-          </Card>
-
-          <Card className="border-border/50">
-            <CardHeader>
-              <CardTitle className="text-base">Output sizes</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-xs text-muted-foreground mb-3">
-                Saving creates the master plus an adapted template for every ticked size — artwork
-                re-crops, text re-anchors. Untick everything to save just the master.
-              </p>
-              <SizePicker
-                selected={outputSizes}
-                onToggle={(key) =>
-                  setOutputSizes((prev) => {
-                    const next = new Set(prev);
-                    if (next.has(key)) next.delete(key);
-                    else next.add(key);
-                    return next;
-                  })
-                }
-                onSetMany={(keys, on) =>
-                  setOutputSizes((prev) => {
-                    const next = new Set(prev);
-                    for (const k of keys) on ? next.add(k) : next.delete(k);
-                    return next;
-                  })
-                }
-                testPrefix="output-size"
-                columns="grid-cols-1 sm:grid-cols-2 lg:grid-cols-3"
-              />
             </CardContent>
           </Card>
 
@@ -461,7 +337,7 @@ export default function ImportPdf() {
               Choose Another
             </Button>
             <Button onClick={handleSave} disabled={createTemplate.isPending || elements.length === 0} data-testid="button-import-save">
-              {createTemplate.isPending ? "Saving…" : "Save Template"}
+              {createTemplate.isPending ? "Saving…" : "Add to Artwork WIP"}
             </Button>
           </div>
         </div>

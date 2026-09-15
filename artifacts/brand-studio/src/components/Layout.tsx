@@ -1,4 +1,4 @@
-import { ReactNode, useState } from "react";
+import { ReactNode } from "react";
 import { Link, useLocation } from "wouter";
 import { StanBubbles } from "@/components/StanBubbles";
 import { UpdateNotifier } from "@/components/UpdateNotifier";
@@ -14,13 +14,11 @@ import {
   LayoutTemplate,
   Plus,
   UploadCloud,
-  ImageIcon,
   Images,
   AlertTriangle,
   ExternalLink, BookOpen } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useClerk, useUser } from "@clerk/react";
-import { useListBrands } from "@workspace/api-client-react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
@@ -30,13 +28,6 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
 import { useMe } from "@/hooks/use-me";
 import { useTheme } from "@/lib/theme";
 
@@ -45,7 +36,7 @@ interface LayoutProps {
 }
 
 export function Layout({ children }: LayoutProps) {
-  const [location, setLocation] = useLocation();
+  const [location] = useLocation();
   const { signOut } = useClerk();
   const { user, isSignedIn, isLoaded: clerkLoaded } = useUser();
   const { data: meData, isFetched: meFetched } = useMe();
@@ -62,9 +53,6 @@ export function Layout({ children }: LayoutProps) {
     clerkLoaded && !!isSignedIn && meFetched && meData === null;
 
   const basePath = import.meta.env.BASE_URL.replace(/\/$/, "");
-  const [pickerOpen, setPickerOpen] = useState(false);
-  const { data: brands } = useListBrands();
-
   const navigation = [
     { name: "Dashboard", href: "/", icon: LayoutDashboard, show: true },
     { name: "Campaigns", href: "/briefs", icon: Briefcase, show: true },
@@ -72,7 +60,7 @@ export function Layout({ children }: LayoutProps) {
     { name: "Library", href: "/library", icon: Images, show: true },
     { name: "Templates", href: "/templates", icon: LayoutTemplate, show: true },
     { name: "Knowledge", href: "/knowledge", icon: BookOpen, show: true },
-    { name: "WIP", href: "/wip", icon: Hammer, show: true },
+    { name: "Artwork WIP", href: "/wip", icon: Hammer, show: true },
     { name: "Performance", href: "/performance", icon: BarChart3, show: true },
     { name: "Team", href: "/team", icon: Users, show: isAdmin },
   ].filter((n) => n.show);
@@ -87,11 +75,6 @@ export function Layout({ children }: LayoutProps) {
 
   const isActive = (href: string) =>
     location === href || (href !== "/" && location.startsWith(href));
-
-  const goToLibrary = (brandId: number) => {
-    setPickerOpen(false);
-    setLocation(`/brands/${brandId}?tab=library`);
-  };
 
   const activeName = navigation.find((n) => isActive(n.href))?.name ?? "Dashboard";
 
@@ -201,15 +184,16 @@ export function Layout({ children }: LayoutProps) {
         <div className="flex items-center gap-2 md:gap-3">
           {isSignedIn ? (
             <>
-              <Button
-                variant="outline"
-                className="rounded-full gap-2 h-10 md:h-11 px-4 md:px-5"
-                onClick={() => setPickerOpen(true)}
-                data-testid="button-add-asset"
-              >
-                <UploadCloud className="w-4 h-4 text-primary" />
-                <span className="hidden sm:inline">Add asset</span>
-              </Button>
+              <Link href="/wip/import">
+                <Button
+                  variant="outline"
+                  className="rounded-full gap-2 h-10 md:h-11 px-4 md:px-5"
+                  data-testid="button-upload-artwork"
+                >
+                  <UploadCloud className="w-4 h-4 text-primary" />
+                  <span className="hidden sm:inline">Upload artwork</span>
+                </Button>
+              </Link>
               <Link href="/briefs/new">
                 <Button
                   className="rounded-full gap-2 h-10 px-4 md:px-6 shadow-md border-0 text-white hover:opacity-90 transition-all"
@@ -335,54 +319,6 @@ export function Layout({ children }: LayoutProps) {
       </main>
       </div>
 
-      {/* Add-asset brand picker */}
-      <Dialog open={pickerOpen} onOpenChange={setPickerOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Add assets to a brand</DialogTitle>
-            <DialogDescription>
-              Pick a brand to open its library, then upload logos or images.
-            </DialogDescription>
-          </DialogHeader>
-          {brands?.length ? (
-            <div className="space-y-1 max-h-80 overflow-y-auto -mx-2 px-2">
-              {brands.map((b) => (
-                <button
-                  key={b.id}
-                  onClick={() => goToLibrary(b.id)}
-                  className="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-muted text-left transition-colors"
-                  data-testid={`picker-brand-${b.id}`}
-                >
-                  <div className="w-9 h-9 rounded-lg bg-muted flex items-center justify-center overflow-hidden shrink-0">
-                    {b.logoUrl ? (
-                      <img
-                        src={b.logoUrl}
-                        alt={b.name}
-                        className="max-h-full max-w-full object-contain"
-                      />
-                    ) : (
-                      <ImageIcon className="w-4 h-4 text-muted-foreground" />
-                    )}
-                  </div>
-                  <span className="text-sm font-medium">{b.name}</span>
-                </button>
-              ))}
-            </div>
-          ) : (
-            <div className="text-center py-6">
-              <p className="text-sm text-muted-foreground mb-4">
-                You don't have any brands yet. Create one to start a library.
-              </p>
-              <Link href="/brands/new">
-                <Button onClick={() => setPickerOpen(false)} className="rounded-full gap-2">
-                  <Plus className="w-4 h-4" />
-                  New brand
-                </Button>
-              </Link>
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
     </div>
   );
 }

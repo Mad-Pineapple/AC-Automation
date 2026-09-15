@@ -145,7 +145,7 @@ export default function Dashboard() {
                 className="rounded-full text-white border border-white/25 hover:bg-white/10 hover:text-white gap-2"
               >
                 <FileUp className="w-4 h-4" />
-                Import artwork
+                Upload artwork
               </Button>
             </Link>
           </div>

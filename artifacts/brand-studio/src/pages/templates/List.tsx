@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Plus, Pencil, Trash2, LayoutTemplate, FileUp, FileText, Folder, ArrowUpRight } from "lucide-react";
+import { Plus, Pencil, Trash2, LayoutTemplate, FileText, Folder, ArrowUpRight } from "lucide-react";
 import { isTemplateFolder } from "@/lib/templateFolders";
 import { TemplateThumbnail, LayoutOptions } from "@/components/TemplateRenderer";
 import { useToast } from "@/hooks/use-toast";
@@ -202,9 +202,6 @@ export default function TemplateList() {
         </div>
         {isAdmin && (
           <div className="flex gap-2">
-            <Link href="/templates/import">
-              <Button variant="outline" data-testid="button-import-pdf"><FileUp className="w-4 h-4 mr-2" />Import PDF</Button>
-            </Link>
             <Link href="/templates/new">
               <Button data-testid="button-new-template"><Plus className="w-4 h-4 mr-2" />New Template</Button>
             </Link>
@@ -232,9 +229,6 @@ export default function TemplateList() {
             </p>
             {isAdmin && (
               <div className="flex gap-2 mt-5">
-                <Link href="/templates/import">
-                  <Button variant="outline" data-testid="button-import-pdf-empty"><FileUp className="w-4 h-4 mr-2" />Import PDF</Button>
-                </Link>
                 <Link href="/templates/new">
                   <Button data-testid="button-new-template-empty"><Plus className="w-4 h-4 mr-2" />New Template</Button>
                 </Link>

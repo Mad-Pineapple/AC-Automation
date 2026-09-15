@@ -107,11 +107,16 @@ function WipCard({
             <h3 className="font-semibold text-sm truncate">{template.name}</h3>
             <p className="text-xs text-muted-foreground font-mono">{template.dims}</p>
           </div>
-          {((template.config as { rejected?: string[] } | undefined)?.rejected?.length ?? 0) > 0 ? (
-            <Badge variant="destructive" className="text-xs shrink-0" title={((template.config as { rejected?: string[] }).rejected ?? []).join(" ")}>Rejected</Badge>
-          ) : (
-            <Badge variant="secondary" className="text-xs shrink-0">In progress</Badge>
-          )}
+          <div className="flex items-center gap-1.5 shrink-0">
+            <Badge variant="outline" className="text-[10px]">
+              {template.sourceTemplateId ? "Generated" : "Master"}
+            </Badge>
+            {((template.config as { rejected?: string[] } | undefined)?.rejected?.length ?? 0) > 0 ? (
+              <Badge variant="destructive" className="text-xs" title={((template.config as { rejected?: string[] }).rejected ?? []).join(" ")}>Rejected</Badge>
+            ) : (
+              <Badge variant="secondary" className="text-xs">In progress</Badge>
+            )}
+          </div>
         </div>
         {((template.config as { rejected?: string[] } | undefined)?.rejected?.length ?? 0) > 0 && (
           <ul className="text-xs text-destructive list-disc pl-4 space-y-0.5">
@@ -265,10 +270,10 @@ export default function WipList() {
     <div className="space-y-8">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight">Work in progress</h1>
+          <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight">Artwork WIP</h1>
           <p className="text-muted-foreground mt-1.5">
-            Imported artwork you're still developing. Nothing here is selectable in campaign
-            briefs — press <span className="font-medium">Make template</span> when a piece is finished.
+            Your single artwork workspace. Upload masters here, create sizes, review results, then
+            press <span className="font-medium">Make template</span> only when a layout is approved for reuse.
           </p>
         </div>
         {isAdmin && (
@@ -289,7 +294,7 @@ export default function WipList() {
               </Button>
             )}
             <Link href="/wip/import">
-              <Button data-testid="button-import-wip"><FileUp className="w-4 h-4 mr-2" />Import artwork</Button>
+              <Button data-testid="button-import-wip"><FileUp className="w-4 h-4 mr-2" />Upload artwork</Button>
             </Link>
           </div>
         )}
@@ -309,15 +314,15 @@ export default function WipList() {
         <Card className="border-dashed border-border/50">
           <CardContent className="flex flex-col items-center justify-center py-16 text-center">
             <Hammer className="w-12 h-12 text-muted-foreground mb-4" />
-            <h3 className="font-semibold">Nothing in progress</h3>
+            <h3 className="font-semibold">No artwork yet</h3>
             <p className="text-sm text-muted-foreground mt-1 max-w-sm">
-              Imported artwork lands here first so you can develop it without it appearing as a
-              selectable template. Finished pieces get promoted to Templates.
+              Upload your landscape and portrait masters here. Generated sizes and artwork under
+              review will stay together in this workspace.
             </p>
             {isAdmin && (
               <Link href="/wip/import">
                 <Button className="mt-5" data-testid="button-import-wip-empty">
-                  <FileUp className="w-4 h-4 mr-2" />Import artwork
+                  <FileUp className="w-4 h-4 mr-2" />Upload artwork
                 </Button>
               </Link>
             )}

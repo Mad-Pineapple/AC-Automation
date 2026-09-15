@@ -2,21 +2,20 @@ import { useState } from "react";
 import { Link, useLocation } from "wouter";
 import { useQueryClient } from "@tanstack/react-query";
 import {
-  useImportExampleArtwork,
   useParseCollateralPlan,
   usePlanCampaignBuild,
   useAdaptTemplate,
   useCreateBrief,
   useListBrands,
+  useListTemplates,
   getListTemplatesQueryKey,
   getListBriefsQueryKey,
-  getListBrandAssetsQueryKey,
   type CollateralPlan,
   type CampaignBuildPlan,
 } from "@workspace/api-client-react";
 import { useUpload } from "@workspace/object-storage-web";
 import { PartRulesEditor } from "@/components/PartRulesEditor";
-import { ChevronLeft, FileSpreadsheet, ImagePlus, Loader2, Check, Wand2, AlertTriangle, X } from "lucide-react";
+import { ChevronLeft, FileSpreadsheet, Loader2, Check, Wand2, AlertTriangle, X, FileUp } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -42,18 +41,9 @@ const KIND_LABEL: Record<string, string> = {
   pdf: "PDF",
   psd: "Photoshop",
   image: "Flat art",
+  freeform: "Artwork",
+  artwork: "Artwork",
 };
-
-const ACCEPT =
-  ".zip,.idml,.pdf,.psd,.psb,.jpg,.jpeg,.png,.webp,.tif,.tiff," +
-  "application/zip,application/pdf,image/jpeg,image/png,image/webp,image/tiff";
-
-const SOURCE_KINDS = [
-  { label: "InDesign package", hint: "File → Package, zipped — live text, real fonts, every page a variant", best: true },
-  { label: "Layered PDF", hint: "Type lifted off as live text, artwork kept exactly" },
-  { label: "Photoshop (.psd)", hint: "Flattened to its composite — reflows by re-cropping" },
-  { label: "Flat art (.jpg/.png)", hint: "Kept verbatim — reflows by re-cropping around the subject" },
-];
 
 /**
  * Campaign builder: examples + brief in, every brief size out.
@@ -69,15 +59,14 @@ export default function CampaignBuild() {
   const [plan, setPlan] = useState<CollateralPlan | null>(null);
   const [build, setBuild] = useState<CampaignBuildPlan | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
-  const [notes, setNotes] = useState<string[]>([]);
   const [aiGuard, setAiGuard] = useState(true);
   const [aiGuardProvider, setAiGuardProvider] = useState<"auto" | "openai" | "claude">("auto");
   // Which planned pieces to produce (indexes into build.jobs); null = all.
   const [pickedJobs, setPickedJobs] = useState<Set<number> | null>(null);
 
   const { data: brands } = useListBrands();
-  const { uploadFile, progress: uploadProgress, isUploading } = useUpload();
-  const importExample = useImportExampleArtwork();
+  const { data: allTemplates } = useListTemplates();
+  const { uploadFile } = useUpload();
   const parsePlan = useParseCollateralPlan();
   const planBuild = usePlanCampaignBuild();
   const adaptTemplate = useAdaptTemplate();
@@ -87,50 +76,24 @@ export default function CampaignBuild() {
   const queryClient = useQueryClient();
 
   const brand = brands?.[0];
+  const wipArtwork = (allTemplates ?? []).filter((t) => t.category === "wip");
 
-  // --- Step 1: example artwork -------------------------------------------
-  const addExamples = async (files: FileList | null) => {
-    if (!files || files.length === 0) return;
-    if (!brand) {
-      toast({ title: "Create a brand first", description: "Examples import into the brand library.", variant: "destructive" });
-      return;
-    }
-    const list = Array.from(files);
-    for (let i = 0; i < list.length; i++) {
-      const file = list[i];
-      setBusy(`Reading ${file.name} (${i + 1}/${list.length})…`);
-      try {
-        const uploaded = await uploadFile(file);
-        if (!uploaded) throw new Error("upload failed");
-        const res = await new Promise<Awaited<ReturnType<typeof importExample.mutateAsync>>>((resolve, reject) =>
-          importExample.mutate(
-            { data: { objectPath: uploaded.objectPath, fileName: file.name, brandId: brand.id } },
-            { onSuccess: resolve, onError: reject },
-          ),
-        );
-        const created: ExampleMaster[] = res.templates.map((t) => ({
-          id: t.id,
-          name: t.name,
-          width: t.width,
-          height: t.height,
-          kind: res.kind,
-        }));
-        setExamples((prev) => [...prev, ...created.filter((c) => !prev.some((p) => p.id === c.id))]);
-        setNotes((prev) => [...prev, ...res.warnings]);
-        queryClient.invalidateQueries({ queryKey: getListTemplatesQueryKey() });
-        queryClient.invalidateQueries({ queryKey: getListBrandAssetsQueryKey(brand.id) });
-      } catch (err) {
-        toast({
-          title: `Could not read ${file.name}`,
-          description:
-            err instanceof Error && err.message
-              ? err.message.slice(0, 200)
-              : "Supported: packaged InDesign (.zip), .idml, .pdf, .psd, or flat art (.jpg/.png).",
-          variant: "destructive",
-        });
+  // Step 1 selects masters from the central artwork workspace. Artwork is
+  // uploaded once in WIP, then reused here without making duplicate imports.
+  const toggleExample = (template: (typeof wipArtwork)[number]) => {
+    setExamples((prev) => {
+      if (prev.some((item) => item.id === template.id)) {
+        return prev.filter((item) => item.id !== template.id);
       }
-    }
-    setBusy(null);
+      const config = template.config as { sourceKind?: string; kind?: string } | undefined;
+      return [...prev, {
+        id: template.id,
+        name: template.name,
+        width: template.width,
+        height: template.height,
+        kind: config?.sourceKind ?? config?.kind ?? "artwork",
+      }];
+    });
     setBuild(null);
   };
 
@@ -273,7 +236,7 @@ export default function CampaignBuild() {
         <div>
           <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight">Build A Campaign</h1>
           <p className="text-muted-foreground mt-1.5">
-            Examples + Brief → Every Size
+            WIP masters + brief, every required size
           </p>
         </div>
       </div>
@@ -284,56 +247,50 @@ export default function CampaignBuild() {
           <CardHeader className="pb-3">
             <CardTitle className="text-base flex items-center gap-2">
               <span className="w-6 h-6 rounded-full bg-primary/10 text-primary text-xs font-bold grid place-items-center">1</span>
-              Example artwork
+              Choose master artwork
               {examples.length > 0 && <Check className="w-4 h-4 text-emerald-600" />}
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
-            <label
-              className={`flex flex-col items-center justify-center text-center gap-3 rounded-xl border-2 border-dashed border-border/60 p-8 transition-colors ${
-                busy ? "opacity-60 pointer-events-none" : "cursor-pointer hover:border-primary/50 hover:bg-muted/30"
-              }`}
-              data-testid="dropzone-examples"
-            >
-              <input
-                type="file"
-                accept={ACCEPT}
-                multiple
-                className="hidden"
-                onChange={(e) => {
-                  void addExamples(e.target.files);
-                  e.target.value = "";
-                }}
-                disabled={!!busy}
-              />
-              <ImagePlus className="w-7 h-7 text-primary" />
-              {busy && busy.startsWith("Reading") ? (
-                <p className="text-sm font-medium flex items-center gap-2" data-testid="examples-progress">
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                  {isUploading ? `Uploading ${busy.replace(/^Reading /, "").replace(/…$/, "")} · ${Math.max(1, Math.round(uploadProgress))}%` : busy.replace(/^Reading /, "Taking apart ")}
-                </p>
-              ) : (
-                <p className="font-semibold text-sm">Upload your example artwork</p>
-              )}
-              <p className="text-xs text-muted-foreground max-w-sm">
-                One file per shape you designed — a portrait billboard and a wide billboard, say.
-                Multi-page documents import each page as its own message variant. Files up to 500 MB; large packages upload in the background, so leave this tab open.
-              </p>
-            </label>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-              {SOURCE_KINDS.map((k) => (
-                <div
-                  key={k.label}
-                  className={`rounded-lg border p-2.5 ${k.best ? "border-primary/40 bg-primary/5" : "border-border/50"}`}
-                >
-                  <p className="text-xs font-semibold flex items-center gap-1.5">
-                    {k.label}
-                    {k.best && <span className="text-[9px] uppercase tracking-wider text-primary">richest</span>}
-                  </p>
-                  <p className="text-[11px] text-muted-foreground mt-0.5 leading-snug">{k.hint}</p>
-                </div>
-              ))}
-            </div>
+            <p className="text-xs text-muted-foreground">
+              Select the approved landscape and portrait masters already stored in Artwork WIP.
+              The same artwork is reused here, so it is never uploaded twice.
+            </p>
+            {wipArtwork.length > 0 ? (
+              <div className="max-h-64 overflow-y-auto rounded-lg border border-border/60 divide-y divide-border/40" data-testid="wip-master-picker">
+                {wipArtwork.map((artwork) => {
+                  const selected = examples.some((item) => item.id === artwork.id);
+                  return (
+                    <label key={artwork.id} className="flex items-center gap-3 px-3 py-2.5 cursor-pointer hover:bg-muted/40">
+                      <input
+                        type="checkbox"
+                        checked={selected}
+                        onChange={() => toggleExample(artwork)}
+                        disabled={!!busy}
+                        data-testid={`select-wip-master-${artwork.id}`}
+                      />
+                      <span className="min-w-0 flex-1">
+                        <span className="block text-sm font-medium truncate">{artwork.name}</span>
+                        <span className="block text-xs text-muted-foreground font-mono">{artwork.width}×{artwork.height}</span>
+                      </span>
+                      <Badge variant={artwork.sourceTemplateId ? "outline" : "secondary"} className="text-[10px] shrink-0">
+                        {artwork.sourceTemplateId ? "Generated" : "Master"}
+                      </Badge>
+                    </label>
+                  );
+                })}
+              </div>
+            ) : (
+              <div className="rounded-lg border border-dashed border-border/60 p-5 text-center">
+                <p className="text-sm font-medium">No artwork in WIP yet</p>
+                <p className="text-xs text-muted-foreground mt-1">Upload your master artwork once, then return here to select it.</p>
+              </div>
+            )}
+            <Link href="/wip/import">
+              <Button type="button" variant="outline" className="w-full" data-testid="button-upload-master-in-wip">
+                <FileUp className="w-4 h-4 mr-2" />Upload artwork in WIP
+              </Button>
+            </Link>
             {examples.length > 0 && (
               <div className="space-y-2">
                 <div className="flex flex-wrap gap-1.5">
@@ -516,14 +473,6 @@ export default function CampaignBuild() {
                 </Button>
               </div>
             </>
-          )}
-          {notes.length > 0 && (
-            <details className="text-xs text-muted-foreground">
-              <summary className="cursor-pointer">Import notes ({notes.length})</summary>
-              <ul className="mt-2 space-y-1 list-disc pl-4">
-                {notes.map((n, i) => (<li key={i}>{n}</li>))}
-              </ul>
-            </details>
           )}
         </CardContent>
       </Card>
