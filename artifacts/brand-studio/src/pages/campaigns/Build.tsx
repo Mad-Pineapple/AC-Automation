@@ -432,7 +432,7 @@ export default function CampaignBuild() {
             <>
               {build.profile ? (
                 <div className="rounded-md border border-border/60 bg-muted/30 px-3 py-2 text-xs space-y-0.5" data-testid="build-profile">
-                  <p><span className="font-semibold">Layout profile:</span> {build.profile.name}, measured from your examples.</p>
+                  <p><span className="font-semibold">Master-relative geometry:</span> {build.profile.name}, measured from your examples.</p>
                   <p className="text-muted-foreground">
                     Measured shapes: {build.profile.measuredClasses.join(", ") || "none"}
                     {build.profile.interpolatedClasses.length > 0 ? ` · interpolated: ${build.profile.interpolatedClasses.join(", ")}` : ""}
@@ -516,4 +516,3 @@ function variantOf(name: string): string | null {
   const tail = name.slice(idx + 3).trim();
   return tail.length > 0 && tail.length <= 40 ? tail : null;
 }
-

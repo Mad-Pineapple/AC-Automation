@@ -42,7 +42,7 @@ router.post("/layout-profiles/learn", requireAuth, async (req, res): Promise<voi
   const name = typeof req.body?.name === "string" ? req.body.name.slice(0, 120) : null;
   try {
     const learned = await learnProfile(ids, name, (req as any).clerkUserId ?? null);
-    if (!learned) { res.status(422).json({ error: "None of those examples could be measured: each needs a recognised panel and headline." }); return; }
+    if (!learned) { res.status(422).json({ error: "None of those examples could be measured: each needs a recognised headline or headline layer." }); return; }
     res.status(201).json({ ...formatProfile(learned.stored), skipped: learned.skipped });
   } catch (err) {
     (req as any).log?.warn?.({ err }, "profile learn failed");

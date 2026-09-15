@@ -15,6 +15,8 @@ import type { ImageLoader } from "../lib/renderFreeform";
 import { isImageOnly, hasLayeredSlots, hasPanelParts, splitPanelGraphic, enrichLayeredArtwork, adaptLayered, edgeColour, storageImageLoader } from "../lib/layeredArtwork";
 import { analyseGwdHtml, motionForElements, type GwdLeaf } from "../lib/gwdMotion";
 import { resolveStyleSchema, learnProfile, getProfile } from "../lib/layoutProfile";
+import type { LayoutProfile } from "../lib/layoutProfile";
+import { adaptGeometryProfile } from "../lib/geometryAdapt";
 import { guidelinesForConfig, guidelineNotes, topicsPerElement } from "../lib/guidelines";
 import type { StyleSchema } from "../lib/styleSpecs/getReadyBurst2";
 import { visibleBounds } from "../lib/gwdImport";
@@ -220,7 +222,7 @@ async function adaptOne(
   exemplars: Exemplar[] = [],
   excludeId?: number,
   hints: FormatHints = {},
-  styleOverride?: { schema: StyleSchema | null; label: string } | null,
+  styleOverride?: { schema: StyleSchema | null; label: string; profile?: LayoutProfile } | null,
   render?: { loadImage: ImageLoader; brandFontFamily?: string } | null,
 ): Promise<{ config: FreeformConfig; method: string; spec: ReturnType<typeof describeFormat>; reference: Reference | null; rejected: string[] }> {
   let adapted: FreeformConfig | null = null;
@@ -237,6 +239,17 @@ async function adaptOne(
     adapted = adaptFreeformConfig(reference.exemplar.config, reference.exemplar.width, reference.exemplar.height, width, height);
     method = "scaled:approved";
     notes.push(reference.note);
+  }
+  // 0.25. A portrait + landscape free-form pair is the strongest evidence
+  //       available. Interpolate its measured semantic layer boxes before
+  //       considering generic panel or key-visual recipes.
+  if (!adapted && styleOverride?.profile) {
+    const geometric = adaptGeometryProfile(masterConfig, master.width, master.height, width, height, styleOverride.profile);
+    if (geometric) {
+      adapted = geometric.config;
+      method = "geometry-profile";
+      notes.push(...geometric.notes);
+    }
   }
   // 0.5. Layered image artwork (HTML5 exports): the headline and CTA are
   //      pictures, so place the recognised layers with the class recipe.
@@ -553,7 +566,7 @@ router.post("/templates/:id/adapt", requireAdmin, async (req, res): Promise<void
       name: typeof t.formatName === "string" ? t.formatName : typeof t.name === "string" ? t.name : null,
       channel: typeof t.channel === "string" ? t.channel : null,
     };
-    const { config: adaptedConfig, method, spec, rejected } = await adaptOne(master, masterConfig, width, height, brandInfo, (req as any).log, exemplars, undefined, hints, resolvedStyle.source === "none" ? null : { schema: resolvedStyle.schema, label: resolvedStyle.label }, { loadImage: makeImageLoader(req), brandFontFamily: brand?.fontFamily ?? "National 2" });
+    const { config: adaptedConfig, method, spec, rejected } = await adaptOne(master, masterConfig, width, height, brandInfo, (req as any).log, exemplars, undefined, hints, resolvedStyle.source === "none" ? null : { schema: resolvedStyle.schema, label: resolvedStyle.label, profile: resolvedStyle.profile }, { loadImage: makeImageLoader(req), brandFontFamily: brand?.fontFamily ?? "National 2" });
     if (rejected.length > 0) rejectedCount++;
     // Guideline reminders for what is on the piece (logo tile, band, photo…).
     let merged = subjectNotes.length ? normalizeFreeformConfig({ ...adaptedConfig, adaptNotes: [...(adaptedConfig.adaptNotes ?? []), ...subjectNotes] }) : adaptedConfig;
@@ -1149,7 +1162,7 @@ router.post("/templates/:id/redo", requireAdmin, async (req, res): Promise<void>
     // the piece being redone itself.
     const exemplars = await approvedExemplars(master.id);
     const redoStyle = await resolveStyleSchema({ masterId: master.id, masterName: master.name, sourceTemplateId: master.sourceTemplateId ?? null });
-    const { config, method, spec, reference } = await adaptOne(master, masterConfig, piece.width, piece.height, brandInfo, (req as any).log, exemplars, piece.id, { name: piece.name }, redoStyle.source === "none" ? null : { schema: redoStyle.schema, label: redoStyle.label }, { loadImage: makeImageLoader(req), brandFontFamily: brand?.fontFamily ?? "National 2" });
+    const { config, method, spec, reference } = await adaptOne(master, masterConfig, piece.width, piece.height, brandInfo, (req as any).log, exemplars, piece.id, { name: piece.name }, redoStyle.source === "none" ? null : { schema: redoStyle.schema, label: redoStyle.label, profile: redoStyle.profile }, { loadImage: makeImageLoader(req), brandFontFamily: brand?.fontFamily ?? "National 2" });
     const [updated] = await db
       .update(templatesTable)
       .set({

@@ -17,10 +17,32 @@ import { db, templatesTable, layoutProfilesTable } from "@workspace/db";
 import { eq, inArray, desc, sql } from "drizzle-orm";
 import { normalizeFreeformConfig, type FreeformConfig, type FreeformElement } from "./freeform";
 import { classifyFormat, type FormatClass } from "./formatCatalog";
+import { inferSlots } from "./slots";
 import { styleSchemaFor, PART_RULE_SLOTS, type StyleSchema, type DisplayAxisRule, type ZoneRule, type PartRule, type PartRules, type PartRuleSlot } from "./styleSpecs/getReadyBurst2";
 
 type Axis = "stacked" | "side";
 interface Box { x: number; y: number; w: number; h: number }
+
+export interface GeometryBox extends Box {
+  /** Font size divided by the canvas short side, for live text only. */
+  fontSize?: number;
+  /** Original artwork aspect, used to keep image layers proportional. */
+  aspect: number;
+  /** Which canvas edges this part deliberately touches. */
+  edges: Array<"left" | "right" | "top" | "bottom">;
+}
+
+export interface GeometryMaster {
+  templateId: number;
+  name: string;
+  width: number;
+  height: number;
+  aspect: number;
+  formatClass: FormatClass;
+  mode: "panel" | "free";
+  /** Stable semantic keys, such as headline:0, photo:0 and image:decoration:1. */
+  elements: Record<string, GeometryBox>;
+}
 
 export interface AxisMeasurement extends DisplayAxisRule {
   /** Photo zone share along the split axis. */
@@ -47,10 +69,12 @@ export interface MasterMeasurement {
   formatClass: FormatClass;
   m: AxisMeasurement;
   missing: string[];
+  geometry: GeometryMaster;
+  mode: "panel" | "free";
 }
 
 export interface LayoutProfile {
-  version: 1;
+  version: 1 | 2;
   name: string;
   sources: Array<{ templateId: number; name: string; width: number; height: number; axis: Axis; formatClass: FormatClass }>;
   zones: Record<FormatClass, ZoneRule & { measured: boolean }>;
@@ -61,6 +85,8 @@ export interface LayoutProfile {
   notes: string[];
   /** Designer-set behaviour rules per part; absent = defaults from the measurements. */
   rules?: Partial<Record<PartRuleSlot, PartRules>>;
+  /** Measured layer boxes from every supplied key visual. Version 2+. */
+  geometryMasters?: GeometryMaster[];
 }
 
 /** The rules the measurements imply, before a designer touches them. */
@@ -110,36 +136,88 @@ function allByRole(config: FreeformConfig, role: string): FreeformElement[] {
 }
 const box = (e: FreeformElement): Box => ({ x: e.x, y: e.y, w: e.w, h: e.h });
 
+function geometryKeyed(config: FreeformConfig, W: number, H: number): Record<string, GeometryBox> {
+  const semantic = inferSlots(config, W, H);
+  const groups = new Map<string, FreeformElement[]>();
+  for (const e of semantic.elements) {
+    const slot = e.slot && e.slot !== "other"
+      ? e.slot
+      : e.type === "image"
+        ? `image:${e.role}`
+        : e.type === "text"
+          ? `text:${e.role}`
+          : "rect:other";
+    groups.set(slot, [...(groups.get(slot) ?? []), e]);
+  }
+  const out: Record<string, GeometryBox> = {};
+  for (const [slot, elements] of groups) {
+    elements.sort((a, b) => a.y - b.y || a.x - b.x || b.w * b.h - a.w * a.h);
+    elements.forEach((e, index) => {
+      const toleranceX = Math.max(2, W * 0.012);
+      const toleranceY = Math.max(2, H * 0.012);
+      const edges: GeometryBox["edges"] = [];
+      if (e.x <= toleranceX) edges.push("left");
+      if (e.x + e.w >= W - toleranceX) edges.push("right");
+      if (e.y <= toleranceY) edges.push("top");
+      if (e.y + e.h >= H - toleranceY) edges.push("bottom");
+      out[`${slot}:${index}`] = {
+        x: r3(e.x / W), y: r3(e.y / H), w: r3(e.w / W), h: r3(e.h / H),
+        aspect: r3(e.w / Math.max(1, e.h)), edges,
+        ...(e.type === "text" ? { fontSize: r3(e.fontSize / Math.min(W, H)) } : {}),
+      };
+    });
+  }
+  return out;
+}
+
+function geometryMaster(config: FreeformConfig, W: number, H: number, name: string, templateId: number, mode: GeometryMaster["mode"]): GeometryMaster {
+  return { templateId, name, width: W, height: H, aspect: W / H, formatClass: classifyFormat(W, H, { name }), mode, elements: geometryKeyed(config, W, H) };
+}
+
 /**
- * Measure one master. Needs a panel (image or rect with slot "panel") and a
- * headline; everything else is optional and reported as missing.
+ * Measure one master. A recognised headline is required. Panel campaigns keep
+ * their existing zone measurements; free-form key visuals are measured by
+ * semantic layer and do not need an invented panel.
  */
 export function measureMaster(config: FreeformConfig, W: number, H: number, name: string, templateId: number): MasterMeasurement | null {
-  const panel = byRole(config, "panel");
-  const headlineParts = allByRole(config, "headline");
-  if (!panel || headlineParts.length === 0) return null;
-  const axis: Axis | null = panel.w >= W * 0.9 && panel.y > H * 0.2 ? "stacked" : panel.h >= H * 0.9 && panel.x > W * 0.2 ? "side" : null;
-  if (!axis) return null;
-  const photoZone: Box = axis === "stacked" ? { x: 0, y: 0, w: W, h: panel.y } : { x: 0, y: 0, w: panel.x, h: H };
-  const panelZone: Box = axis === "stacked" ? { x: 0, y: panel.y, w: W, h: H - panel.y } : { x: panel.x, y: 0, w: W - panel.x, h: H };
+  const semantic = inferSlots(config, W, H);
+  const measuredConfig: FreeformConfig = { ...config, elements: semantic.elements };
+  const panel = byRole(measuredConfig, "panel");
+  const headlineParts = allByRole(measuredConfig, "headline");
+  if (headlineParts.length === 0) return null;
+  const panelAxis: Axis | null = panel
+    ? panel.w >= W * 0.9 && panel.y > H * 0.2
+      ? "stacked"
+      : panel.h >= H * 0.9 && panel.x > W * 0.2
+        ? "side"
+        : null
+    : null;
+  const axis: Axis = panelAxis ?? (W / H >= 1.12 ? "side" : "stacked");
+  const mode: MasterMeasurement["mode"] = panelAxis ? "panel" : "free";
+  const fallbackPhotoFrac = axis === "stacked" ? 0.58 : 0.56;
+  const split = panelAxis && panel
+    ? (axis === "stacked" ? panel.y : panel.x)
+    : (axis === "stacked" ? H * fallbackPhotoFrac : W * fallbackPhotoFrac);
+  const photoZone: Box = axis === "stacked" ? { x: 0, y: 0, w: W, h: split } : { x: 0, y: 0, w: split, h: H };
+  const panelZone: Box = axis === "stacked" ? { x: 0, y: split, w: W, h: H - split } : { x: split, y: 0, w: W - split, h: H };
   const short = Math.min(W, H);
   const missing: string[] = [];
 
   const hx0 = Math.min(...headlineParts.map((e) => e.x)), hy0 = Math.min(...headlineParts.map((e) => e.y));
   const hl: Box = { x: hx0, y: hy0, w: Math.max(...headlineParts.map((e) => e.x + e.w)) - hx0, h: Math.max(...headlineParts.map((e) => e.y + e.h)) - hy0 };
-  const sub = byRole(config, "subheadline");
-  const cutout = allByRole(config, "cutout").sort((a, b) => b.w * b.h - a.w * a.h)[0];
-  const band = byRole(config, "band");
-  const message = byRole(config, "message");
-  const cta = byRole(config, "cta");
-  const lockup = byRole(config, "lockup") ?? byRole(config, "logo");
-  const scrim = byRole(config, "scrim");
+  const sub = byRole(measuredConfig, "subheadline");
+  const cutout = allByRole(measuredConfig, "cutout").sort((a, b) => b.w * b.h - a.w * a.h)[0];
+  const band = byRole(measuredConfig, "band");
+  const message = byRole(measuredConfig, "message");
+  const cta = byRole(measuredConfig, "cta");
+  const lockup = byRole(measuredConfig, "lockup") ?? byRole(measuredConfig, "logo");
+  const scrim = byRole(measuredConfig, "scrim");
   for (const [k, v] of [["sub-line", sub], ["cut-out", cutout], ["band", band], ["message", message], ["CTA", cta], ["lockup", lockup]] as const) if (!v) missing.push(k);
 
   const copyBottom = sub ? Math.max(hl.y + hl.h, sub.y + sub.h) : hl.y + hl.h;
   const lastLineH = sub ? sub.h : hl.h;
   const m: AxisMeasurement = {
-    photoFrac: r3(axis === "stacked" ? panel.y / H : panel.x / W),
+    photoFrac: r3(axis === "stacked" ? split / H : split / W),
     bandFrac: r3(band ? band.h / H : 0),
     bandH: r3(band ? band.h / panelZone.h : 0),
     headlineH: r3(hl.h / short),
@@ -164,7 +242,7 @@ export function measureMaster(config: FreeformConfig, W: number, H: number, name
     hasScrim: !!scrim,
     scrimH: scrim ? r3(scrim.h / photoZone.h) : null,
   };
-  return { templateId, name, width: W, height: H, axis, formatClass: classifyFormat(W, H, { name }), m, missing };
+  return { templateId, name, width: W, height: H, axis, formatClass: classifyFormat(W, H, { name }), m, missing, geometry: geometryMaster(measuredConfig, W, H, name, templateId, mode), mode };
 }
 
 const STACKED_CLASSES: FormatClass[] = ["portrait", "tower", "square"];
@@ -245,11 +323,12 @@ export function buildProfile(measurements: MasterMeasurement[], name: string): L
   const measuredList = [...measuredClasses].join(", ");
   const interpolated = (Object.keys(zones) as FormatClass[]).filter((c) => !zones[c].measured).join(", ");
   notes.unshift(`Measured from ${measurements.length} example${measurements.length === 1 ? "" : "s"} (${measuredList}); interpolated: ${interpolated || "none"}.`);
+  if (measurements.some((x) => x.mode === "free")) notes.push("Free-form key visual geometry measured by semantic layer, no panel required. Images remain proportional and live text keeps editable boxes.");
   if (!sAvg) notes.push("No stacked (tall) example: portrait, tower and square sizes use the family defaults until one is supplied.");
   if (!dAvg) notes.push("No side (wide) example: wide and landscape sizes use the family defaults until one is supplied.");
   for (const x of measurements) if (x.missing.length) notes.push(`${x.name}: no ${x.missing.join(", ")} layer recognised.`);
 
-  return { version: 1, name, sources: measurements.map((x) => ({ templateId: x.templateId, name: x.name, width: x.width, height: x.height, axis: x.axis, formatClass: x.formatClass })), zones, display, measuredAxes, cta, copyOverCutoutFrac, notes };
+  return { version: 2, name, sources: measurements.map((x) => ({ templateId: x.templateId, name: x.name, width: x.width, height: x.height, axis: x.axis, formatClass: x.formatClass })), zones, display, measuredAxes, cta, copyOverCutoutFrac, notes, geometryMasters: measurements.map((x) => x.geometry) };
 }
 
 function stripAxis(m: AxisMeasurement): DisplayAxisRule {
@@ -335,7 +414,7 @@ export async function learnProfile(masterIds: number[], name?: string | null, cr
     const cfg = normalizeFreeformConfig(parsed);
     const m = measureMaster(cfg, row.width, row.height, row.name, row.id);
     if (m) measurements.push(m);
-    else skipped.push(`${row.name}: no panel and headline recognised, not measured`);
+    else skipped.push(`${row.name}: no headline recognised, not measured`);
   }
   if (measurements.length === 0) return null;
   const profileName = (name ?? "").trim() || campaignNameFrom(measurements.map((m) => m.name));
@@ -393,7 +472,7 @@ export async function profileForMaster(masterId: number, sourceTemplateId?: numb
   return rows[0] ? parseRow(rows[0]) : null;
 }
 
-export interface ResolvedStyle { schema: StyleSchema | null; source: "profile" | "builtin" | "none"; profileId?: number; label: string }
+export interface ResolvedStyle { schema: StyleSchema | null; source: "profile" | "builtin" | "none"; profileId?: number; label: string; profile?: LayoutProfile }
 
 /**
  * The style schema for a build: an explicit profile, else the newest profile
@@ -402,11 +481,11 @@ export interface ResolvedStyle { schema: StyleSchema | null; source: "profile" |
 export async function resolveStyleSchema(opts: { masterId: number; masterName: string; sourceTemplateId?: number | null; profileId?: number | null }): Promise<ResolvedStyle> {
   if (opts.profileId) {
     const p = await getProfile(opts.profileId);
-    if (p) return { schema: profileToStyleSchema(p.profile, p.id), source: "profile", profileId: p.id, label: `${p.name} (measured profile)` };
+    if (p) return { schema: profileToStyleSchema(p.profile, p.id), source: "profile", profileId: p.id, label: `${p.name} (measured profile)`, profile: p.profile };
   }
   try {
     const p = await profileForMaster(opts.masterId, opts.sourceTemplateId);
-    if (p) return { schema: profileToStyleSchema(p.profile, p.id), source: "profile", profileId: p.id, label: `${p.name} (measured profile)` };
+    if (p) return { schema: profileToStyleSchema(p.profile, p.id), source: "profile", profileId: p.id, label: `${p.name} (measured profile)`, profile: p.profile };
   } catch { /* table missing on an old database: fall through */ }
   const builtin = styleSchemaFor(opts.masterName);
   if (builtin) return { schema: builtin, source: "builtin", label: `${builtin.name} (built-in schema)` };
