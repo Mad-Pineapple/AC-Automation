@@ -21,7 +21,8 @@ import type { FreeformConfig, FreeformElement, FreeformImage, FreeformRect, Free
 import { aspectDistance, classifyAspect, classifyBudget, needsRebuild, type FormatClass, type PixelBudget } from "./formatCatalog";
 import { inferSlots, type Box, type SemanticMaster } from "./slots";
 import { recipeFor, type Recipe } from "./recipes";
-import { fitText, prepareMeasurement, type FontSpec, capHeightPx } from "./textMeasure";
+import { fitText, prepareMeasurement, type FontSpec, capHeightPx, fontResolution } from "./textMeasure";
+import { planCta, type CtaPlan } from "./ctaPlan";
 import { guidelineLogoPlacement, isSocialSquare } from "./logoRules";
 import { ObjectStorageService } from "./objectStorage";
 
@@ -338,6 +339,40 @@ export async function recomposeToFormat(
     notes.push("Pattern band dropped: strips carry photo, headline, CTA and logo only.");
   }
 
+  // ---- CTA plan: the pill is sized from its measured label (lib/ctaPlan.ts) ------------------
+  // Planned before the headline so a strip's headline is fitted beside the
+  // real pill instead of an estimate it later overlaps.
+  const CTA_MIN_PX = budget === "micro" ? 18 : 24;
+  const ctaPlanned = (): CtaPlan | null => {
+    if (!sem.cta || !keep.has("cta")) return null;
+    const cta = sem.cta;
+    const maxH = recipe.axis === "row" ? dstH * 0.64 : panelZone.h * 0.4;
+    const targetH = Math.max(recipe.ctaFloorPx, short * recipe.ctaHeightFrac);
+    if (!sem.ctaLabel) {
+      // A pill with no live label keeps the master's proportions.
+      const aspect = cta.w / Math.max(1, cta.h) || 4;
+      const h = r(clamp(targetH, CTA_MIN_PX, maxH));
+      const w = r(Math.min(h * aspect, panelZone.w * recipe.ctaMaxWidthFrac));
+      return { h, w, fontSize: 0, padX: r(h * 0.45), iconSize: 0, iconGap: 0, lines: [], fits: true, labelRatio: 0.5, padRatio: 0.45, notes: [] };
+    }
+    return planCta({
+      label: sem.ctaLabel.text,
+      spec: fontSpec(sem.ctaLabel),
+      master: { ctaH: cta.h, ctaW: cta.w, labelFontSize: sem.ctaLabel.fontSize, labelText: sem.ctaLabel.text, labelSpec: fontSpec(sem.ctaLabel), hasIcon: !!sem.ctaIcon },
+      targetH,
+      minH: CTA_MIN_PX,
+      maxH,
+      maxW: panelZone.w * (recipe.axis === "row" ? 0.5 : Math.min(0.92, recipe.ctaMaxWidthFrac + 0.15)),
+      minLabelPx: budget === "micro" ? 8 : 9,
+      icon: !!sem.ctaIcon,
+      allowTwoLines: formatClass === "tower" || dstW < 200,
+    });
+  };
+  if (sem.headline) {
+    const res = fontResolution(fontSpec(sem.headline));
+    if (res.substituted) notes.push(`Check: the headline was measured in ${res.used} because "${res.requested}" is not registered on this server — confirm its width on export.`);
+  }
+
   // ---- 7. Headline (+ sub-headline) ----------------------------------------------------------
   const copyZone: Box = recipe.axis === "row" ? panelZone : photoZone;
   if (sem.headline && keep.has("headline")) {
@@ -348,7 +383,7 @@ export async function recomposeToFormat(
     const zoneW = copyZone.w - margin * 2;
     if (recipe.axis === "row") {
       // One row: headline flexes between the photo and the CTA.
-      const ctaW = sem.cta && keep.has("cta") ? r(Math.min(panelZone.w * recipe.ctaMaxWidthFrac, clamp(Math.max(recipe.ctaFloorPx, dstH * recipe.ctaHeightFrac), 20, dstH * 0.64) * ((sem.cta.w / Math.max(1, sem.cta.h)) || 4))) : 0;
+      const ctaW = ctaPlanned()?.w ?? 0;
       const box: Box = { x: panelZone.x + margin, y: panelZone.y, w: Math.max(20, panelZone.w - ctaW - margin * 3), h: dstH };
       let fit = fitText(text, { w: box.w, h: dstH * recipe.headlineMaxHeightFrac }, { ...fontSpec(hl), minSize: HEADLINE_MIN_PX, maxSize: dstH, lineHeight: 1.0, maxLines: 1 });
       if (!fit.fits) fit = fitText(text, { w: box.w, h: dstH * 0.86 }, { ...fontSpec(hl), minSize: HEADLINE_MIN_PX, maxSize: dstH, lineHeight: 1.0, maxLines: 2 });
@@ -414,34 +449,15 @@ export async function recomposeToFormat(
     }
   }
 
-  if (sem.cta && keep.has("cta")) {
+  const ctaPlan = ctaPlanned();
+  if (sem.cta && ctaPlan) {
     const cta = sem.cta;
-    const aspect = cta.w / Math.max(1, cta.h) || 4;
-    const maxH = recipe.axis === "row" ? dstH * 0.64 : panelZone.h * 0.4;
-    const ctaH = r(clamp(Math.max(recipe.ctaFloorPx, short * recipe.ctaHeightFrac), 18, maxH));
-    let ctaW = r(Math.min(ctaH * aspect, panelZone.w * (recipe.axis === "row" ? recipe.ctaMaxWidthFrac : recipe.ctaMaxWidthFrac)));
-    let iconSize = sem.ctaIcon ? r(ctaH * 0.72) : 0;
-    const padX = r(ctaH * 0.45);
-    let labelFit: ReturnType<typeof fitText> | null = null;
-    if (sem.ctaLabel) {
-      const label = sem.ctaLabel.text.replace(/\s+/g, " ").trim();
-      const spec = { ...fontSpec(sem.ctaLabel), minSize: 8, maxSize: r(ctaH * 0.55), lineHeight: 1, maxLines: 1 };
-      const avail = () => ctaW - padX * 2 - (iconSize ? iconSize + r(ctaH * 0.25) : 0);
-      const maxW = panelZone.w * (recipe.axis === "row" ? 0.5 : 0.92);
-      labelFit = fitText(label, { w: avail(), h: ctaH }, spec);
-      // A pill that can't hold its label grows, up to the panel width…
-      if (!labelFit.fits || labelFit.fontSize < ctaH * 0.4) {
-        const want = fitText(label, { w: 10_000, h: ctaH }, spec).width + padX * 2 + (iconSize ? iconSize + r(ctaH * 0.25) : 0);
-        ctaW = r(Math.min(Math.max(ctaW, want), maxW));
-        labelFit = fitText(label, { w: avail(), h: ctaH }, spec);
-      }
-      // …and on a micro canvas gives up its icon before its words.
-      if (!labelFit.fits && iconSize) {
-        iconSize = 0;
-        labelFit = fitText(label, { w: avail(), h: ctaH }, spec);
-        if (!labelFit.fits) { notes.push("CTA label does not fit at the minimum size — shorten it for this format."); needsReview = true; }
-      }
-    }
+    const ctaW = ctaPlan.w;
+    const ctaH = ctaPlan.h;
+    const padX = ctaPlan.padX;
+    const iconSize = ctaPlan.iconSize;
+    for (const n of ctaPlan.notes) notes.push(n);
+    if (!ctaPlan.fits) needsReview = true;
     const build = (x: number, y: number): FreeformElement[] => {
       const out: FreeformElement[] = [];
       if (cta.type === "rect") {
@@ -449,18 +465,23 @@ export async function recomposeToFormat(
       } else {
         out.push({ ...cta, id: "rc_cta", slot: "cta", role: "decoration", fit: "contain", x, y, w: ctaW, h: ctaH, locked: true } as FreeformImage);
       }
-      if (sem.ctaLabel && labelFit) {
-        const lw = ctaW - padX * 2 - (iconSize ? iconSize + r(ctaH * 0.25) : 0);
-        // Centre the label's CAP HEIGHT on the pill's centre line — the same
-        // cap-fit frame InDesign uses — so the copy sits dead centre in both
-        // the export and the editor regardless of font metrics.
-        const capH = capHeightPx(fontSpec(sem.ctaLabel), labelFit.fontSize);
-        const lh = Math.max(1, r(capH));
-        out.push(
-          textEl("rc_cta_label", "ctaLabel", "cta", sem.ctaLabel, { x: x + padX, y: y + r((ctaH - lh) / 2), w: lw, h: lh }, labelFit.fontSize, labelFit.lines[0] ?? "", iconSize ? "left" : "center", 1.1, {
-            baselineFit: "cap",
-          }),
-        );
+      if (sem.ctaLabel && ctaPlan.lines.length > 0) {
+        const lw = ctaW - padX * 2 - (iconSize ? iconSize + ctaPlan.iconGap : 0);
+        if (ctaPlan.lines.length === 1) {
+          // Centre the label's CAP HEIGHT on the pill's centre line — the same
+          // cap-fit frame InDesign uses — so the copy sits dead centre in both
+          // the export and the editor regardless of font metrics.
+          const capH = capHeightPx(fontSpec(sem.ctaLabel), ctaPlan.fontSize);
+          const lh = Math.max(1, r(capH));
+          out.push(
+            textEl("rc_cta_label", "ctaLabel", "cta", sem.ctaLabel, { x: x + padX, y: y + r((ctaH - lh) / 2), w: lw, h: lh }, ctaPlan.fontSize, ctaPlan.lines[0] ?? "", iconSize ? "left" : "center", 1.1, {
+              baselineFit: "cap",
+            }),
+          );
+        } else {
+          const lh = r(ctaPlan.fontSize * 1.15 * ctaPlan.lines.length);
+          out.push(textEl("rc_cta_label", "ctaLabel", "cta", sem.ctaLabel, { x: x + padX, y: y + r((ctaH - lh) / 2), w: lw, h: lh }, ctaPlan.fontSize, ctaPlan.lines.join("\n"), "center", 1.15));
+        }
       }
       if (sem.ctaIcon && iconSize) {
         out.push({ ...sem.ctaIcon, id: "rc_cta_icon", slot: "ctaIcon", role: "decoration", fit: "contain", x: x + ctaW - padX - iconSize, y: y + r((ctaH - iconSize) / 2), w: iconSize, h: iconSize, locked: true } as FreeformImage);
@@ -494,8 +515,11 @@ export async function recomposeToFormat(
     // Stack the panel items, centred; drop the message, then shrink gaps,
     // when the panel cannot hold everything. When the guideline logo tile
     // will sit bottom-right (no lockup), keep the stack clear of it.
-    const wantsTile = !items.some((i) => i.kind === "lockup") && !!opts.brand.logoUrl && !social && keep.has("lockup");
-    const tileReserve = wantsTile ? (guidelineLogoPlacement(dstW, dstH)?.tile.w ?? 0) : 0;
+    // The tile is wanted when no lockup ENDS UP in the panel, so it is
+    // decided after the drops below (it used to be computed before the
+    // lockup could be dropped, leaving neither lockup nor tile).
+    const wantsTileNow = () => !items.some((i) => i.kind === "lockup") && !!opts.brand.logoUrl && !social && keep.has("lockup");
+    const tileReserve = wantsTileNow() ? (guidelineLogoPlacement(dstW, dstH)?.tile.w ?? 0) : 0;
     const inner = panelZone.h - r(margin * 1.5);
     let gap = clamp(r(panelZone.h * 0.07), 4, 48);
     const total = () => items.reduce((s, i) => s + i.h, 0) + gap * Math.max(0, items.length - 1);
@@ -508,6 +532,7 @@ export async function recomposeToFormat(
       const idx = items.findIndex((i) => i.kind === "lockup");
       if (idx >= 0) { items.splice(idx, 1); notes.push("Lockup dropped: no room in the panel — the logo tile is used instead."); }
     }
+    const wantsTile = wantsTileNow();
     const stackW = Math.max(1, panelZone.w - (tileReserve ? tileReserve + margin : 0));
     // Shipped OOH puts the message + pill in the upper part of the panel and
     // the lockup at the bottom. A centred stack reproduces that on a short

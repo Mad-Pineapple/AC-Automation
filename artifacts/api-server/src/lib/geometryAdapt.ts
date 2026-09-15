@@ -66,13 +66,30 @@ function targetBox(a: GeometryMaster, b: GeometryMaster, key: string, t: number)
 
 function fitText(el: Extract<FreeformElement, { type: "text" }>, proposed: number, width: number, height: number): number {
   const floor = el.slot === "headline" || el.role === "headline" ? 12 : 8;
+  const spec = { family: el.fontFamily, weight: el.fontWeight, letterSpacing: el.letterSpacing };
+  const lineHeight = el.lineHeight ?? 1.2;
+  const fitsAt = (size: number) => {
+    const lines = wrapText(el.text, width, spec, size);
+    const widest = Math.max(0, ...lines.map((line) => measureLine(line, spec, size)));
+    const blockH = lines.length * size * lineHeight;
+    return widest <= width * 1.01 && blockH <= height * 1.02;
+  };
   let size = Math.max(floor, proposed);
-  for (let i = 0; i < 40; i++) {
-    const lines = wrapText(el.text, width, { family: el.fontFamily, weight: el.fontWeight, letterSpacing: el.letterSpacing }, size);
-    const widest = Math.max(0, ...lines.map((line) => measureLine(line, { family: el.fontFamily, weight: el.fontWeight, letterSpacing: el.letterSpacing }, size)));
-    const blockH = lines.length * size * (el.lineHeight ?? 1.2);
-    if (widest <= width * 1.01 && blockH <= height * 1.02) break;
-    size *= 0.96;
+  if (fitsAt(size)) {
+    // Type fills its measured box: grow while the copy still fits, up to
+    // the box height and half again the proposed size (the master's own
+    // share of the canvas, never a runaway).
+    const cap = Math.min(proposed * 1.5, height / lineHeight);
+    for (let i = 0; i < 40; i++) {
+      const next = size * 1.04;
+      if (next > cap || !fitsAt(next)) break;
+      size = next;
+    }
+  } else {
+    for (let i = 0; i < 40; i++) {
+      size *= 0.96;
+      if (size <= floor || fitsAt(size)) break;
+    }
   }
   return Math.max(floor, Math.round(size * 10) / 10);
 }
@@ -128,6 +145,25 @@ export function adaptGeometryProfile(
     return { ...element, x, y, w, h };
   });
   if (matched < Math.min(3, keyed.length)) return null;
+  // Shared type scale: labels styled alike in the master (same text role,
+  // e.g. two body lines or two CTA labels) take the smallest fitted size so
+  // they do not drift apart when fitted alone.
+  const groupMin = new Map<string, number>();
+  for (const el of elements) {
+    if (el.type !== "text" || el.slot === "headline" || el.role === "headline") continue;
+    const key = el.slot ?? el.role;
+    if (!key) continue;
+    groupMin.set(key, Math.min(groupMin.get(key) ?? Infinity, el.fontSize));
+  }
+  const groupCount = new Map<string, number>();
+  for (const el of elements) { if (el.type === "text") { const k = el.slot ?? el.role; if (k) groupCount.set(k, (groupCount.get(k) ?? 0) + 1); } }
+  for (const el of elements) {
+    if (el.type !== "text") continue;
+    const key = el.slot ?? el.role;
+    if (!key || (groupCount.get(key) ?? 0) < 2) continue;
+    const m = groupMin.get(key);
+    if (m !== undefined && Number.isFinite(m) && el.fontSize > m) el.fontSize = m;
+  }
   const relation = a.templateId === b.templateId ? `nearest ${a.width}×${a.height} master` : `${a.width}×${a.height} and ${b.width}×${b.height} masters`;
   return {
     config: { ...master, elements, adaptMethod: "geometry-profile" },

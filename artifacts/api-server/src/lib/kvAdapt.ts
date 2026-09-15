@@ -23,6 +23,7 @@ import { guidelineLogoPlacement } from "./logoRules";
 import { STRIP_MAX_HEIGHT } from "./formatCatalog";
 import { inferSlots } from "./slots";
 import { prepareMeasurement, wrapText, measureLine, type FontSpec } from "./textMeasure";
+import { planCta } from "./ctaPlan";
 import type { FreeformConfig, FreeformElement, FreeformImage, FreeformRect, FreeformText, KvTextBlock } from "./freeform";
 
 const objectStorageService = new ObjectStorageService();
@@ -294,13 +295,23 @@ export async function composeKeyVisualAdaptation(
   const ctaSrc = sem.cta && sem.ctaLabel ? sem.cta : null;
   const ctaPlan = ctaSrc && sem.ctaLabel
     ? (() => {
-        const label = sem.ctaLabel!.text.replace(/\s+/g, " ").trim();
-        const h = Math.round(Math.max(24, Math.min(short * 0.16, (ctaSrc.h / srcShort) * short)));
-        const fs = Math.max(9, Math.round(h * 0.42));
-        const padX = Math.round(h * 0.6);
-        const w = Math.round(Math.min(dstW - margin * 2, label.length * fs * 0.56 + padX * 2));
+        // The pill is sized from its measured label at the master's own
+        // label-to-pill ratio (lib/ctaPlan.ts) — no character-count estimate.
+        const labelEl = sem.ctaLabel!;
+        const spec: FontSpec = { family: labelEl.fontFamily, weight: labelEl.fontWeight === 700 ? 700 : 400, letterSpacing: labelEl.letterSpacing };
+        const p = planCta({
+          label: labelEl.text,
+          spec,
+          master: { ctaH: ctaSrc.h, ctaW: ctaSrc.w, labelFontSize: labelEl.fontSize, labelText: labelEl.text, labelSpec: spec, hasIcon: !!sem.ctaIcon },
+          targetH: (ctaSrc.h / srcShort) * short,
+          minH: 24,
+          maxH: Math.max(24, short * 0.16),
+          maxW: dstW - margin * 2,
+          icon: false,
+          allowTwoLines: dstW < 200,
+        });
         const pill = ctaSrc.type === "rect" && (ctaSrc.radius ?? 0) >= ctaSrc.h / 2 - 1;
-        return { label, h, w, fs, padX, pill, fill: ctaSrc.type === "rect" ? ctaSrc.fill : "#ffffff", color: sem.ctaLabel!.color ?? "#11263d", fontFamily: sem.ctaLabel!.fontFamily, fontWeight: sem.ctaLabel!.fontWeight ?? 700 };
+        return { label: p.lines.join("\n"), lines: p.lines.length, h: p.h, w: p.w, fs: p.fontSize, padX: p.padX, pill, fill: ctaSrc.type === "rect" ? ctaSrc.fill : "#ffffff", color: labelEl.color ?? "#11263d", fontFamily: labelEl.fontFamily, fontWeight: labelEl.fontWeight ?? 700 };
       })()
     : null;
   const subLine = !isStrip && sem.subheadline && sem.subheadline.text.trim() ? sem.subheadline : null;
@@ -433,7 +444,13 @@ export async function composeKeyVisualAdaptation(
       const fitToWidth = w / Math.max(0.1, longest);
       const fitToHeight = hAvail / (lines * 1.3);
       const fitCap = Math.min(fitToWidth, fitToHeight);
-      return Math.round(Math.max(MIN_HEADLINE_PX, Math.min(fitCap, isStrip || isWide ? Math.max(designSize, fitCap * 0.8) : designSize)));
+      // Type fills its zone: grow to the master's own share of the canvas
+      // height (never past what fits), instead of capping at the master's
+      // font-to-short-axis ratio, which left headlines small on tall or
+      // large canvases.
+      const shareSize = headline ? ((headline.h / srcH) * dstH) / (lines * 1.3) : designSize;
+      const target = Math.max(designSize, shareSize);
+      return Math.round(Math.max(MIN_HEADLINE_PX, Math.min(fitCap, isStrip || isWide ? Math.max(target, fitCap * 0.8) : target)));
     };
     const mk = (label: string, zone: string, zx: number, zy: number, zw: number, zh: number, align: "left" | "center" | "right"): Candidate | null => {
       zx = Math.max(margin, zx);
@@ -554,7 +571,7 @@ export async function composeKeyVisualAdaptation(
       elements.push({
         id: "kv_cta_label", type: "text", role: "cta", slot: "ctaLabel", text: ctaPlan.label,
         x: cx + ctaPlan.padX, y: cy, w: ctaPlan.w - ctaPlan.padX * 2, h: ctaPlan.h, fontSize: ctaPlan.fs,
-        fontWeight: ctaPlan.fontWeight, color: ctaPlan.color, align: "center", lineHeight: ctaPlan.h / ctaPlan.fs,
+        fontWeight: ctaPlan.fontWeight, color: ctaPlan.color, align: "center", lineHeight: ctaPlan.lines > 1 ? 1.15 : ctaPlan.h / ctaPlan.fs,
         ...(ctaPlan.fontFamily ? { fontFamily: ctaPlan.fontFamily } : {}), locked: true,
       } as FreeformElement);
       if (!isStrip) copyBottom = cy + ctaPlan.h;

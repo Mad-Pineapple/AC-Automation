@@ -460,6 +460,30 @@ export function applyEdits(config: FreeformConfig, edits: ElementEdit[], width: 
     setNum("opacity", s.opacity, 0, 1, false);
     if (Object.keys(changes).length > 0) applied.push({ elementId: edit.elementId, label, changes });
   }
+  // A pill and its label are one object: when the guard resized the pill,
+  // the label scales with it and stays centred (a pill resized alone was
+  // how "pill too big" became "copy too small").
+  for (const a of applied) {
+    if (a.deleted || a.label !== "cta" || !(a.changes.w || a.changes.h)) continue;
+    const pill = elements.find((e) => e.id === a.elementId) as (Record<string, unknown> & { type: string }) | undefined;
+    if (!pill || pill.type !== "rect") continue;
+    const fromW = Number(a.changes.w?.from ?? pill.w), fromH = Number(a.changes.h?.from ?? pill.h);
+    const fromX = Number(a.changes.x?.from ?? pill.x), fromY = Number(a.changes.y?.from ?? pill.y);
+    const labelEl = elements.find((e) => e.type === "text" && (e as { slot?: string }).slot === "ctaLabel" &&
+      Number((e as { x: number }).x) + Number((e as { w: number }).w) / 2 >= fromX - 1 && Number((e as { x: number }).x) + Number((e as { w: number }).w) / 2 <= fromX + fromW + 1 &&
+      Number((e as { y: number }).y) + Number((e as { h: number }).h) / 2 >= fromY - 1 && Number((e as { y: number }).y) + Number((e as { h: number }).h) / 2 <= fromY + fromH + 1) as (Record<string, unknown> & { id: string }) | undefined;
+    if (!labelEl || applied.some((x) => x.elementId === labelEl.id && x.changes.fontSize)) continue;
+    const k = Number(pill.h) / Math.max(1, fromH);
+    const ch: AppliedChange["changes"] = {};
+    const upd = (key: string, v: number, round = true) => { const nv = round ? Math.round(v) : Math.round(v * 100) / 100; if (labelEl[key] !== nv) { ch[key] = { from: labelEl[key], to: nv }; labelEl[key] = nv; } };
+    const padX = Math.max(2, (fromW - Number(labelEl.w)) / 2) * (Number(pill.w) / Math.max(1, fromW));
+    upd("fontSize", Number(labelEl.fontSize) * k);
+    upd("h", Number(labelEl.h) * k);
+    upd("w", Number(pill.w) - padX * 2);
+    upd("x", Number(pill.x) + padX);
+    upd("y", Number(pill.y) + (Number(pill.h) - Number(labelEl.h)) / 2);
+    if (Object.keys(ch).length) applied.push({ elementId: labelEl.id, label: "ctaLabel", changes: ch });
+  }
   // Layered artwork: a headline that is a picture moves with its sub-head.
   // If Claude moved or resized the headline image and left the sub-head
   // image alone, carry the sub-head along by the same transform.

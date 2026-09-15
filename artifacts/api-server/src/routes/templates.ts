@@ -236,7 +236,14 @@ async function adaptOne(
   //    shape is near-identical, otherwise rebuild with its measured
   //    proportions overriding the class recipe.
   const reference = chooseReference(exemplars, width, height, excludeId);
-  if (reference?.scaleFromExemplar) {
+  // Scaling an approved sibling only holds within a sane size range: a
+  // 1080 square scaled to 100px keeps no floor at all (7px pill), so far
+  // outside 0.5×–2× the sibling leads through its measured proportions
+  // (the rebuild path below) instead of a straight scale.
+  const sizeRatio = reference ? Math.min(width, height) / Math.max(1, Math.min(reference.exemplar.width, reference.exemplar.height)) : 1;
+  const scaleOk = sizeRatio >= 0.5 && sizeRatio <= 2;
+  if (reference?.scaleFromExemplar && !scaleOk) notes.push(`The approved "${reference.exemplar.name}" is the reference, but this size is ${sizeRatio < 1 ? "much smaller" : "much larger"}, so it was rebuilt to its proportions rather than scaled.`);
+  if (reference?.scaleFromExemplar && scaleOk) {
     adapted = adaptFreeformConfig(reference.exemplar.config, reference.exemplar.width, reference.exemplar.height, width, height);
     method = "scaled:approved";
     notes.push(reference.note);

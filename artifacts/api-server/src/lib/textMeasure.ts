@@ -44,6 +44,29 @@ export function resolveFamily(family?: string): string {
   return NATIONAL2_FAMILY;
 }
 
+export interface FontResolution {
+  /** Family the layout asked for, when it named one. */
+  requested?: string;
+  /** Family the measurement actually used. */
+  used: string;
+  /** The requested family is not registered, so widths came from another face. */
+  substituted: boolean;
+  /** No font at all is registered: widths are a 0.55em estimate. */
+  estimated: boolean;
+}
+
+/** What a measurement of `spec` would really be measured with. Engines read
+ *  this to warn when a headline set in DS-Digital was measured in National 2
+ *  (the export then draws the real face and the width differs). */
+export function fontResolution(spec: FontSpec): FontResolution {
+  const used = resolveFamily(spec.family);
+  const substituted = !!spec.family && spec.family !== used;
+  const estimated = !fontsReady && !hasFontFamily(used);
+  return { requested: spec.family, used, substituted, estimated };
+}
+
+let warnedEstimate = false;
+
 function setFont(spec: FontSpec, sizePx: number): void {
   const fam = resolveFamily(spec.family);
   ctx.font = `${spec.italic ? "italic" : "normal"} ${spec.weight ?? 400} ${sizePx}px "${fam}"`;
@@ -55,6 +78,10 @@ export function measureLine(text: string, spec: FontSpec, sizePx: number): numbe
   if (text.length === 0) return 0;
   const ls = (spec.letterSpacing ?? 0) * Array.from(text).length;
   if (!fontsReady && !hasFontFamily(resolveFamily(spec.family))) {
+    if (!warnedEstimate) {
+      warnedEstimate = true;
+      console.warn("[textMeasure] no font registered: copy widths are a 0.55em estimate and layouts will not match the export. Set FREEFORM_FONT_DIR or ship the fonts with the server.");
+    }
     return text.length * sizePx * 0.55 + ls;
   }
   setFont(spec, sizePx);

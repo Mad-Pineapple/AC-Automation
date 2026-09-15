@@ -49,3 +49,20 @@ billboard structurally, and vice versa.
   column was added with plain `ALTER TABLE … ADD COLUMN IF NOT EXISTS`. Do the same on Neon.
 - Strip and tower outputs are always `needsReview`: they are correct by recipe but the studio
   has shipped none to calibrate against yet.
+
+## Pill rule (2026-09-16, audit fixes P2/P3)
+
+`lib/ctaPlan.ts` is the one pill rule. The label is measured with the real face at the master's own
+label-to-pill ratio (clamped 0.3–0.6) and the pill is that label plus the master's padding. When the
+zone is too narrow: label and pill shrink together to the floor (9px, 8px on micro), padding tightens
+to 0.3× pill height, the icon goes, then the label wraps to 2–3 lines on towers and canvases under
+200px wide. Words are never cut; a label that still does not fit is flagged `Check:` and
+`needsReview`. Used by `recompose.ts` (planned before the strip headline so the two never overlap)
+and `kvAdapt.ts`. The Claude guard (`claudeReview.ts`) scales a pill's label with the pill.
+
+Type growth: `kvAdapt.fitFont` grows a headline to the master's share of canvas height (never past
+what fits); `geometryAdapt.fitText` grows into its measured box up to 1.5× the proposed size and
+siblings with the same text role share the smallest fitted size. `textMeasure.fontResolution` reports
+a substituted face and both engines add a `Check:` note when the headline or label was measured in
+National 2 because its face (e.g. DS-Digital) was not registered. The approved-sibling scale path is
+skipped outside 0.5×–2× of the sibling's short side (rebuild with its proportions instead).
