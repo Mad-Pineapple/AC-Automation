@@ -12,7 +12,7 @@ import { checkLayout, checkMandatory } from "../lib/layoutCheck";
 import { scoreGeometry, scoreContrast, contrastBaseline, type PrincipleScores } from "../lib/principles";
 import { ensureSubjects, detectSubject } from "../lib/subjectDetect";
 import type { ImageLoader } from "../lib/renderFreeform";
-import { isImageOnly, hasLayeredSlots, hasPanelParts, splitPanelGraphic, enrichLayeredArtwork, adaptLayered, edgeColour, storageImageLoader } from "../lib/layeredArtwork";
+import { isImageOnly, hasLayeredSlots, hasPanelParts, splitPanelGraphic, enrichLayeredArtwork, adaptLayered, edgeColour, storageImageLoader, verifyScrimSlot } from "../lib/layeredArtwork";
 import { analyseGwdHtml, motionForElements, type GwdLeaf } from "../lib/gwdMotion";
 import { resolveStyleSchema, learnProfile, getProfile } from "../lib/layoutProfile";
 import type { LayoutProfile } from "../lib/layoutProfile";
@@ -487,6 +487,22 @@ router.post("/templates/:id/adapt", requireAdmin, async (req, res): Promise<void
       }
     } catch (err) {
       (req as any).log?.warn?.({ err, templateId: master.id }, "layered artwork recognition failed; continuing");
+    }
+  }
+  // Masters labelled before the pixel check existed may carry a picture
+  // (the car cut-out) as their "scrim"; re-check and repair once.
+  if (hasLayeredSlots(masterConfig) && masterConfig.elements.some((e) => e.type === "image" && e.slot === "scrim")) {
+    try {
+      const v = await verifyScrimSlot(masterConfig, { loadImage: makeImageLoader(req) });
+      if (v.changed) {
+        masterConfig = normalizeFreeformConfig({ ...(parsed as Record<string, unknown>), elements: v.config.elements });
+        await db.update(templatesTable)
+          .set({ config: JSON.stringify({ ...(parsed as Record<string, unknown>), elements: v.config.elements }), updatedAt: new Date() })
+          .where(eq(templatesTable.id, master.id));
+        (req as any).log?.info?.({ templateId: master.id, notes: v.notes }, "layered artwork: scrim relabelled as cut-out");
+      }
+    } catch (err) {
+      (req as any).log?.warn?.({ err, templateId: master.id }, "scrim check failed; continuing");
     }
   }
 

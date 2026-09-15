@@ -164,6 +164,61 @@ export function inferImageSlots(config: FreeformConfig, W: number, H: number): S
   return { config: { ...config, elements }, glyphRun, notes };
 }
 
+/**
+ * Does this layer LOOK like a scrim — a translucent or flat gradient veil
+ * over the photo — rather than a picture? The geometric rule ("wide, over
+ * the photo") also matches a car cut-out, which then gets stretched across
+ * the top of the hero as a "scrim": the artifact designers saw. A scrim is
+ * mostly translucent, or a near-flat fill; a cut-out is largely opaque with
+ * real picture detail.
+ */
+export async function looksLikeScrim(bytes: Buffer): Promise<boolean> {
+  try {
+    const { data, info } = await sharp(bytes).resize(32, 32, { fit: "fill" }).ensureAlpha().raw().toBuffer({ resolveWithObject: true });
+    const n = info.width * info.height;
+    let alphaSum = 0, opaque = 0;
+    const lum: number[] = [];
+    for (let i = 0; i < n; i++) {
+      const a = data[i * 4 + 3] / 255;
+      alphaSum += a;
+      if (a > 0.9) { opaque++; lum.push((0.299 * data[i * 4] + 0.587 * data[i * 4 + 1] + 0.114 * data[i * 4 + 2]) / 255); }
+    }
+    const meanAlpha = alphaSum / n;
+    const opaqueShare = opaque / n;
+    if (opaqueShare < 0.4 && meanAlpha < 0.75) return true; // translucent veil / gradient
+    if (lum.length > 0) {
+      const mean = lum.reduce((a, b) => a + b, 0) / lum.length;
+      const sd = Math.sqrt(lum.reduce((a, b) => a + (b - mean) ** 2, 0) / lum.length);
+      if (sd < 0.08) return true; // a flat (or smoothly graded) fill, no picture detail
+    }
+    return false;
+  } catch {
+    return true; // unreadable: keep the geometric guess
+  }
+}
+
+/** Re-check a layer labelled "scrim" against its pixels; a picture gets
+ *  relabelled as a cut-out. Runs at import and on every build of a master
+ *  labelled before this check existed. */
+export async function verifyScrimSlot(config: FreeformConfig, io: Pick<LayerIO, "loadImage">): Promise<{ config: FreeformConfig; changed: boolean; notes: string[] }> {
+  const scrims = config.elements.filter((e): e is Img => e.type === "image" && e.slot === "scrim" && !!e.src);
+  if (scrims.length === 0) return { config, changed: false, notes: [] };
+  const notes: string[] = [];
+  let changed = false;
+  const elements = config.elements.map((e) => ({ ...e })) as FreeformElement[];
+  for (const sc of scrims) {
+    const bytes = await io.loadImage(sc.src!);
+    if (!bytes) continue;
+    if (await looksLikeScrim(bytes)) continue;
+    const el = elements.find((e) => e.id === sc.id) as Img | undefined;
+    if (!el) continue;
+    el.slot = "cutout";
+    changed = true;
+    notes.push("A picture layer over the photo was labelled as a scrim; it is now the cut-out.");
+  }
+  return { config: changed ? { ...config, elements } : config, changed, notes };
+}
+
 /** Median colour of an image's border pixels — the ground a baked panel graphic sits on. */
 export async function edgeColour(bytes: Buffer): Promise<string | null> {
   try {
@@ -274,6 +329,13 @@ export async function enrichLayeredArtwork(config: FreeformConfig, W: number, H:
   if (!isImageOnly(config) || hasLayeredSlots(config)) return { config, changed: false, notes: [] };
   const inferred = inferImageSlots(config, W, H);
   let next = inferred.config;
+  try {
+    const v = await verifyScrimSlot(next, io);
+    next = v.config;
+    inferred.notes.push(...v.notes);
+  } catch (err) {
+    logger.warn({ err }, "layered artwork: scrim check failed; keeping the geometric guess");
+  }
   if (inferred.glyphRun.length >= 2) {
     try {
       next = await mergeGlyphRun(next, inferred.glyphRun, io);
