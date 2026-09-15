@@ -34196,7 +34196,7 @@ var require_serializer = __commonJS({
       68
       /* code.describe */
     );
-    var describe = (msg) => {
+    var describe2 = (msg) => {
       return msg.name ? cstringMessage(68, `${msg.type}${msg.name || ""}`) : msg.type === "P" ? emptyDescribePortal : emptyDescribeStatement;
     };
     var close = (msg) => {
@@ -34239,7 +34239,7 @@ var require_serializer = __commonJS({
       parse: parse5,
       bind,
       execute,
-      describe,
+      describe: describe2,
       close,
       flush: () => flushBuffer,
       sync: () => syncBuffer,
@@ -145542,17 +145542,17 @@ async function renderHtmlToVideo(html, width, height, format, durationMs = DEFAU
       const frameCount = Math.round(durationMs / 1e3 * GIF_FPS);
       const frameDelayMs = 1e3 / GIF_FPS;
       const frames = [];
-      const sharp16 = (await import("sharp")).default;
+      const sharp17 = (await import("sharp")).default;
       const start = Date.now();
       for (let i = 0; i < frameCount; i++) {
         const due = start + i * frameDelayMs;
         const wait = due - Date.now();
         if (wait > 0) await page2.waitForTimeout(wait);
         const png = await page2.screenshot({ type: "png" });
-        frames.push(await sharp16(png).resize(gifW, gifH).ensureAlpha().raw().toBuffer());
+        frames.push(await sharp17(png).resize(gifW, gifH).ensureAlpha().raw().toBuffer());
       }
       await page2.close();
-      const gif = await sharp16(Buffer.concat(frames), {
+      const gif = await sharp17(Buffer.concat(frames), {
         // Animated raw input: `pages` lives inside `raw` (sharp ≥0.33; the
         // published typings don't know the property yet, hence the cast).
         raw: { width: gifW, height: gifH, channels: 4, pages: frames.length }
@@ -163892,15 +163892,15 @@ var heroBox_exports = {};
 __export(heroBox_exports, {
   detectHeroBox: () => detectHeroBox
 });
-import sharp11 from "sharp";
+import sharp12 from "sharp";
 async function detectHeroBox(image) {
   try {
-    const meta = await sharp11(image).metadata();
+    const meta = await sharp12(image).metadata();
     const imgW = meta.width ?? 0;
     const imgH = meta.height ?? 0;
     if (!imgW || !imgH) return null;
     const side = Math.max(16, Math.round(Math.min(imgW, imgH) * BOX_FRACTION));
-    const { info } = await sharp11(image).resize(side, side, { fit: "cover", position: sharp11.strategy.attention }).toBuffer({ resolveWithObject: true });
+    const { info } = await sharp12(image).resize(side, side, { fit: "cover", position: sharp12.strategy.attention }).toBuffer({ resolveWithObject: true });
     const left = Math.abs(info.cropOffsetLeft ?? 0);
     const top = Math.abs(info.cropOffsetTop ?? 0);
     const clamp012 = (v) => Math.max(0, Math.min(1, v));
@@ -195232,6 +195232,8 @@ var DetectTemplateSubjectResponse = objectType({
 var AdaptTemplateParams = objectType({
   "id": coerce.number()
 });
+var adaptTemplateBodyAiGuardDefault = false;
+var adaptTemplateBodyAiGuardProviderDefault = `auto`;
 var AdaptTemplateBody = objectType({
   "targets": arrayType(objectType({
     "width": numberType(),
@@ -195240,7 +195242,9 @@ var AdaptTemplateBody = objectType({
     "formatName": stringType().optional().describe("The brief's deliverable name for the size (decides the format class with the channel)"),
     "channel": stringType().optional().describe("Brief channel section (DISPLAY, OOH \u2026)")
   })),
-  "profileId": numberType().optional().describe("Layout profile (measured from examples) to lay the sizes out with")
+  "profileId": numberType().optional().describe("Layout profile (measured from examples) to lay the sizes out with"),
+  "aiGuard": booleanType().default(adaptTemplateBodyAiGuardDefault).describe("Check and safely correct each adapted layout before it is saved"),
+  "aiGuardProvider": enumType(["auto", "openai", "claude"]).default(adaptTemplateBodyAiGuardProviderDefault).describe("AI reviewer, auto uses OpenAI first and Claude as fallback")
 });
 var DissectPdfBody = objectType({
   "objectPath": stringType().min(1),
@@ -226422,12 +226426,12 @@ ${snippet}`;
 async function fetchLogoDataUri(logoUrl, origin) {
   if (!logoUrl) return void 0;
   try {
-    const sharp16 = (await import("sharp")).default;
+    const sharp17 = (await import("sharp")).default;
     const abs = /^https?:\/\//i.test(logoUrl) ? logoUrl : `${origin}${logoUrl}`;
     const res = await fetch(abs);
     if (!res.ok) return void 0;
     const buf = Buffer.from(await res.arrayBuffer());
-    const png = await sharp16(buf).resize(240, 240, { fit: "cover" }).png().toBuffer();
+    const png = await sharp17(buf).resize(240, 240, { fit: "cover" }).png().toBuffer();
     return `data:image/png;base64,${png.toString("base64")}`;
   } catch {
     return void 0;
@@ -235560,8 +235564,21 @@ function applyEdits(config2, edits, width, height) {
     const s2 = edit.set;
     setNum("x", s2.x, -width, width * 2);
     setNum("y", s2.y, -height, height * 2);
-    setNum("w", s2.w, 4, width * 2);
-    setNum("h", s2.h, 4, height * 2);
+    if (el.type === "image") {
+      const aspect = Number(el.w) / Math.max(1, Number(el.h));
+      if (typeof s2.w === "number" && Number.isFinite(s2.w)) {
+        const nextW = Math.min(width * 2, Math.max(4, Math.round(s2.w)));
+        setNum("w", nextW, 4, width * 2);
+        setNum("h", nextW / Math.max(1e-3, aspect), 4, height * 2);
+      } else if (typeof s2.h === "number" && Number.isFinite(s2.h)) {
+        const nextH = Math.min(height * 2, Math.max(4, Math.round(s2.h)));
+        setNum("h", nextH, 4, height * 2);
+        setNum("w", nextH * aspect, 4, width * 2);
+      }
+    } else {
+      setNum("w", s2.w, 4, width * 2);
+      setNum("h", s2.h, 4, height * 2);
+    }
     if (el.type === "text") {
       setNum("fontSize", s2.fontSize, 6, Math.max(height, width));
       setNum("lineHeight", s2.lineHeight, 0.6, 3, false);
@@ -235657,6 +235674,149 @@ function capPictureHeadline(config2, maxH) {
     return e;
   });
   return { ...config2, elements };
+}
+
+// src/lib/openaiArtworkReview.ts
+import sharp11 from "sharp";
+var OPENAI_REVIEW_MODEL = process.env.OPENAI_ARTWORK_REVIEW_MODEL?.trim() || "gpt-4o";
+function isOpenAIReviewConfigured() {
+  return !!process.env.OPENAI_API_KEY?.trim();
+}
+var describe = (input) => input.config.elements.map((e) => {
+  const role = e.slot ?? ("role" in e ? e.role : "other");
+  const base = `${e.id} ${e.type} ${role} x=${Math.round(e.x)} y=${Math.round(e.y)} w=${Math.round(e.w)} h=${Math.round(e.h)}`;
+  return e.type === "text" ? `${base} font=${e.fontSize}px text=${JSON.stringify(e.text.slice(0, 120))}` : base;
+}).join("\n");
+async function jpegData(config2, input, maxEdge) {
+  const png = await renderFreeformToPng(config2, input.width, input.height, { scale: 1, loadImage: input.loadImage });
+  const jpg = await sharp11(png).resize(maxEdge, maxEdge, { fit: "inside", withoutEnlargement: true }).jpeg({ quality: 84 }).toBuffer();
+  return `data:image/jpeg;base64,${jpg.toString("base64")}`;
+}
+function editOf(value) {
+  if (!value || typeof value !== "object") return null;
+  const r4 = value;
+  if (typeof r4.elementId !== "string") return null;
+  const rawSet = r4.set && typeof r4.set === "object" ? r4.set : {};
+  const set2 = {};
+  for (const key of ["x", "y", "w", "h", "fontSize", "opacity", "lineHeight", "letterSpacing", "focusX", "focusY", "radius"]) {
+    if (typeof rawSet[key] === "number" && Number.isFinite(rawSet[key])) set2[key] = rawSet[key];
+  }
+  if (rawSet.align === "left" || rawSet.align === "center" || rawSet.align === "right") set2.align = rawSet.align;
+  if (rawSet.fit === "cover" || rawSet.fit === "contain") set2.fit = rawSet.fit;
+  if (rawSet.fontWeight === 400 || rawSet.fontWeight === 700) set2.fontWeight = rawSet.fontWeight;
+  for (const key of ["color", "fill"]) if (typeof rawSet[key] === "string") set2[key] = rawSet[key].slice(0, 32);
+  return { elementId: r4.elementId, delete: r4.delete === true, set: set2 };
+}
+async function reviewPieceWithOpenAI(input) {
+  const started = Date.now();
+  const candidate = await jpegData(input.config, input, 1200);
+  const referenceBlocks = [];
+  for (const ex of input.exemplars.slice(0, 2)) {
+    try {
+      const refInput = { ...input, config: ex.config, width: ex.width, height: ex.height };
+      referenceBlocks.push({ type: "text", text: `Approved source reference: ${ex.name}, ${ex.width}x${ex.height}.` });
+      referenceBlocks.push({ type: "image_url", image_url: { url: await jpegData(ex.config, refInput, 800) } });
+    } catch {
+    }
+  }
+  const prompt = [
+    `You are the AI Artwork Guard for ${input.brand.name}. Inspect an automatically resized creative before it reaches a designer.`,
+    "The source references are authoritative. Do not redesign, rewrite copy, alter logos, or apply personal taste.",
+    "Check for stretched raster artwork, distorted logos, bad crops, missing elements, text collisions, overflowing text, unsafe margins, incorrect edge contact, weak hierarchy and departures from the supplied masters.",
+    "Return JSON only with verdict, confidence, summary and issues.",
+    "Each issue has elementId, slot, fault, message, fix, severity and edit.",
+    "severity is send_back or fix_next_time. fault is one of: " + REVIEW_FAULTS.join(", ") + ".",
+    "For a safe correction to an existing element, edit is {elementId, delete:false, set:{x,y,w,h,fontSize,align,opacity,lineHeight,letterSpacing,focusX,focusY,fit,radius}} containing only changed properties.",
+    "Never change image width and height independently. For an image resize, preserve its current w:h ratio. Never resize, recolour, delete or move a logo or lockup. Never change any text wording.",
+    input.styleSpec ? `Measured campaign rules:
+${input.styleSpec.slice(0, 5e3)}` : "",
+    input.measured.length ? `Deterministic checks:
+${input.measured.map((x) => `- ${x.severity}: ${x.message}`).join("\n")}` : "Deterministic checks found no issue.",
+    `Canvas: ${input.width}x${input.height}. Method: ${input.adaptMethod ?? "unknown"}.`,
+    `Elements:
+${describe(input)}`
+  ].filter(Boolean).join("\n\n");
+  const response = await openai.chat.completions.create({
+    model: OPENAI_REVIEW_MODEL,
+    messages: [{ role: "user", content: [
+      ...referenceBlocks,
+      { type: "text", text: prompt },
+      { type: "image_url", image_url: { url: candidate } }
+    ] }],
+    max_tokens: 2400,
+    response_format: { type: "json_object" }
+  });
+  const parsed = JSON.parse(response.choices[0]?.message?.content ?? "{}");
+  const issues = (Array.isArray(parsed.issues) ? parsed.issues : []).slice(0, 16).map((raw2) => {
+    const i = raw2 && typeof raw2 === "object" ? raw2 : {};
+    const fault = typeof i.fault === "string" && REVIEW_FAULTS.includes(i.fault) ? i.fault : "other";
+    return {
+      elementId: typeof i.elementId === "string" ? i.elementId : null,
+      slot: typeof i.slot === "string" ? i.slot : null,
+      fault,
+      message: String(i.message ?? "Artwork needs review").slice(0, 400),
+      fix: typeof i.fix === "string" ? i.fix.slice(0, 300) : null,
+      severity: i.severity === "fix_next_time" ? "fix_next_time" : "send_back",
+      edit: editOf(i.edit)
+    };
+  });
+  return {
+    verdict: parsed.verdict === "right" ? "right" : "wrong",
+    confidence: Math.max(0, Math.min(1, Number(parsed.confidence) || 0)),
+    summary: String(parsed.summary ?? "OpenAI artwork check completed").slice(0, 600),
+    issues,
+    model: OPENAI_REVIEW_MODEL,
+    answeredBy: `OpenAI ${OPENAI_REVIEW_MODEL}`,
+    reviewedAt: (/* @__PURE__ */ new Date()).toISOString(),
+    ms: Date.now() - started,
+    exemplarIds: input.exemplars.slice(0, 2).map((e) => e.id)
+  };
+}
+async function reviewAndFixWithOpenAI(input, maxReviews = 2) {
+  let config2 = input.config;
+  const applied = [];
+  let review = await reviewPieceWithOpenAI({ ...input, config: config2 });
+  let rounds = 1;
+  while (rounds < maxReviews && review.verdict !== "right") {
+    const edits = review.issues.filter((i) => i.severity === "send_back" && i.edit).map((i) => i.edit);
+    if (!edits.length) break;
+    const fixed = applyEdits(config2, edits, input.width, input.height);
+    if (!fixed.applied.length) break;
+    config2 = input.headlineMaxH ? capPictureHeadline(fixed.config, input.headlineMaxH) : fixed.config;
+    applied.push(...fixed.applied);
+    rounds++;
+    review = await reviewPieceWithOpenAI({ ...input, config: config2, measured: [] });
+  }
+  return { review, config: config2, rounds, applied, remaining: review.issues.filter((i) => i.severity === "send_back" && !i.edit) };
+}
+
+// src/lib/artworkGuard.ts
+function isArtworkGuardConfigured(provider = "auto") {
+  if (provider === "openai") return isOpenAIReviewConfigured();
+  if (provider === "claude") return isClaudeReviewConfigured();
+  return isOpenAIReviewConfigured() || isClaudeReviewConfigured();
+}
+async function runArtworkGuard(input, provider = "auto", maxReviews = 2) {
+  const failures = [];
+  const attempt = async (which) => {
+    if (which === "openai") return reviewAndFixWithOpenAI(input, maxReviews);
+    return reviewAndFix(input, maxReviews);
+  };
+  const order = provider === "auto" ? ["openai", "claude"] : [provider];
+  for (const which of order) {
+    if (!isArtworkGuardConfigured(which)) {
+      failures.push(`${which} is not configured`);
+      continue;
+    }
+    try {
+      const result = await attempt(which);
+      result.review.answeredBy = result.review.answeredBy ?? (which === "openai" ? "OpenAI" : "Claude");
+      return result;
+    } catch (error40) {
+      failures.push(`${which}: ${error40 instanceof Error ? error40.message : "review failed"}`);
+    }
+  }
+  throw new Error(`AI Artwork Guard could not run, ${failures.join("; ")}`);
 }
 
 // src/lib/exemplars.ts
@@ -236448,7 +236608,7 @@ async function dissectPdfToTemplate(objectPath, page, paletteHexes = [], mode = 
 }
 
 // src/lib/imageDissect.ts
-import sharp12 from "sharp";
+import sharp13 from "sharp";
 init_objectStorage();
 var objectStorageService10 = new ObjectStorageService();
 var MAX_EDGE = 1024;
@@ -236506,13 +236666,13 @@ Rules:
 - Return ONLY the JSON, no commentary.`;
 async function dissectImageToTemplate(objectPath) {
   const bytes2 = await readObjectBytes(objectPath);
-  const meta = await sharp12(bytes2).metadata();
+  const meta = await sharp13(bytes2).metadata();
   let width = meta.width ?? 0;
   let height = meta.height ?? 0;
   if (meta.orientation && meta.orientation >= 5) {
     [width, height] = [height, width];
   }
-  const { data: resized, info } = await sharp12(bytes2).rotate().resize(MAX_EDGE, MAX_EDGE, { fit: "inside", withoutEnlargement: true }).jpeg({ quality: 80 }).toBuffer({ resolveWithObject: true });
+  const { data: resized, info } = await sharp13(bytes2).rotate().resize(MAX_EDGE, MAX_EDGE, { fit: "inside", withoutEnlargement: true }).jpeg({ quality: 80 }).toBuffer({ resolveWithObject: true });
   if (!width || !height) {
     width = info.width;
     height = info.height;
@@ -236632,7 +236792,7 @@ async function dissectImageToTemplate(objectPath) {
 // src/lib/exampleImport.ts
 var import_jszip3 = __toESM(require_lib13(), 1);
 init_objectStorage();
-import sharp14 from "sharp";
+import sharp15 from "sharp";
 
 // ../../node_modules/.pnpm/fast-xml-parser@5.11.0/node_modules/fast-xml-parser/src/util.js
 var nameStartChar = ":A-Za-z_\\u00C0-\\u00D6\\u00D8-\\u00F6\\u00F8-\\u02FF\\u0370-\\u037D\\u037F-\\u1FFF\\u200C-\\u200D\\u2070-\\u218F\\u2C00-\\u2FEF\\u3001-\\uD7FF\\uF900-\\uFDCF\\uFDF0-\\uFFFD";
@@ -241341,7 +241501,7 @@ async function parseIdmlToLayouts(idml, linksByName, brandLogoUrl = null) {
 // src/lib/indesignPackage.ts
 var import_jszip2 = __toESM(require_lib13(), 1);
 init_objectStorage();
-import sharp13 from "sharp";
+import sharp14 from "sharp";
 
 // src/lib/pdfStripText.ts
 var import_pdf_lib2 = __toESM(require_cjs2(), 1);
@@ -241610,7 +241770,7 @@ async function importInDesignPackage(objectPath, brandLogoUrl = null) {
         result.imported.push({ name, objectPath: storedPath, contentType: IMAGE_TYPES2[e], kind: "image" });
         linksByName.set(name, { objectPath: storedPath, kind: "image" });
       } else if (e === ".tif" || e === ".tiff") {
-        const png = await sharp13(bytes2).png().toBuffer();
+        const png = await sharp14(bytes2).png().toBuffer();
         const storedPath = await objectStorageService11.uploadBytes(png, "image/png");
         result.imported.push({
           name: name.replace(/\.tiff?$/i, ".png"),
@@ -241717,7 +241877,7 @@ async function importInDesignPackage(objectPath, brandLogoUrl = null) {
               const width = Math.min(source.width - left, Math.max(1, Math.round(Number(region.w) * scale)));
               const height = Math.min(source.height - top, Math.max(1, Math.round(Number(region.h) * scale)));
               if (width < 1 || height < 1) continue;
-              const crop = await sharp13(source.png).extract({ left, top, width, height }).png().toBuffer();
+              const crop = await sharp14(source.png).extract({ left, top, width, height }).png().toBuffer();
               const storedPath = await objectStorageService11.uploadBytes(crop, "image/png");
               region.type = "image";
               region.src = `/api/storage${storedPath}`;
@@ -241766,7 +241926,7 @@ async function importInDesignPackage(objectPath, brandLogoUrl = null) {
                 src = Buffer.from(await (await objectStorageService11.downloadObject(file3)).arrayBuffer());
                 srcBytesCache.set(objPath, src);
               }
-              const meta = await sharp13(src).metadata();
+              const meta = await sharp14(src).metadata();
               const iw = meta.width ?? 0;
               const ih = meta.height ?? 0;
               if (iw < 2 || ih < 2) continue;
@@ -241774,7 +241934,7 @@ async function importInDesignPackage(objectPath, brandLogoUrl = null) {
               const top = Math.min(ih - 1, Math.max(0, Math.round(rect.y * ih)));
               const width = Math.max(1, Math.min(iw - left, Math.round(rect.w * iw)));
               const height = Math.max(1, Math.min(ih - top, Math.round(rect.h * ih)));
-              const pipeline = sharp13(src).extract({ left, top, width, height });
+              const pipeline = sharp14(src).extract({ left, top, width, height });
               const jpeg = meta.format === "jpeg";
               const out = jpeg ? await pipeline.jpeg({ quality: 95 }).toBuffer() : await pipeline.png().toBuffer();
               croppedPath = await objectStorageService11.uploadBytes(out, jpeg ? "image/jpeg" : "image/png");
@@ -241831,7 +241991,7 @@ function exampleKindFor(fileName) {
   return null;
 }
 async function faithfulImageLayout(bytes2, contentType, name) {
-  const meta = await sharp14(bytes2).metadata();
+  const meta = await sharp15(bytes2).metadata();
   const width = Math.max(16, meta.width ?? 0);
   const height = Math.max(16, meta.height ?? 0);
   const storedPath = await objectStorageService12.uploadBytes(bytes2, contentType);
@@ -241915,11 +242075,11 @@ async function importExample(objectPath, fileName, brandLogoUrl, paletteHexes = 
       const ext2 = /\.(jpe?g|png|webp)$/i.exec(path11)?.[1]?.toLowerCase();
       if (!ext2) continue;
       const bytes3 = Buffer.from(await entry.async("uint8array"));
-      const meta = await sharp14(bytes3).metadata().catch(() => null);
+      const meta = await sharp15(bytes3).metadata().catch(() => null);
       if (!meta?.width || !meta.height) continue;
       if (Math.min(meta.width, meta.height) < 200 || meta.width * meta.height < 15e4) continue;
       if (meta.hasAlpha) {
-        const stats = await sharp14(bytes3).stats().catch(() => null);
+        const stats = await sharp15(bytes3).stats().catch(() => null);
         const alpha = stats?.channels?.[stats.channels.length - 1];
         if (alpha && alpha.mean < 100) continue;
       }
@@ -242012,7 +242172,7 @@ async function importExample(objectPath, fileName, brandLogoUrl, paletteHexes = 
     };
   }
   const isTiff = /\.tiff?$/i.test(fileName);
-  const finalBytes = isTiff ? await sharp14(bytes2).png().toBuffer() : bytes2;
+  const finalBytes = isTiff ? await sharp15(bytes2).png().toBuffer() : bytes2;
   const contentType = isTiff ? "image/png" : /\.png$/i.test(fileName) ? "image/png" : /\.webp$/i.test(fileName) ? "image/webp" : /\.gif$/i.test(fileName) ? "image/gif" : "image/jpeg";
   const layout = await faithfulImageLayout(finalBytes, contentType, baseName2);
   return {
@@ -242403,6 +242563,8 @@ router13.post("/templates/:id/adapt", requireAdmin, async (req, res) => {
   const created = [];
   let rejectedCount = 0;
   const profileId = Number.isInteger(Number(req.body?.profileId)) && Number(req.body?.profileId) > 0 ? Number(req.body.profileId) : null;
+  const guardEnabled = req.body?.aiGuard === true;
+  const requestedGuardProvider = req.body?.aiGuardProvider === "claude" || req.body?.aiGuardProvider === "openai" ? req.body.aiGuardProvider : "auto";
   const resolvedStyle = await resolveStyleSchema({ masterId: master.id, masterName: master.name, sourceTemplateId: master.sourceTemplateId ?? null, profileId });
   if (resolvedStyle.source === "profile") res.setHeader("X-Layout-Profile", String(resolvedStyle.profileId));
   for (const raw2 of rawTargets) {
@@ -242425,24 +242587,88 @@ router13.post("/templates/:id/adapt", requireAdmin, async (req, res) => {
       channel: typeof t.channel === "string" ? t.channel : null
     };
     const { config: adaptedConfig, method, spec, rejected } = await adaptOne(master, masterConfig, width, height, brandInfo, req.log, exemplars, void 0, hints, resolvedStyle.source === "none" ? null : { schema: resolvedStyle.schema, label: resolvedStyle.label, profile: resolvedStyle.profile }, { loadImage: makeImageLoader(req), brandFontFamily: brand?.fontFamily ?? "National 2" });
-    if (rejected.length > 0) rejectedCount++;
     let merged = subjectNotes.length ? normalizeFreeformConfig({ ...adaptedConfig, adaptNotes: [...adaptedConfig.adaptNotes ?? [], ...subjectNotes] }) : adaptedConfig;
+    let elementGuidelines = [];
     try {
-      const gl = await guidelinesForConfig(brand?.id ?? null, adaptedConfig, width, height, 1);
+      elementGuidelines = await guidelinesForConfig(brand?.id ?? null, adaptedConfig, width, height, 3);
+      const gl = elementGuidelines;
       const lines = guidelineNotes(gl);
       if (lines.length) merged = normalizeFreeformConfig({ ...adaptedConfig, adaptNotes: [...adaptedConfig.adaptNotes ?? [], ...lines] });
     } catch {
     }
     const name = typeof t.name === "string" && t.name.trim() ? t.name.trim().slice(0, 120) : `${master.name} ${spec.entry ? `${spec.label} ` : ""}${width}\xD7${height}`;
+    let guardReview = null;
+    let guardFixes = null;
+    let finalRejected = [...rejected];
+    if (guardEnabled) {
+      if (!isArtworkGuardConfigured(requestedGuardProvider)) {
+        finalRejected.push("AI Artwork Guard could not run because the selected provider is not configured.");
+        merged = normalizeFreeformConfig({ ...merged, adaptNotes: [...merged.adaptNotes ?? [], "Check: AI Artwork Guard is not configured. Verify OPENAI_API_KEY or ANTHROPIC_API_KEY in Vercel."] });
+      } else {
+        try {
+          const masterReference = {
+            id: master.id,
+            name: master.name,
+            width: master.width,
+            height: master.height,
+            formatClass: classifyAspect(master.width, master.height),
+            config: masterConfig,
+            measured: measureRecipe(masterConfig, master.width, master.height),
+            approvedAt: null
+          };
+          const guarded = await runArtworkGuard({
+            name,
+            config: merged,
+            width,
+            height,
+            brand: { name: brand?.name ?? "the brand", guidelines: brand?.guidelines ?? null, fontFamily: brand?.fontFamily ?? null },
+            loadImage: makeImageLoader(req),
+            exemplars: [masterReference, ...exemplars.filter((e) => e.id !== master.id)].slice(0, 3),
+            measured: checkLayout(merged, width, height),
+            adaptMethod: method,
+            styleSpec: resolvedStyle.schema ? `${resolvedStyle.label}
+${describeStyleSchema(resolvedStyle.schema)}` : null,
+            elementGuidelines,
+            elementTopics: topicsPerElement(merged, width, height),
+            headlineMaxH: (() => {
+              const sp = resolvedStyle.schema;
+              if (!sp || !hasLayeredSlots(merged)) return null;
+              const share = height > width * 0.8 ? sp.parts.headline?.display?.stacked ?? 0.19 : sp.parts.headline?.display?.side ?? 0.38;
+              return Math.round(Math.min(width, height) * share);
+            })()
+          }, requestedGuardProvider, 2);
+          guardReview = guarded.review;
+          if (guarded.applied.length) guardFixes = { at: (/* @__PURE__ */ new Date()).toISOString(), rounds: guarded.rounds, applied: guarded.applied, before: merged.elements };
+          merged = normalizeFreeformConfig({ ...merged, elements: guarded.config.elements });
+          finalRejected = checkMandatory(masterConfig, merged, width, height, resolvedStyle.schema?.partRules ?? {});
+          finalRejected.push(...checkLayout(merged, width, height).filter((i) => i.severity === "error").map((i) => i.message));
+          finalRejected.push(...guarded.review.issues.filter((i) => i.severity === "send_back").map((i) => `AI Artwork Guard: ${i.message}`));
+        } catch (err) {
+          const reason = err instanceof Error ? err.message.slice(0, 180) : "review failed";
+          req.log?.warn?.({ err, templateId: master.id, width, height }, "AI artwork guard failed");
+          finalRejected.push(`AI Artwork Guard failed: ${reason}`);
+        }
+      }
+    }
+    finalRejected = [...new Set(finalRejected)];
+    if (finalRejected.length > 0) rejectedCount++;
+    const cleanNotes = (merged.adaptNotes ?? []).filter((n) => !n.startsWith("Rejected:") && !n.startsWith("Check: Claude") && !n.startsWith("Check: AI Artwork Guard"));
+    const storedConfig = {
+      ...merged,
+      adaptNotes: [...finalRejected.map((r4) => `Rejected: ${r4}`), ...cleanNotes],
+      rejected: finalRejected.length ? finalRejected : void 0,
+      ...guardReview ? { claudeReview: guardReview, aiArtworkGuard: { enabled: true, provider: guardReview.answeredBy ?? guardReview.model, reviewedDuringBuild: true } } : {},
+      ...guardFixes ? { claudeFixes: guardFixes } : {}
+    };
     const [template] = await db.insert(templatesTable).values({
       name,
-      description: `${rejected.length > 0 ? "REJECTED \xB7 " : ""}Adapted from "${master.name}" (${master.width}\xD7${master.height}) \xB7 ${method.replace(":", " ")} \xB7 ${spec.formatClass}`,
+      description: `${finalRejected.length > 0 ? "REJECTED \xB7 " : ""}Adapted from "${master.name}" (${master.width}\xD7${master.height}) \xB7 ${method.replace(":", " ")} \xB7 ${spec.formatClass}${guardReview ? " \xB7 AI guarded" : ""}`,
       // Created pieces always land in Work-in-progress, whatever the master
       // is; only "Make template" moves a piece into Templates.
       category: "wip",
       width,
       height,
-      config: JSON.stringify(merged),
+      config: JSON.stringify(storedConfig),
       sourceTemplateId: master.id,
       createdBy: req.clerkUserId ?? null
     }).returning();
@@ -242456,8 +242682,9 @@ router13.post("/templates/:id/adapt", requireAdmin, async (req, res) => {
   res.status(201).json(created.map(formatTemplate));
 });
 router13.post("/templates/:id/claude-review", requireAuth, async (req, res) => {
-  if (!isClaudeReviewConfigured()) {
-    res.status(503).json({ error: "Claude review is not configured (ANTHROPIC_API_KEY)" });
+  const requestedProvider = req.body?.provider === "claude" || req.body?.provider === "openai" ? req.body.provider : "auto";
+  if (!isArtworkGuardConfigured(requestedProvider)) {
+    res.status(503).json({ error: "AI Artwork Guard is not configured. Add OPENAI_API_KEY or ANTHROPIC_API_KEY in Vercel." });
     return;
   }
   const id = Number(req.params.id);
@@ -242529,10 +242756,10 @@ ${describeStyleSchema(resolvedStyle.schema)}` : null,
       })()
     };
     if (canFix) {
-      fixed = await reviewAndFix(reviewInput, 3);
+      fixed = await runArtworkGuard(reviewInput, requestedProvider, 2);
       review = fixed.review;
     } else {
-      review = await reviewPiece(reviewInput);
+      review = (await runArtworkGuard(reviewInput, requestedProvider, 1)).review;
     }
   } catch (err) {
     req.log?.warn?.({ err, templateId: id }, "claude review failed");
@@ -242861,7 +243088,7 @@ router13.post("/templates/:id/trim-layers", requireAdmin, async (req, res) => {
     res.status(400).json({ error: "Config unreadable" });
     return;
   }
-  const sharp16 = (await import("sharp")).default;
+  const sharp17 = (await import("sharp")).default;
   const { ObjectStorageService: ObjectStorageService2 } = await Promise.resolve().then(() => (init_objectStorage(), objectStorage_exports));
   const objectStorageService17 = new ObjectStorageService2();
   let trimmed = 0;
@@ -242875,12 +243102,12 @@ router13.post("/templates/:id/trim-layers", requireAdmin, async (req, res) => {
       const objectPath = el.src.replace(/^\/api\/storage/, "");
       const file2 = await objectStorageService17.getObjectEntityFile(objectPath);
       const bytes2 = Buffer.from(await (await objectStorageService17.downloadObject(file2)).arrayBuffer());
-      const meta = await sharp16(bytes2).metadata();
+      const meta = await sharp17(bytes2).metadata();
       if (!meta.hasAlpha || !meta.width || !meta.height) {
         elements.push(el);
         continue;
       }
-      const raw2 = await sharp16(bytes2).ensureAlpha().raw().toBuffer();
+      const raw2 = await sharp17(bytes2).ensureAlpha().raw().toBuffer();
       const W2 = meta.width, H2 = meta.height;
       let minX = W2, minY = H2, maxX = -1, maxY = -1;
       for (let py = 0; py < H2; py++) for (let px = 0; px < W2; px++) {
@@ -242896,7 +243123,7 @@ router13.post("/templates/:id/trim-layers", requireAdmin, async (req, res) => {
         elements.push(el);
         continue;
       }
-      const out = Buffer.from(await sharp16(bytes2).extract({ left: minX, top: minY, width: bw, height: bh }).png().toBuffer());
+      const out = Buffer.from(await sharp17(bytes2).extract({ left: minX, top: minY, width: bw, height: bh }).png().toBuffer());
       const stored = await objectStorageService17.uploadBytes(out, "image/png");
       const dispX = (el.w ?? W2) / W2, dispY = (el.h ?? H2) / H2;
       elements.push({
@@ -244404,7 +244631,7 @@ import { randomBytes } from "node:crypto";
 
 // src/lib/htmlExport.ts
 var import_jszip4 = __toESM(require_lib13(), 1);
-import sharp15 from "sharp";
+import sharp16 from "sharp";
 var ARTWORK_MOTIONS = ["none", "kenburns", "drift", "zoomout", "breathe", "wipe"];
 var COPY_MOTIONS = ["none", "fade", "rise", "pan", "pop", "wipe", "baseline", "tumble", "typewriter", "block"];
 var FONT_FILES2 = [
@@ -244426,7 +244653,7 @@ function safeFileName(src, index, contentType, prefix = "") {
 async function optimizeForExport(bytes2, contentType, boxW, boxH) {
   try {
     if (contentType.includes("svg")) return { bytes: bytes2, contentType };
-    const img = sharp15(bytes2, { failOn: "none" });
+    const img = sharp16(bytes2, { failOn: "none" });
     const meta = await img.metadata();
     const maxW = Math.max(16, Math.round(boxW * 2));
     const maxH = Math.max(16, Math.round(boxH * 2));

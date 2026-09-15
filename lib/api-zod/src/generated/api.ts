@@ -668,6 +668,9 @@ export const AdaptTemplateParams = zod.object({
   "id": zod.coerce.number()
 })
 
+export const adaptTemplateBodyAiGuardDefault = false;
+export const adaptTemplateBodyAiGuardProviderDefault = `auto`;
+
 export const AdaptTemplateBody = zod.object({
   "targets": zod.array(zod.object({
   "width": zod.number(),
@@ -676,7 +679,9 @@ export const AdaptTemplateBody = zod.object({
   "formatName": zod.string().optional().describe('The brief\'s deliverable name for the size (decides the format class with the channel)'),
   "channel": zod.string().optional().describe('Brief channel section (DISPLAY, OOH …)')
 })),
-  "profileId": zod.number().optional().describe('Layout profile (measured from examples) to lay the sizes out with')
+  "profileId": zod.number().optional().describe('Layout profile (measured from examples) to lay the sizes out with'),
+  "aiGuard": zod.boolean().default(adaptTemplateBodyAiGuardDefault).describe('Check and safely correct each adapted layout before it is saved'),
+  "aiGuardProvider": zod.enum(['auto', 'openai', 'claude']).default(adaptTemplateBodyAiGuardProviderDefault).describe('AI reviewer, auto uses OpenAI first and Claude as fallback')
 })
 
 

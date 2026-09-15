@@ -418,8 +418,24 @@ export function applyEdits(config: FreeformConfig, edits: ElementEdit[], width: 
     const s = edit.set;
     setNum("x", s.x, -width, width * 2);
     setNum("y", s.y, -height, height * 2);
-    setNum("w", s.w, 4, width * 2);
-    setNum("h", s.h, 4, height * 2);
+    if (el.type === "image") {
+      // An AI reviewer may propose both dimensions independently. Ignore that
+      // freedom for raster layers: one proposed dimension drives a uniform
+      // scale, so logos, masks, lenses, patterns and cut-outs never stretch.
+      const aspect = Number(el.w) / Math.max(1, Number(el.h));
+      if (typeof s.w === "number" && Number.isFinite(s.w)) {
+        const nextW = Math.min(width * 2, Math.max(4, Math.round(s.w)));
+        setNum("w", nextW, 4, width * 2);
+        setNum("h", nextW / Math.max(0.001, aspect), 4, height * 2);
+      } else if (typeof s.h === "number" && Number.isFinite(s.h)) {
+        const nextH = Math.min(height * 2, Math.max(4, Math.round(s.h)));
+        setNum("h", nextH, 4, height * 2);
+        setNum("w", nextH * aspect, 4, width * 2);
+      }
+    } else {
+      setNum("w", s.w, 4, width * 2);
+      setNum("h", s.h, 4, height * 2);
+    }
     if (el.type === "text") {
       setNum("fontSize", s.fontSize, 6, Math.max(height, width));
       setNum("lineHeight", s.lineHeight, 0.6, 3, false);

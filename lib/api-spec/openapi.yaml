@@ -2456,6 +2456,15 @@ components:
         profileId:
           type: integer
           description: Layout profile (measured from examples) to lay the sizes out with
+        aiGuard:
+          type: boolean
+          default: false
+          description: Check and safely correct each adapted layout before it is saved
+        aiGuardProvider:
+          type: string
+          enum: [auto, openai, claude]
+          default: auto
+          description: AI reviewer, auto uses OpenAI first and Claude as fallback
       required:
         - targets
 

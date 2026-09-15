@@ -61,7 +61,7 @@ const claudeReviewOf = (t: Template): ClaudeReviewShape | null =>
 const claudeFixesOf = (t: Template): ClaudeFixesShape | null =>
   ((t.config as { claudeFixes?: ClaudeFixesShape })?.claudeFixes) ?? null;
 
-/** Claude checks the piece and fixes what it finds; this shows the outcome, not a list. */
+/** The configured AI guard checks and fixes the piece; this shows the outcome. */
 function ClaudeReviewPanel({ template, busy, onCheck, onUndo, undoing }: { template: Template; busy: boolean; onCheck: () => void; onUndo: () => void; undoing: boolean }) {
   const r = claudeReviewOf(template);
   const f = claudeFixesOf(template);
@@ -73,7 +73,7 @@ function ClaudeReviewPanel({ template, busy, onCheck, onUndo, undoing }: { templ
       <div className="flex items-center justify-between gap-2">
         <div className="flex items-center gap-1.5 min-w-0">
           <Sparkles className="w-3.5 h-3.5 text-primary shrink-0" />
-          <span className="text-[11px] font-semibold uppercase tracking-wide">Claude's check</span>
+          <span className="text-[11px] font-semibold uppercase tracking-wide">AI Artwork Guard</span>
           {r && (
             <Badge
               variant="outline"
@@ -97,7 +97,7 @@ function ClaudeReviewPanel({ template, busy, onCheck, onUndo, undoing }: { templ
         </div>
       </div>
       {!r && !busy && <p className="text-xs text-muted-foreground">Not checked yet.</p>}
-      {busy && <p className="text-xs text-muted-foreground">Claude is checking the piece and fixing what it finds — up to three passes, about a minute.</p>}
+      {busy && <p className="text-xs text-muted-foreground">The AI Artwork Guard is checking the piece and applying controlled fixes, up to two passes.</p>}
       {r && !busy && (
         <>
           {fixedCount > 0 ? (
@@ -106,7 +106,7 @@ function ClaudeReviewPanel({ template, busy, onCheck, onUndo, undoing }: { templ
               {touched.length > 0 ? ` (${touched.join(", ")})` : ""}.
             </p>
           ) : (
-            <p className="text-xs text-foreground/90">{r.verdict === "right" ? "Nothing to change." : "Nothing Claude could change itself."}</p>
+            <p className="text-xs text-foreground/90">{r.verdict === "right" ? "Nothing to change." : "Nothing the AI guard could safely change itself."}</p>
           )}
           {remaining.length > 0 && (
             <p className="text-xs text-amber-700 flex gap-1.5"><AlertTriangle className="w-3.5 h-3.5 shrink-0 mt-0.5" /><span>{remaining.length} thing{remaining.length === 1 ? "" : "s"} still need{remaining.length === 1 ? "s" : ""} a designer: {remaining.map((i) => i.message).join(" ")}</span></p>
@@ -216,7 +216,7 @@ export default function CompareTemplates() {
       const status = (err as { response?: { status?: number }; status?: number })?.response?.status ?? (err as { status?: number })?.status;
       if (status === 404) return; // deleted while the check was queued
       const detail = (err as { data?: { error?: string } })?.data?.error ?? (err instanceof Error ? err.message : "");
-      toast({ title: "Claude couldn't check this piece", description: detail || undefined, variant: "destructive" });
+      toast({ title: "AI Artwork Guard couldn't check this piece", description: detail || undefined, variant: "destructive" });
     } finally {
       setChecking((prev) => { const n = new Set(prev); n.delete(id); return n; });
     }
@@ -226,7 +226,7 @@ export default function CompareTemplates() {
     try {
       await undoReview.mutateAsync({ id });
       await queryClient.invalidateQueries({ queryKey: getListTemplatesQueryKey() });
-      toast({ title: "Claude's changes undone" });
+      toast({ title: "AI Artwork Guard changes undone" });
     } catch (err) {
       toast({ title: "Couldn't undo", description: err instanceof Error ? err.message : undefined, variant: "destructive" });
     } finally {

@@ -70,6 +70,8 @@ export default function CampaignBuild() {
   const [build, setBuild] = useState<CampaignBuildPlan | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
   const [notes, setNotes] = useState<string[]>([]);
+  const [aiGuard, setAiGuard] = useState(true);
+  const [aiGuardProvider, setAiGuardProvider] = useState<"auto" | "openai" | "claude">("auto");
   // Which planned pieces to produce (indexes into build.jobs); null = all.
   const [pickedJobs, setPickedJobs] = useState<Set<number> | null>(null);
 
@@ -215,13 +217,14 @@ export default function CampaignBuild() {
       }
       let done = 0;
       let rejected = 0;
+      const adaptBatch = aiGuard ? 1 : ADAPT_BATCH;
       for (const [masterId, masterJobs] of byMaster) {
-        for (let i = 0; i < masterJobs.length; i += ADAPT_BATCH) {
-          const slice = masterJobs.slice(i, i + ADAPT_BATCH);
+        for (let i = 0; i < masterJobs.length; i += adaptBatch) {
+          const slice = masterJobs.slice(i, i + adaptBatch);
           setBusy(`Producing artwork ${done + 1}–${done + slice.length} of ${jobs.length}…`);
           await new Promise<void>((resolve, reject) =>
             adaptTemplate.mutate(
-              { id: masterId, data: { targets: slice.map((j) => ({ width: j.width, height: j.height, name: j.name, formatName: j.formatLabel, channel: j.channel ?? undefined })), ...(build.profile ? { profileId: build.profile.id } : {}) } },
+              { id: masterId, data: { targets: slice.map((j) => ({ width: j.width, height: j.height, name: j.name, formatName: j.formatLabel, channel: j.channel ?? undefined })), ...(build.profile ? { profileId: build.profile.id } : {}), aiGuard, aiGuardProvider } },
               {
                 onSuccess: (made) => {
                   for (const t of made ?? []) if (((t.config as { rejected?: string[] } | undefined)?.rejected?.length ?? 0) > 0) rejected++;
@@ -430,6 +433,25 @@ export default function CampaignBuild() {
             </div>
           ) : (
             <>
+              <div className="rounded-lg border border-primary/30 bg-primary/5 p-3 space-y-2" data-testid="ai-artwork-guard">
+                <label className="flex items-start gap-2 cursor-pointer">
+                  <input type="checkbox" className="mt-0.5" checked={aiGuard} onChange={(e) => setAiGuard(e.target.checked)} />
+                  <span>
+                    <span className="block text-sm font-semibold">AI Artwork Guard</span>
+                    <span className="block text-xs text-muted-foreground">Check and safely correct every layout during creation, before it reaches Work in progress.</span>
+                  </span>
+                </label>
+                {aiGuard && (
+                  <label className="flex items-center gap-2 text-xs">
+                    <span className="font-medium">Reviewer</span>
+                    <select className="h-8 rounded-md border border-input bg-background px-2" value={aiGuardProvider} onChange={(e) => setAiGuardProvider(e.target.value as "auto" | "openai" | "claude")}>
+                      <option value="auto">Automatic, OpenAI then Claude fallback</option>
+                      <option value="openai">OpenAI only</option>
+                      <option value="claude">Claude only</option>
+                    </select>
+                  </label>
+                )}
+              </div>
               {build.profile ? (
                 <div className="rounded-md border border-border/60 bg-muted/30 px-3 py-2 text-xs space-y-0.5" data-testid="build-profile">
                   <p><span className="font-semibold">Master-relative geometry:</span> {build.profile.name}, measured from your examples.</p>

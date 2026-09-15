@@ -6,9 +6,14 @@
  * OpenAPI spec version: 0.1.0
  */
 import type { AdaptTarget } from './adaptTarget';
+import type { AdaptTemplateRequestAiGuardProvider } from './adaptTemplateRequestAiGuardProvider';
 
 export interface AdaptTemplateRequest {
   targets: AdaptTarget[];
   /** Layout profile (measured from examples) to lay the sizes out with */
   profileId?: number;
+  /** Check and safely correct each adapted layout before it is saved */
+  aiGuard?: boolean;
+  /** AI reviewer, auto uses OpenAI first and Claude as fallback */
+  aiGuardProvider?: AdaptTemplateRequestAiGuardProvider;
 }

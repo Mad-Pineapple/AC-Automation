@@ -58,13 +58,14 @@ import { styleSchemaFor, describeStyleSchema } from "../lib/styleSpecs/getReadyB
 import { ObjectStorageService as LayerStorage } from "../lib/objectStorage";
 import { makeImageLoader } from "./exports";
 import { classifyAspect } from "../lib/formatCatalog";
-import { reviewPiece, reviewAndFix, isClaudeReviewConfigured, type ClaudeReview } from "../lib/claudeReview";
+import type { ClaudeReview, FixResult } from "../lib/claudeReview";
+import { isArtworkGuardConfigured, runArtworkGuard, type ArtworkGuardProvider } from "../lib/artworkGuard";
 import { ensureBrandFontsRegistered } from "../lib/brandFonts";
 import { describeFormat, aspectDistance, type FormatHints } from "../lib/formatCatalog";
 import { isFlatArtwork } from "../lib/slots";
 import { FLAT_SCALE_TOLERANCE } from "../lib/campaignPlan";
 import { feedbackForFormat, describeFormatFeedback } from "../lib/feedbackLearning";
-import { approvedExemplars, studioExemplars, chooseReference, type Exemplar, type Reference } from "../lib/exemplars";
+import { approvedExemplars, studioExemplars, chooseReference, measureRecipe, type Exemplar, type Reference } from "../lib/exemplars";
 import { dissectPdfToTemplate } from "../lib/pdfDissect";
 import { dissectImageToTemplate } from "../lib/imageDissect";
 import { importExample, exampleKindFor } from "../lib/exampleImport";
@@ -541,6 +542,8 @@ router.post("/templates/:id/adapt", requireAdmin, async (req, res): Promise<void
   // Layout numbers: an explicit measured profile, else the newest profile
   // this master was measured into, else the hand-written schema by name.
   const profileId = Number.isInteger(Number(req.body?.profileId)) && Number(req.body?.profileId) > 0 ? Number(req.body.profileId) : null;
+  const guardEnabled = req.body?.aiGuard === true;
+  const requestedGuardProvider: ArtworkGuardProvider = req.body?.aiGuardProvider === "claude" || req.body?.aiGuardProvider === "openai" ? req.body.aiGuardProvider : "auto";
   const resolvedStyle = await resolveStyleSchema({ masterId: master.id, masterName: master.name, sourceTemplateId: master.sourceTemplateId ?? null, profileId });
   if (resolvedStyle.source === "profile") res.setHeader("X-Layout-Profile", String(resolvedStyle.profileId));
   for (const raw of rawTargets) {
@@ -567,11 +570,12 @@ router.post("/templates/:id/adapt", requireAdmin, async (req, res): Promise<void
       channel: typeof t.channel === "string" ? t.channel : null,
     };
     const { config: adaptedConfig, method, spec, rejected } = await adaptOne(master, masterConfig, width, height, brandInfo, (req as any).log, exemplars, undefined, hints, resolvedStyle.source === "none" ? null : { schema: resolvedStyle.schema, label: resolvedStyle.label, profile: resolvedStyle.profile }, { loadImage: makeImageLoader(req), brandFontFamily: brand?.fontFamily ?? "National 2" });
-    if (rejected.length > 0) rejectedCount++;
     // Guideline reminders for what is on the piece (logo tile, band, photo…).
     let merged = subjectNotes.length ? normalizeFreeformConfig({ ...adaptedConfig, adaptNotes: [...(adaptedConfig.adaptNotes ?? []), ...subjectNotes] }) : adaptedConfig;
+    let elementGuidelines: Awaited<ReturnType<typeof guidelinesForConfig>> = [];
     try {
-      const gl = await guidelinesForConfig(brand?.id ?? null, adaptedConfig, width, height, 1);
+      elementGuidelines = await guidelinesForConfig(brand?.id ?? null, adaptedConfig, width, height, 3);
+      const gl = elementGuidelines;
       const lines = guidelineNotes(gl);
       if (lines.length) merged = normalizeFreeformConfig({ ...adaptedConfig, adaptNotes: [...(adaptedConfig.adaptNotes ?? []), ...lines] });
     } catch { /* notes are a bonus */ }
@@ -579,17 +583,70 @@ router.post("/templates/:id/adapt", requireAdmin, async (req, res): Promise<void
       typeof t.name === "string" && t.name.trim()
         ? t.name.trim().slice(0, 120)
         : `${master.name} ${spec.entry ? `${spec.label} ` : ""}${width}×${height}`;
+    let guardReview: ClaudeReview | null = null;
+    let guardFixes: { at: string; rounds: number; applied: unknown[]; before: FreeformConfig["elements"] } | null = null;
+    let finalRejected = [...rejected];
+    if (guardEnabled) {
+      if (!isArtworkGuardConfigured(requestedGuardProvider)) {
+        finalRejected.push("AI Artwork Guard could not run because the selected provider is not configured.");
+        merged = normalizeFreeformConfig({ ...merged, adaptNotes: [...(merged.adaptNotes ?? []), "Check: AI Artwork Guard is not configured. Verify OPENAI_API_KEY or ANTHROPIC_API_KEY in Vercel."] });
+      } else {
+        try {
+          const masterReference: Exemplar = {
+            id: master.id, name: master.name, width: master.width, height: master.height,
+            formatClass: classifyAspect(master.width, master.height), config: masterConfig,
+            measured: measureRecipe(masterConfig, master.width, master.height), approvedAt: null,
+          };
+          const guarded = await runArtworkGuard({
+            name, config: merged, width, height,
+            brand: { name: brand?.name ?? "the brand", guidelines: brand?.guidelines ?? null, fontFamily: brand?.fontFamily ?? null },
+            loadImage: makeImageLoader(req),
+            exemplars: [masterReference, ...exemplars.filter((e) => e.id !== master.id)].slice(0, 3),
+            measured: checkLayout(merged, width, height), adaptMethod: method,
+            styleSpec: resolvedStyle.schema ? `${resolvedStyle.label}\n${describeStyleSchema(resolvedStyle.schema)}` : null,
+            elementGuidelines,
+            elementTopics: topicsPerElement(merged, width, height),
+            headlineMaxH: (() => {
+              const sp = resolvedStyle.schema;
+              if (!sp || !hasLayeredSlots(merged)) return null;
+              const share = height > width * 0.8 ? sp.parts.headline?.display?.stacked ?? 0.19 : sp.parts.headline?.display?.side ?? 0.38;
+              return Math.round(Math.min(width, height) * share);
+            })(),
+          }, requestedGuardProvider, 2);
+          guardReview = guarded.review;
+          if (guarded.applied.length) guardFixes = { at: new Date().toISOString(), rounds: guarded.rounds, applied: guarded.applied, before: merged.elements };
+          merged = normalizeFreeformConfig({ ...merged, elements: guarded.config.elements });
+          finalRejected = checkMandatory(masterConfig, merged, width, height, (resolvedStyle.schema?.partRules ?? {}) as Record<string, { minPx?: number; neverOverlap?: string[]; dropWhenTight?: boolean }>);
+          finalRejected.push(...checkLayout(merged, width, height).filter((i) => i.severity === "error").map((i) => i.message));
+          finalRejected.push(...guarded.review.issues.filter((i) => i.severity === "send_back").map((i) => `AI Artwork Guard: ${i.message}`));
+        } catch (err) {
+          const reason = err instanceof Error ? err.message.slice(0, 180) : "review failed";
+          (req as any).log?.warn?.({ err, templateId: master.id, width, height }, "AI artwork guard failed");
+          finalRejected.push(`AI Artwork Guard failed: ${reason}`);
+        }
+      }
+    }
+    finalRejected = [...new Set(finalRejected)];
+    if (finalRejected.length > 0) rejectedCount++;
+    const cleanNotes = (merged.adaptNotes ?? []).filter((n) => !n.startsWith("Rejected:") && !n.startsWith("Check: Claude") && !n.startsWith("Check: AI Artwork Guard"));
+    const storedConfig = {
+      ...merged,
+      adaptNotes: [...finalRejected.map((r) => `Rejected: ${r}`), ...cleanNotes],
+      rejected: finalRejected.length ? finalRejected : undefined,
+      ...(guardReview ? { claudeReview: guardReview, aiArtworkGuard: { enabled: true, provider: guardReview.answeredBy ?? guardReview.model, reviewedDuringBuild: true } } : {}),
+      ...(guardFixes ? { claudeFixes: guardFixes } : {}),
+    };
     const [template] = await db
       .insert(templatesTable)
       .values({
         name,
-        description: `${rejected.length > 0 ? "REJECTED · " : ""}Adapted from "${master.name}" (${master.width}×${master.height}) · ${method.replace(":", " ")} · ${spec.formatClass}`,
+        description: `${finalRejected.length > 0 ? "REJECTED · " : ""}Adapted from "${master.name}" (${master.width}×${master.height}) · ${method.replace(":", " ")} · ${spec.formatClass}${guardReview ? " · AI guarded" : ""}`,
         // Created pieces always land in Work-in-progress, whatever the master
         // is; only "Make template" moves a piece into Templates.
         category: "wip",
         width,
         height,
-        config: JSON.stringify(merged),
+        config: JSON.stringify(storedConfig),
         sourceTemplateId: master.id,
         createdBy: (req as any).clerkUserId ?? null,
       })
@@ -608,7 +665,7 @@ router.post("/templates/:id/adapt", requireAdmin, async (req, res): Promise<void
 /**
  * POST /templates/:id/claude-review
  *
- * Claude is the studio's final reviewer: it sees the rendered piece, its
+ * The AI Artwork Guard sees the rendered piece, its
  * elements, the brand's layout rules, the measuring tool's findings and up
  * to two same-format pieces the designers marked Right, and returns an
  * advisory verdict with element-level issues. Stored on the template as
@@ -616,8 +673,9 @@ router.post("/templates/:id/adapt", requireAdmin, async (req, res): Promise<void
  * the Compare screen's "Needs a check" filter picks them up.
  */
 router.post("/templates/:id/claude-review", requireAuth, async (req, res): Promise<void> => {
-  if (!isClaudeReviewConfigured()) {
-    res.status(503).json({ error: "Claude review is not configured (ANTHROPIC_API_KEY)" });
+  const requestedProvider: ArtworkGuardProvider = req.body?.provider === "claude" || req.body?.provider === "openai" ? req.body.provider : "auto";
+  if (!isArtworkGuardConfigured(requestedProvider)) {
+    res.status(503).json({ error: "AI Artwork Guard is not configured. Add OPENAI_API_KEY or ANTHROPIC_API_KEY in Vercel." });
     return;
   }
   const id = Number(req.params.id);
@@ -661,7 +719,7 @@ router.post("/templates/:id/claude-review", requireAuth, async (req, res): Promi
   // reviewed only.
   const canFix = req.body?.fix !== false && t.sourceTemplateId != null;
   let review: ClaudeReview;
-  let fixed: Awaited<ReturnType<typeof reviewAndFix>> | null = null;
+  let fixed: FixResult | null = null;
   try {
     const reviewInput = {
       name: t.name,
@@ -692,10 +750,10 @@ router.post("/templates/:id/claude-review", requireAuth, async (req, res): Promi
       })(),
     };
     if (canFix) {
-      fixed = await reviewAndFix(reviewInput, 3);
+      fixed = await runArtworkGuard(reviewInput, requestedProvider, 2);
       review = fixed.review;
     } else {
-      review = await reviewPiece(reviewInput);
+      review = (await runArtworkGuard(reviewInput, requestedProvider, 1)).review;
     }
   } catch (err) {
     (req as any).log?.warn?.({ err, templateId: id }, "claude review failed");
