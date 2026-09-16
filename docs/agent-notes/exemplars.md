@@ -50,3 +50,18 @@ Nothing is stored beyond the verdict: exemplars are derived at adapt/redo time f
   will still catch it.
 - An exemplar of a different axis family cannot dictate a strip's one-row layout.
 - Only Right verdicts count; edits saved without a Right are not a reference.
+
+## 2026-09-16 (audit fix P7)
+
+- The reference is the layout that was **approved**: `approvedExemplars` builds the exemplar from the
+  Right row's `subject_config` snapshot (live config only as a fallback for old verdicts).
+- Only whole-piece verdicts count (`element_id IS NULL`); a Wrong filed as "fix next time" is a note,
+  not a retraction.
+- `measureRecipe` no longer exports an absolute `ctaFloorPx`; headline fractions are measured against
+  the visible photo zone (clipped to canvas and seam), not the spilled element.
+- Axis-bound overrides (axis, photo/band shares, headline position/size) apply only when the approved
+  piece lays out along the same axis as the target class; pill/lockup/copy ratios always carry.
+- Redo never follows the piece itself or a duplicate of its layout under another id.
+- A structured Wrong moves geometry: `too_small` + "N px" sets the part's `minPx` on the campaign
+  profile; `missing` / `cut_off` sets `dropWhenTight: false`. The response carries `ruleUpdated`.
+- Approved-sibling scaling is skipped outside 0.5×–2× of the sibling's short side (rebuild instead).

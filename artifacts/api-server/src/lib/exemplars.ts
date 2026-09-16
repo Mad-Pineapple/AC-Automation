@@ -73,10 +73,9 @@ export function measureRecipe(config: FreeformConfig, width: number, height: num
   }
   if (sem.cta) {
     const hf = sem.cta.h / short;
-    if (inRange(hf, 0.03, 0.4)) {
-      out.ctaHeightFrac = hf;
-      out.ctaFloorPx = Math.round(sem.cta.h);
-    }
+    // Only the proportion carries: an absolute pixel floor copied from a
+    // 2160-wide tower made a 100px pill on a 300×250.
+    if (inRange(hf, 0.03, 0.4)) out.ctaHeightFrac = hf;
     if (sem.panelBox && sem.panelBox.w > 0) {
       const wf = sem.cta.w / sem.panelBox.w;
       if (inRange(wf, 0.15, 0.95)) out.ctaMaxWidthFrac = wf;
@@ -91,14 +90,23 @@ export function measureRecipe(config: FreeformConfig, width: number, height: num
     }
   }
   if (sem.headline && sem.photoBox) {
-    const centre = (sem.headline.y + sem.headline.h / 2 - sem.photoBox.y) / Math.max(1, sem.photoBox.h);
+    // Measure against the VISIBLE photo zone (clipped to the canvas and the
+    // seam), not the oversized cover-cropped element: measuring against the
+    // spill taught every generation a smaller headline.
+    const pb = sem.photoBox;
+    const zx0 = Math.max(0, pb.x), zy0 = Math.max(0, pb.y);
+    let zx1 = Math.min(width, pb.x + pb.w), zy1 = Math.min(height, pb.y + pb.h);
+    if (sem.axis === "stacked") zy1 = Math.min(zy1, sem.band ? sem.band.y : zone ? zone.y : sem.panelBox ? sem.panelBox.y : zy1);
+    if (sem.axis === "side") zx1 = Math.min(zx1, sem.band ? sem.band.x : zone ? zone.x : sem.panelBox ? sem.panelBox.x : zx1);
+    const zoneW = Math.max(1, zx1 - zx0), zoneH = Math.max(1, zy1 - zy0);
+    const centre = (sem.headline.y + sem.headline.h / 2 - zy0) / zoneH;
     if (inRange(centre, 0.1, 0.9)) {
       out.headlineCentreFrac = centre;
       out.headlineCentreFracBare = centre;
     }
-    const hf = (sem.headline.fontSize * 1.1) / Math.max(1, sem.photoBox.h);
+    const hf = (sem.headline.fontSize * 1.1) / zoneH;
     if (inRange(hf, 0.08, 0.8)) out.headlineMaxHeightFrac = hf;
-    const wf = sem.headline.w / Math.max(1, sem.photoBox.w);
+    const wf = sem.headline.w / zoneW;
     if (inRange(wf, 0.4, 1)) out.headlineWidthFrac = wf;
     if (sem.subheadline) {
       const r = sem.subheadline.fontSize / sem.headline.fontSize;
@@ -112,17 +120,23 @@ export function measureRecipe(config: FreeformConfig, width: number, height: num
   return out;
 }
 
-/** Latest verdict per template in one family. */
-async function latestVerdicts(ids: number[]): Promise<Map<number, "correct" | "incorrect">> {
-  const m = new Map<number, "correct" | "incorrect">();
+/** Latest WHOLE-PIECE verdict per template in one family, with the layout
+ *  snapshot taken at verdict time. Element-level flags do not count as a
+ *  piece verdict, and a Wrong filed as "fix next time" is a note, not a
+ *  retraction of the approval. */
+interface LatestVerdict { verdict: "correct" | "incorrect"; config: string | null; at: string | null }
+async function latestVerdicts(ids: number[]): Promise<Map<number, LatestVerdict>> {
+  const m = new Map<number, LatestVerdict>();
   if (ids.length === 0) return m;
   await ensureFeedbackTable();
   const rows = await db.execute(sql`
-    SELECT DISTINCT ON (subject_id) subject_id, verdict FROM feedback
-    WHERE subject_type = 'template' AND subject_id IN (${sql.join(ids.map((i) => sql`${i}`), sql`, `)})
+    SELECT DISTINCT ON (subject_id) subject_id, verdict, subject_config, created_at FROM feedback
+    WHERE subject_type = 'template' AND element_id IS NULL
+      AND NOT (verdict = 'incorrect' AND severity = 'fix_next_time')
+      AND subject_id IN (${sql.join(ids.map((i) => sql`${i}`), sql`, `)})
     ORDER BY subject_id, id DESC`);
-  for (const r of rows.rows as { subject_id: number; verdict: string }[]) {
-    if (r.verdict === "correct" || r.verdict === "incorrect") m.set(Number(r.subject_id), r.verdict);
+  for (const r of rows.rows as { subject_id: number; verdict: string; subject_config: string | null; created_at: string | null }[]) {
+    if (r.verdict === "correct" || r.verdict === "incorrect") m.set(Number(r.subject_id), { verdict: r.verdict, config: r.subject_config ?? null, at: r.created_at ? new Date(r.created_at).toISOString() : null });
   }
   return m;
 }
@@ -146,8 +160,21 @@ export async function approvedExemplars(masterId: number): Promise<Exemplar[]> {
   const out: Exemplar[] = [];
   const seen = new Set<number>();
   for (const row of rows) {
-    if (verdicts.get(row.id) !== "correct") continue;
-    const config = parse(row);
+    const v = verdicts.get(row.id);
+    if (v?.verdict !== "correct") continue;
+    // The reference is the layout that was APPROVED — the snapshot taken
+    // when Right was pressed — not whatever the piece has been edited into
+    // since. The live config is the fallback for verdicts older than snapshots.
+    let config: FreeformConfig | null = null;
+    if (v.config) {
+      try {
+        const raw = JSON.parse(v.config);
+        config = isFreeformConfig(raw) ? normalizeFreeformConfig(raw) : null;
+      } catch {
+        config = null;
+      }
+    }
+    config ??= parse(row);
     if (!config) continue;
     seen.add(row.id);
     out.push({
@@ -158,7 +185,7 @@ export async function approvedExemplars(masterId: number): Promise<Exemplar[]> {
       formatClass: classifyAspect(row.width, row.height),
       config,
       measured: measureRecipe(config, row.width, row.height),
-      approvedAt: row.updatedAt ? new Date(row.updatedAt).toISOString() : null,
+      approvedAt: v.at ?? (row.updatedAt ? new Date(row.updatedAt).toISOString() : null),
     });
   }
   // Pieces marked Right and since deleted from WIP still lead: their layout
@@ -224,10 +251,13 @@ export const EXEMPLAR_SCALE_TOLERANCE = 0.08;
 
 /** The approved piece a size should follow, or null when nothing in the
  * family has been marked Right. Same class first, then closest shape. */
-export function chooseReference(exemplars: Exemplar[], width: number, height: number, excludeId?: number): Reference | null {
+export function chooseReference(exemplars: Exemplar[], width: number, height: number, excludeId?: number, excludeConfig?: FreeformConfig | null): Reference | null {
   const cls = classifyAspect(width, height);
+  // A duplicate of the piece itself (same layout, other id) is not a
+  // reference for it: following it would be a no-op that inherits approval.
+  const selfKey = excludeConfig ? JSON.stringify(excludeConfig.elements) : null;
   const candidates = exemplars
-    .filter((e) => e.id !== excludeId)
+    .filter((e) => e.id !== excludeId && (!selfKey || JSON.stringify(e.config.elements) !== selfKey))
     .map((e) => ({ e, distance: aspectDistance(width, height, e.width, e.height), sameClass: e.formatClass === cls }))
     .sort((a, b) => Number(b.sameClass) - Number(a.sameClass) || a.distance - b.distance);
   const pick = candidates[0];

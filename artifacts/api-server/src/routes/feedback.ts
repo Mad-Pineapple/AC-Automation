@@ -19,6 +19,8 @@ import { ensureFeedbackTable, snapshotTemplate, snapshotTemplateConfig, remember
 import { renderFreeformToPng } from "../lib/renderFreeform";
 import { ObjectStorageService } from "../lib/objectStorage";
 import { makeImageLoader } from "./exports";
+import { profileForMaster, updateProfileRules } from "../lib/layoutProfile";
+import { PART_RULE_SLOTS, type PartRuleSlot } from "../lib/styleSpecs/getReadyBurst2";
 
 const ensureTable = ensureFeedbackTable;
 
@@ -94,7 +96,30 @@ router.post("/feedback", requireAuth, async (req, res): Promise<void> => {
       req.log.warn({ err, subjectId, verdict }, "feedback: remembering the verdict in Knowledge failed");
     }
   }
-  res.status(201).json({ ok: true, rememberedId });
+  // A structured Wrong moves geometry, not just prompts: "too small" with a
+  // px value becomes the part's minimum, "missing" makes the part
+  // undroppable — on the campaign profile this piece belongs to.
+  let ruleUpdated: { profileId: number; slot: string; change: Record<string, unknown> } | null = null;
+  if (subjectType === "template" && verdict === "incorrect" && slot && (PART_RULE_SLOTS as readonly string[]).includes(slot)) {
+    try {
+      const px = expectedV ? Number((/(\d{1,4})\s*px/i.exec(expectedV) ?? [])[1]) : NaN;
+      const change: Record<string, unknown> =
+        faultV === "too_small" && Number.isFinite(px) && px > 0 ? { minPx: px }
+        : faultV === "missing" || faultV === "cut_off" ? { dropWhenTight: false }
+        : {};
+      if (Object.keys(change).length > 0) {
+        const p = await profileForMaster(snap.sourceTemplateId ?? subjectId, snap.sourceTemplateId ? subjectId : null);
+        if (p) {
+          await updateProfileRules(p.id, { [slot as PartRuleSlot]: change });
+          ruleUpdated = { profileId: p.id, slot, change };
+          req.log.info({ profileId: p.id, slot, change }, "feedback: profile rule updated from a structured Wrong");
+        }
+      }
+    } catch (err) {
+      req.log.warn({ err, subjectId }, "feedback: could not move the verdict into the profile's rules");
+    }
+  }
+  res.status(201).json({ ok: true, rememberedId, ...(ruleUpdated ? { ruleUpdated } : {}) });
   void backfillOnce(req);
 });
 

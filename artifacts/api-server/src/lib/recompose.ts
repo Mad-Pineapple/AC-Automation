@@ -202,9 +202,14 @@ export async function recomposeToFormat(
   const formatClass = opts.formatClass ?? classifyAspect(dstW, dstH);
   const budget = classifyBudget(dstW, dstH);
   const base = recipeFor(formatClass, budget);
-  const ov = opts.recipeOverrides ?? {};
-  // An approved piece's axis only applies when it matches the class's own
-  // axis family (a stacked exemplar cannot dictate a strip's row).
+  const ovAll = opts.recipeOverrides ?? {};
+  // An approved piece's axis-bound numbers (axis, photo and band shares,
+  // headline position and size) only apply when it lays out along the same
+  // axis as this class: a wide approved piece must not turn a portrait into
+  // columns. Pill, lockup and copy ratios carry across either way.
+  const sameAxis = !ovAll.axis || ovAll.axis === base.axis;
+  const AXIS_BOUND = new Set(["axis", "photoFrac", "bandFrac", "headlineCentreFrac", "headlineCentreFracBare", "headlineWidthFrac", "headlineMaxHeightFrac"]);
+  const ov: Partial<Recipe> = sameAxis ? ovAll : (Object.fromEntries(Object.entries(ovAll).filter(([k]) => !AXIS_BOUND.has(k))) as Partial<Recipe>);
   const recipe: Recipe = { ...base, ...ov, axis: base.axis === "row" ? "row" : (ov.axis ?? base.axis), keep: base.keep };
   const keep = new Set(recipe.keep);
   const short = Math.min(dstW, dstH);

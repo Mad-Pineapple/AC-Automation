@@ -1323,8 +1323,12 @@ router.post("/templates/:id/redo", requireAdmin, async (req, res): Promise<void>
     // The corrected, approved pieces of this family are the reference — never
     // the piece being redone itself.
     const exemplars = await approvedExemplars(master.id);
+    // Never follow the piece itself, nor a duplicate of it under another id.
+    const pieceCfg = (() => { try { const r = JSON.parse(piece.config || "{}"); return isFreeformConfig(r) ? normalizeFreeformConfig(r) : null; } catch { return null; } })();
+    const selfKey = pieceCfg ? JSON.stringify(pieceCfg.elements) : null;
+    const exemplarsForRedo = exemplars.filter((e) => e.id !== piece.id && (!selfKey || JSON.stringify(e.config.elements) !== selfKey));
     const redoStyle = await resolveStyleSchema({ masterId: master.id, masterName: master.name, sourceTemplateId: master.sourceTemplateId ?? null });
-    const { config, method, spec, reference } = await adaptOne(master, masterConfig, piece.width, piece.height, brandInfo, (req as any).log, exemplars, piece.id, { name: piece.name }, redoStyle.source === "none" ? null : { schema: redoStyle.schema, label: redoStyle.label, profile: redoStyle.profile }, { loadImage: makeImageLoader(req), brandFontFamily: brand?.fontFamily ?? "National 2" });
+    const { config, method, spec, reference } = await adaptOne(master, masterConfig, piece.width, piece.height, brandInfo, (req as any).log, exemplarsForRedo, piece.id, { name: piece.name }, redoStyle.source === "none" ? null : { schema: redoStyle.schema, label: redoStyle.label, profile: redoStyle.profile }, { loadImage: makeImageLoader(req), brandFontFamily: brand?.fontFamily ?? "National 2" });
     const [updated] = await db
       .update(templatesTable)
       .set({
