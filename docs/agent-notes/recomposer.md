@@ -105,3 +105,11 @@ New slot `kicker` (the line above the headline, e.g. "IT'S TIME TO TALK"): infer
 recomposer and the layered engine, and existing layered masters are relabelled on their next build.
 Known gap: the message's first line in the Phase 1/2 HTML5 files is still lost — the panel splitter
 keeps one yellow segment (P6).
+
+## Panel split without doubling (2026-09-16, audit fix P6)
+
+`splitPanelGraphic` now merges consecutive yellow message segments (a two-line message no longer
+loses its first line) and paints the cut regions out of the panel graphic in the exact ground colour
+(`panelMasked: true` on the panel image), so any engine can draw the panel and its parts together
+without doubling. `resplitLegacyPanel` re-cuts a master split before masking existed; the adapt route
+runs it once on the next build of such a master and persists the result.

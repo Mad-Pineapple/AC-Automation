@@ -416,7 +416,14 @@ export async function splitPanelGraphic(config: FreeformConfig, io: LayerIO): Pr
   for (let y = 0; y < H; y++) { bump(0, y); bump(W - 1, y); }
   const top = [...tally.entries()].sort((a, b) => b[1] - a[1])[0];
   if (!top) return { config, notes };
-  const [gr, gg, gb] = top[0].split(",").map((v) => (Number(v) << 3) + 4);
+  // The exact ground: average the real edge pixels that fall in the winning
+  // bucket (the bucket centre alone left a visibly lighter patch after masking).
+  const [qr, qg, qb] = top[0].split(",").map(Number);
+  let sr = 0, sg = 0, sb = 0, sn = 0;
+  const acc = (x: number, y: number) => { const [r, g, b, a] = px(x, y); if (a < 200) return; if ((r >> 3) === qr && (g >> 3) === qg && (b >> 3) === qb) { sr += r; sg += g; sb += b; sn++; } };
+  for (let x = 0; x < W; x++) { acc(x, 0); acc(x, H - 1); acc(x, Math.floor(H / 2)); }
+  for (let y = 0; y < H; y++) { acc(0, y); acc(W - 1, y); }
+  const gr = sn ? Math.round(sr / sn) : (qr << 3) + 4, gg = sn ? Math.round(sg / sn) : (qg << 3) + 4, gb = sn ? Math.round(sb / sn) : (qb << 3) + 4;
   const classify = (r: number, g: number, b: number, a: number): PixelClass => {
     if (a < 40) return "none";
     if (Math.abs(r - gr) + Math.abs(g - gg) + Math.abs(b - gb) < 72) return "ground";
@@ -463,7 +470,21 @@ export async function splitPanelGraphic(config: FreeformConfig, io: LayerIO): Pr
   // mark beside it, so white is the plurality, not the majority.
   const isLockup = (s: Seg) => !isBand(s) && !isMessage(s) && s.white >= s.content * 0.3 && s.white + s.other >= s.content * 0.6 && s.y0 > H * 0.35 && (s.y1 - s.y0) >= 8;
   const band = segs.find(isBand) ?? null;
-  const message = segs.filter(isMessage).sort((a, b) => b.content - a.content)[0] ?? null;
+  // The message may be two or three lines of yellow type with a line gap
+  // wider than the 4px bridge: merge consecutive message segments whose
+  // gap is under 1.5 line heights, then keep the group with the most type
+  // (keeping only the biggest line lost "Make a plan this" on every build).
+  const msgSegs = segs.filter(isMessage).sort((a, b) => a.y0 - b.y0);
+  const groups: Seg[] = [];
+  for (const seg of msgSegs) {
+    const last = groups[groups.length - 1];
+    const lineH = last ? Math.max(last.y1 - last.y0, seg.y1 - seg.y0) : 0;
+    if (last && seg.y0 - last.y1 <= Math.max(8, lineH * 1.5)) {
+      last.y1 = seg.y1; last.x0 = Math.min(last.x0, seg.x0); last.x1 = Math.max(last.x1, seg.x1);
+      last.content += seg.content; last.yellow += seg.yellow; last.white += seg.white; last.other += seg.other;
+    } else groups.push({ ...seg });
+  }
+  const message = groups.sort((a, b) => b.content - a.content)[0] ?? null;
   const lockup = [...segs.filter(isLockup)].pop() ?? null;
   if (!message && !lockup) { notes.push("Panel graphic kept whole: no message or lockup could be told apart in it."); return { config, notes }; }
 
@@ -496,11 +517,43 @@ export async function splitPanelGraphic(config: FreeformConfig, io: LayerIO): Pr
   if (band) await cut(band, "band", "layer_band");
   if (message) await cut(message, "message", "layer_message");
   if (lockup) await cut(lockup, "lockup", "layer_lockup");
+  // Paint the cut regions out of the panel graphic in its ground colour, so
+  // the panel drawn together with its parts never shows them twice (the
+  // "IT'S A DUPLICATE" verdict came from every other engine drawing both).
+  let panelEl: Img = panel;
+  try {
+    const cutSegs = [band, message, lockup].filter((x): x is Seg => !!x);
+    const overlays = cutSegs.map((seg) => {
+      const pad = 2;
+      const x0 = Math.max(0, seg.x0 - pad), y0 = Math.max(0, seg.y0 - pad);
+      const x1 = Math.min(W - 1, seg.x1 + pad), y1 = Math.min(H - 1, seg.y1 + pad);
+      return { input: { create: { width: x1 - x0 + 1, height: y1 - y0 + 1, channels: 4 as const, background: { r: gr, g: gg, b: gb, alpha: 1 } } }, left: x0, top: y0 };
+    });
+    const masked = await sharp(bytes).composite(overlays).png().toBuffer();
+    const storedPanel = await io.uploadBytes(masked, "image/png");
+    panelEl = { ...panel, src: `/api/storage${storedPanel}`, panelMasked: true };
+  } catch (err) {
+    logger.warn({ err }, "layered artwork: panel masking failed; keeping the unmasked panel");
+  }
   const idx = config.elements.findIndex((e) => e.id === panel.id);
   const elements = [...config.elements];
+  elements[idx] = panelEl;
   elements.splice(idx + 1, 0, ...parts);
   notes.push(`Panel graphic cut into ${parts.map((p) => p.slot).join(", ")} so the panel can be re-stacked at any size.`);
   return { config: { ...config, elements }, notes };
+}
+
+/** A master split before panels were masked carries both the whole panel
+ *  graphic and its parts. Drop the old parts and split again (with the
+ *  message-line merge and the mask), once. */
+export async function resplitLegacyPanel(config: FreeformConfig, io: LayerIO): Promise<{ config: FreeformConfig; changed: boolean; notes: string[] }> {
+  const panel = config.elements.find((e): e is Img => e.type === "image" && e.slot === "panel" && !!e.src);
+  if (!panel || panel.panelMasked || !hasPanelParts(config)) return { config, changed: false, notes: [] };
+  const stripped: FreeformConfig = { ...config, elements: config.elements.filter((e) => !(e.type === "image" && e.panelPart)) };
+  const split = await splitPanelGraphic(stripped, io);
+  const masked = split.config.elements.some((e) => e.type === "image" && e.slot === "panel" && e.panelMasked);
+  if (!masked) return { config, changed: false, notes: [] };
+  return { config: split.config, changed: true, notes: ["Panel graphic re-cut with its parts painted out, so nothing is drawn twice.", ...split.notes] };
 }
 
 // ---------------------------------------------------------------------------

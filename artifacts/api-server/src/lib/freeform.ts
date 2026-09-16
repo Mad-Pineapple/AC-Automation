@@ -113,6 +113,9 @@ export interface FreeformImage extends FreeformBase {
    * panel can be re-stacked per zone; the panel image itself stays on the
    * master as the ground reference. */
   panelPart?: boolean;
+  /** The panel graphic has had its cut parts painted out in the ground
+   * colour, so drawing it together with its parts never doubles them. */
+  panelMasked?: boolean;
   /** Motion from the imported HTML example (see MotionTrack). */
   motion?: MotionTrack;
   /** The motion shared by this layer's group (its animated ancestors only);
@@ -585,6 +588,7 @@ export function normalizeFreeformConfig(raw: unknown): FreeformConfig {
         ...(el.keepWhole === true ? { keepWhole: true } : {}),
         ...(el.bakedCopy === true ? { bakedCopy: true } : {}),
         ...(el.panelPart === true ? { panelPart: true } : {}),
+        ...(el.panelMasked === true ? { panelMasked: true } : {}),
         ...(kvText && kvText.length > 0 ? { kvText } : {}),
         ...(motion ? { motion } : {}),
         ...(groupMotion ? { groupMotion } : {}),
