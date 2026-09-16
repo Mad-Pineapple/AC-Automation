@@ -336,10 +336,39 @@ async function adaptOne(
       method = "scaled";
     }
   }
-  const issues = checkLayout(adapted, width, height);
   // The hard gate: an automated layout that lost a mandatory element,
   // undersized the logo or let copy collide is rejected, not merely noted.
-  const rejected = checkMandatory(masterConfig, { ...adapted, adaptNotes: [...(adapted.adaptNotes ?? []), ...notes] }, width, height, (styleSpec?.partRules ?? {}) as Record<string, { minPx?: number; neverOverlap?: string[]; dropWhenTight?: boolean }>);
+  const partRulesForGate = (styleSpec?.partRules ?? {}) as Record<string, { minPx?: number; neverOverlap?: string[]; dropWhenTight?: boolean }>;
+  const gate = (cfg: FreeformConfig) => checkMandatory(masterConfig, { ...cfg, adaptNotes: [...(cfg.adaptNotes ?? []), ...notes] }, width, height, partRulesForGate, { w: master.width, h: master.height });
+  let rejected = gate(adapted);
+  // A rejected result is not simply labelled: the next engine gets a turn
+  // and the build keeps whichever result has the fewest rejections.
+  if (rejected.length > 0 && method !== "scaled") {
+    const attempts: Array<{ label: string; run: () => Promise<FreeformConfig | null> }> = [];
+    if (!method.startsWith("recomposed") && shouldRecompose(masterConfig, master.width, master.height, width, height)) {
+      attempts.push({ label: `recomposed:${spec.formatClass}`, run: async () => (await recomposeToFormat(masterConfig, master.width, master.height, width, height, { brand: brandInfo, formatClass: spec.formatClass, rules }))?.config ?? null });
+    }
+    attempts.push({ label: "scaled", run: async () => adaptFreeformConfig(masterConfig, master.width, master.height, width, height) });
+    for (const attempt of attempts) {
+      try {
+        const alt = await attempt.run();
+        if (!alt) continue;
+        const altRejected = gate(alt);
+        if (altRejected.length < rejected.length) {
+          notes.push(`Rebuilt with the ${attempt.label.replace(":", " ")} engine: the ${method.replace(":", " ")} result was rejected (${rejected.join(" ")}).`);
+          adapted = alt;
+          method = attempt.label;
+          rejected = altRejected;
+          if (rejected.length === 0) break;
+        }
+      } catch (err) {
+        log?.warn({ err, engine: attempt.label }, "retry engine failed");
+      }
+    }
+  }
+  const issues = checkLayout(adapted, width, height);
+  const needsReview = adapted.needsReview === true || (adapted.droppedParts ?? []).length > 0;
+  if (needsReview && rejected.length === 0) notes.push("Review: a part was dropped or fitted at its floor — a designer should look before sign-off.");
   // Design principles: alignment, margins and balance from the geometry;
   // contrast behind copy from the rendered piece. Low contrast on the
   // headline or message is a rejection; the rest are checks.
@@ -377,6 +406,7 @@ async function adaptOne(
       ...(feedbackLine ? [feedbackLine] : []),
     ],
     ...(rejected.length > 0 ? { rejected } : {}),
+    ...(needsReview ? { needsReview: true } : {}),
     principles,
   });
   return { config, method, spec, reference, rejected };
@@ -496,7 +526,7 @@ router.post("/templates/:id/adapt", requireAdmin, async (req, res): Promise<void
   }
   // Masters labelled before the pixel check existed may carry a picture
   // (the car cut-out) as their "scrim"; re-check and repair once.
-  if (hasLayeredSlots(masterConfig) && masterConfig.elements.some((e) => e.type === "image" && e.slot === "scrim")) {
+  if (hasLayeredSlots(masterConfig) && masterConfig.elements.some((e) => e.type === "image" && (e.slot === "scrim" || e.slot === "cutout"))) {
     try {
       const v = await verifyScrimSlot(masterConfig, { loadImage: makeImageLoader(req) });
       if (v.changed) {
@@ -673,7 +703,7 @@ router.post("/templates/:id/adapt", requireAdmin, async (req, res): Promise<void
           guardReview = guarded.review;
           if (guarded.applied.length) guardFixes = { at: new Date().toISOString(), rounds: guarded.rounds, applied: guarded.applied, before: merged.elements };
           merged = normalizeFreeformConfig({ ...merged, elements: guarded.config.elements });
-          finalRejected = checkMandatory(masterConfig, merged, width, height, (resolvedStyle.schema?.partRules ?? {}) as Record<string, { minPx?: number; neverOverlap?: string[]; dropWhenTight?: boolean }>);
+          finalRejected = checkMandatory(masterConfig, merged, width, height, (resolvedStyle.schema?.partRules ?? {}) as Record<string, { minPx?: number; neverOverlap?: string[]; dropWhenTight?: boolean }>, { w: master.width, h: master.height });
           finalRejected.push(...checkLayout(merged, width, height).filter((i) => i.severity === "error").map((i) => i.message));
           finalRejected.push(...guarded.review.issues.filter((i) => i.severity === "send_back").map((i) => `AI Artwork Guard: ${i.message}`));
         } catch (err) {
@@ -697,7 +727,7 @@ router.post("/templates/:id/adapt", requireAdmin, async (req, res): Promise<void
       .insert(templatesTable)
       .values({
         name,
-        description: `${finalRejected.length > 0 ? "REJECTED · " : ""}Adapted from "${master.name}" (${master.width}×${master.height}) · ${method.replace(":", " ")} · ${spec.formatClass}${guardReview ? " · AI guarded" : ""}`,
+        description: `${finalRejected.length > 0 ? "REJECTED · " : storedConfig.needsReview ? "REVIEW · " : ""}Adapted from "${master.name}" (${master.width}×${master.height}) · ${method.replace(":", " ")} · ${spec.formatClass}${guardReview ? " · AI guarded" : ""}`,
         // Created pieces always land in Work-in-progress, whatever the master
         // is; only "Make template" moves a piece into Templates.
         category: "wip",

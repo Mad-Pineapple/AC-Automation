@@ -144,7 +144,24 @@ export function adaptGeometryProfile(
     matched++;
     const x = Math.round(measured.x * dstW), y = Math.round(measured.y * dstH);
     const w = Math.max(1, Math.round(measured.w * dstW)), h = Math.max(1, Math.round(measured.h * dstH));
-    if (element.type === "image") return placeImage(element, measured, dstW, dstH);
+    if (element.type === "image") {
+      const placed = placeImage(element, measured, dstW, dstH);
+      // Lockups and logos never drop below their floor (the rule layer's
+      // minPx or the studio floor), scaled up in proportion within the canvas.
+      const part = element.slot === "lockup" || element.slot === "logo" ? element.slot : null;
+      if (part && placed.type === "image") {
+        const floor = rules?.floor(part) ?? (part === "logo" ? 24 : 16);
+        const dim = part === "logo" ? Math.min(placed.w, placed.h) : placed.h;
+        if (dim < floor) {
+          const k = floor / Math.max(1, dim);
+          const nw = Math.min(dstW, Math.round(placed.w * k)), nh = Math.round(placed.h * (nw / Math.max(1, placed.w)));
+          const nx = Math.min(Math.max(0, placed.x - (nw - placed.w) / 2), dstW - nw);
+          const ny = Math.min(Math.max(0, placed.y - (nh - placed.h) / 2), dstH - nh);
+          return { ...placed, x: Math.round(nx), y: Math.round(ny), w: nw, h: nh };
+        }
+      }
+      return placed;
+    }
     // Edge flags apply to copy and rects too: flush means 0, not the
     // measured fraction (which put a "flush" band 23px in on a 1920 canvas).
     const sx = measured.edges.includes("left") ? 0 : measured.edges.includes("right") ? dstW - w : x;

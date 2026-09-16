@@ -113,6 +113,8 @@ function WipCard({
             </Badge>
             {((template.config as { rejected?: string[] } | undefined)?.rejected?.length ?? 0) > 0 ? (
               <Badge variant="destructive" className="text-xs" title={((template.config as { rejected?: string[] }).rejected ?? []).join(" ")}>Rejected</Badge>
+            ) : (template.config as { needsReview?: boolean } | undefined)?.needsReview ? (
+              <Badge variant="outline" className="text-xs border-amber-500 text-amber-700 dark:text-amber-400" title="A part was dropped or fitted at its floor — look before sign-off">Review</Badge>
             ) : (
               <Badge variant="secondary" className="text-xs">In progress</Badge>
             )}
@@ -122,6 +124,11 @@ function WipCard({
           <ul className="text-xs text-destructive list-disc pl-4 space-y-0.5">
             {((template.config as { rejected?: string[] }).rejected ?? []).slice(0, 3).map((r, i) => <li key={i}>{r}</li>)}
           </ul>
+        )}
+        {(((template.config as { droppedParts?: { slot: string; reason: string; byRule: boolean }[] } | undefined)?.droppedParts?.length ?? 0) > 0) && (
+          <p className="text-xs text-amber-700 dark:text-amber-400" title={((template.config as { droppedParts: { reason: string }[] }).droppedParts).map((d) => d.reason).join(" ")}>
+            Left out: {((template.config as { droppedParts: { slot: string; byRule: boolean }[] }).droppedParts).map((d) => `${d.slot}${d.byRule ? "" : " (no rule)"}`).join(", ")}
+          </p>
         )}
         {template.description && (
           <p className="text-xs text-muted-foreground line-clamp-2">{template.description}</p>

@@ -34,6 +34,8 @@ export interface SemanticMaster {
   panel: (FreeformRect & { slot: Slot }) | null;
   band: (FreeformImage & { slot: Slot }) | null;
   headline: (FreeformText & { slot: Slot }) | null;
+  /** A short line set ABOVE the headline ("IT'S TIME TO TALK"). */
+  kicker: (FreeformText & { slot: Slot }) | null;
   subheadline: (FreeformText & { slot: Slot }) | null;
   message: (FreeformText & { slot: Slot }) | null;
   cta: (FreeformRect & { slot: Slot }) | (FreeformImage & { slot: Slot }) | null;
@@ -201,10 +203,24 @@ export function inferSlots(config: FreeformConfig, width: number, height: number
     texts.filter((t) => unassigned(t) && t.text.trim().length > 0).sort((a, b) => (a.role === "headline" ? 0 : 1) - (b.role === "headline" ? 0 : 1) || bySize(a, b))[0] ??
     null;
   if (headline) headline.slot = "headline";
+  // Kicker: a smaller line whose bottom sits just above the headline, in its
+  // column. It is copy in its own right and travels with the headline.
+  const kicker =
+    (texts.find((t) => t.slot === "kicker") as (FreeformText & { slot: Slot }) | undefined) ??
+    (headline
+      ? texts
+          .filter((t) => unassigned(t) && t !== headline && t.text.trim().length > 0)
+          .filter((t) => t.fontSize <= headline.fontSize * 0.6)
+          .filter((t) => t.y + t.h <= headline.y + headline.fontSize * 0.3 && t.y + t.h >= headline.y - headline.fontSize * 1.5)
+          .filter((t) => t.x + t.w / 2 >= headline.x - headline.w * 0.1 && t.x + t.w / 2 <= headline.x + headline.w * 1.1)
+          .sort((a, b) => b.y - a.y)[0]
+      : undefined) ??
+    null;
+  if (kicker) kicker.slot = "kicker";
   const subheadline =
     (texts.find((t) => t.slot === "subheadline") as (FreeformText & { slot: Slot }) | undefined) ??
     texts
-      .filter((t) => unassigned(t) && t !== headline && t.text.trim().length > 0)
+      .filter((t) => unassigned(t) && t !== headline && t !== kicker && t.text.trim().length > 0)
       .filter((t) => (photoBox ? centreIn(t, photoBox) : headline ? Math.abs(t.y - (headline.y + headline.h)) < headline.fontSize * 1.5 : false))
       .sort(bySize)[0] ??
     null;
@@ -212,7 +228,7 @@ export function inferSlots(config: FreeformConfig, width: number, height: number
   const message =
     (texts.find((t) => t.slot === "message") as (FreeformText & { slot: Slot }) | undefined) ??
     texts
-      .filter((t) => unassigned(t) && t !== headline && t !== subheadline && t.text.trim().length > 0)
+      .filter((t) => unassigned(t) && t !== headline && t !== kicker && t !== subheadline && t.text.trim().length > 0)
       .filter((t) => (panelBox ? centreIn(t, panelBox) : true))
       .sort(bySize)[0] ??
     null;
@@ -249,6 +265,7 @@ export function inferSlots(config: FreeformConfig, width: number, height: number
     panel: panel ?? null,
     band: band ?? null,
     headline: headline ?? null,
+    kicker: kicker ?? null,
     subheadline: subheadline ?? null,
     message: message ?? null,
     cta,

@@ -90,3 +90,18 @@ move as one cluster, placed at the master's relative position inside its zone an
 anything flush to a canvas edge in the master snaps flush. Text boxes get 3% slack so a line that
 met its box does not wrap after rounding. The geometry engine now unions edge flags across masters
 and snaps flush copy and rects to the edge instead of the measured fraction.
+
+## Parity gate, retry, kicker (2026-09-16, audit fix P5)
+
+Every build records `droppedParts` ({slot, reason, byRule}) and `needsReview` on its config.
+`checkMandatory` reads the master with `inferSlots` and requires every part it carries in the output
+unless a drop entry is allowed: `byRule`, a profile `dropWhenTight`, or the default-droppable set
+(message, sub-line, kicker, cut-out, band). Headline, pill, lockup/logo and photo are never droppable
+by default. A rejected result is retried with the next engine (recompose, then plain scale) and the
+build keeps the result with the fewest rejections, noting the switch. Descriptions carry `REVIEW ·`
+when a piece needs a look; the WIP card shows a Review badge and a "Left out:" line.
+New slot `kicker` (the line above the headline, e.g. "IT'S TIME TO TALK"): inferred for live text
+(slots.ts) and for image layers (layeredArtwork.inferImageSlots), placed above the headline by the
+recomposer and the layered engine, and existing layered masters are relabelled on their next build.
+Known gap: the message's first line in the Phase 1/2 HTML5 files is still lost — the panel splitter
+keeps one yellow segment (P6).

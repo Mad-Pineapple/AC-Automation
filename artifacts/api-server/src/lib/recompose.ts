@@ -17,7 +17,7 @@
  * Deterministic: the same master and target always produce the same layout.
  */
 import sharp from "sharp";
-import type { FreeformConfig, FreeformElement, FreeformImage, FreeformRect, FreeformText, LayoutOption } from "./freeform";
+import type { DroppedPart, FreeformConfig, FreeformElement, FreeformImage, FreeformRect, FreeformText, LayoutOption } from "./freeform";
 import { aspectDistance, classifyAspect, classifyBudget, needsRebuild, type FormatClass, type PixelBudget } from "./formatCatalog";
 import { inferSlots, type Box, type SemanticMaster } from "./slots";
 import { recipeFor, type Recipe } from "./recipes";
@@ -212,6 +212,8 @@ export async function recomposeToFormat(
   const social = isSocialSquare(dstW, dstH);
   const notes: string[] = [...sem.notes];
   let needsReview = sem.notes.length > 0;
+  const dropped: DroppedPart[] = [];
+  const drop = (slot: string, reason: string, byRule: boolean) => { dropped.push({ slot, reason, byRule }); notes.push(reason); };
   const panelFill = sem.panelFill ?? OCEAN;
   const rules = opts.rules;
   const headlineMin = rules?.floor("headline") ?? HEADLINE_MIN_PX;
@@ -278,7 +280,7 @@ export async function recomposeToFormat(
       locked: false,
     } as FreeformImage);
   } else if (sem.photo && !keep.has("photo")) {
-    notes.push("Photo dropped: this format has no room for it.");
+    drop("photo", "Photo dropped: this format has no room for it.", false);
   }
 
   // ---- 3. Scrim over the photo zone ------------------------------------------------
@@ -344,7 +346,7 @@ export async function recomposeToFormat(
       } as FreeformImage);
     }
   } else if (sem.band && recipe.bandAt === "none") {
-    notes.push("Pattern band dropped: strips carry photo, headline, CTA and logo only.");
+    drop("band", "Pattern band dropped: strips carry photo, headline, CTA and logo only.", true);
   }
 
   // ---- CTA plan: the pill is sized from its measured label (lib/ctaPlan.ts) ------------------
@@ -398,6 +400,7 @@ export async function recomposeToFormat(
       const h = r(fit.height);
       elements.push(textEl("rc_headline", "headline", "headline", hl, { x: box.x, y: r((dstH - h) / 2), w: box.w, h }, fit.fontSize, fit.lines.join("\n"), "left", 1.0));
       if (!fit.fits) { notes.push("Headline does not fit the strip at the minimum size — shorten the copy."); needsReview = true; }
+      if (sem.kicker) drop("kicker", "Kicker line dropped: strips carry the headline only.", true);
     } else {
       const maxLines = recipe.headlineWordPerLine ? Math.max(1, words.length) : 2;
       const box = { w: zoneW * recipe.headlineWidthFrac, h: copyZone.h * recipe.headlineMaxHeightFrac };
@@ -411,21 +414,37 @@ export async function recomposeToFormat(
         const subText = sub.text.replace(/\s+/g, " ").trim();
         const subMax = Math.max(sublineMin, r(fit.fontSize * recipe.subheadRatio));
         subFit = fitText(subText, { w: zoneW * 0.9, h: subMax * 2.4 }, { ...fontSpec(sub), minSize: sublineMin, maxSize: subMax, lineHeight: 1.1, maxLines: 2 });
-        if (!subFit.fits && budget !== "large" && (rules?.drop("subheadline") ?? true)) { subFit = null; notes.push("Sub-headline dropped: no legible room under the headline."); }
+        if (!subFit.fits && budget !== "large" && (rules?.drop("subheadline") ?? true)) { subFit = null; drop("subheadline", "Sub-headline dropped: no legible room under the headline.", rules?.drop("subheadline") === true); }
       }
+      // Kicker: the line above the headline, at the master's ratio to it.
+      let kickFit: ReturnType<typeof fitText> | null = null;
+      const kick = sem.kicker;
+      if (kick) {
+        const ratio = clamp(kick.fontSize / Math.max(1, hl.fontSize), 0.15, 0.6);
+        const kickMax = Math.max(sublineMin, r(fit.fontSize * ratio));
+        kickFit = fitText(kick.text.replace(/\s+/g, " ").trim(), { w: zoneW * 0.9, h: kickMax * 2.4 }, { ...fontSpec(kick), minSize: sublineMin, maxSize: kickMax, lineHeight: 1.1, maxLines: 2 });
+        if (!kickFit.fits) { kickFit = null; drop("kicker", "Kicker line dropped: no legible room above the headline.", true); }
+      }
+      const kickGap = kickFit ? r(fit.fontSize * 0.15) : 0;
+      const kickH = kickFit ? r(kickFit.height) : 0;
       const gap = subFit ? r(fit.fontSize * 0.12) : 0;
-      const blockH = hlH + gap + (subFit ? r(subFit.height) : 0);
+      const blockH = kickH + kickGap + hlH + gap + (subFit ? r(subFit.height) : 0);
       // With no cut-out on the photo, the headline drops onto the subject
       // (shipped Quakes vs Storms) so the lower photo zone never reads empty.
       const hasCutout = elements.some((e) => e.id === "rc_cutout");
       const centreFrac = hasCutout ? recipe.headlineCentreFrac : recipe.headlineCentreFracBare;
       const centreY = copyZone.y + copyZone.h * centreFrac;
       const y0 = r(clamp(centreY - blockH / 2, copyZone.y + margin, copyZone.y + copyZone.h - blockH - margin));
-      const hlBox: Box = { x: copyZone.x + r((copyZone.w - box.w) / 2), y: y0, w: r(box.w), h: hlH };
+      const hlY = y0 + kickH + kickGap;
+      const hlBox: Box = { x: copyZone.x + r((copyZone.w - box.w) / 2), y: hlY, w: r(box.w), h: hlH };
+      if (kickFit && kick) {
+        const kw = r(zoneW * 0.9);
+        elements.push(textEl("rc_kicker", "kicker", "subhead", kick, { x: copyZone.x + r((copyZone.w - kw) / 2), y: y0, w: kw, h: kickH }, kickFit.fontSize, kickFit.lines.join("\n"), "center", 1.1));
+      }
       elements.push(textEl("rc_headline", "headline", "headline", hl, hlBox, fit.fontSize, fit.lines.join("\n"), "center", 1.02));
       if (subFit) {
         const sw = r(zoneW * 0.9);
-        elements.push(textEl("rc_subheadline", "subheadline", "subhead", sub as FreeformText, { x: copyZone.x + r((copyZone.w - sw) / 2), y: y0 + hlH + gap, w: sw, h: r(subFit.height) }, subFit.fontSize, subFit.lines.join("\n"), "center", 1.1));
+        elements.push(textEl("rc_subheadline", "subheadline", "subhead", sub as FreeformText, { x: copyZone.x + r((copyZone.w - sw) / 2), y: hlY + hlH + gap, w: sw, h: r(subFit.height) }, subFit.fontSize, subFit.lines.join("\n"), "center", 1.1));
       }
       // Alternatives a designer can switch to without re-running.
       const alt = (label: string, frac: number, score: number) => {
@@ -453,7 +472,7 @@ export async function recomposeToFormat(
       const h = r(fit.height);
       items.push({ kind: "message", w, h, build: (x, y) => [textEl("rc_message", "message", "body", msg, { x, y, w, h }, fit.fontSize, fit.lines.join("\n"), "center", 1.15)] });
     } else {
-      notes.push("Message dropped: it would not fit the panel legibly.");
+      drop("message", "Message dropped: it would not fit the panel legibly.", rules?.drop("message") === true);
     }
   }
 
@@ -511,7 +530,7 @@ export async function recomposeToFormat(
     if (h < lockupMin) { h = lockupMin; w = r(h * aspect); if (w > panelZone.w - margin * 2) { w = panelZone.w - margin * 2; h = r(w / aspect); } }
     items.push({ kind: "lockup", w, h, build: (x, y) => [{ ...lk, id: "rc_lockup", slot: "lockup", role: "decoration", fit: "contain", x, y, w, h, locked: true } as FreeformImage] });
   } else if (sem.lockup && social) {
-    notes.push("Logo lockup omitted: social squares carry no logo (guidelines).");
+    drop("lockup", "Logo lockup omitted: social squares carry no logo (guidelines).", true);
   }
 
   if (recipe.axis === "row") {
@@ -535,12 +554,12 @@ export async function recomposeToFormat(
     const total = () => items.reduce((s, i) => s + i.h, 0) + gap * Math.max(0, items.length - 1);
     if (total() > inner && (rules?.drop("message") ?? true)) {
       const idx = items.findIndex((i) => i.kind === "message");
-      if (idx >= 0) { items.splice(idx, 1); notes.push("Message dropped: the panel is too short for message, CTA and lockup."); }
+      if (idx >= 0) { items.splice(idx, 1); drop("message", "Message dropped: the panel is too short for message, CTA and lockup.", rules?.drop("message") === true); }
     }
     if (total() > inner) gap = Math.max(2, r(gap / 2));
     if (total() > inner && (rules ? rules.drop("lockup") !== false : true)) {
       const idx = items.findIndex((i) => i.kind === "lockup");
-      if (idx >= 0) { items.splice(idx, 1); notes.push("Lockup dropped: no room in the panel — the logo tile is used instead."); }
+      if (idx >= 0) { items.splice(idx, 1); drop("lockup", "Lockup dropped: no room in the panel — the logo tile is used instead.", rules?.drop("lockup") === true); }
     }
     const wantsTile = wantsTileNow();
     const stackW = Math.max(1, panelZone.w - (tileReserve ? tileReserve + margin : 0));
@@ -594,6 +613,8 @@ export async function recomposeToFormat(
       ...(options.length > 1 ? { layoutOptions: options } : {}),
       adaptMethod: `recomposed:${formatClass}`,
       adaptNotes: notes,
+      ...(dropped.length ? { droppedParts: dropped } : {}),
+      needsReview,
     },
     formatClass,
     budget,

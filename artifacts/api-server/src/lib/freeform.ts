@@ -23,6 +23,7 @@ export type SlotRole =
   | "panel"
   | "band"
   | "headline"
+  | "kicker"
   | "subheadline"
   | "message"
   | "cta"
@@ -33,9 +34,17 @@ export type SlotRole =
   | "other";
 
 export const SLOT_ROLES: SlotRole[] = [
-  "photo", "cutout", "scrim", "panel", "band", "headline", "subheadline", "message",
+  "photo", "cutout", "scrim", "panel", "band", "headline", "kicker", "subheadline", "message",
   "cta", "ctaLabel", "ctaIcon", "lockup", "logo", "other",
 ];
+
+/** A part of the master that a build left out, and why. `byRule` is true
+ *  when a profile rule or a guideline allowed the drop. */
+export interface DroppedPart {
+  slot: string;
+  reason: string;
+  byRule: boolean;
+}
 
 export interface FreeformBase {
   id: string;
@@ -193,6 +202,10 @@ export interface FreeformConfig {
   rejected?: string[];
   /** What the adapt engine decided and what a designer should check. */
   adaptNotes?: string[];
+  /** Parts of the master this build left out, structured (see DroppedPart). */
+  droppedParts?: DroppedPart[];
+  /** A slot was missing, dropped or fitted at the floor — a designer should look. */
+  needsReview?: boolean;
   /** Design-principle scores (0..1) and the worst contrast ratio behind copy. */
   principles?: { alignment: number; margins: number; balance: number; contrast: number | null; contrastDetail?: Array<{ id: string; label: string; ratio: number; floor: number }> };
 }
@@ -659,6 +672,14 @@ export function normalizeFreeformConfig(raw: unknown): FreeformConfig {
           : {}),
       }
     : null;
+  const rawDropped = (raw as { droppedParts?: unknown }).droppedParts;
+  const droppedParts: DroppedPart[] = Array.isArray(rawDropped)
+    ? (rawDropped as unknown[])
+        .filter((d): d is { slot: string; reason?: unknown; byRule?: unknown } => !!d && typeof d === "object" && typeof (d as { slot?: unknown }).slot === "string")
+        .slice(0, 20)
+        .map((d) => ({ slot: d.slot.slice(0, 40), reason: typeof d.reason === "string" ? d.reason.slice(0, 200) : "", byRule: d.byRule === true }))
+    : [];
+  const needsReview = (raw as { needsReview?: unknown }).needsReview === true;
   const rejected = Array.isArray((raw as { rejected?: unknown }).rejected)
     ? ((raw as { rejected: unknown[] }).rejected).filter((r): r is string => typeof r === "string" && r.trim().length > 0).map((r) => r.slice(0, 300)).slice(0, 20)
     : [];
@@ -673,6 +694,8 @@ export function normalizeFreeformConfig(raw: unknown): FreeformConfig {
     ...(adaptMethod ? { adaptMethod } : {}),
     ...(adaptNotes.length > 0 ? { adaptNotes } : {}),
     ...(rejected.length > 0 ? { rejected } : {}),
+    ...(droppedParts.length > 0 ? { droppedParts } : {}),
+    ...(needsReview ? { needsReview } : {}),
     ...(principles ? { principles } : {}),
   };
 }

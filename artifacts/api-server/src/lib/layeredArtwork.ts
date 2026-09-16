@@ -19,7 +19,7 @@
  */
 import sharp from "sharp";
 import { panToKeepBox } from "./subjectDetect";
-import type { FreeformConfig, FreeformElement, FreeformImage } from "./freeform";
+import type { DroppedPart, FreeformConfig, FreeformElement, FreeformImage } from "./freeform";
 import { classifyAspect, type FormatClass } from "./formatCatalog";
 import { RECIPES } from "./recipes";
 import { guidelineLogoPlacement } from "./logoRules";
@@ -141,6 +141,17 @@ export function inferImageSlots(config: FreeformConfig, W: number, H: number): S
     if (sub) set(sub, "subheadline");
   }
 
+  // 5b. Kicker: a wide short layer just ABOVE the headline, in its column
+  //     ("IT'S TIME TO TALK" over the hazard word). Copy, not a cut-out.
+  if (headlineBox) {
+    const hx0 = headlineBox.x, hx1 = headlineBox.x + headlineBox.w;
+    const kick = images.filter(free)
+      .filter((i) => i.w / Math.max(1, i.h) >= 2.5 && i.h <= headlineBox.h * 0.9 && i.w <= headlineBox.w * 1.1 && i.y + i.h <= headlineBox.y + headlineBox.h * 0.15 && i.y + i.h >= headlineBox.y - headlineBox.h * 1.2)
+      .filter((i) => i.x + i.w / 2 >= hx0 && i.x + i.w / 2 <= hx1 && !(panelBox && overlap(i, panelBox) > area(i) * 0.5))
+      .sort((a, b) => b.y - a.y)[0] ?? null;
+    if (kick) { set(kick, "kicker"); notes.push("Kicker line recognised above the headline."); }
+  }
+
   // 6. CTA: a button-shaped layer in the lower half, outside the headline.
   const cta = images.filter(free).filter((i) => {
     const a = i.w / Math.max(1, i.h);
@@ -201,11 +212,25 @@ export async function looksLikeScrim(bytes: Buffer): Promise<boolean> {
  *  relabelled as a cut-out. Runs at import and on every build of a master
  *  labelled before this check existed. */
 export async function verifyScrimSlot(config: FreeformConfig, io: Pick<LayerIO, "loadImage">): Promise<{ config: FreeformConfig; changed: boolean; notes: string[] }> {
-  const scrims = config.elements.filter((e): e is Img => e.type === "image" && e.slot === "scrim" && !!e.src);
-  if (scrims.length === 0) return { config, changed: false, notes: [] };
   const notes: string[] = [];
   let changed = false;
   const elements = config.elements.map((e) => ({ ...e })) as FreeformElement[];
+  // A wide short "cut-out" sitting just above the headline is a kicker line
+  // (masters labelled before the kicker slot existed carried it as a cut-out
+  // and lost it on every build).
+  const hs = elements.filter((e): e is Img => e.type === "image" && e.slot === "headline");
+  if (hs.length) {
+    const hb = { x: Math.min(...hs.map((i) => i.x)), y: Math.min(...hs.map((i) => i.y)), w: Math.max(...hs.map((i) => i.x + i.w)) - Math.min(...hs.map((i) => i.x)), h: Math.max(...hs.map((i) => i.y + i.h)) - Math.min(...hs.map((i) => i.y)) };
+    for (const el of elements) {
+      if (el.type !== "image" || el.slot !== "cutout") continue;
+      const wide = el.w / Math.max(1, el.h) >= 2.5 && el.h <= hb.h * 0.9 && el.w <= hb.w * 1.1;
+      const above = el.y + el.h <= hb.y + hb.h * 0.15 && el.y + el.h >= hb.y - hb.h * 1.2;
+      const inColumn = el.x + el.w / 2 >= hb.x && el.x + el.w / 2 <= hb.x + hb.w;
+      if (wide && above && inColumn) { el.slot = "kicker"; changed = true; notes.push("A line above the headline was labelled as a cut-out; it is now the kicker."); }
+    }
+  }
+  const scrims = elements.filter((e): e is Img => e.type === "image" && e.slot === "scrim" && !!e.src);
+  if (scrims.length === 0) return { config: changed ? { ...config, elements } : config, changed, notes };
   for (const sc of scrims) {
     const bytes = await io.loadImage(sc.src!);
     if (!bytes) continue;
@@ -582,6 +607,8 @@ export function adaptLayered(master: FreeformConfig, srcW: number, srcH: number,
   }
 
   const out: FreeformElement[] = [];
+  const dropped: DroppedPart[] = [];
+  const drop = (slot: string, reason: string, byRule: boolean) => { dropped.push({ slot, reason, byRule }); notes.push(reason); };
 
   // ---- Copy group metrics (from the master) ------------------------------
   const hx0 = Math.min(...headlineParts.map((i) => i.x)), hy0 = Math.min(...headlineParts.map((i) => i.y));
@@ -609,6 +636,8 @@ export function adaptLayered(master: FreeformConfig, srcW: number, srcH: number,
   // ---- Copy placement -------------------------------------------------------
   let s: number, gx: number, gy: number;
   let subBox: Box | null = null;
+  let kickerBox: Box | null = null;
+  const kicker = by("kicker")[0];
   if (rowLike) {
     const copyBand: Box = { x: panelZone.x + margin, y: panelZone.y + margin, w: r(isStrip ? Math.max(40, panelZone.w - margin * 2 - stripReserve) : panelZone.w * 0.55), h: panelZone.h - margin * 2 };
     const target = fitInto(copyBand, groupW / Math.max(1, groupH), 2.2);
@@ -616,6 +645,11 @@ export function adaptLayered(master: FreeformConfig, srcW: number, srcH: number,
     gx = copyBand.x;
     gy = r(copyBand.y + (copyBand.h - groupH * s) / 2);
     if (sub) subBox = { x: r(gx + (sub.x - hBox.x) * s), y: r(gy + (sub.y - hBox.y) * s), w: r(sub.w * s), h: r(sub.h * s) };
+    if (kicker) {
+      const ky = gy + (kicker.y - hBox.y) * s;
+      if (ky >= copyBand.y - 1) kickerBox = { x: r(gx + (kicker.x - hBox.x) * s), y: r(ky), w: r(kicker.w * s), h: r(kicker.h * s) };
+      else drop("kicker", "Kicker line dropped: no room above the headline on this strip.", true);
+    }
   } else {
     // Headline height from the short side, centred on the zone at the
     // measured height; the sub-line set at the measured share of the
@@ -631,6 +665,14 @@ export function adaptLayered(master: FreeformConfig, srcW: number, srcH: number,
     const wantCy = copyPin === "top" ? (hh / 2 + margin / 2) / photoZone.h : copyPin === "centre" ? 0.5 : disp.headlineCy;
     gy = r(Math.max(photoZone.y + margin / 2, photoZone.y + photoZone.h * wantCy - hh / 2));
     if (copyPin !== "measured") notes.push(`Copy pinned to the ${copyPin} of the photo zone by the profile's rules.`);
+    if (kicker) {
+      // Same scale as the headline, same gap above it as the master; if the
+      // zone top is in the way the whole copy group moves down.
+      const kw = kicker.w * s, kh = kicker.h * s, kgap = Math.max(2, (hBox.y - (kicker.y + kicker.h)) * s);
+      let ky = gy - kgap - kh;
+      if (ky < photoZone.y + margin / 2) { const shift = photoZone.y + margin / 2 - ky; gy += shift; ky += shift; }
+      kickerBox = { x: r(photoZone.x + (photoZone.w - kw) / 2), y: r(ky), w: r(kw), h: r(kh) };
+    }
     if (sub) {
       const sw = Math.min(maxW, hw * disp.subW), sh = hh * disp.subH;
       subBox = { x: r(photoZone.x + (photoZone.w - sw) / 2), y: r(gy + hh + hh * disp.subGap), w: r(sw), h: r(sh) };
@@ -643,7 +685,7 @@ export function adaptLayered(master: FreeformConfig, srcW: number, srcH: number,
   let cutoutBox: Box | null = null;
   const cutRule = ruleOf("cutout");
   if (cutout && photo && !rowLike && cutRule.pin === "none") {
-    notes.push("Cut-out left out by the profile's rules.");
+    drop("cutout", "Cut-out left out by the profile's rules.", true);
   } else if (cutout && photo && !rowLike) {
     const ov = copyOverCutoutFrac != null ? copyOverCutoutFrac * lastLineScaled : 0;
     const wantW = photoZone.w * (tall ? 0.94 : disp.cutoutW);
@@ -666,9 +708,9 @@ export function adaptLayered(master: FreeformConfig, srcW: number, srcH: number,
       cutoutBox = { x: r(cx - w / 2), y: r(top), w: r(w), h: r(h) };
       if (copyOverCutoutFrac != null && copyOverCutoutFrac > 0.02) notes.push("Car cut-out overlaps the copy as in the master (copy reads behind the car).");
     } else {
-      notes.push("Cut-out dropped: no room for the car under the copy at this size.");
+      drop("cutout", "Cut-out dropped: no room for the car under the copy at this size.", cutRule.dropWhenTight === true);
     }
-  } else if (cutout) notes.push("Cut-out dropped: strips carry photo, headline, CTA and logo only.");
+  } else if (cutout) drop("cutout", "Cut-out dropped: strips carry photo, headline, CTA and logo only.", true);
 
   // ---- Photo -------------------------------------------------------------
   // Same layout axis as the master: keep the designer's framing — the photo
@@ -758,6 +800,7 @@ export function adaptLayered(master: FreeformConfig, srcW: number, srcH: number,
     out.push({ ...part, id: headlineParts.length === 1 ? "ly_headline" : `ly_headline_${k}`, fit: "contain", x: r(gx + (part.x - hBox.x) * s), y: r(gy + (part.y - hBox.y) * s), w: r(part.w * s), h: r(part.h * s) });
   }
   if (sub && subBox) out.push({ ...sub, id: "ly_subheadline", fit: "contain", ...subBox });
+  if (kicker && kickerBox) out.push({ ...kicker, id: "ly_kicker", fit: "contain", ...kickerBox });
   if (cutout && cutoutBox) out.push({ ...cutout, id: "ly_cutout", fit: "contain", ...cutoutBox });
 
   // Stacked / side: the panel ground AFTER the photo group, so the photo and
@@ -836,7 +879,7 @@ export function adaptLayered(master: FreeformConfig, srcW: number, srcH: number,
       for (const d of droppable) {
         if (total() <= avail) break;
         const idx = items.indexOf(d);
-        if (idx >= 0) { items.splice(idx, 1); notes.push(`${d.el === partMessage ? "Message" : "Lockup"} dropped by the profile's rules: no room in this panel.`); }
+        if (idx >= 0) { items.splice(idx, 1); drop(d.el === partMessage ? "message" : "lockup", `${d.el === partMessage ? "Message" : "Lockup"} dropped by the profile's rules: no room in this panel.`, true); }
       }
     }
     if (total() > avail) {
@@ -946,8 +989,8 @@ export function adaptLayered(master: FreeformConfig, srcW: number, srcH: number,
   const logo = by("logo")[0];
   if (logo && tile) out.push({ ...logo, id: "ly_logo", role: "logo", fit: "contain", locked: true, x: tile.tile.x, y: tile.tile.y, w: tile.tile.w, h: tile.tile.h });
 
-  const dropped = imgs.filter((i) => (!i.slot || i.slot === "other") && !i.panelPart).length;
-  if (dropped) notes.push(`${dropped} unrecognised decoration layer${dropped === 1 ? "" : "s"} not carried to this size.`);
+  const droppedDeco = imgs.filter((i) => (!i.slot || i.slot === "other") && !i.panelPart).length;
+  if (droppedDeco) drop("other", `${droppedDeco} unrecognised decoration layer${droppedDeco === 1 ? "" : "s"} not carried to this size.`, true);
   notes.push("Built from image layers: the headline and CTA are pictures, so Claude's check aligns them to the approved references rather than re-setting type.");
-  return { config: { ...master, elements: out, adaptMethod: "layered" } as FreeformConfig, notes };
+  return { config: { ...master, elements: out, adaptMethod: "layered", ...(dropped.length ? { droppedParts: dropped } : {}) } as FreeformConfig, notes };
 }

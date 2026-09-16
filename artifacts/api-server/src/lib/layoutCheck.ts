@@ -8,6 +8,7 @@
  * nothing — and return plain-language issues the review UI can show.
  */
 import type { FreeformConfig, FreeformText } from "./freeform";
+import { inferSlots } from "./slots";
 import { wrapText, measureLine } from "./textMeasure";
 
 export const CTA_MIN_HEIGHT_PX = 24;
@@ -128,23 +129,50 @@ function checkMarkRules(config: FreeformConfig, width: number, height: number): 
  *  - copy collides with other copy or with the cut-out imagery.
  * Returns plain-language reasons; empty means the piece may proceed.
  */
-export function checkMandatory(master: FreeformConfig, adapted: FreeformConfig, width: number, height: number, partRules: Record<string, { minPx?: number; neverOverlap?: string[]; dropWhenTight?: boolean }> = {}): string[] {
+export function checkMandatory(master: FreeformConfig, adapted: FreeformConfig, width: number, height: number, partRules: Record<string, { minPx?: number; neverOverlap?: string[]; dropWhenTight?: boolean }> = {}, masterSize?: { w: number; h: number }): string[] {
   const reasons: string[] = [];
   const short = Math.min(width, height);
   const isStrip = height <= 120 && width / height >= 2.5;
   const present = (cfg: FreeformConfig, slot: string) =>
     cfg.elements.some((e) => (e.slot === slot || (e.type === "text" && e.role === slot) || (e.type === "image" && e.role === slot)) && (e.type !== "text" || e.text.trim().length > 0) && e.w > 0 && e.h > 0);
-  const hadLogo = present(master, "logo") || present(master, "lockup");
+  // Master parity: every part the master carries — read with the same slot
+  // inference the engines use, not raw tags — must be in the output, or be
+  // recorded as dropped by a rule that allows it. Parts a tight zone may
+  // drop by default: message, sub-line, kicker, cut-out, band. Never by
+  // default: headline, call-to-action, lockup/logo, photo.
+  const mw = masterSize?.w ?? Math.max(1, ...master.elements.map((e) => e.x + e.w));
+  const mh = masterSize?.h ?? Math.max(1, ...master.elements.map((e) => e.y + e.h));
+  const sem = inferSlots(master, mw, mh);
+  const droppedParts = adapted.droppedParts ?? [];
+  const DEFAULT_DROPPABLE = new Set(["message", "subheadline", "kicker", "cutout", "band", "other"]);
+  const dropAllowed = (slot: string) => {
+    const entry = droppedParts.find((d) => d.slot === slot);
+    if (!entry) return false;
+    if (entry.byRule) return true;
+    const rule = partRules[slot]?.dropWhenTight;
+    return rule === undefined ? DEFAULT_DROPPABLE.has(slot) : rule === true;
+  };
+  const NAMES: Record<string, string> = { headline: "headline", kicker: "kicker line", subheadline: "sub-line", message: "message line", cta: "call-to-action", band: "pattern band", cutout: "cut-out", photo: "photograph" };
+  const required: Array<[string, boolean]> = [
+    ["headline", !!sem.headline],
+    ["kicker", !!sem.kicker],
+    ["subheadline", !!sem.subheadline],
+    ["message", !!sem.message],
+    ["cta", !!sem.cta],
+    ["band", !!sem.band],
+    ["cutout", sem.cutouts.length > 0],
+    ["photo", !!sem.photo],
+  ];
+  for (const [slot, had] of required) {
+    if (!had || present(adapted, slot)) continue;
+    if (isStrip && ["message", "subheadline", "kicker", "band", "cutout"].includes(slot)) continue;
+    if (dropAllowed(slot)) continue;
+    const entry = droppedParts.find((d) => d.slot === slot);
+    reasons.push(entry ? `The ${NAMES[slot] ?? slot} was dropped (${entry.reason.replace(/\.$/, "")}) and no rule allows that.` : `The ${NAMES[slot] ?? slot} is missing.`);
+  }
+  const hadLogo = !!(sem.lockup || sem.logo) || present(master, "logo") || present(master, "lockup");
   const hasLogo = present(adapted, "logo") || present(adapted, "lockup");
-  // A part the profile's rules allow to drop when the zone is tight is not a
-  // failure when the adapter dropped it for that reason (its note says so).
-  const droppedByRule = (slot: string) =>
-    partRules[slot]?.dropWhenTight === true &&
-    (adapted.adaptNotes ?? []).some((n) => /dropped by the profile's rules/i.test(n) && n.toLowerCase().includes(slot === "cta" ? "button" : slot));
-  if (present(master, "headline") && !present(adapted, "headline")) reasons.push("The headline is missing.");
-  if (present(master, "cta") && !present(adapted, "cta") && !droppedByRule("cta")) reasons.push("The call-to-action is missing.");
-  if (hadLogo && !hasLogo) reasons.push("The logo tile / lockup is missing.");
-  if (!isStrip && present(master, "message") && !present(adapted, "message") && !droppedByRule("message")) reasons.push("The message line is missing.");
+  if (hadLogo && !hasLogo && !dropAllowed("lockup") && !dropAllowed("logo")) reasons.push("The logo tile / lockup is missing.");
 
   const logoMin = Math.max(24, Math.round(short / 8));
   for (const el of adapted.elements) {
