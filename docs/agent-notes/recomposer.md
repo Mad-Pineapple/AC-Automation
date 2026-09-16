@@ -66,3 +66,15 @@ siblings with the same text role share the smallest fitted size. `textMeasure.fo
 a substituted face and both engines add a `Check:` note when the headline or label was measured in
 National 2 because its face (e.g. DS-Digital) was not registered. The approved-sibling scale path is
 skipped outside 0.5×–2× of the sibling's short side (rebuild with its proportions instead).
+
+## One rule layer (2026-09-16, audit fix P1)
+
+`lib/partRulesLayer.ts` — `ruleLayerFor(schema)` gives every engine the campaign's part rules
+(`pin`, `size`, `dropWhenTight`, `minPx`) with the studio floors as defaults (headline 12, sub-line
+10, message 13, pill 24, lockup 16, logo 24; label 9). The adapt route builds it once and passes it
+to the recomposer (floors, drops, band pin none), the key-visual engine (headline and pill floors),
+the geometry engine (floors, parts pinned none are left out) and the layered engine already read the
+schema (band `size: fit-width` now keeps full width with a cover crop; `pin: centre` centres it in
+the panel). The scaled paths (plain scale and approved-sibling scale) do not apply floors: they
+reproduce the reference as it is. Re-learning a profile with the same campaign name updates the
+existing profile (rules kept, source ids widened) instead of spawning a default one that outranks it.

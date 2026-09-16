@@ -17,6 +17,7 @@ import { analyseGwdHtml, motionForElements, type GwdLeaf } from "../lib/gwdMotio
 import { resolveStyleSchema, learnProfile, getProfile } from "../lib/layoutProfile";
 import type { LayoutProfile } from "../lib/layoutProfile";
 import { adaptGeometryProfile } from "../lib/geometryAdapt";
+import { ruleLayerFor } from "../lib/partRulesLayer";
 import { guidelinesForConfig, guidelineNotes, topicsPerElement } from "../lib/guidelines";
 import type { StyleSchema } from "../lib/styleSpecs/getReadyBurst2";
 import { visibleBounds } from "../lib/gwdImport";
@@ -251,8 +252,11 @@ async function adaptOne(
   // 0.25. A portrait + landscape free-form pair is the strongest evidence
   //       available. Interpolate its measured semantic layer boxes before
   //       considering generic panel or key-visual recipes.
+  // One rule layer for every engine below: the campaign's part rules
+  // (floors, drops, pins) or the studio floors when no schema applies.
+  const rules = ruleLayerFor(styleOverride ? styleOverride.schema : styleSchemaFor(master.name));
   if (!adapted && styleOverride?.profile) {
-    const geometric = adaptGeometryProfile(masterConfig, master.width, master.height, width, height, styleOverride.profile);
+    const geometric = adaptGeometryProfile(masterConfig, master.width, master.height, width, height, styleOverride.profile, rules);
     if (geometric) {
       adapted = geometric.config;
       method = "geometry-profile";
@@ -278,7 +282,7 @@ async function adaptOne(
   // colour block the master never had.
   const photoLed = !adapted && !!findKvBackground(masterConfig, master.width, master.height) && !masterConfig.elements.some((e) => e.slot === "panel" || e.slot === "band");
   if (photoLed) {
-    const composed = await composeKeyVisualAdaptation(masterConfig, master.width, master.height, width, height, brandInfo);
+    const composed = await composeKeyVisualAdaptation(masterConfig, master.width, master.height, width, height, { ...brandInfo, rules });
     if (composed) {
       adapted = composed;
       method = "key-visual";
@@ -292,6 +296,7 @@ async function adaptOne(
       const rc = await recomposeToFormat(masterConfig, master.width, master.height, width, height, {
         brand: brandInfo,
         formatClass: spec.formatClass,
+        rules,
         // An approved piece's measurements lead; else the campaign schema's zones; else the class recipe.
         ...(reference
           ? { recipeOverrides: reference.exemplar.measured }

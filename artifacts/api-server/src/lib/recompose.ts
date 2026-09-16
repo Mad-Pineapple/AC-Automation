@@ -23,6 +23,7 @@ import { inferSlots, type Box, type SemanticMaster } from "./slots";
 import { recipeFor, type Recipe } from "./recipes";
 import { fitText, prepareMeasurement, type FontSpec, capHeightPx, fontResolution } from "./textMeasure";
 import { planCta, type CtaPlan } from "./ctaPlan";
+import { LABEL_FLOOR_PX, type RuleLayer } from "./partRulesLayer";
 import { guidelineLogoPlacement, isSocialSquare } from "./logoRules";
 import { ObjectStorageService } from "./objectStorage";
 
@@ -44,6 +45,8 @@ export interface RecomposeOptions {
   /** Format class decided from the brief's name/channel; overrides the
    * dimensions-only classification. */
   formatClass?: FormatClass;
+  /** The campaign's part rules (lib/partRulesLayer.ts): floors, drops, pins. */
+  rules?: RuleLayer;
 }
 
 export interface RecomposeResult {
@@ -210,8 +213,13 @@ export async function recomposeToFormat(
   const notes: string[] = [...sem.notes];
   let needsReview = sem.notes.length > 0;
   const panelFill = sem.panelFill ?? OCEAN;
+  const rules = opts.rules;
+  const headlineMin = rules?.floor("headline") ?? HEADLINE_MIN_PX;
+  const sublineMin = rules?.floor("subheadline") ?? 10;
+  const messageMin = rules?.floor("message") ?? 13;
+  const lockupMin = rules?.floor("lockup") ?? 16;
   const hasPhoto = !!(sem.photo && sem.photo.src && keep.has("photo"));
-  const hasBand = !!(sem.band && sem.band.src && keep.has("band") && recipe.bandAt !== "none");
+  const hasBand = !!(sem.band && sem.band.src && keep.has("band") && recipe.bandAt !== "none" && rules?.pin("band") !== "none");
 
   // ---- Zones ---------------------------------------------------------------
   let photoZone: Box;
@@ -342,7 +350,7 @@ export async function recomposeToFormat(
   // ---- CTA plan: the pill is sized from its measured label (lib/ctaPlan.ts) ------------------
   // Planned before the headline so a strip's headline is fitted beside the
   // real pill instead of an estimate it later overlaps.
-  const CTA_MIN_PX = budget === "micro" ? 18 : 24;
+  const CTA_MIN_PX = rules?.rules.cta?.minPx ?? (budget === "micro" ? 18 : 24);
   const ctaPlanned = (): CtaPlan | null => {
     if (!sem.cta || !keep.has("cta")) return null;
     const cta = sem.cta;
@@ -363,7 +371,7 @@ export async function recomposeToFormat(
       minH: CTA_MIN_PX,
       maxH,
       maxW: panelZone.w * (recipe.axis === "row" ? 0.5 : Math.min(0.92, recipe.ctaMaxWidthFrac + 0.15)),
-      minLabelPx: budget === "micro" ? 8 : 9,
+      minLabelPx: budget === "micro" ? Math.min(8, LABEL_FLOOR_PX) : LABEL_FLOOR_PX,
       icon: !!sem.ctaIcon,
       allowTwoLines: formatClass === "tower" || dstW < 200,
     });
@@ -385,15 +393,15 @@ export async function recomposeToFormat(
       // One row: headline flexes between the photo and the CTA.
       const ctaW = ctaPlanned()?.w ?? 0;
       const box: Box = { x: panelZone.x + margin, y: panelZone.y, w: Math.max(20, panelZone.w - ctaW - margin * 3), h: dstH };
-      let fit = fitText(text, { w: box.w, h: dstH * recipe.headlineMaxHeightFrac }, { ...fontSpec(hl), minSize: HEADLINE_MIN_PX, maxSize: dstH, lineHeight: 1.0, maxLines: 1 });
-      if (!fit.fits) fit = fitText(text, { w: box.w, h: dstH * 0.86 }, { ...fontSpec(hl), minSize: HEADLINE_MIN_PX, maxSize: dstH, lineHeight: 1.0, maxLines: 2 });
+      let fit = fitText(text, { w: box.w, h: dstH * recipe.headlineMaxHeightFrac }, { ...fontSpec(hl), minSize: headlineMin, maxSize: dstH, lineHeight: 1.0, maxLines: 1 });
+      if (!fit.fits) fit = fitText(text, { w: box.w, h: dstH * 0.86 }, { ...fontSpec(hl), minSize: headlineMin, maxSize: dstH, lineHeight: 1.0, maxLines: 2 });
       const h = r(fit.height);
       elements.push(textEl("rc_headline", "headline", "headline", hl, { x: box.x, y: r((dstH - h) / 2), w: box.w, h }, fit.fontSize, fit.lines.join("\n"), "left", 1.0));
       if (!fit.fits) { notes.push("Headline does not fit the strip at the minimum size — shorten the copy."); needsReview = true; }
     } else {
       const maxLines = recipe.headlineWordPerLine ? Math.max(1, words.length) : 2;
       const box = { w: zoneW * recipe.headlineWidthFrac, h: copyZone.h * recipe.headlineMaxHeightFrac };
-      const fit = fitText(text, box, { ...fontSpec(hl), minSize: HEADLINE_MIN_PX, maxSize: copyZone.h, lineHeight: 1.02, maxLines });
+      const fit = fitText(text, box, { ...fontSpec(hl), minSize: headlineMin, maxSize: copyZone.h, lineHeight: 1.02, maxLines });
       if (!fit.fits) { notes.push("Headline shrank to the floor size and still overflows — shorten the copy."); needsReview = true; }
       const hlH = r(fit.height);
       // Sub-headline rides directly under the headline at the recipe ratio.
@@ -401,9 +409,9 @@ export async function recomposeToFormat(
       const sub = sem.subheadline;
       if (sub && keep.has("subheadline")) {
         const subText = sub.text.replace(/\s+/g, " ").trim();
-        const subMax = Math.max(9, r(fit.fontSize * recipe.subheadRatio));
-        subFit = fitText(subText, { w: zoneW * 0.9, h: subMax * 2.4 }, { ...fontSpec(sub), minSize: 9, maxSize: subMax, lineHeight: 1.1, maxLines: 2 });
-        if (!subFit.fits && budget !== "large") { subFit = null; notes.push("Sub-headline dropped: no legible room under the headline."); }
+        const subMax = Math.max(sublineMin, r(fit.fontSize * recipe.subheadRatio));
+        subFit = fitText(subText, { w: zoneW * 0.9, h: subMax * 2.4 }, { ...fontSpec(sub), minSize: sublineMin, maxSize: subMax, lineHeight: 1.1, maxLines: 2 });
+        if (!subFit.fits && budget !== "large" && (rules?.drop("subheadline") ?? true)) { subFit = null; notes.push("Sub-headline dropped: no legible room under the headline."); }
       }
       const gap = subFit ? r(fit.fontSize * 0.12) : 0;
       const blockH = hlH + gap + (subFit ? r(subFit.height) : 0);
@@ -438,9 +446,9 @@ export async function recomposeToFormat(
   if (recipe.axis !== "row" && sem.message && keep.has("message")) {
     const msg = sem.message;
     const text = msg.text.replace(/\s+/g, " ").trim();
-    const maxSize = Math.max(10, r(headlineSize * recipe.messageMaxRatio));
+    const maxSize = Math.max(messageMin, r(headlineSize * recipe.messageMaxRatio));
     const w = r(panelZone.w * 0.85);
-    const fit = fitText(text, { w, h: maxSize * 2.5 }, { ...fontSpec(msg), minSize: 10, maxSize, lineHeight: 1.15, maxLines: 2 });
+    const fit = fitText(text, { w, h: maxSize * 2.5 }, { ...fontSpec(msg), minSize: messageMin, maxSize, lineHeight: 1.15, maxLines: 2 });
     if (fit.fits) {
       const h = r(fit.height);
       items.push({ kind: "message", w, h, build: (x, y) => [textEl("rc_message", "message", "body", msg, { x, y, w, h }, fit.fontSize, fit.lines.join("\n"), "center", 1.15)] });
@@ -499,6 +507,8 @@ export async function recomposeToFormat(
     let w = r(h * aspect);
     const maxW = r(panelZone.w * recipe.lockupMaxWidthFrac);
     if (w > maxW) { w = maxW; h = r(w / aspect); }
+    // Never below the lockup floor (illegible marks on towers).
+    if (h < lockupMin) { h = lockupMin; w = r(h * aspect); if (w > panelZone.w - margin * 2) { w = panelZone.w - margin * 2; h = r(w / aspect); } }
     items.push({ kind: "lockup", w, h, build: (x, y) => [{ ...lk, id: "rc_lockup", slot: "lockup", role: "decoration", fit: "contain", x, y, w, h, locked: true } as FreeformImage] });
   } else if (sem.lockup && social) {
     notes.push("Logo lockup omitted: social squares carry no logo (guidelines).");
@@ -523,12 +533,12 @@ export async function recomposeToFormat(
     const inner = panelZone.h - r(margin * 1.5);
     let gap = clamp(r(panelZone.h * 0.07), 4, 48);
     const total = () => items.reduce((s, i) => s + i.h, 0) + gap * Math.max(0, items.length - 1);
-    if (total() > inner) {
+    if (total() > inner && (rules?.drop("message") ?? true)) {
       const idx = items.findIndex((i) => i.kind === "message");
       if (idx >= 0) { items.splice(idx, 1); notes.push("Message dropped: the panel is too short for message, CTA and lockup."); }
     }
     if (total() > inner) gap = Math.max(2, r(gap / 2));
-    if (total() > inner) {
+    if (total() > inner && (rules ? rules.drop("lockup") !== false : true)) {
       const idx = items.findIndex((i) => i.kind === "lockup");
       if (idx >= 0) { items.splice(idx, 1); notes.push("Lockup dropped: no room in the panel — the logo tile is used instead."); }
     }

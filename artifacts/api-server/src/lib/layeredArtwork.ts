@@ -789,9 +789,22 @@ export function adaptLayered(master: FreeformConfig, srcW: number, srcH: number,
       // (an eighth on a shallow zone, where the message and lockup need the room).
       let bw = panelZone.w, bh = bw * (partBand.h / Math.max(1, partBand.w));
       const capH = panelZone.h * (shallow ? 0.2 : 0.25);
-      if (bh > capH) { bh = capH; bw = bh * (partBand.w / Math.max(1, partBand.h)); }
-      out.push({ ...partBand, id: "ly_band", fit: "contain", x: r(panelZone.x + (panelZone.w - bw) / 2), y: r(panelZone.y), w: r(bw), h: r(bh) });
-      stackTop = panelZone.y + bh + margin / 2;
+      let fit: "contain" | "cover" = "contain";
+      if (bh > capH) {
+        bh = capH;
+        if (bandRule.size === "fit-width") {
+          // Rule: the band fills the zone width. Keep the full width and let
+          // the motif crop at the ends rather than shrinking and centring.
+          fit = "cover";
+        } else {
+          bw = bh * (partBand.w / Math.max(1, partBand.h));
+        }
+      }
+      // Rule: pinned to the panel's outer edge (the seam) unless a designer
+      // asked for it centred in the panel.
+      const by = bandRule.pin === "centre" ? panelZone.y + (panelZone.h - bh) / 2 : panelZone.y;
+      out.push({ ...partBand, id: "ly_band", fit, x: r(panelZone.x + (panelZone.w - bw) / 2), y: r(by), w: r(bw), h: r(bh) });
+      stackTop = bandRule.pin === "centre" ? panelZone.y + margin : panelZone.y + bh + margin / 2;
     }
     const stackBottom = panelZone.y + panelZone.h - (shallow ? margin / 2 : margin);
     const avail = Math.max(10, stackBottom - stackTop);

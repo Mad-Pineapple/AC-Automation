@@ -419,13 +419,25 @@ export async function learnProfile(masterIds: number[], name?: string | null, cr
   if (measurements.length === 0) return null;
   const profileName = (name ?? "").trim() || campaignNameFrom(measurements.map((m) => m.name));
   const profile = buildProfile(measurements, profileName);
-  const sourceKey = measurements.map((m) => m.templateId).sort((a, b) => a - b).join(",");
-  const [existing] = await db.select().from(layoutProfilesTable).where(eq(layoutProfilesTable.sourceKey, sourceKey));
+  let sourceKey = measurements.map((m) => m.templateId).sort((a, b) => a - b).join(",");
+  let [existing] = await db.select().from(layoutProfilesTable).where(eq(layoutProfilesTable.sourceKey, sourceKey));
+  // A re-import of the same folder gives the masters new ids. Rather than
+  // spawning a fresh default profile that would outrank the one carrying
+  // the designer's rule edits, re-learn INTO the campaign's existing
+  // profile (same name) and widen its source key to the new masters.
+  if (!existing) {
+    const sameName = (await db.select().from(layoutProfilesTable).where(sql`lower(${layoutProfilesTable.name}) = ${profileName.toLowerCase()}`).orderBy(desc(layoutProfilesTable.updatedAt)).limit(1))[0];
+    if (sameName) {
+      existing = sameName;
+      const prevIds = sameName.sourceKey.split(",").map((v) => Number(v)).filter((n) => Number.isInteger(n) && n > 0);
+      sourceKey = [...new Set([...prevIds, ...ids])].sort((a, b) => a - b).join(",");
+    }
+  }
   let saved: typeof layoutProfilesTable.$inferSelect;
   if (existing) {
     // Re-measuring keeps the designer's rule edits.
     try { const prev = JSON.parse(existing.profile) as LayoutProfile; if (prev.rules) profile.rules = prev.rules; } catch { /* fresh rules */ }
-    [saved] = await db.update(layoutProfilesTable).set({ name: profileName, profile: JSON.stringify(profile), updatedAt: new Date() }).where(eq(layoutProfilesTable.id, existing.id)).returning();
+    [saved] = await db.update(layoutProfilesTable).set({ name: profileName, sourceKey, profile: JSON.stringify(profile), updatedAt: new Date() }).where(eq(layoutProfilesTable.id, existing.id)).returning();
   } else {
     [saved] = await db.insert(layoutProfilesTable).values({ name: profileName, sourceKey, profile: JSON.stringify(profile), createdBy: createdBy ?? null }).returning();
   }

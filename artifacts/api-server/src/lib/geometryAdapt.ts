@@ -8,6 +8,7 @@ import type { FreeformConfig, FreeformElement } from "./freeform";
 import { adaptFreeformConfig } from "./freeform";
 import { inferSlots } from "./slots";
 import { measureLine, wrapText } from "./textMeasure";
+import { slotForText, LABEL_FLOOR_PX, type RuleLayer } from "./partRulesLayer";
 import type { GeometryBox, GeometryMaster, LayoutProfile } from "./layoutProfile";
 
 interface KeyedElement { key: string; element: FreeformElement }
@@ -64,8 +65,9 @@ function targetBox(a: GeometryMaster, b: GeometryMaster, key: string, t: number)
   return x ?? y ?? null;
 }
 
-function fitText(el: Extract<FreeformElement, { type: "text" }>, proposed: number, width: number, height: number): number {
-  const floor = el.slot === "headline" || el.role === "headline" ? 12 : 8;
+function fitText(el: Extract<FreeformElement, { type: "text" }>, proposed: number, width: number, height: number, rules?: RuleLayer): number {
+  const part = slotForText(el);
+  const floor = part === "cta" ? LABEL_FLOOR_PX : part ? (rules?.floor(part) ?? (part === "headline" ? 12 : 8)) : 8;
   const spec = { family: el.fontFamily, weight: el.fontWeight, letterSpacing: el.letterSpacing };
   const lineHeight = el.lineHeight ?? 1.2;
   const fitsAt = (size: number) => {
@@ -120,6 +122,7 @@ export function adaptGeometryProfile(
   dstW: number,
   dstH: number,
   profile: LayoutProfile,
+  rules?: RuleLayer,
 ): { config: FreeformConfig; notes: string[] } | null {
   const masters = profile.geometryMasters ?? [];
   if (masters.length === 0 || !masters.some((m) => m.mode === "free")) return null;
@@ -131,7 +134,9 @@ export function adaptGeometryProfile(
   const fallbackById = new Map(fallback.elements.map((e) => [e.id, e]));
   const short = Math.min(dstW, dstH);
   let matched = 0;
-  const elements = keyed.map(({ key, element }) => {
+  // Part rules: a part pinned "none" is left out of this size entirely.
+  const droppedByRule = new Set(keyed.filter(({ element }) => { const part = slotForText(element as { slot?: string; role?: string }); return part ? rules?.pin(part) === "none" : false; }).map(({ element }) => element.id));
+  const elements = keyed.filter(({ element }) => !droppedByRule.has(element.id)).map(({ key, element }) => {
     const measured = targetBox(a, b, key, t);
     if (!measured) return fallbackById.get(element.id) ?? element;
     matched++;
@@ -140,7 +145,7 @@ export function adaptGeometryProfile(
     if (element.type === "image") return placeImage(element, measured, dstW, dstH);
     if (element.type === "text") {
       const proposed = (measured.fontSize ?? element.fontSize / Math.min(srcW, srcH)) * short;
-      return { ...element, x, y, w, h, fontSize: fitText(element, proposed, w, h), ...(element.letterSpacing !== undefined ? { letterSpacing: element.letterSpacing * (short / Math.min(srcW, srcH)) } : {}) };
+      return { ...element, x, y, w, h, fontSize: fitText(element, proposed, w, h, rules), ...(element.letterSpacing !== undefined ? { letterSpacing: element.letterSpacing * (short / Math.min(srcW, srcH)) } : {}) };
     }
     return { ...element, x, y, w, h };
   });
@@ -170,6 +175,7 @@ export function adaptGeometryProfile(
     notes: [
       `Layer positions measured from the ${relation}.`,
       "Raster artwork was scaled proportionally, never stretched; live text was fitted inside its measured box.",
+      ...(droppedByRule.size ? [`${droppedByRule.size} part${droppedByRule.size === 1 ? "" : "s"} left out by the profile's rules (pinned "none").`] : []),
       ...(outside ? ["Target shape is outside the supplied portrait-to-landscape range, so the nearest master geometry was edge-anchored and flagged for review."] : []),
     ],
   };

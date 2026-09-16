@@ -24,6 +24,7 @@ import { STRIP_MAX_HEIGHT } from "./formatCatalog";
 import { inferSlots } from "./slots";
 import { prepareMeasurement, wrapText, measureLine, type FontSpec } from "./textMeasure";
 import { planCta } from "./ctaPlan";
+import type { RuleLayer } from "./partRulesLayer";
 import type { FreeformConfig, FreeformElement, FreeformImage, FreeformRect, FreeformText, KvTextBlock } from "./freeform";
 
 const objectStorageService = new ObjectStorageService();
@@ -31,9 +32,11 @@ const objectStorageService = new ObjectStorageService();
 export interface KvBrandInfo {
   logoUrl: string | null;
   strapline: string | null;
+  /** The campaign's part rules (floors); studio defaults when absent. */
+  rules?: RuleLayer;
 }
 
-const MIN_HEADLINE_PX = 13;
+const MIN_HEADLINE_PX_DEFAULT = 13;
 /** White copy needs a treatment when the artwork behind it is lighter than
  * this (0-255 luminance) — same threshold the compliance checker uses. */
 const SCRIM_LUMINANCE_THRESHOLD = 140;
@@ -154,6 +157,7 @@ export async function composeKeyVisualAdaptation(
   if (!bg) return null;
   await prepareMeasurement();
 
+  const MIN_HEADLINE_PX = brand.rules?.floor("headline") ?? MIN_HEADLINE_PX_DEFAULT;
   const short = Math.min(dstW, dstH);
   const isStrip = dstH <= STRIP_MAX_HEIGHT;
   const isWide = dstW / dstH > 2.5;
@@ -304,8 +308,8 @@ export async function composeKeyVisualAdaptation(
           spec,
           master: { ctaH: ctaSrc.h, ctaW: ctaSrc.w, labelFontSize: labelEl.fontSize, labelText: labelEl.text, labelSpec: spec, hasIcon: !!sem.ctaIcon },
           targetH: (ctaSrc.h / srcShort) * short,
-          minH: 24,
-          maxH: Math.max(24, short * 0.16),
+          minH: brand.rules?.floor("cta") ?? 24,
+          maxH: Math.max(brand.rules?.floor("cta") ?? 24, short * 0.16),
           maxW: dstW - margin * 2,
           icon: false,
           allowTwoLines: dstW < 200,
