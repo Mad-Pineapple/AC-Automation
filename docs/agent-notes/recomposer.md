@@ -78,3 +78,15 @@ schema (band `size: fit-width` now keeps full width with a cover crop; `pin: cen
 the panel). The scaled paths (plain scale and approved-sibling scale) do not apply floors: they
 reproduce the reference as it is. Re-learning a profile with the same campaign name updates the
 existing profile (rules kept, source ids widened) instead of spawning a default one that outranks it.
+
+## Fallback scaler zones (2026-09-16, audit fix P4)
+
+`adaptFreeformConfig` (the plain-scale and approved-sibling paths, and the geometry engine's
+fallback) now understands zones. Full-width strips and full-height columns keep their span, snap
+to the canvas edges and tile against each other (a strip whose master top met another's bottom
+keeps meeting it; the strip that touched the far edge fills to it), so photo / band / panel stay
+seamless on any canvas. Elements that overlap in the master (pill + label + icon, a lockup's marks)
+move as one cluster, placed at the master's relative position inside its zone and clamped inside it;
+anything flush to a canvas edge in the master snaps flush. Text boxes get 3% slack so a line that
+met its box does not wrap after rounding. The geometry engine now unions edge flags across masters
+and snaps flush copy and rects to the edge instead of the measured fraction.

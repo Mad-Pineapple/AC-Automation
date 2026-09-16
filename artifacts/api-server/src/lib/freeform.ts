@@ -285,49 +285,153 @@ export function adaptFreeformConfig(
   dstH: number,
 ): FreeformConfig {
   const scale = Math.min(dstW / srcW, dstH / srcH);
+  const tolX = Math.max(2, srcW * 0.012);
+  const tolY = Math.max(2, srcH * 0.012);
+  const R = Math.round;
 
-  const adaptAxis = (
-    pos: number,
-    size: number,
-    srcLen: number,
-    dstLen: number,
-    newSize: number,
-  ): number => {
+  type El = FreeformConfig["elements"][number];
+  type Box = { x: number; y: number; w: number; h: number };
+  const touchesL = (el: El) => el.x <= tolX;
+  const touchesR = (el: El) => el.x + el.w >= srcW - tolX;
+  const touchesT = (el: El) => el.y <= tolY;
+  const touchesB = (el: El) => el.y + el.h >= srcH - tolY;
+  const fullW = (el: El) => el.w >= srcW * 0.97 && touchesL(el) && touchesR(el);
+  const fullH = (el: El) => el.h >= srcH * 0.97 && touchesT(el) && touchesB(el);
+  const fullBleed = (el: El) => el.w >= srcW * 0.9 && el.h >= srcH * 0.9;
+
+  // ---- Zones: full-width strips (stacked layouts) and full-height columns
+  // (side layouts) keep their span, snap to the canvas edges and TILE: a
+  // strip whose master top met another strip's bottom keeps meeting it, and
+  // the strip that touched the far edge fills to it. This is what keeps a
+  // photo / band / panel stack seamless instead of three centred stamps.
+  const placed = new Map<string, Box>();
+  const zones: El[] = master.elements.filter((el) => !fullBleed(el) && (fullW(el) || fullH(el)));
+  const strips = zones.filter((el) => fullW(el) && !fullH(el)).sort((a, b) => a.y - b.y);
+  const columns = zones.filter((el) => fullH(el) && !fullW(el)).sort((a, b) => a.x - b.x);
+  for (const el of strips) {
+    const h = Math.max(1, R(el.h * scale));
+    let y: number | null = null;
+    if (touchesT(el)) y = 0;
+    else {
+      for (const prev of strips) {
+        if (prev === el) continue;
+        const pb = placed.get(prev.id);
+        if (pb && Math.abs(prev.y + prev.h - el.y) <= tolY) { y = pb.y + pb.h; break; }
+      }
+    }
+    if (y === null) y = R((el.y / srcH) * dstH);
+    const fill = touchesB(el) ? Math.max(1, dstH - y) : h;
+    placed.set(el.id, { x: 0, y, w: dstW, h: fill });
+  }
+  for (const el of columns) {
+    const w = Math.max(1, R(el.w * scale));
+    let x: number | null = null;
+    if (touchesL(el)) x = 0;
+    else {
+      for (const prev of columns) {
+        if (prev === el) continue;
+        const pb = placed.get(prev.id);
+        if (pb && Math.abs(prev.x + prev.w - el.x) <= tolX) { x = pb.x + pb.w; break; }
+      }
+    }
+    if (x === null) x = R((el.x / srcW) * dstW);
+    const fill = touchesR(el) ? Math.max(1, dstW - x) : w;
+    placed.set(el.id, { x, y: 0, w: fill, h: dstH });
+  }
+
+  const adaptAxis = (pos: number, size: number, srcLen: number, dstLen: number, newSize: number): number => {
     const centre = pos + size / 2;
-    if (centre < srcLen / 3) {
-      return Math.round(pos * scale); // near the leading edge: keep scaled margin
-    }
-    if (centre > (2 * srcLen) / 3) {
-      return Math.round(dstLen - (srcLen - pos - size) * scale - newSize); // trailing edge
-    }
-    return Math.round((centre / srcLen) * dstLen - newSize / 2); // centred band
+    if (centre < srcLen / 3) return R(pos * scale); // near the leading edge: keep scaled margin
+    if (centre > (2 * srcLen) / 3) return R(dstLen - (srcLen - pos - size) * scale - newSize); // trailing edge
+    return R((centre / srcLen) * dstLen - newSize / 2); // centred band
   };
+
+  // The zone an element sits in (by its centre), so message, pill and lockup
+  // travel with the panel and the headline with the photo.
+  const zoneOf = (box: Box): El | null => {
+    const cx = box.x + box.w / 2, cy = box.y + box.h / 2;
+    let best: El | null = null;
+    for (const z of zones) {
+      if (cx >= z.x && cx <= z.x + z.w && cy >= z.y && cy <= z.y + z.h) {
+        if (!best || z.w * z.h < best.w * best.h) best = z;
+      }
+    }
+    return best;
+  };
+
+  // ---- Clusters: elements that overlap in the master (a pill, its label
+  // and its icon; a lockup's marks) move as ONE object. Placing each by its
+  // own relative position pulled them apart whenever a zone grew faster
+  // than the scale (a 384-wide panel becoming 1920 wide).
+  const loose: El[] = master.elements.filter((el) => !fullBleed(el) && !placed.has(el.id));
+  const parent = new Map<string, string>();
+  const find = (id: string): string => { const p = parent.get(id); if (!p || p === id) return id; const root = find(p); parent.set(id, root); return root; };
+  const union = (a: string, b: string) => { const ra = find(a), rb = find(b); if (ra !== rb) parent.set(ra, rb); };
+  for (const el of loose) parent.set(el.id, el.id);
+  const meets = (a: El, b: El) => a.x < b.x + b.w + 1 && a.x + a.w + 1 > b.x && a.y < b.y + b.h + 1 && a.y + a.h + 1 > b.y;
+  for (let i = 0; i < loose.length; i++) for (let j = i + 1; j < loose.length; j++) if (meets(loose[i], loose[j])) union(loose[i].id, loose[j].id);
+  const clusters = new Map<string, El[]>();
+  for (const el of loose) { const rt = find(el.id); clusters.set(rt, [...(clusters.get(rt) ?? []), el]); }
+
+  const newBox = new Map<string, Box>();
+  for (const members of clusters.values()) {
+    const bx0 = Math.min(...members.map((m) => m.x)), by0 = Math.min(...members.map((m) => m.y));
+    const bx1 = Math.max(...members.map((m) => m.x + m.w)), by1 = Math.max(...members.map((m) => m.y + m.h));
+    const B: Box = { x: bx0, y: by0, w: bx1 - bx0, h: by1 - by0 };
+    const w = Math.max(1, R(B.w * scale));
+    const h = Math.max(1, R(B.h * scale));
+    let x: number;
+    let y: number;
+    const zone = zoneOf(B);
+    const zNew = zone ? placed.get(zone.id) : undefined;
+    if (zone && zNew) {
+      // Same relative position inside the zone as in the master.
+      const fx = (B.x + B.w / 2 - zone.x) / Math.max(1, zone.w);
+      const fy = (B.y + B.h / 2 - zone.y) / Math.max(1, zone.h);
+      x = R(zNew.x + fx * zNew.w - w / 2);
+      y = R(zNew.y + fy * zNew.h - h / 2);
+      // Stay inside the zone where the master kept it inside.
+      if (B.x >= zone.x && B.x + B.w <= zone.x + zone.w) x = Math.min(Math.max(x, zNew.x), Math.max(zNew.x, zNew.x + zNew.w - w));
+      if (B.y >= zone.y && B.y + B.h <= zone.y + zone.h) y = Math.min(Math.max(y, zNew.y), Math.max(zNew.y, zNew.y + zNew.h - h));
+    } else {
+      x = adaptAxis(B.x, B.w, srcW, dstW, w);
+      y = adaptAxis(B.y, B.h, srcH, dstH, h);
+    }
+    // Flush in the master stays flush: a cluster that met a canvas edge
+    // snaps to it rather than landing a scaled sliver away.
+    const bel = B as unknown as El;
+    if (touchesL(bel) && B.x >= 0) x = 0;
+    if (touchesR(bel) && B.x + B.w <= srcW) x = dstW - w;
+    if (touchesT(bel) && B.y >= 0) y = 0;
+    if (touchesB(bel) && B.y + B.h <= srcH) y = dstH - h;
+    // Preserve containment, but only where the master was contained — bleed
+    // is a design choice.
+    if (B.x >= 0 && B.x + B.w <= srcW) x = Math.min(Math.max(x, 0), Math.max(0, dstW - w));
+    if (B.y >= 0 && B.y + B.h <= srcH) y = Math.min(Math.max(y, 0), Math.max(0, dstH - h));
+    for (const m of members) {
+      newBox.set(m.id, { x: x + R((m.x - B.x) * scale), y: y + R((m.y - B.y) * scale), w: Math.max(1, R(m.w * scale)), h: Math.max(1, R(m.h * scale)) });
+    }
+  }
 
   const elements = master.elements.map((el) => {
     // Full-bleed backgrounds restretch rather than scale-and-anchor.
-    if (el.w >= srcW * 0.9 && el.h >= srcH * 0.9) {
+    if (fullBleed(el)) {
       return { ...el, x: 0, y: 0, w: dstW, h: dstH };
     }
-
-    const w = Math.max(1, Math.round(el.w * scale));
-    const h = Math.max(1, Math.round(el.h * scale));
-    let x = adaptAxis(el.x, el.w, srcW, dstW, w);
-    let y = adaptAxis(el.y, el.h, srcH, dstH, h);
-
-    // Preserve containment, but only where the master was contained — bleed
-    // is a design choice.
-    if (el.x >= 0 && el.x + el.w <= srcW) x = Math.min(Math.max(x, 0), Math.max(0, dstW - w));
-    if (el.y >= 0 && el.y + el.h <= srcH) y = Math.min(Math.max(y, 0), Math.max(0, dstH - h));
-
+    const zb = placed.get(el.id);
+    if (zb) return { ...el, x: zb.x, y: zb.y, w: zb.w, h: zb.h };
+    const nb = newBox.get(el.id) ?? { x: R(el.x * scale), y: R(el.y * scale), w: Math.max(1, R(el.w * scale)), h: Math.max(1, R(el.h * scale)) };
     if (el.type === "text") {
+      // A hair of slack so a line that met its box in the master does not
+      // wrap after rounding at the new size.
       return {
         ...el,
-        x, y, w, h,
-        fontSize: Math.max(6, Math.round(el.fontSize * scale)),
+        x: nb.x, y: nb.y, w: nb.w + Math.max(2, R(nb.w * 0.03)), h: nb.h,
+        fontSize: Math.max(6, R(el.fontSize * scale)),
         ...(el.letterSpacing !== undefined ? { letterSpacing: el.letterSpacing * scale } : {}),
       };
     }
-    return { ...el, x, y, w, h };
+    return { ...el, x: nb.x, y: nb.y, w: nb.w, h: nb.h };
   });
 
   return { kind: "freeform", elements };

@@ -37,7 +37,9 @@ function keyElements(config: FreeformConfig, width: number, height: number): Key
 const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
 
 function interpolate(a: GeometryBox, b: GeometryBox, t: number): GeometryBox {
-  const edges = (["left", "right", "top", "bottom"] as const).filter((edge) => a.edges.includes(edge) && b.edges.includes(edge));
+  // A part flush to an edge in EITHER measured master is flush here: one
+  // loosely measured master must not switch the flag off for the family.
+  const edges = (["left", "right", "top", "bottom"] as const).filter((edge) => a.edges.includes(edge) || b.edges.includes(edge));
   return {
     x: lerp(a.x, b.x, t), y: lerp(a.y, b.y, t),
     w: lerp(a.w, b.w, t), h: lerp(a.h, b.h, t),
@@ -143,11 +145,17 @@ export function adaptGeometryProfile(
     const x = Math.round(measured.x * dstW), y = Math.round(measured.y * dstH);
     const w = Math.max(1, Math.round(measured.w * dstW)), h = Math.max(1, Math.round(measured.h * dstH));
     if (element.type === "image") return placeImage(element, measured, dstW, dstH);
+    // Edge flags apply to copy and rects too: flush means 0, not the
+    // measured fraction (which put a "flush" band 23px in on a 1920 canvas).
+    const sx = measured.edges.includes("left") ? 0 : measured.edges.includes("right") ? dstW - w : x;
+    const sy = measured.edges.includes("top") ? 0 : measured.edges.includes("bottom") ? dstH - h : y;
+    const sw = measured.edges.includes("left") && measured.edges.includes("right") ? dstW : w;
+    const sh = measured.edges.includes("top") && measured.edges.includes("bottom") ? dstH : h;
     if (element.type === "text") {
       const proposed = (measured.fontSize ?? element.fontSize / Math.min(srcW, srcH)) * short;
-      return { ...element, x, y, w, h, fontSize: fitText(element, proposed, w, h, rules), ...(element.letterSpacing !== undefined ? { letterSpacing: element.letterSpacing * (short / Math.min(srcW, srcH)) } : {}) };
+      return { ...element, x: sx, y: sy, w: sw, h: sh, fontSize: fitText(element, proposed, sw, sh, rules), ...(element.letterSpacing !== undefined ? { letterSpacing: element.letterSpacing * (short / Math.min(srcW, srcH)) } : {}) };
     }
-    return { ...element, x, y, w, h };
+    return { ...element, x: sx, y: sy, w: sw, h: sh };
   });
   if (matched < Math.min(3, keyed.length)) return null;
   // Shared type scale: labels styled alike in the master (same text role,
