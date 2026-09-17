@@ -1,0 +1,137 @@
+/**
+ * Auckland Artwork Studio, InDesign bridge v1
+ *
+ * Open the approved key-visual documents in InDesign, close unrelated
+ * documents, then run this file from Window > Utilities > Scripts.
+ * Every visible top-level object on an art:* layer is exported with exact
+ * geometry, semantics and a stable layout block. The resulting ZIP is the
+ * file to upload to Artwork WIP.
+ */
+(async function () {
+  "use strict";
+  const { app, ExportFormat, PNGQualityEnum } = require("indesign");
+  const { storage } = require("uxp");
+  const fs = storage.localFileSystem;
+  const formats = storage.formats;
+  const SCHEMA = "nz.govt.auckland.artwork-master/v1";
+
+  function toArray(collection) {
+    if (!collection) return [];
+    if (Array.isArray(collection)) return collection.slice();
+    try { return collection.everyItem().getElements(); }
+    catch (_) { const out = []; for (let i = 0; i < collection.length; i++) out.push(collection.item(i)); return out; }
+  }
+  function safe(value, fallback) {
+    const s = String(value || fallback || "item").trim().replace(/[^a-z0-9._-]+/gi, "-").replace(/^-+|-+$/g, "");
+    return s || String(fallback || "item");
+  }
+  function label(object, key) { try { return object.extractLabel("ac:" + key) || ""; } catch (_) { return ""; } }
+  function roleFromLayer(name) {
+    const raw = String(name || "").toLowerCase().replace(/^art\s*[:_/-]\s*/, "").trim();
+    if (/^background\b/.test(raw)) return "background";
+    if (/^(hero|photo|image|key.?visual)\b/.test(raw)) return "hero";
+    if (/^headline\b/.test(raw)) return "headline";
+    if (/^(subheadline|subhead)\b/.test(raw)) return "subheadline";
+    if (/^(body|message|copy)\b/.test(raw)) return "body";
+    if (/^(cta|button|search)\b/.test(raw)) return "cta";
+    if (/^(logo|lockup)\b/.test(raw)) return "logo";
+    if (/^(decoration|pattern|band|motif|anther)\b/.test(raw)) return "decoration";
+    if (/^(legal|terms)\b/.test(raw)) return "legal";
+    return "";
+  }
+  function slotFor(role) { return ({ background:"photo", hero:"photo", headline:"headline", subheadline:"subheadline", body:"message", cta:"cta", logo:"logo", decoration:"band", legal:"other" })[role] || "other"; }
+  function familyFor(w, h) { const r = w / h; return r <= 0.55 ? "slim-portrait" : r < 0.82 ? "portrait" : r >= 2.75 ? "slim-landscape" : "landscape"; }
+  function pageSize(page) { const b = page.bounds; return { width:Number(b[3])-Number(b[1]), height:Number(b[2])-Number(b[0]), top:Number(b[0]), left:Number(b[1]) }; }
+  function bounds(item, page) { const b=item.geometricBounds,p=page.bounds; return { x:Number(b[1])-Number(p[1]), y:Number(b[0])-Number(p[0]), w:Number(b[3])-Number(b[1]), h:Number(b[2])-Number(b[0]) }; }
+  function visible(item) { try { return item.visible !== false && item.nonprinting !== true && item.itemLayer.visible !== false; } catch (_) { return true; } }
+  function anchors(role, b, W, H) {
+    if (role === "background") return { anchorX:"stretch", anchorY:"stretch", scaleMode:"fill" };
+    if (role === "logo") return { anchorX:"right", anchorY:"bottom", scaleMode:"uniform" };
+    const cx=b.x+b.w/2,cy=b.y+b.h/2;
+    return {
+      anchorX: labelAnchor(role,"X") || (cx < W/3 ? "left" : cx > W*2/3 ? "right" : "center"),
+      anchorY: labelAnchor(role,"Y") || (cy < H/3 ? "top" : cy > H*2/3 ? "bottom" : "center"),
+      scaleMode:"uniform",
+    };
+  }
+  function labelAnchor() { return ""; }
+  function hex2(n) { const s=Math.max(0,Math.min(255,Math.round(n))).toString(16); return s.length<2?"0"+s:s; }
+  function textColor(text) {
+    try {
+      const c=text.fillColor, values=toArray(c.colorValue).map(Number), space=String(c.space||"");
+      if (/rgb/i.test(space) && values.length>=3) return "#"+hex2(values[0])+hex2(values[1])+hex2(values[2]);
+      if (/cmyk/i.test(space) && values.length>=4) {
+        const C=values[0]/100,M=values[1]/100,Y=values[2]/100,K=values[3]/100;
+        return "#"+hex2(255*(1-C)*(1-K))+hex2(255*(1-M)*(1-K))+hex2(255*(1-Y)*(1-K));
+      }
+    } catch (_) {}
+    return "#11263d";
+  }
+  function alignment(text) { const v=String(text.justification||"").toLowerCase(); return v.indexOf("center")>=0?"center":v.indexOf("right")>=0?"right":"left"; }
+  function textData(item) {
+    const story=item.parentStory,t=story.texts.item(0),size=Number(t.pointSize)||16,leading=Number(t.leading);
+    return {
+      kind:"text", text:String(story.contents||"").replace(/\r/g,"\n"), fontSize:size,
+      fontWeight:/bold|black|heavy|semibold/i.test(String(t.fontStyle||""))?700:400,
+      fontFamily:String(t.appliedFont&&t.appliedFont.name||"National 2"), color:textColor(t),
+      align:alignment(t), lineHeight:Number.isFinite(leading)&&leading>0?leading/size:1.2,
+      letterSpacing:(Number(t.tracking)||0)/1000*size,
+    };
+  }
+  function isTextFrame(item) { try { return item.constructor.name === "TextFrame"; } catch (_) { return false; } }
+  function showMessage(message) {
+    try {
+      const d=app.dialogs.add({name:"Auckland Artwork Studio"});
+      d.dialogColumns.add().staticTexts.add({staticLabel:String(message).slice(0,900)});
+      d.show(); d.destroy();
+    } catch (_) { console.log(message); }
+  }
+
+  const encoder = new TextEncoder();
+  function bytes(value) { return value instanceof Uint8Array?value:value instanceof ArrayBuffer?new Uint8Array(value):encoder.encode(String(value)); }
+  function crc32(data) { let c=0xffffffff;for(let i=0;i<data.length;i++){c^=data[i];for(let k=0;k<8;k++)c=(c>>>1)^((c&1)?0xedb88320:0);}return(c^0xffffffff)>>>0; }
+  function u16(a,o,v){a[o]=v&255;a[o+1]=(v>>>8)&255;} function u32(a,o,v){u16(a,o,v&65535);u16(a,o+2,(v>>>16)&65535);}
+  function concat(parts){const n=parts.reduce((s,p)=>s+p.length,0),out=new Uint8Array(n);let at=0;parts.forEach(p=>{out.set(p,at);at+=p.length;});return out;}
+  function zipFiles(files){const local=[],central=[];let offset=0;files.forEach(file=>{const name=bytes(file.name),data=bytes(file.data),crc=crc32(data),lh=new Uint8Array(30+name.length);u32(lh,0,0x04034b50);u16(lh,4,20);u16(lh,6,0x0800);u32(lh,14,crc);u32(lh,18,data.length);u32(lh,22,data.length);u16(lh,26,name.length);lh.set(name,30);local.push(lh,data);const ch=new Uint8Array(46+name.length);u32(ch,0,0x02014b50);u16(ch,4,20);u16(ch,6,20);u16(ch,8,0x0800);u32(ch,16,crc);u32(ch,20,data.length);u32(ch,24,data.length);u16(ch,28,name.length);u32(ch,42,offset);ch.set(name,46);central.push(ch);offset+=lh.length+data.length;});const body=concat(local),dir=concat(central),end=new Uint8Array(22);u32(end,0,0x06054b50);u16(end,8,files.length);u16(end,10,files.length);u32(end,12,dir.length);u32(end,16,body.length);return concat([body,dir,end]);}
+
+  try {
+    const documents=toArray(app.documents);
+    if (!documents.length) throw Error("Open the approved InDesign key visuals first.");
+    const destination=await fs.getFolder(); if(!destination) return;
+    const stamp=Date.now().toString(36),folder=await destination.createFolder("AC-InDesign-Masters-"+stamp),assetFolder=await folder.createFolder("assets");
+    const manifest={schema:SCHEMA,createdAt:new Date().toISOString(),campaign:safe(documents[0].name.replace(/\.[^.]+$/, ""),"campaign"),pages:[]};
+    const zipEntries=[],warnings=[];
+    // Preserve enough raster detail for print and OOH derivatives. The app
+    // still uses the InDesign frame geometry, so the higher-resolution PNGs
+    // improve output quality without changing positions or proportions.
+    try { app.pngExportPreferences.transparentBackground=true; app.pngExportPreferences.exportResolution=300; app.pngExportPreferences.pngQuality=PNGQualityEnum.MAXIMUM; } catch (_) {}
+    let pageNo=0;
+    for (const doc of documents) {
+      for (const page of toArray(doc.pages)) {
+        const size=pageSize(page),pageKey="p"+(++pageNo),elements=[];
+        let items=toArray(page.pageItems).filter(visible).reverse();
+        for (let i=0;i<items.length;i++) {
+          const item=items[i],layerName=String(item.itemLayer&&item.itemLayer.name||""),role=roleFromLayer(layerName);
+          if (!role) { warnings.push(doc.name+" page "+page.name+": skipped untagged layer "+layerName); continue; }
+          const b=bounds(item,page); if (!(b.w>0&&b.h>0)) continue;
+          const explicitBlock=label(item,"block"),a=anchors(role,b,size.width,size.height);
+          const common={id:pageKey+"_"+safe(role+"_"+i,"item"),layerName,role,slot:slotFor(role),block:explicitBlock||role,anchorX:label(item,"anchorX")||a.anchorX,anchorY:label(item,"anchorY")||a.anchorY,scaleMode:label(item,"scaleMode")||a.scaleMode,x:b.x,y:b.y,w:b.w,h:b.h,locked:role==="logo"};
+          if (isTextFrame(item)) elements.push(Object.assign(common,textData(item)));
+          else {
+            const fileName=pageKey+"-"+String(i+1).padStart(3,"0")+"-"+safe(role,"art")+".png",assetPath="assets/"+fileName,file=await assetFolder.createFile(fileName,{overwrite:true});
+            item.exportFile(ExportFormat.PNG_FORMAT,file,false);
+            elements.push(Object.assign(common,{kind:"image",assetPath,fit:"contain"}));
+            zipEntries.push({name:assetPath,data:await file.read({format:formats.binary})});
+          }
+        }
+        if (!elements.length) { warnings.push(doc.name+" page "+page.name+": no visible art:* objects"); continue; }
+        manifest.pages.push({name:safe(doc.name.replace(/\.[^.]+$/, "")+" "+page.name,"Master "+pageNo),document:doc.name,page:String(page.name),width:size.width,height:size.height,masterFamily:label(page,"masterFamily")||familyFor(size.width,size.height),elements});
+      }
+    }
+    if (!manifest.pages.length) throw Error("No tagged artwork was found. Name visible InDesign layers art:background, art:hero, art:headline, art:body, art:cta, art:logo or art:decoration.");
+    const json=JSON.stringify(manifest,null,2),manifestFile=await folder.createFile("ac-master.json",{overwrite:true});await manifestFile.write(json,{format:formats.utf8});zipEntries.unshift({name:"ac-master.json",data:json});
+    const report=["Auckland Artwork Studio InDesign bridge",manifest.pages.length+" master page(s) exported.",warnings.length+" warning(s).","",...warnings].join("\n"),reportFile=await folder.createFile("export-report.txt",{overwrite:true});await reportFile.write(report,{format:formats.utf8});zipEntries.push({name:"export-report.txt",data:report});
+    const zip=zipFiles(zipEntries),zipName=safe(manifest.campaign,"campaign")+"-AC-Masters.zip",zipFile=await destination.createFile(zipName,{overwrite:true});await zipFile.write(zip.buffer,{format:formats.binary});
+    showMessage("Complete. Upload "+zipName+" to Artwork WIP.\n\n"+manifest.pages.length+" master page(s) exported. "+warnings.length+" warning(s). The folder beside the ZIP contains the report.");
+  } catch (error) { showMessage("Stopped: "+(error&&error.message?error.message:String(error))); }
+})();

@@ -64,6 +64,13 @@ export interface FreeformBase {
   locked?: boolean;
   /** Composition slot (photo, panel, cta, …) — drives recomposition. */
   slot?: SlotRole;
+  /** Stable block exported by the InDesign bridge. All members receive one
+   * uniform transform, so a CTA, logo lockup or pattern never comes apart. */
+  layoutBlock?: string;
+  /** Explicit master-relative placement exported by InDesign. */
+  anchorX?: "left" | "center" | "right" | "stretch";
+  anchorY?: "top" | "center" | "bottom" | "stretch";
+  scaleMode?: "uniform" | "fill" | "fixed";
 }
 
 export interface FreeformText extends FreeformBase {
@@ -211,6 +218,11 @@ export interface FreeformConfig {
   needsReview?: boolean;
   /** Design-principle scores (0..1) and the worst contrast ratio behind copy. */
   principles?: { alignment: number; margins: number; balance: number; contrast: number | null; contrastDetail?: Array<{ id: string; label: string; ratio: number; floor: number }> };
+  /** The layout came from the AC InDesign bridge and is authoritative.
+   * Generic recipes and AI may validate it, but must not redesign it. */
+  sourceMode?: "indesign-bridge";
+  masterFamily?: "portrait" | "landscape" | "slim-portrait" | "slim-landscape";
+  authoritativeGeometry?: boolean;
 }
 
 const MAX_ELEMENTS = 200;
@@ -501,6 +513,10 @@ export function normalizeFreeformConfig(raw: unknown): FreeformConfig {
       ...(sanitizeLayerName(el.layerName) ? { layerName: sanitizeLayerName(el.layerName) } : {}),
       ...(el.locked === true ? { locked: true } : {}),
       ...(SLOT_ROLES.includes(el.slot as SlotRole) && el.slot !== "other" ? { slot: el.slot as SlotRole } : {}),
+      ...(typeof el.layoutBlock === "string" && /^[\w:.-]{1,80}$/.test(el.layoutBlock) ? { layoutBlock: el.layoutBlock } : {}),
+      ...(el.anchorX === "left" || el.anchorX === "center" || el.anchorX === "right" || el.anchorX === "stretch" ? { anchorX: el.anchorX } : {}),
+      ...(el.anchorY === "top" || el.anchorY === "center" || el.anchorY === "bottom" || el.anchorY === "stretch" ? { anchorY: el.anchorY } : {}),
+      ...(el.scaleMode === "uniform" || el.scaleMode === "fill" || el.scaleMode === "fixed" ? { scaleMode: el.scaleMode } : {}),
     };
 
     if (el.type === "text") {
@@ -687,6 +703,10 @@ export function normalizeFreeformConfig(raw: unknown): FreeformConfig {
   const rejected = Array.isArray((raw as { rejected?: unknown }).rejected)
     ? ((raw as { rejected: unknown[] }).rejected).filter((r): r is string => typeof r === "string" && r.trim().length > 0).map((r) => r.slice(0, 300)).slice(0, 20)
     : [];
+  const sourceMode = (raw as { sourceMode?: unknown }).sourceMode === "indesign-bridge" ? "indesign-bridge" as const : undefined;
+  const familyRaw = (raw as { masterFamily?: unknown }).masterFamily;
+  const masterFamily = familyRaw === "portrait" || familyRaw === "landscape" || familyRaw === "slim-portrait" || familyRaw === "slim-landscape" ? familyRaw : undefined;
+  const authoritativeGeometry = sourceMode === "indesign-bridge" && (raw as { authoritativeGeometry?: unknown }).authoritativeGeometry === true;
 
   return {
     kind: "freeform",
@@ -701,5 +721,8 @@ export function normalizeFreeformConfig(raw: unknown): FreeformConfig {
     ...(droppedParts.length > 0 ? { droppedParts } : {}),
     ...(needsReview ? { needsReview } : {}),
     ...(principles ? { principles } : {}),
+    ...(sourceMode ? { sourceMode } : {}),
+    ...(masterFamily ? { masterFamily } : {}),
+    ...(authoritativeGeometry ? { authoritativeGeometry: true } : {}),
   };
 }

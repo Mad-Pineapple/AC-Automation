@@ -28,6 +28,7 @@ import { dissectPdfToTemplate } from "./pdfDissect";
 import { detectHeroBox } from "./heroBox";
 import { normalizeFreeformConfig, type FreeformConfig } from "./freeform";
 import { reconstructGwdBanners } from "./gwdImport";
+import { findAcMasterManifest, parseAcMasterPackage } from "./acMasterPackage";
 
 const objectStorageService = new ObjectStorageService();
 
@@ -117,6 +118,15 @@ export async function importExample(
   const baseName = fileName.replace(/\.[^.]+$/, "").trim().slice(0, 80) || "Example";
 
   if (kind === "package") {
+    // Packages made by the InDesign bridge carry an explicit semantic
+    // manifest. It is the source of truth and must bypass IDML inference.
+    const bridgeFile = await objectStorageService.getObjectEntityFile(objectPath);
+    const bridgeBytes = Buffer.from(await (await objectStorageService.downloadObject(bridgeFile)).arrayBuffer());
+    const bridgeZip = await JSZip.loadAsync(bridgeBytes);
+    if (findAcMasterManifest(bridgeZip)) {
+      const bridge = await parseAcMasterPackage(bridgeZip);
+      return { kind, layouts: bridge.layouts, warnings: bridge.warnings, assets: bridge.imported, folder: `InDesign Bridge — ${baseName}` };
+    }
     const res = await importInDesignPackage(objectPath, brandLogoUrl);
     if (res.idmlLayouts.length > 0) {
       return {

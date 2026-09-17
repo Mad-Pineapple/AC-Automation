@@ -17,6 +17,7 @@ import { analyseGwdHtml, motionForElements, type GwdLeaf } from "../lib/gwdMotio
 import { resolveStyleSchema, learnProfile, getProfile } from "../lib/layoutProfile";
 import type { LayoutProfile } from "../lib/layoutProfile";
 import { adaptGeometryProfile } from "../lib/geometryAdapt";
+import { adaptAuthoritativeConfig, selectAuthoritativeSource } from "../lib/authoritativeAdapt";
 import { ruleLayerFor } from "../lib/partRulesLayer";
 import { guidelinesForConfig, guidelineNotes, topicsPerElement } from "../lib/guidelines";
 import type { StyleSchema } from "../lib/styleSpecs/getReadyBurst2";
@@ -233,6 +234,14 @@ async function adaptOne(
   // The brief's format name and channel decide the class (a leaderboard is a
   // strip whatever its ratio; a 3:1 billboard is wide, never a strip).
   const spec = describeFormat(width, height, hints.name ?? null, hints.channel ?? null);
+  // A bridge master is already semantically authored in InDesign. Its
+  // explicit blocks and anchors are authoritative, so none of the inferred
+  // profile, key-visual, panel or campaign-recipe engines may replace it.
+  if (masterConfig.sourceMode === "indesign-bridge" && masterConfig.authoritativeGeometry) {
+    adapted = adaptAuthoritativeConfig(masterConfig, master.width, master.height, width, height);
+    method = "indesign-authoritative";
+    notes.push(...(adapted.adaptNotes ?? []));
+  }
   // 0. An approved piece in the family is the reference: scale it when the
   //    shape is near-identical, otherwise rebuild with its measured
   //    proportions overriding the class recipe.
@@ -243,8 +252,8 @@ async function adaptOne(
   // (the rebuild path below) instead of a straight scale.
   const sizeRatio = reference ? Math.min(width, height) / Math.max(1, Math.min(reference.exemplar.width, reference.exemplar.height)) : 1;
   const scaleOk = sizeRatio >= 0.5 && sizeRatio <= 2;
-  if (reference?.scaleFromExemplar && !scaleOk) notes.push(`The approved "${reference.exemplar.name}" is the reference, but this size is ${sizeRatio < 1 ? "much smaller" : "much larger"}, so it was rebuilt to its proportions rather than scaled.`);
-  if (reference?.scaleFromExemplar && scaleOk) {
+  if (!adapted && reference?.scaleFromExemplar && !scaleOk) notes.push(`The approved "${reference.exemplar.name}" is the reference, but this size is ${sizeRatio < 1 ? "much smaller" : "much larger"}, so it was rebuilt to its proportions rather than scaled.`);
+  if (!adapted && reference?.scaleFromExemplar && scaleOk) {
     adapted = adaptFreeformConfig(reference.exemplar.config, reference.exemplar.width, reference.exemplar.height, width, height);
     method = "scaled:approved";
     notes.push(reference.note);
@@ -343,7 +352,7 @@ async function adaptOne(
   let rejected = gate(adapted);
   // A rejected result is not simply labelled: the next engine gets a turn
   // and the build keeps whichever result has the fewest rejections.
-  if (rejected.length > 0 && method !== "scaled") {
+  if (rejected.length > 0 && method !== "scaled" && method !== "indesign-authoritative") {
     const attempts: Array<{ label: string; run: () => Promise<FreeformConfig | null> }> = [];
     if (!method.startsWith("recomposed") && shouldRecompose(masterConfig, master.width, master.height, width, height)) {
       attempts.push({ label: `recomposed:${spec.formatClass}`, run: async () => (await recomposeToFormat(masterConfig, master.width, master.height, width, height, { brand: brandInfo, formatClass: spec.formatClass, rules }))?.config ?? null });
@@ -390,7 +399,7 @@ async function adaptOne(
   // What designers have said about pieces of this shape so far rides on
   // every new one, so the lesson is in front of whoever reviews it.
   let feedbackLine: string | null = null;
-  try {
+  if (!(masterConfig.sourceMode === "indesign-bridge" && masterConfig.authoritativeGeometry)) try {
     feedbackLine = describeFormatFeedback(await feedbackForFormat(spec.formatClass));
   } catch {
     feedbackLine = null;
@@ -462,6 +471,7 @@ router.post("/templates/:id/adapt", requireAdmin, async (req, res): Promise<void
     return;
   }
   let masterConfig = normalizeFreeformConfig(parsed);
+  const authoritativeMaster = masterConfig.sourceMode === "indesign-bridge" && masterConfig.authoritativeGeometry === true;
   // Keep an untouched snapshot for exact-size duplication. Generating the
   // master's own dimensions is a copy operation, not an adaptation: no slot
   // inference, panel splitting, subject detection, AI fixing or layout rules
@@ -472,7 +482,7 @@ router.post("/templates/:id/adapt", requireAdmin, async (req, res): Promise<void
 
   // Masters imported from an HTML example before motion capture: lift the
   // choreography from the stored original so the pieces built now carry it.
-  try {
+  if (!authoritativeMaster) try {
     const withMotion = await backfillKeyVisualMotion(masterConfig);
     if (withMotion) {
       masterConfig = normalizeFreeformConfig({ ...(parsed as Record<string, unknown>), elements: withMotion.elements });
@@ -488,7 +498,7 @@ router.post("/templates/:id/adapt", requireAdmin, async (req, res): Promise<void
 
   // A master whose baked panel has not been cut into parts yet gets that
   // done now (masters imported before the panel split existed).
-  if (hasLayeredSlots(masterConfig) && !hasPanelParts(masterConfig) && masterConfig.elements.some((e) => e.type === "image" && e.slot === "panel")) {
+  if (!authoritativeMaster && hasLayeredSlots(masterConfig) && !hasPanelParts(masterConfig) && masterConfig.elements.some((e) => e.type === "image" && e.slot === "panel")) {
     try {
       const storage = new LayerStorage();
       const split = await splitPanelGraphic(masterConfig, { loadImage: makeImageLoader(req), uploadBytes: (bytes, ct) => storage.uploadBytes(bytes, ct) });
@@ -506,7 +516,7 @@ router.post("/templates/:id/adapt", requireAdmin, async (req, res): Promise<void
   // An image-only stack (HTML5 export) gets its layers recognised once —
   // headline glyphs merged, slots assigned — and the master is updated so the
   // recognition sticks for every later build.
-  if (isImageOnly(masterConfig) && !hasLayeredSlots(masterConfig)) {
+  if (!authoritativeMaster && isImageOnly(masterConfig) && !hasLayeredSlots(masterConfig)) {
     try {
       const storage = new LayerStorage();
       const enriched = await enrichLayeredArtwork(masterConfig, master.width, master.height, {
@@ -526,7 +536,7 @@ router.post("/templates/:id/adapt", requireAdmin, async (req, res): Promise<void
   }
   // Masters split before panels were masked draw the panel graphic AND its
   // parts (the duplicate layers designers flagged): re-cut and mask once.
-  if (hasPanelParts(masterConfig) && masterConfig.elements.some((e) => e.type === "image" && e.slot === "panel" && !e.panelMasked)) {
+  if (!authoritativeMaster && hasPanelParts(masterConfig) && masterConfig.elements.some((e) => e.type === "image" && e.slot === "panel" && !e.panelMasked)) {
     try {
       const storage = new LayerStorage();
       const v = await resplitLegacyPanel(masterConfig, { loadImage: makeImageLoader(req), uploadBytes: (bytes, ct) => storage.uploadBytes(bytes, ct) });
@@ -543,7 +553,7 @@ router.post("/templates/:id/adapt", requireAdmin, async (req, res): Promise<void
   }
   // Masters labelled before the pixel check existed may carry a picture
   // (the car cut-out) as their "scrim"; re-check and repair once.
-  if (hasLayeredSlots(masterConfig) && masterConfig.elements.some((e) => e.type === "image" && (e.slot === "scrim" || e.slot === "cutout"))) {
+  if (!authoritativeMaster && hasLayeredSlots(masterConfig) && masterConfig.elements.some((e) => e.type === "image" && (e.slot === "scrim" || e.slot === "cutout"))) {
     try {
       const v = await verifyScrimSlot(masterConfig, { loadImage: makeImageLoader(req) });
       if (v.changed) {
@@ -561,7 +571,7 @@ router.post("/templates/:id/adapt", requireAdmin, async (req, res): Promise<void
   // A photograph with no cut-out gets its subject found once (Claude
   // vision) and the box stored on the master, so every size keeps it.
   const subjectNotes: string[] = [];
-  try {
+  if (!authoritativeMaster) try {
     const found = await ensureSubjects(masterConfig, makeImageLoader(req));
     if (found) {
       masterConfig = normalizeFreeformConfig({ ...(parsed as Record<string, unknown>), elements: found.config.elements });
@@ -625,6 +635,34 @@ router.post("/templates/:id/adapt", requireAdmin, async (req, res): Promise<void
   const requestedGuardProvider: ArtworkGuardProvider = req.body?.aiGuardProvider === "claude" || req.body?.aiGuardProvider === "openai" ? req.body.aiGuardProvider : "auto";
   const resolvedStyle = await resolveStyleSchema({ masterId: master.id, masterName: master.name, sourceTemplateId: master.sourceTemplateId ?? null, profileId });
   if (resolvedStyle.source === "profile") res.setHeader("X-Layout-Profile", String(resolvedStyle.profileId));
+  // Load the real bridge masters named in the measured profile. Targets pick
+  // the closest family from these rows, rather than borrowing only their
+  // geometry and continuing with the originally selected page's artwork.
+  const authoritativeSources: Array<{ id: number; name: string; width: number; height: number; config: FreeformConfig }> = [];
+  const sourceIds = [...new Set([master.id, ...((resolvedStyle.profile?.sources ?? []).map((s) => s.templateId))])];
+  if (sourceIds.length) {
+    const rows = await db.select().from(templatesTable).where(inArray(templatesTable.id, sourceIds));
+    for (const row of rows) {
+      try {
+        const cfg = normalizeFreeformConfig(JSON.parse(row.config || "{}"));
+        if (cfg.sourceMode === "indesign-bridge" && cfg.authoritativeGeometry) authoritativeSources.push({ id: row.id, name: row.name, width: row.width, height: row.height, config: cfg });
+      } catch { /* an unrelated or invalid profile source is ignored */ }
+    }
+  }
+  if (authoritativeSources.length) {
+    const missing: string[] = [];
+    for (const raw of rawTargets) {
+      if (typeof raw !== "object" || raw === null) continue;
+      const target = raw as Record<string, unknown>;
+      const width = Number(target.width), height = Number(target.height);
+      if (!Number.isFinite(width) || !Number.isFinite(height)) continue;
+      if (!selectAuthoritativeSource(authoritativeSources, width, height)) missing.push(`${width}×${height}`);
+    }
+    if (missing.length) {
+      res.status(422).json({ error: `Generation stopped. ${missing.join(", ")} require the matching slim InDesign master. Export portrait, landscape, slim portrait and slim landscape together with AC-InDesign-Bridge.idjs, then upload the new package.` });
+      return;
+    }
+  }
   for (const raw of rawTargets) {
     if (typeof raw !== "object" || raw === null) continue;
     const t = raw as Record<string, unknown>;
@@ -637,21 +675,25 @@ router.post("/templates/:id/adapt", requireAdmin, async (req, res): Promise<void
       typeof t.name === "string" && t.name.trim()
         ? t.name.trim().slice(0, 120)
         : `${master.name} ${width}×${height}`;
+    const chosen = authoritativeSources.length ? selectAuthoritativeSource(authoritativeSources, width, height) : null;
+    const sourceMaster = chosen ? { id: chosen.id, width: chosen.width, height: chosen.height, name: chosen.name } : master;
+    const sourceConfig = chosen?.config ?? masterConfig;
 
     // Same dimensions must reproduce the imported master exactly. In
     // particular, do not send it through adaptOne or Artwork Guard, both of
     // which are allowed to move or resize elements for a genuinely new size.
-    if (width === master.width && height === master.height) {
+    if (width === sourceMaster.width && height === sourceMaster.height) {
+      const cloneConfig = chosen ? JSON.parse(JSON.stringify(sourceConfig)) as Record<string, unknown> : exactCloneConfig;
       const [template] = await db
         .insert(templatesTable)
         .values({
           name: requestedName,
-          description: `Exact-size duplicate of "${master.name}" (${master.width}×${master.height})`,
+          description: `Exact-size duplicate of "${sourceMaster.name}" (${sourceMaster.width}×${sourceMaster.height})`,
           category: "wip",
           width,
           height,
-          config: JSON.stringify(exactCloneConfig),
-          sourceTemplateId: master.id,
+          config: JSON.stringify(cloneConfig),
+          sourceTemplateId: sourceMaster.id,
           createdBy: (req as any).clerkUserId ?? null,
         })
         .returning();
@@ -661,7 +703,7 @@ router.post("/templates/:id/adapt", requireAdmin, async (req, res): Promise<void
     // A photo reproduced from the document PDF carries the original copy
     // baked into its pixels. Re-setting the headline elsewhere would draw it
     // over a ghost of itself — refuse rather than ship a wrong size.
-    const baked = masterConfig.elements.find((e) => e.type === "image" && (e as { bakedCopy?: boolean }).bakedCopy);
+    const baked = sourceConfig.elements.find((e) => e.type === "image" && (e as { bakedCopy?: boolean }).bakedCopy);
     if (baked) {
       res.status(422).json({
         error:
@@ -673,7 +715,7 @@ router.post("/templates/:id/adapt", requireAdmin, async (req, res): Promise<void
       name: typeof t.formatName === "string" ? t.formatName : typeof t.name === "string" ? t.name : null,
       channel: typeof t.channel === "string" ? t.channel : null,
     };
-    const { config: adaptedConfig, method, spec, rejected } = await adaptOne(master, masterConfig, width, height, brandInfo, (req as any).log, exemplars, undefined, hints, resolvedStyle.source === "none" ? null : { schema: resolvedStyle.schema, label: resolvedStyle.label, profile: resolvedStyle.profile }, { loadImage: makeImageLoader(req), brandFontFamily: brand?.fontFamily ?? "National 2" });
+    const { config: adaptedConfig, method, spec, rejected } = await adaptOne(sourceMaster, sourceConfig, width, height, brandInfo, (req as any).log, exemplars, undefined, hints, resolvedStyle.source === "none" ? null : { schema: resolvedStyle.schema, label: resolvedStyle.label, profile: resolvedStyle.profile }, { loadImage: makeImageLoader(req), brandFontFamily: brand?.fontFamily ?? "National 2" });
     // Guideline reminders for what is on the piece (logo tile, band, photo…).
     let merged = subjectNotes.length ? normalizeFreeformConfig({ ...adaptedConfig, adaptNotes: [...(adaptedConfig.adaptNotes ?? []), ...subjectNotes] }) : adaptedConfig;
     let elementGuidelines: Awaited<ReturnType<typeof guidelinesForConfig>> = [];
@@ -690,15 +732,15 @@ router.post("/templates/:id/adapt", requireAdmin, async (req, res): Promise<void
     let guardReview: ClaudeReview | null = null;
     let guardFixes: { at: string; rounds: number; applied: unknown[]; before: FreeformConfig["elements"] } | null = null;
     let finalRejected = [...rejected];
-    if (guardEnabled) {
+    if (guardEnabled && !(sourceConfig.sourceMode === "indesign-bridge" && sourceConfig.authoritativeGeometry)) {
       if (!isArtworkGuardConfigured(requestedGuardProvider)) {
         finalRejected.push("AI Artwork Guard could not run because the selected provider is not configured.");
         merged = normalizeFreeformConfig({ ...merged, adaptNotes: [...(merged.adaptNotes ?? []), "Check: AI Artwork Guard is not configured. Verify OPENAI_API_KEY or ANTHROPIC_API_KEY in Vercel."] });
       } else {
         try {
           const masterReference: Exemplar = {
-            id: master.id, name: master.name, width: master.width, height: master.height,
-            formatClass: classifyAspect(master.width, master.height), config: masterConfig,
+            id: sourceMaster.id, name: sourceMaster.name, width: sourceMaster.width, height: sourceMaster.height,
+            formatClass: classifyAspect(sourceMaster.width, sourceMaster.height), config: sourceConfig,
             measured: measureRecipe(masterConfig, master.width, master.height), approvedAt: null,
           };
           const guarded = await runArtworkGuard({
@@ -720,7 +762,7 @@ router.post("/templates/:id/adapt", requireAdmin, async (req, res): Promise<void
           guardReview = guarded.review;
           if (guarded.applied.length) guardFixes = { at: new Date().toISOString(), rounds: guarded.rounds, applied: guarded.applied, before: merged.elements };
           merged = normalizeFreeformConfig({ ...merged, elements: guarded.config.elements });
-          finalRejected = checkMandatory(masterConfig, merged, width, height, (resolvedStyle.schema?.partRules ?? {}) as Record<string, { minPx?: number; neverOverlap?: string[]; dropWhenTight?: boolean }>, { w: master.width, h: master.height });
+          finalRejected = checkMandatory(sourceConfig, merged, width, height, (resolvedStyle.schema?.partRules ?? {}) as Record<string, { minPx?: number; neverOverlap?: string[]; dropWhenTight?: boolean }>, { w: sourceMaster.width, h: sourceMaster.height });
           finalRejected.push(...checkLayout(merged, width, height).filter((i) => i.severity === "error").map((i) => i.message));
           finalRejected.push(...guarded.review.issues.filter((i) => i.severity === "send_back").map((i) => `AI Artwork Guard: ${i.message}`));
         } catch (err) {
@@ -744,14 +786,14 @@ router.post("/templates/:id/adapt", requireAdmin, async (req, res): Promise<void
       .insert(templatesTable)
       .values({
         name,
-        description: `${finalRejected.length > 0 ? "REJECTED · " : storedConfig.needsReview ? "REVIEW · " : ""}Adapted from "${master.name}" (${master.width}×${master.height}) · ${method.replace(":", " ")} · ${spec.formatClass}${guardReview ? " · AI guarded" : ""}`,
+        description: `${finalRejected.length > 0 ? "REJECTED · " : storedConfig.needsReview ? "REVIEW · " : ""}Adapted from "${sourceMaster.name}" (${sourceMaster.width}×${sourceMaster.height}) · ${method.replace(":", " ")} · ${spec.formatClass}${guardReview ? " · AI guarded" : ""}`,
         // Created pieces always land in Work-in-progress, whatever the master
         // is; only "Make template" moves a piece into Templates.
         category: "wip",
         width,
         height,
         config: JSON.stringify(storedConfig),
-        sourceTemplateId: master.id,
+        sourceTemplateId: sourceMaster.id,
         createdBy: (req as any).clerkUserId ?? null,
       })
       .returning();
@@ -821,7 +863,9 @@ router.post("/templates/:id/claude-review", requireAuth, async (req, res): Promi
   // Claude fixes what it finds on adapted pieces. Imported masters are never
   // touched (the studio reproduces imported artwork verbatim) — they are
   // reviewed only.
-  const canFix = req.body?.fix !== false && t.sourceTemplateId != null;
+  // The bridge geometry is the designer's source of truth. AI can report a
+  // problem but it is never allowed to move or resize these elements.
+  const canFix = req.body?.fix !== false && t.sourceTemplateId != null && !(config.sourceMode === "indesign-bridge" && config.authoritativeGeometry);
   let review: ClaudeReview;
   let fixed: FixResult | null = null;
   try {
@@ -1027,7 +1071,9 @@ router.post("/templates/import-example", requireAdmin, async (req, res): Promise
         .insert(templatesTable)
         .values({
           name: layout.name,
-          description: `Example artwork imported from ${fileName}`,
+          description: layout.config.sourceMode === "indesign-bridge"
+            ? `Authoritative InDesign master imported from ${fileName}`
+            : `Example artwork imported from ${fileName}`,
           // Imports land in Work-in-progress: they only become selectable
           // templates when the user promotes them from the Templates page.
           category: "wip",
