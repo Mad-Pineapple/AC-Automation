@@ -298,7 +298,15 @@ async function adaptOne(
   // One rule layer for every engine below: the campaign's part rules
   // (floors, drops, pins) or the studio floors when no schema applies.
   const rules = ruleLayerFor(styleOverride ? styleOverride.schema : styleSchemaFor(master.name));
-  if (!adapted && styleOverride?.profile) {
+  // The geometry engine INTERPOLATES measured layer boxes between masters of
+  // different shapes. It is only evidence for a target that lies between two
+  // measured shapes. With one shape measured (three portrait hazards), a
+  // wide or square target is outside the evidence: the engine used to
+  // edge-anchor the portrait layout onto it (band across the photo, no
+  // panel, tiny headline) and, because every import learns a profile, it
+  // hijacked every build. Outside the measured range the recipe engines lead.
+  const measuredShapes = (styleOverride?.profile?.geometryMasters ?? []).map((m) => ({ width: m.width, height: m.height }));
+  if (!adapted && styleOverride?.profile && targetBetweenMasters(measuredShapes, width, height)) {
     const geometric = adaptGeometryProfile(masterConfig, master.width, master.height, width, height, styleOverride.profile, rules);
     if (geometric) {
       adapted = geometric.config;
