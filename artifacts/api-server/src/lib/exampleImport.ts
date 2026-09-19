@@ -144,7 +144,7 @@ export async function importExample(
         kind,
         layouts: [{ name: baseName, width: dissected.width, height: dissected.height, config: dissected.config, variant: null }],
         warnings: [
-          "No IDML in the package — the document PDF was recreated instead, so text is part of the artwork.",
+          "No IDML in the package. The .indd file cannot be read outside InDesign, so your layers, live text and positions were NOT imported — the PDF was placed as one flat picture, and only same-shape sizes can be made from it. Fix: in InDesign choose File > Package and tick \"Include IDML\" (or File > Export > InDesign Markup (IDML) and add that file to the folder), zip the folder and import it again.",
           ...dissected.warnings,
         ],
         assets: res.imported,

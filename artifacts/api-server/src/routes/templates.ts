@@ -283,6 +283,15 @@ async function adaptOne(
     method = "scaled:approved";
     notes.push(reference.note);
   }
+  // 0.1. The SAME SHAPE as the master is an exact scale of it — never a
+  //      rebuild. A 1080×1920 from a 2160×3840 master was being sent through
+  //      the key-visual engine and re-set from scratch; the designer's own
+  //      layout, scaled, is by definition the right answer at that shape.
+  if (!adapted && aspectDistance(master.width, master.height, width, height) <= 0.02) {
+    adapted = adaptFreeformConfig(masterConfig, master.width, master.height, width, height);
+    method = "scaled";
+    notes.push(`Same shape as the master (${master.width}×${master.height}): scaled exactly, nothing re-set or rebuilt.`);
+  }
   // 0.25. A portrait + landscape free-form pair is the strongest evidence
   //       available. Interpolate its measured semantic layer boxes before
   //       considering generic panel or key-visual recipes.

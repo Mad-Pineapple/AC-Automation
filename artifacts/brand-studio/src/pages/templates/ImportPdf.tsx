@@ -101,10 +101,18 @@ export default function ImportPdf() {
           onSuccess: (res) => {
             queryClient.invalidateQueries({ queryKey: getListTemplatesQueryKey() });
             const n = res.templates?.length ?? 0;
-            toast({
-              title: n > 0 ? `${n} artwork piece${n === 1 ? "" : "s"} added to WIP` : "Nothing importable found",
-              description: (res.warnings ?? []).slice(0, 2).join(" "),
-            });
+            const noIdml = (res.warnings ?? []).find((w) => w.startsWith("No IDML"));
+            if (noIdml) {
+              // Not a footnote: without IDML nothing but a flat picture came
+              // in, and no layout can be rebuilt from it. Say so, and how to fix it.
+              window.alert(`This package has no IDML file.\n\n${noIdml}`);
+              toast({ title: "Imported as a flat picture only", description: "No IDML in the package: re-package from InDesign with \"Include IDML\" ticked, then import again.", variant: "destructive", duration: 60000 });
+            } else {
+              toast({
+                title: n > 0 ? `${n} artwork piece${n === 1 ? "" : "s"} added to WIP` : "Nothing importable found",
+                description: (res.warnings ?? []).slice(0, 2).join(" "),
+              });
+            }
             setLocation("/wip");
           },
           onError: (err: unknown) =>
