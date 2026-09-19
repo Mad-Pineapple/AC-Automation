@@ -78,6 +78,45 @@ export function masterLabelRatio(master?: CtaMasterRef | null): number {
   return clamp(master.labelFontSize / master.ctaH, 0.3, 0.72);
 }
 
+/**
+ * THE PILL FORMULA — one rule, every size.
+ *
+ *   1. k      = master pill height ÷ master headline type size
+ *               (Get Ready: 28.9 ÷ 95 = 0.30 on the portrait, 32.2 ÷ 110 =
+ *               0.29 on the wide — the studio holds it constant)
+ *   2. pill   = k × the headline type size AS BUILT in this size
+ *   3. floor  = the pill that still gives an 18px label at the master's
+ *               label share (18 ÷ 0.68 = 26px for a search pill), never
+ *               under the studio / designer minimum; ceiling = the zone's
+ *   4. label  = pill × the master's label share (0.66–0.68 search pill,
+ *               0.42 DV360 button)
+ *   5. the label's CAP HEIGHT is centred on the pill's centre line
+ *   6. icon   = 0.74 × pill, concentric in the right-hand round end
+ *
+ * So the pill always reads at the same weight against the heading as it
+ * does in the file the designer uploaded.
+ */
+export function pillHeightFromHeadline(input: {
+  masterPillH: number;
+  masterHeadlinePx?: number | null;
+  headlinePx?: number | null;
+  /** Used when either headline size is unknown (no live headline). */
+  fallbackH: number;
+  labelRatio: number;
+  minH: number;
+  maxH: number;
+  recipeFloorPx?: number;
+  comfortLabelPx?: number;
+}): { h: number; k: number | null; atFloor: boolean } {
+  const comfort = input.comfortLabelPx ?? 18;
+  const floor = Math.max(input.minH, Math.min(input.recipeFloorPx ?? Infinity, comfort / Math.max(0.2, input.labelRatio)));
+  const known = !!input.masterHeadlinePx && input.masterHeadlinePx > 0 && !!input.headlinePx && input.headlinePx > 0 && input.masterPillH > 0;
+  const k = known ? clamp(input.masterPillH / (input.masterHeadlinePx as number), 0.12, 0.9) : null;
+  const want = k !== null ? k * (input.headlinePx as number) : input.fallbackH;
+  const h = clamp(Math.max(want, floor), input.minH, input.maxH);
+  return { h, k, atFloor: want < floor };
+}
+
 const ICON_SHARE = 0.74; // icon diameter as a share of pill height (23.8 in 32.2)
 const iconInsetFor = (h: number) => (h - h * ICON_SHARE) / 2;
 

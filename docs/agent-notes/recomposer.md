@@ -199,3 +199,50 @@ file (was up to 12%).
   too small for its space: headline height now follows the photo zone's
   aspect, interpolated between the two masters (0.32 of zone height at
   aspect 1.14 → 0.45 at 1.9), never below the class recipe's value.
+
+## The pill formula (2026-09-19, designer ruling)
+
+"The size of the pills needs a formula they follow, including the text
+centred to the height, and pills relative to the heading as in the original
+upload." The formula lives in `lib/ctaPlan.ts` (`pillHeightFromHeadline`,
+`planCta`) and is enforced for every engine by `lib/pillRule.ts`:
+
+1. `k` = master pill height ÷ master headline type size (Get Ready: 0.30
+   portrait, 0.29 wide — the studio holds it constant).
+2. pill = `k` × the headline type size as built in this size.
+3. floor = the pill that still gives an 18px label at the master's label
+   share (26px for a search pill), never under the studio / designer
+   minimum (24px); ceiling = 40% of the panel. Strips are the exception:
+   their heading is set by the strip's height, so the pill takes the
+   recipe's share of that height. An approved piece's measured pill share
+   still leads when one exists.
+4. label = pill × the master's label share (0.66–0.68 search pill, 0.42
+   DV360 button); when the zone is too narrow the label takes the largest
+   size that fits on ONE line with the icon.
+5. the label's cap height is centred on the pill's centre line
+   (`baselineFit: "cap"` frame) — PNG, editor and HTML5 agree to <1px.
+6. icon = 0.74 × pill, concentric in the right-hand round end, centred on
+   the same line.
+
+Sub-line and message sizes hang off the heading the same way: the master's
+own sub : headline and message : headline ratios (0.29 / 0.27 on Get Ready),
+unless an approved piece measured different ones.
+
+`applyPillRule` runs in `adaptOne` after whichever engine built the piece
+(not on the designer's own InDesign sizes): it re-centres label and icon and
+adds a "Check:" note when the pill's size against the heading has drifted
+more than 30% from the original. It never resizes (neighbours would move).
+
+## HTML5 export (2026-09-19)
+
+- Pill, label and icon are one `.cta-unit` group with one entrance, last of
+  the copy. As separate layers the icon arrived first.
+- Artwork = the photo (and a cut-out). Bands, lockups and the pill icon are
+  not artwork: a Ken Burns preset used to zoom the lockup and the icon.
+- Panels, scrims and bands are still from the first frame; the stage wears
+  the artwork's ground colour. No white flash.
+- Cap-height copy frames use an inline-block strut so the baseline lands on
+  the frame bottom in any font.
+- Weight: cover-fit photos are cropped to the part on the canvas (+5% for
+  motion) before the 2× resize; opaque RGBA goes JPEG; only the National 2
+  weights a banner sets are packaged. 160×600 went 572KB → 136KB.

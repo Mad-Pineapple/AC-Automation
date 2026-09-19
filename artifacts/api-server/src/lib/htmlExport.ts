@@ -21,6 +21,7 @@
 import JSZip from "jszip";
 import sharp from "sharp";
 import type { FreeformConfig, FreeformElement, FreeformImage, FreeformRect, FreeformText } from "./freeform";
+import { inferSlots } from "./slots";
 
 export interface CreativeTags {
   token: string;
@@ -103,6 +104,8 @@ export interface RenderedStage {
   copyMotion: CopyMotion;
   storyFrames: boolean;
   wipeStage: boolean;
+  /** Ground colour of the artwork, worn by the stage. */
+  bg?: string;
 }
 
 export interface HtmlPackage {
@@ -174,6 +177,43 @@ async function optimizeForExport(
     return { bytes: await pipeline.jpeg({ quality: 82, mozjpeg: true }).toBuffer(), contentType: "image/jpeg" };
   } catch {
     return { bytes, contentType };
+  }
+}
+
+/**
+ * A cover-fit photograph is usually far larger than the part of it a banner
+ * can show: the 160×600 Storms photo is a 467×418 box on a 160px canvas, and
+ * two thirds of its pixels were shipped to sit outside the stage. Crop to
+ * the part that falls on the canvas (plus a margin the artwork motion can
+ * move into) before the resize. Returns the box the cropped image occupies.
+ */
+async function cropToCanvas(
+  bytes: Buffer,
+  el: FreeformImage,
+  canvasW: number,
+  canvasH: number,
+  margin: number,
+): Promise<{ bytes: Buffer; box: { x: number; y: number; w: number; h: number } } | null> {
+  try {
+    if (el.fit !== "cover" || (el.radius ?? 0) > 0) return null;
+    const meta = await sharp(bytes, { failOn: "none" }).metadata();
+    const nw = meta.width ?? 0, nh = meta.height ?? 0;
+    if (nw < 2 || nh < 2 || el.w < 2 || el.h < 2) return null;
+    const vx0 = Math.max(0, -el.x - margin), vy0 = Math.max(0, -el.y - margin);
+    const vx1 = Math.min(el.w, canvasW - el.x + margin), vy1 = Math.min(el.h, canvasH - el.y + margin);
+    if (vx1 - vx0 < 2 || vy1 - vy0 < 2) return null;
+    // Only worth it when a real share of the picture is off-stage.
+    if ((vx1 - vx0) * (vy1 - vy0) > el.w * el.h * 0.8) return null;
+    const k = Math.max(el.w / nw, el.h / nh);
+    const dw = nw * k, dh = nh * k;
+    const ox = (el.w - dw) * (el.focusX ?? 0.5), oy = (el.h - dh) * (el.focusY ?? 0.5);
+    const left = Math.max(0, Math.floor((vx0 - ox) / k)), top = Math.max(0, Math.floor((vy0 - oy) / k));
+    const width = Math.min(nw - left, Math.ceil((vx1 - vx0) / k)), height = Math.min(nh - top, Math.ceil((vy1 - vy0) / k));
+    if (width < 2 || height < 2) return null;
+    const out = await sharp(bytes, { failOn: "none" }).extract({ left, top, width, height }).toBuffer();
+    return { bytes: out, box: { x: el.x + vx0, y: el.y + vy0, w: vx1 - vx0, h: vy1 - vy0 } };
+  } catch {
+    return null;
   }
 }
 
@@ -255,7 +295,17 @@ export async function buildHtmlPackage(opts: HtmlExportOptions): Promise<HtmlPac
 
   // Fonts: embedded from the deployment's own files.
   const fontFaces: string[] = [];
+  // Only the weights this banner sets: every package carried both National 2
+  // files (95KB) though most banners set bold alone.
+  const brandWeights = new Set<number>();
+  for (const e of config.elements) {
+    if (e.type !== "text") continue;
+    const fam = (e.fontFamily ?? "").toLowerCase();
+    if (fam && fam !== "national 2" && fam !== brandFont.toLowerCase()) { brandWeights.add(e.fontWeight === 700 ? 700 : 400); continue; }
+    brandWeights.add(e.fontWeight === 700 ? 700 : 400);
+  }
   for (const f of opts._skipFonts ? [] : FONT_FILES) {
+    if (brandWeights.size > 0 && !brandWeights.has(f.weight)) continue;
     const asset = await opts.loadAsset(f.src);
     if (asset) {
       let ref = f.file;
@@ -334,7 +384,8 @@ export async function buildHtmlPackage(opts: HtmlExportOptions): Promise<HtmlPac
   let seq = 0;
   const delayFor = (el: FreeformElement): number => {
     // Entrance order: artwork first, then shapes, then copy, logo last.
-    if (el.type === "image" && el.role === "logo") return 0.9;
+    if (el.type === "image" && (el.role === "logo" || el.slot === "lockup")) return 0.9;
+    if (el.type === "image" && !isArt(el)) return 0.75;
     if (el.type === "image") return 0;
     if (el.type === "rect") return 0.15;
     return 0.45 + Math.min(0.3, (seq++) * 0.12);
@@ -342,7 +393,7 @@ export async function buildHtmlPackage(opts: HtmlExportOptions): Promise<HtmlPac
   /** Story frames: which frame an element belongs to (artwork/scrim always on). */
   const frameOf = (el: FreeformElement): 0 | 1 | 2 | 3 => {
     if (el.type === "rect") return 0;
-    if (el.type === "image") return el.role === "logo" ? 3 : 0;
+    if (el.type === "image") return el.role === "logo" || el.slot === "lockup" ? 3 : 0;
     if (el.role === "headline") return 1;
     if (el.role === "cta") return 3;
     return 2; // subhead / body / other
@@ -361,8 +412,33 @@ export async function buildHtmlPackage(opts: HtmlExportOptions): Promise<HtmlPac
   const copyMotion: CopyMotion = opts.copyMotion ?? legacy.copy;
   const storyFrames = opts.storyFrames ?? legacy.frames;
   const copyLead = artMotion === "wipe" ? 0.8 : 0.3;
-  const isArt = (el: FreeformElement) => el.type === "image" && el.role !== "logo";
-  const isCopy = (el: FreeformElement) => el.type === "text" || (el.type === "image" && el.role === "logo");
+  // Artwork is the photograph (and a cut-out riding on it). Bands, lockups
+  // and the pill's icon are furniture or copy: they used to be treated as
+  // artwork, so a Ken Burns preset slowly zoomed the logo lockup and the
+  // search icon along with the photo.
+  const isArt = (el: FreeformElement) =>
+    el.type === "image" && (el.slot === "photo" || el.slot === "cutout" || (!el.slot && el.role === "product"));
+  const isStill = (el: FreeformElement) => el.type === "rect" || (el.type === "image" && el.slot === "band");
+  const isCopy = (el: FreeformElement) => el.type === "text" || (el.type === "image" && !isArt(el) && !isStill(el));
+
+  // The call-to-action is ONE object: pill, label and icon enter together.
+  // As separate layers the icon arrived first (it counted as artwork), then
+  // the pill faded in, then the label rose into it.
+  const ctaUnit = (() => {
+    if (useKv) return null;
+    const bySlot = (slot: string) => config.elements.find((e) => e.slot === slot);
+    let cta = bySlot("cta"), label = bySlot("ctaLabel"), icon = bySlot("ctaIcon");
+    if (!cta) {
+      const sem = inferSlots(config, width, height);
+      const byId = (id?: string) => (id ? config.elements.find((e) => e.id === id) : undefined);
+      cta = byId(sem.cta?.id); label = byId(sem.ctaLabel?.id); icon = byId(sem.ctaIcon?.id);
+    }
+    if (!cta || !label || label.type !== "text" || (cta.type !== "rect" && cta.type !== "image")) return null;
+    const cx = label.x + label.w / 2, cy = label.y + label.h / 2;
+    if (cx < cta.x || cx > cta.x + cta.w || cy < cta.y || cy > cta.y + cta.h) return null;
+    return { cta, members: [cta, label, ...(icon ? [icon] : [])] as FreeformElement[] };
+  })();
+  const inUnit = (el: FreeformElement) => !!ctaUnit && ctaUnit.members.includes(el);
 
   const animFor = (el: FreeformElement): string => {
     // Key-visual choreography replaces every preset for this artwork: layers
@@ -382,8 +458,10 @@ export async function buildHtmlPackage(opts: HtmlExportOptions): Promise<HtmlPac
         default: return ""; // none / wipe (wipe is applied to the stage)
       }
     }
-    // Shapes (scrims/panels) simply fade in with the artwork.
-    if (el.type === "rect") return artMotion === "none" && copyMotion === "none" ? "" : `animation:fadein .6s ease-out .15s both`;
+    // Panels, scrims and pattern bands are the page itself: they are there
+    // from the first frame. Fading them in showed a white stage with the
+    // photo and a lone icon on it for the first half second.
+    if (isStill(el)) return "";
     // Copy + logo.
     if (storyFrames) {
       const f = frameOf(el);
@@ -410,16 +488,30 @@ export async function buildHtmlPackage(opts: HtmlExportOptions): Promise<HtmlPac
   };
   const accent = opts.accentColor ?? "#11263d";
 
-  for (const el of config.elements) {
-    const base = `position:absolute;left:${el.x}px;top:${el.y}px;width:${el.w}px;height:${el.h}px;opacity:${el.opacity ?? 1}`;
-    const anim = animFor(el);
+  const artMargin = artMotion === "none" || artMotion === "wipe" ? 0 : Math.round(Math.max(width, height) * 0.05);
+  /** One element's markup. `dx/dy` re-base it inside a group box. */
+  const renderEl = async (el: FreeformElement, anim: string, dx = 0, dy = 0): Promise<string> => {
+    const body: string[] = [];
+    let base = `position:absolute;left:${el.x - dx}px;top:${el.y - dy}px;width:${el.w}px;height:${el.h}px;opacity:${el.opacity ?? 1}`;
     if (el.type === "rect") {
       body.push(`<div class="el rect" style="${base};${rectStyle(el)};${anim}"></div>`);
     } else if (el.type === "image") {
       let src = "";
       if (el.src) {
-        const raw = await opts.loadAsset(el.src);
-        const asset = raw ? await optimizeForExport(raw.bytes, raw.contentType, el.w, el.h) : null;
+        let raw = await opts.loadAsset(el.src);
+        let boxW = el.w, boxH = el.h;
+        if (raw && !useKv && isArt(el) && el.slot !== "cutout") {
+          const cropped = await cropToCanvas(raw.bytes, el, width, height, artMargin);
+          if (cropped) {
+            raw = { ...raw, bytes: cropped.bytes };
+            boxW = cropped.box.w; boxH = cropped.box.h;
+            // The motion's origin stays on the same point of the picture.
+            const fxPx = (el.focusX ?? 0.5) * el.w - (cropped.box.x - el.x), fyPx = (el.focusY ?? 0.5) * el.h - (cropped.box.y - el.y);
+            base = `position:absolute;left:${cropped.box.x - dx}px;top:${cropped.box.y - dy}px;width:${boxW}px;height:${boxH}px;opacity:${el.opacity ?? 1}`;
+            anim = anim.replace(/transform-origin:[^;]+/, `transform-origin:${Math.round(fxPx)}px ${Math.round(fyPx)}px`);
+          }
+        }
+        const asset = raw ? await optimizeForExport(raw.bytes, raw.contentType, boxW, boxH) : null;
         if (asset) {
           if (opts.inline) {
             src = `data:${asset.contentType};base64,${asset.bytes.toString("base64")}`;
@@ -463,7 +555,7 @@ export async function buildHtmlPackage(opts: HtmlExportOptions): Promise<HtmlPac
           parts.push(`<img class="el img part" src="${esc(psrc)}" alt="" style="position:absolute;left:${Math.round(part.fx * el.w)}px;top:${Math.round(part.fy * el.h)}px;width:${pw}px;height:${ph}px;object-fit:fill;${panim}">`);
         }
         body.push(`<div class="el group ${el.role}" style="${base};${anim}">\n${parts.join("\n")}\n</div>`);
-        continue;
+        return body.join("\n");
       }
       body.push(
         `<img class="el img ${el.role}" src="${esc(src)}" alt=""${dyn} style="${base};${imageStyle(el)};${anim}">`,
@@ -471,11 +563,11 @@ export async function buildHtmlPackage(opts: HtmlExportOptions): Promise<HtmlPac
     } else if (el.type === "text") {
       const key = dynamicKey(el);
       const dyn = key ? ` data-dynamic="${key}"` : "";
-      const extraCls = !storyFrames && copyMotion === "typewriter" ? " tw" : "";
+      const extraCls = !storyFrames && copyMotion === "typewriter" && typing ? " tw" : "";
       const blockDelay = (copyLead + delayFor(el)).toFixed(2);
       const blockMarkup =
-        !storyFrames && copyMotion === "block"
-          ? `<div class="block-reveal" style="position:absolute;left:${el.x}px;top:${el.y}px;width:${el.w}px;height:${el.h}px;background:${accent};animation:blockwipe .9s cubic-bezier(.7,0,.3,1) ${blockDelay}s both;transform-origin:left center;pointer-events:none"></div>\n`
+        !storyFrames && copyMotion === "block" && typing
+          ? `<div class="block-reveal" style="position:absolute;left:${el.x - dx}px;top:${el.y - dy}px;width:${el.w}px;height:${el.h}px;background:${accent};animation:blockwipe .9s cubic-bezier(.7,0,.3,1) ${blockDelay}s both;transform-origin:left center;pointer-events:none"></div>\n`
           : "";
       // Cap-height frames (baselineFit "cap"): the frame hugs the capitals
       // and the PNG renderer sits the baseline on the frame's bottom edge.
@@ -491,15 +583,51 @@ export async function buildHtmlPackage(opts: HtmlExportOptions): Promise<HtmlPac
         body.push(
           `${blockMarkup}<div class="el text ${el.role}" style="${base};${textStyle(el, brandFont)};line-height:0;white-space:nowrap;${anim}"><span style="display:inline-block;width:0;height:${el.h}px"></span><span class="capline${extraCls}"${dyn} data-delay="${delay}">${esc(el.text)}</span></div>`,
         );
-        continue;
+        return body.join("\n");
       }
       body.push(
         `${blockMarkup}<div class="el text ${el.role}${extraCls}"${dyn} data-delay="${(copyLead + delayFor(el)).toFixed(2)}" style="${base};${textStyle(el, brandFont)};${anim}">${esc(el.text)}</div>`,
       );
     }
+    return body.join("\n");
+  };
+
+  // The pill unit's own entrance: last of the copy, before the lockup.
+  const unitAnim = (): string => {
+    if (storyFrames) return `animation:frame3 ${D}s ease-in-out ${L} both`;
+    if (preset === "getready") return `animation:pop .5s cubic-bezier(.34,1.56,.64,1) ${(D * 0.8).toFixed(2)}s both`;
+    const d = (copyLead + 0.8).toFixed(2);
+    switch (copyMotion) {
+      case "none": return "";
+      case "fade": case "typewriter": case "block": return `animation:fadein .6s ease-out ${d}s both`;
+      case "pan": return `animation:pan .7s cubic-bezier(.2,.8,.2,1) ${d}s both`;
+      case "pop": return `animation:pop .55s cubic-bezier(.34,1.56,.64,1) ${d}s both`;
+      case "wipe": return `animation:wipein .7s cubic-bezier(.4,0,.2,1) ${d}s both`;
+      default: return `animation:enter .6s ease-out ${d}s both`;
+    }
+  };
+
+  let typing = true;
+  for (const el of config.elements) {
+    if (ctaUnit && el === ctaUnit.cta) {
+      const c = ctaUnit.cta;
+      typing = false;
+      const inner: string[] = [];
+      for (const m of ctaUnit.members) inner.push(await renderEl(m, "", c.x, c.y));
+      typing = true;
+      body.push(`<div class="el group cta-unit" style="position:absolute;left:${c.x}px;top:${c.y}px;width:${c.w}px;height:${c.h}px;transform-origin:50% 50%;${unitAnim()}">\n${inner.join("\n")}\n</div>`);
+      continue;
+    }
+    if (inUnit(el)) continue;
+    body.push(await renderEl(el, animFor(el)));
   }
 
+  // The stage wears the artwork's ground colour, so nothing ever flashes
+  // white behind a layer that is still arriving.
+  const ground = config.elements.find((e): e is FreeformRect => e.type === "rect" && !e.gradient && (e.opacity ?? 1) >= 1 && e.w >= width * 0.95 && e.h >= height * 0.95 && /^#[0-9a-f]{3,8}$/i.test(e.fill ?? ""));
+  const stageBg = ground?.fill ?? "#ffffff";
   const stage: RenderedStage = {
+    bg: stageBg,
     width, height, format: `${width}x${height}`,
     body: body.join("\n"),
     keyframes: useKv ? kvKeyframes.join("\n") : "",
@@ -530,9 +658,9 @@ export async function buildHtmlPackage(opts: HtmlExportOptions): Promise<HtmlPac
 <style>
 ${fontFaces.join("\n")}
 html,body{margin:0;padding:0;background:transparent}
-#stage{position:relative;width:${width}px;height:${height}px;overflow:hidden;background:#ffffff;transform-origin:top left}
+#stage{position:relative;width:${width}px;height:${height}px;overflow:hidden;background:${stageBg};transform-origin:top left}
 #fluid{position:relative;width:100%;}
-.el{box-sizing:border-box}
+.el{box-sizing:border-box;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale}
 .img{display:block}
 ${SHARED_KEYFRAMES}
 ${useKv ? kvKeyframes.join("\n") : artMotion === "wipe" ? `#stage{animation:wipe .9s cubic-bezier(.4,0,.2,1) both}` : ""}
@@ -736,7 +864,7 @@ export async function buildResponsiveHtmlPackage(opts: ResponsiveHtmlOptions): P
   });
   const landing = opts.clickUrl ? `${opts.clickUrl}${opts.clickUrl.includes("?") ? "&" : "?"}${utm.toString()}` : "";
   const sizeCss = stages.map((st, i) =>
-    `#s${i}{width:${st.width}px;height:${st.height}px}\n@media (width:${st.width}px) and (height:${st.height}px){.stage{display:none}#s${i}{display:block}}${st.wipeStage ? `\n#s${i}{animation:wipe .9s cubic-bezier(.4,0,.2,1) both}` : ""}${st.keyframes ? `\n${st.keyframes}` : ""}`,
+    `#s${i}{width:${st.width}px;height:${st.height}px${st.bg ? `;background:${st.bg}` : ""}}\n@media (width:${st.width}px) and (height:${st.height}px){.stage{display:none}#s${i}{display:block}}${st.wipeStage ? `\n#s${i}{animation:wipe .9s cubic-bezier(.4,0,.2,1) both}` : ""}${st.keyframes ? `\n${st.keyframes}` : ""}`,
   ).join("\n");
   const stageMarkup = stages.map((st, i) =>
     `<div class="stage${i === 0 ? " on" : ""}" id="s${i}" data-w="${st.width}" data-h="${st.height}" data-format="${st.format}" data-animation="${st.animation}" data-motion-source="${st.motionSource}" data-artwork-motion="${st.artworkMotion}" data-copy-motion="${st.copyMotion}" data-story-frames="${st.storyFrames}" data-duration="${st.durationSec}" data-loops="${st.loops}">\n${st.body}\n<a href="javascript:void(0)" class="clicktag" aria-label="${esc(tags.name)}"></a>\n</div>`,
@@ -758,7 +886,7 @@ html,body{margin:0;padding:0;background:transparent;width:100%;height:100%}
 #fluid{position:relative;width:100%;height:100%;overflow:hidden}
 .stage{position:absolute;left:0;top:0;overflow:hidden;background:#ffffff;transform-origin:top left;display:none}
 .stage.on{display:block}
-.el{box-sizing:border-box}
+.el{box-sizing:border-box;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale}
 .img{display:block}
 ${SHARED_KEYFRAMES}
 ${sizeCss}

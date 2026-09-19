@@ -9,6 +9,8 @@ import { collectBrandPaletteHexes } from "../lib/colorAdapter";
 import { composeKeyVisualAdaptation, findKvBackground } from "../lib/kvAdapt";
 import { recomposeToFormat, shouldRecompose } from "../lib/recompose";
 import { checkLayout, checkMandatory } from "../lib/layoutCheck";
+import { applyPillRule } from "../lib/pillRule";
+import { prepareMeasurement } from "../lib/textMeasure";
 import { scoreGeometry, scoreContrast, contrastBaseline, type PrincipleScores } from "../lib/principles";
 import { ensureSubjects, detectSubject } from "../lib/subjectDetect";
 import type { ImageLoader } from "../lib/renderFreeform";
@@ -387,6 +389,23 @@ async function adaptOne(
       method = "scaled";
     }
   }
+  // The pill rule holds whichever engine ran (lib/pillRule.ts): label cap
+  // height and icon centred on the pill, pill size checked against the
+  // heading as in the original. The designer's own InDesign sizes are left
+  // exactly as exported.
+  const pillRule = async (cfg: FreeformConfig, m: string): Promise<FreeformConfig> => {
+    if (m.startsWith("indesign")) return cfg;
+    try {
+      await prepareMeasurement();
+      const ruled = applyPillRule(cfg, width, height, { config: masterConfig, width: master.width, height: master.height });
+      for (const n of ruled.notes) if (!notes.includes(n)) notes.push(n);
+      return ruled.config;
+    } catch (err) {
+      log?.warn({ err }, "pill rule failed; layout left as built");
+      return cfg;
+    }
+  };
+  adapted = await pillRule(adapted, method);
   // The hard gate: an automated layout that lost a mandatory element,
   // undersized the logo or let copy collide is rejected, not merely noted.
   const partRulesForGate = (styleSpec?.partRules ?? {}) as Record<string, { minPx?: number; neverOverlap?: string[]; dropWhenTight?: boolean }>;
@@ -402,8 +421,9 @@ async function adaptOne(
     attempts.push({ label: "scaled", run: async () => adaptFreeformConfig(masterConfig, master.width, master.height, width, height) });
     for (const attempt of attempts) {
       try {
-        const alt = await attempt.run();
-        if (!alt) continue;
+        const built = await attempt.run();
+        if (!built) continue;
+        const alt = await pillRule(built, attempt.label);
         const altRejected = gate(alt);
         if (altRejected.length < rejected.length) {
           notes.push(`Rebuilt with the ${attempt.label.replace(":", " ")} engine: the ${method.replace(":", " ")} result was rejected (${rejected.join(" ")}).`);

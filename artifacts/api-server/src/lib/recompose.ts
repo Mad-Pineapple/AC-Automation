@@ -22,7 +22,7 @@ import { aspectDistance, classifyAspect, classifyBudget, needsRebuild, type Form
 import { inferSlots, type Box, type SemanticMaster } from "./slots";
 import { recipeFor, type Recipe } from "./recipes";
 import { fitText, prepareMeasurement, type FontSpec, capHeightPx, fontResolution } from "./textMeasure";
-import { planCta, masterLabelRatio, type CtaPlan } from "./ctaPlan";
+import { planCta, masterLabelRatio, pillHeightFromHeadline, type CtaPlan } from "./ctaPlan";
 import { LABEL_FLOOR_PX, type RuleLayer } from "./partRulesLayer";
 import { guidelineLogoPlacement, isSocialSquare } from "./logoRules";
 import { ObjectStorageService } from "./objectStorage";
@@ -434,7 +434,7 @@ export async function recomposeToFormat(
   // real pill instead of an estimate it later overlaps.
   const CTA_MIN_PX = rules?.rules.cta?.minPx ?? (budget === "micro" ? 18 : 24);
   const COMFORT_LABEL_PX = 18;
-  const ctaPlanned = (): CtaPlan | null => {
+  const ctaPlanned = (headlinePx?: number): CtaPlan | null => {
     if (!sem.cta || !keep.has("cta")) return null;
     const cta = sem.cta;
     const maxH = recipe.axis === "row" ? dstH * 0.64 : panelZone.h * 0.4;
@@ -444,8 +444,23 @@ export async function recomposeToFormat(
     // same 18px label needs only a 27px pill — the shipped 384×592 pill is
     // 28.9px, and forcing 43px there cost it the icon and the message.
     const labelShare = sem.ctaLabel ? masterLabelRatio({ ctaH: cta.h, ctaW: cta.w, labelFontSize: sem.ctaLabel.fontSize }) : 0.42;
-    const floorH = Math.min(recipe.ctaFloorPx, COMFORT_LABEL_PX / labelShare);
-    const targetH = Math.max(floorH, short * recipe.ctaHeightFrac);
+    // The pill formula (lib/ctaPlan.ts): the pill keeps the master's
+    // proportion to the HEADING as built here. Strips are the exception —
+    // their heading is set by the strip's height, so the pill takes the
+    // recipe's share of that height instead.
+    const pill = pillHeightFromHeadline({
+      masterPillH: cta.h,
+      // An approved piece's own measured pill share leads when there is one.
+      masterHeadlinePx: recipe.axis === "row" || ovAll.ctaHeightFrac != null ? null : sem.headline?.fontSize,
+      headlinePx: recipe.axis === "row" || ovAll.ctaHeightFrac != null ? null : headlinePx,
+      fallbackH: short * recipe.ctaHeightFrac,
+      labelRatio: labelShare,
+      minH: CTA_MIN_PX,
+      maxH,
+      recipeFloorPx: recipe.ctaFloorPx,
+      comfortLabelPx: COMFORT_LABEL_PX,
+    });
+    const targetH = pill.h;
     if (!sem.ctaLabel) {
       // A pill with no live label keeps the master's proportions.
       const aspect = cta.w / Math.max(1, cta.h) || 4;
@@ -528,7 +543,11 @@ export async function recomposeToFormat(
       const sub = sem.subheadline;
       if (sub && keep.has("subheadline")) {
         const subText = sub.text.replace(/\s+/g, " ").trim();
-        const subMax = Math.max(sublineMin, r(fit.fontSize * recipe.subheadRatio));
+        // The type scale hangs off the heading as it does in the upload:
+        // the master's own sub-line : headline ratio, unless an approved
+        // piece measured a different one.
+        const subRatio = ovAll.subheadRatio ?? clamp(sub.fontSize / Math.max(1, hl.fontSize), 0.15, 0.6);
+        const subMax = Math.max(sublineMin, r(fit.fontSize * subRatio));
         // One line first, as on every master (the sub-line runs 83% of the
         // zone at 0.29 of the headline); it may give up a fifth of its size
         // to stay on one line before it is allowed to break in two.
@@ -588,7 +607,8 @@ export async function recomposeToFormat(
   if (recipe.axis !== "row" && sem.message && keep.has("message")) {
     const msg = sem.message;
     const text = msg.text.replace(/\s+/g, " ").trim();
-    const maxSize = Math.max(messageMin, r(headlineSize * recipe.messageMaxRatio));
+    const msgRatio = ovAll.messageMaxRatio ?? (sem.headline ? clamp(msg.fontSize / Math.max(1, sem.headline.fontSize), 0.12, 0.5) : recipe.messageMaxRatio);
+    const maxSize = Math.max(messageMin, r(headlineSize * msgRatio));
     const w = r(panelZone.w * 0.85);
     const fit = fitText(text, { w, h: maxSize * 2.5 }, { ...fontSpec(msg), minSize: messageMin, maxSize, lineHeight: 1.15, maxLines: 2 });
     if (fit.fits) {
@@ -600,7 +620,8 @@ export async function recomposeToFormat(
     }
   }
 
-  const ctaPlan = ctaPlanned();
+  const builtHeadline = elements.find((e) => e.id === "rc_headline") as FreeformText | undefined;
+  const ctaPlan = ctaPlanned(builtHeadline?.fontSize);
   if (sem.cta && ctaPlan) {
     const cta = sem.cta;
     const ctaW = ctaPlan.w;
