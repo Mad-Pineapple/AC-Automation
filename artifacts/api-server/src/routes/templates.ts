@@ -22,7 +22,7 @@ import { adaptGeometryProfile } from "../lib/geometryAdapt";
 import { adaptAuthoritativeConfig, adaptAuthoritativeBetween, selectAuthoritativeSource, nearestAuthoritativeSource, targetBetweenMasters, masterAxis } from "../lib/authoritativeAdapt";
 import { contentCoverage } from "../lib/layoutCheck";
 import { ruleLayerFor } from "../lib/partRulesLayer";
-import { guidelinesForConfig, guidelineNotes, topicsPerElement } from "../lib/guidelines";
+import { guidelinesForConfig, topicsPerElement } from "../lib/guidelines";
 import type { StyleSchema } from "../lib/styleSpecs/getReadyBurst2";
 import { visibleBounds } from "../lib/gwdImport";
 
@@ -473,7 +473,7 @@ async function adaptOne(
   // every new one, so the lesson is in front of whoever reviews it.
   let feedbackLine: string | null = null;
   if (!(masterConfig.sourceMode === "indesign-bridge" && masterConfig.authoritativeGeometry)) try {
-    feedbackLine = describeFormatFeedback(await feedbackForFormat(spec.formatClass));
+    feedbackLine = describeFormatFeedback(await feedbackForFormat(spec.formatClass, { masterId: master.id, masterName: master.name }));
   } catch {
     feedbackLine = null;
   }
@@ -795,10 +795,12 @@ router.post("/templates/:id/adapt", requireAdmin, async (req, res): Promise<void
     let elementGuidelines: Awaited<ReturnType<typeof guidelinesForConfig>> = [];
     try {
       elementGuidelines = await guidelinesForConfig(brand?.id ?? null, adaptedConfig, width, height, 3);
-      const gl = elementGuidelines;
-      const lines = guidelineNotes(gl);
-      if (lines.length) merged = normalizeFreeformConfig({ ...adaptedConfig, adaptNotes: [...(adaptedConfig.adaptNotes ?? []), ...lines] });
-    } catch { /* notes are a bonus */ }
+      // The passages are read for the AI guard below. They are no longer
+      // copied into the piece's notes: a first sentence lifted from a
+      // keyword-matched passage was usually beside the point (an events-logo
+      // rule on an emergency piece) and buried the notes that matter. The
+      // editor shows them on request ("Guidelines for this piece").
+    } catch { /* guidelines are a bonus */ }
     if (dryRun) {
       dryBuilt.push({ width, height, method, rejected: [...rejected], config: adaptedConfig });
       continue;

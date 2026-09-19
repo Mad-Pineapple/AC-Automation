@@ -72,6 +72,12 @@ router.post("/feedback", requireAuth, async (req, res): Promise<void> => {
   const faultV = typeof fault === "string" && (FEEDBACK_FAULTS as readonly string[]).includes(fault) ? fault : null;
   const expectedV = typeof expected === "string" && expected.trim() ? expected.trim().slice(0, 200) : null;
   const severityV = typeof severity === "string" && (FEEDBACK_SEVERITIES as readonly string[]).includes(severity) ? severity : null;
+  // A Wrong with no reason teaches nothing (19 of the first 27 had none).
+  // The form has required a fault since 8 Sept; the server now agrees.
+  if (verdict === "incorrect" && !faultV && !cleanNote) {
+    res.status(400).json({ error: "Say what is wrong: pick a fault or write a note." });
+    return;
+  }
   await ensureTable();
   // Snapshot what the verdict is about so it still teaches after the piece
   // is deleted (WIP gets cleared; the lesson must not go with it).

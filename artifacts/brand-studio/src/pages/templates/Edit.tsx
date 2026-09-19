@@ -247,6 +247,7 @@ export default function EditTemplate() {
 
 import { ADAPT_PRESETS } from "@/lib/adaptPresets";
 import { SizePicker } from "@/components/SizePicker";
+import { PieceGuidelines } from "@/components/PieceGuidelines";
 
 function AdaptDialog({ templateId, templateName, base }: { templateId: number; templateName: string; base: string }) {
   const [open, setOpen] = useState(false);
@@ -397,7 +398,14 @@ function FreeformEditSection({
   const layoutOptions = ((template.config as { layoutOptions?: LayoutOption[] })?.layoutOptions ?? []) as LayoutOption[];
   // What the adapt engine did to derive this size, and what to check.
   const adaptMethod = (template.config as { adaptMethod?: string }).adaptMethod ?? null;
-  const adaptNotes = ((template.config as { adaptNotes?: string[] }).adaptNotes ?? []) as string[];
+  // What needs a designer's eye comes first; guideline reminders carried by
+  // older pieces move to the "Guidelines for this piece" panel.
+  const notePriority = (n: string) => (n.startsWith("Rejected") ? 0 : n.startsWith("Check:") ? 1 : /^(Review:|.*(dropped|left out|Left out))/.test(n) ? 2 : 3);
+  const adaptNotes = (((template.config as { adaptNotes?: string[] }).adaptNotes ?? []) as string[])
+    .filter((n) => !n.startsWith("Guideline ("))
+    .map((n, i) => ({ n, i }))
+    .sort((a, b) => notePriority(a.n) - notePriority(b.n) || a.i - b.i)
+    .map((x) => x.n);
   // The headline element the options move: key-visual adapt names it
   // kv_headline, the recomposer rc_headline.
   const HEADLINE_IDS = ["kv_headline", "rc_headline"];
@@ -480,10 +488,11 @@ function FreeformEditSection({
               {adaptNotes.length > 0 && (
                 <ul className="mt-1 space-y-0.5 list-disc pl-4 text-muted-foreground">
                   {adaptNotes.map((n, i) => (
-                    <li key={i} className={n.startsWith("Check:") ? "text-amber-700" : undefined}>{n}</li>
+                    <li key={i} className={n.startsWith("Rejected") ? "text-red-700 font-medium" : n.startsWith("Check:") ? "text-amber-700" : undefined}>{n}</li>
                   ))}
                 </ul>
               )}
+              <PieceGuidelines templateId={template.id} />
             </div>
           )}
           {layoutOptions.length > 1 && (
@@ -551,7 +560,8 @@ function FreeformEditSection({
                   <Button variant="outline" onClick={() => setFlagEl(null)}>Cancel</Button>
                   <Button
                     variant="destructive"
-                    disabled={flagBusy}
+                    disabled={flagBusy || flagNote.trim().length < 3}
+                    title={flagNote.trim().length < 3 ? "Say what is wrong with it first" : undefined}
                     data-testid="element-flag-submit"
                     onClick={async () => {
                       if (!flagEl) return;

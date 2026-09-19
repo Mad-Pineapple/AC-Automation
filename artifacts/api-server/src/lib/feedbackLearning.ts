@@ -19,6 +19,7 @@
  * the notes and tunes lib/recipes.ts, so a mistaken thumbs-down can't silently
  * move the whole system.
  */
+import { styleSchemaFor } from "./styleSpecs/getReadyBurst2";
 import { db } from "@workspace/db";
 import { isFreeformConfig, normalizeFreeformConfig, type FreeformConfig } from "./freeform";
 import { sql } from "drizzle-orm";
@@ -127,18 +128,36 @@ const CACHE_MS = 60_000;
 /** Verdict counts and incorrect notes for adapted pieces of a format class.
  * Imports are excluded: a thumbs-down on an imported master is about the
  * import, not about how the class is rebuilt. */
-export async function feedbackForFormat(formatClass: FormatClass): Promise<FormatFeedback> {
-  const hit = cache.get(formatClass);
+/** Which campaign a piece belongs to: the named campaign schema its name
+ *  matches (every Get Ready import is one campaign), else the name of the
+ *  artwork it was made from (the part before " — "). */
+export function campaignKeyOf(name: string | null | undefined): string {
+  const n = (name ?? "").trim();
+  const named = styleSchemaFor(n);
+  if (named) return `schema:${named.id}`;
+  return `name:${n.split(" — ")[0].toLowerCase().replace(/\s+/g, " ").trim()}`;
+}
+
+/**
+ * Scoped to ONE campaign when `scope` is given: what a designer said about a
+ * Heritage Festival portrait says nothing about a Get Ready portrait, and
+ * the shape-wide summary put one campaign's verdicts on every other's pieces.
+ */
+export async function feedbackForFormat(formatClass: FormatClass, scope?: { masterId: number; masterName: string }): Promise<FormatFeedback> {
+  const scopeKey = scope ? campaignKeyOf(scope.masterName) : null;
+  const cacheKey = scope ? `${formatClass}|${scopeKey}|${scope.masterId}` : formatClass;
+  const hit = cache.get(cacheKey);
   if (hit && Date.now() - hit.at < CACHE_MS) return hit.value;
   await ensureFeedbackTable();
   const rows = await db.execute(sql`
-    SELECT verdict, note, element_label, element_slot, fault, expected, subject_width, subject_height
+    SELECT verdict, note, element_label, element_slot, fault, expected, subject_width, subject_height, subject_name, source_template_id
     FROM feedback
     WHERE subject_type = 'template' AND format_class = ${formatClass}
       AND adapt_method IS NOT NULL AND adapt_method <> 'import'
     ORDER BY id DESC LIMIT 200`);
   const value: FormatFeedback = { formatClass, correct: 0, incorrect: 0, notes: [] };
   for (const r of rows.rows as any[]) {
+    if (scope && Number(r.source_template_id) !== scope.masterId && campaignKeyOf(r.subject_name) !== scopeKey) continue;
     if (r.verdict === "correct") value.correct++;
     else if (r.verdict === "incorrect") value.incorrect++;
     if (r.verdict === "incorrect" && (r.note || r.fault) && value.notes.length < 6) {
@@ -149,14 +168,14 @@ export async function feedbackForFormat(formatClass: FormatClass): Promise<Forma
       value.notes.push(`${part}${[structured, free].filter(Boolean).join("; ")}${size}`);
     }
   }
-  cache.set(formatClass, { at: Date.now(), value });
+  cache.set(cacheKey, { at: Date.now(), value });
   return value;
 }
 
 /** Human line for adaptNotes, or null when designers have said nothing. */
 export function describeFormatFeedback(fb: FormatFeedback): string | null {
   if (fb.correct + fb.incorrect === 0) return null;
-  const head = `Designer feedback on ${fb.formatClass} formats: ${fb.correct} right, ${fb.incorrect} wrong.`;
+  const head = `Designer feedback on this campaign's ${fb.formatClass} formats: ${fb.correct} right, ${fb.incorrect} wrong.`;
   return fb.notes.length > 0 ? `${head} Wrong because: ${fb.notes.join("; ")}` : head;
 }
 
