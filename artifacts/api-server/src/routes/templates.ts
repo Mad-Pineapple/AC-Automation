@@ -700,6 +700,11 @@ router.post("/templates/:id/adapt", requireAdmin, async (req, res): Promise<void
     }
   }
   const created: (typeof templatesTable.$inferSelect)[] = [];
+  // dryRun: build every size exactly as a real adapt would and return the
+  // layouts, but save nothing. The regression baseline (tools/baseline) runs
+  // on this, so checking the engines never adds pieces to WIP.
+  const dryRun = req.body?.dryRun === true;
+  const dryBuilt: Array<{ width: number; height: number; method: string; rejected: string[]; config: FreeformConfig }> = [];
   let rejectedCount = 0;
   // Layout numbers: an explicit measured profile, else the newest profile
   // this master was measured into, else the hand-written schema by name.
@@ -751,6 +756,7 @@ router.post("/templates/:id/adapt", requireAdmin, async (req, res): Promise<void
     // particular, do not send it through adaptOne or Artwork Guard, both of
     // which are allowed to move or resize elements for a genuinely new size.
     if (width === sourceMaster.width && height === sourceMaster.height) {
+      if (dryRun) { dryBuilt.push({ width, height, method: "exact-clone", rejected: [], config: sourceConfig }); continue; }
       const cloneConfig = chosen ? JSON.parse(JSON.stringify(sourceConfig)) as Record<string, unknown> : exactCloneConfig;
       const [template] = await db
         .insert(templatesTable)
@@ -793,6 +799,10 @@ router.post("/templates/:id/adapt", requireAdmin, async (req, res): Promise<void
       const lines = guidelineNotes(gl);
       if (lines.length) merged = normalizeFreeformConfig({ ...adaptedConfig, adaptNotes: [...(adaptedConfig.adaptNotes ?? []), ...lines] });
     } catch { /* notes are a bonus */ }
+    if (dryRun) {
+      dryBuilt.push({ width, height, method, rejected: [...rejected], config: adaptedConfig });
+      continue;
+    }
     const name =
       typeof t.name === "string" && t.name.trim()
         ? requestedName
@@ -869,6 +879,10 @@ router.post("/templates/:id/adapt", requireAdmin, async (req, res): Promise<void
     created.push(template);
   }
 
+  if (dryRun) {
+    res.status(200).json({ dryRun: true, master: { id: master.id, name: master.name, width: master.width, height: master.height }, built: dryBuilt });
+    return;
+  }
   if (created.length === 0) {
     res.status(400).json({ error: "No valid adaptation targets supplied" });
     return;

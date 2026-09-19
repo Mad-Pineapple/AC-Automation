@@ -1,0 +1,2024 @@
+{
+ "master": {
+  "id": 1433,
+  "name": "AEM Get Ready burst 2_960x256 REAL2 — Quakes",
+  "width": 960,
+  "height": 256
+ },
+ "sizes": {
+  "970x250": {
+   "method": "scaled",
+   "rejected": [
+    "The sub-line is missing.",
+    "The message line is missing.",
+    "The call-to-action is missing.",
+    "The pattern band is missing.",
+    "The photograph is missing.",
+    "The logo tile / lockup is missing."
+   ],
+   "dropped": [],
+   "needsReview": false,
+   "elements": {
+    "idml_img_0": {
+     "slot": null,
+     "x": 0,
+     "y": 0,
+     "w": 469,
+     "h": 250,
+     "type": "image"
+    },
+    "idml_rect_1": {
+     "slot": null,
+     "x": 0,
+     "y": 0,
+     "w": 469,
+     "h": 211,
+     "type": "rect",
+     "fill": "#0c253b"
+    },
+    "idml_rect_2": {
+     "slot": null,
+     "x": 469,
+     "y": 0,
+     "w": 501,
+     "h": 250,
+     "type": "rect",
+     "fill": "#005b9f"
+    },
+    "idml_txt_3": {
+     "slot": null,
+     "x": 36,
+     "y": 69,
+     "w": 391,
+     "h": 68,
+     "fontSize": 107,
+     "type": "text",
+     "text": "QU:aK:es",
+     "baselineFit": "cap",
+     "align": "center"
+    },
+    "idml_txt_4": {
+     "slot": null,
+     "x": 47,
+     "y": 150,
+     "w": 371,
+     "h": 21,
+     "fontSize": 31,
+     "type": "text",
+     "text": "CAN STRIKE SUDDENLY",
+     "baselineFit": "cap",
+     "align": "center"
+    },
+    "idml_raster_5": {
+     "slot": null,
+     "x": 469,
+     "y": 0,
+     "w": 469,
+     "h": 42,
+     "type": "image"
+    },
+    "idml_txt_83": {
+     "slot": null,
+     "x": 590,
+     "y": 94,
+     "w": 266,
+     "h": 19,
+     "fontSize": 28,
+     "type": "text",
+     "text": "Make a plan today.",
+     "baselineFit": "cap",
+     "align": "center"
+    },
+    "idml_raster_86": {
+     "slot": null,
+     "x": 624,
+     "y": 184,
+     "w": 190,
+     "h": 46,
+     "type": "image"
+    },
+    "idml_rect_172": {
+     "slot": null,
+     "x": 589,
+     "y": 134,
+     "w": 260,
+     "h": 31,
+     "type": "rect",
+     "fill": "#ffffff",
+     "radius": 16.28
+    },
+    "idml_txt_173": {
+     "slot": null,
+     "x": 602,
+     "y": 142,
+     "w": 222,
+     "h": 15,
+     "fontSize": 21,
+     "type": "text",
+     "text": "Auckland emergency",
+     "baselineFit": "cap",
+     "align": "left"
+    },
+    "idml_raster_174": {
+     "slot": null,
+     "x": 822,
+     "y": 138,
+     "w": 23,
+     "h": 23,
+     "type": "image"
+    }
+   }
+  },
+  "728x90": {
+   "method": "recomposed:strip",
+   "rejected": [],
+   "dropped": [
+    "band",
+    "band",
+    "subheadline"
+   ],
+   "needsReview": true,
+   "elements": {
+    "rc_panel": {
+     "slot": "panel",
+     "x": 0,
+     "y": 0,
+     "w": 728,
+     "h": 90,
+     "type": "rect",
+     "fill": "#005b9f"
+    },
+    "rc_photo": {
+     "slot": "photo",
+     "x": 0,
+     "y": 0,
+     "w": 240,
+     "h": 128,
+     "type": "image"
+    },
+    "rc_scrim": {
+     "slot": "scrim",
+     "x": 0,
+     "y": 0,
+     "w": 218,
+     "h": 90,
+     "type": "rect",
+     "fill": "#0c253b"
+    },
+    "rc_panel_zone": {
+     "slot": "panel",
+     "x": 218,
+     "y": 0,
+     "w": 420,
+     "h": 90,
+     "type": "rect",
+     "fill": "#005b9f"
+    },
+    "rc_headline": {
+     "slot": "headline",
+     "x": 11,
+     "y": 18,
+     "w": 196,
+     "h": 54,
+     "fontSize": 54,
+     "type": "text",
+     "text": "QU:aK:es",
+     "align": "center"
+    },
+    "rc_message": {
+     "slot": "message",
+     "x": 239,
+     "y": 17,
+     "w": 378,
+     "h": 20,
+     "fontSize": 18,
+     "type": "text",
+     "text": "Make a plan today.",
+     "align": "center"
+    },
+    "rc_cta": {
+     "slot": "cta",
+     "x": 291,
+     "y": 42,
+     "w": 275,
+     "h": 32,
+     "type": "rect",
+     "fill": "#ffffff",
+     "radius": 16
+    },
+    "rc_cta_label": {
+     "slot": "ctaLabel",
+     "x": 304,
+     "y": 50.5,
+     "w": 232,
+     "h": 15,
+     "fontSize": 22,
+     "type": "text",
+     "text": "Auckland emergency",
+     "baselineFit": "cap",
+     "align": "left"
+    },
+    "rc_cta_icon": {
+     "slot": "ctaIcon",
+     "x": 538,
+     "y": 46,
+     "w": 24,
+     "h": 24,
+     "type": "image"
+    },
+    "rc_logo": {
+     "slot": "logo",
+     "x": 638,
+     "y": 0,
+     "w": 90,
+     "h": 90,
+     "type": "image"
+    }
+   }
+  },
+  "320x50": {
+   "method": "recomposed:strip",
+   "rejected": [],
+   "dropped": [
+    "band",
+    "band",
+    "subheadline"
+   ],
+   "needsReview": true,
+   "elements": {
+    "rc_panel": {
+     "slot": "panel",
+     "x": 0,
+     "y": 0,
+     "w": 320,
+     "h": 50,
+     "type": "rect",
+     "fill": "#005b9f"
+    },
+    "rc_photo": {
+     "slot": "photo",
+     "x": 0,
+     "y": 0,
+     "w": 132,
+     "h": 70,
+     "type": "image"
+    },
+    "rc_scrim": {
+     "slot": "scrim",
+     "x": 0,
+     "y": 0,
+     "w": 120,
+     "h": 50,
+     "type": "rect",
+     "fill": "#0c253b"
+    },
+    "rc_panel_zone": {
+     "slot": "panel",
+     "x": 120,
+     "y": 0,
+     "w": 150,
+     "h": 50,
+     "type": "rect",
+     "fill": "#005b9f"
+    },
+    "rc_headline": {
+     "slot": "headline",
+     "x": 6,
+     "y": 10,
+     "w": 108,
+     "h": 30,
+     "fontSize": 30,
+     "type": "text",
+     "text": "QU:aK:es",
+     "align": "center"
+    },
+    "rc_message": {
+     "slot": "message",
+     "x": 128,
+     "y": 6,
+     "w": 135,
+     "h": 12,
+     "fontSize": 11,
+     "type": "text",
+     "text": "Make a plan today.",
+     "align": "center"
+    },
+    "rc_cta": {
+     "slot": "cta",
+     "x": 130,
+     "y": 21,
+     "w": 131,
+     "h": 24,
+     "type": "rect",
+     "fill": "#ffffff",
+     "radius": 12
+    },
+    "rc_cta_label": {
+     "slot": "ctaLabel",
+     "x": 137,
+     "y": 30,
+     "w": 101,
+     "h": 6,
+     "fontSize": 9,
+     "type": "text",
+     "text": "Auckland emergency",
+     "baselineFit": "cap",
+     "align": "left"
+    },
+    "rc_cta_icon": {
+     "slot": "ctaIcon",
+     "x": 240,
+     "y": 24,
+     "w": 18,
+     "h": 18,
+     "type": "image"
+    },
+    "rc_logo": {
+     "slot": "logo",
+     "x": 270,
+     "y": 0,
+     "w": 50,
+     "h": 50,
+     "type": "image"
+    }
+   }
+  },
+  "300x250": {
+   "method": "recomposed:square",
+   "rejected": [],
+   "dropped": [
+    "message"
+   ],
+   "needsReview": true,
+   "elements": {
+    "rc_panel": {
+     "slot": "panel",
+     "x": 0,
+     "y": 0,
+     "w": 300,
+     "h": 250,
+     "type": "rect",
+     "fill": "#005b9f"
+    },
+    "rc_photo": {
+     "slot": "photo",
+     "x": -18,
+     "y": -28,
+     "w": 336,
+     "h": 179,
+     "type": "image"
+    },
+    "rc_scrim": {
+     "slot": "scrim",
+     "x": 0,
+     "y": 0,
+     "w": 300,
+     "h": 105,
+     "type": "rect",
+     "fill": "#0c253b"
+    },
+    "rc_panel_zone": {
+     "slot": "panel",
+     "x": 0,
+     "y": 163,
+     "w": 300,
+     "h": 87,
+     "type": "rect",
+     "fill": "#005b9f"
+    },
+    "rc_band_ground": {
+     "slot": "panel",
+     "x": 0,
+     "y": 150,
+     "w": 300,
+     "h": 13,
+     "type": "rect",
+     "fill": "#005b9f"
+    },
+    "rc_band_0": {
+     "slot": "band",
+     "x": 0,
+     "y": 150,
+     "w": 144,
+     "h": 13,
+     "type": "image"
+    },
+    "rc_band_1": {
+     "slot": "band",
+     "x": 144,
+     "y": 150,
+     "w": 144,
+     "h": 13,
+     "type": "image"
+    },
+    "rc_band_2": {
+     "slot": "band",
+     "x": 288,
+     "y": 150,
+     "w": 144,
+     "h": 13,
+     "type": "image"
+    },
+    "rc_headline": {
+     "slot": "headline",
+     "x": 24,
+     "y": 49,
+     "w": 252,
+     "h": 43,
+     "fontSize": 66,
+     "type": "text",
+     "text": "QU:aK:es",
+     "baselineFit": "cap",
+     "align": "center"
+    },
+    "rc_subheadline": {
+     "slot": "subheadline",
+     "x": 15,
+     "y": 100,
+     "w": 270,
+     "h": 13,
+     "fontSize": 19,
+     "type": "text",
+     "text": "CAN STRIKE SUDDENLY",
+     "baselineFit": "cap",
+     "align": "center"
+    },
+    "rc_cta": {
+     "slot": "cta",
+     "x": 38,
+     "y": 175,
+     "w": 224,
+     "h": 26,
+     "type": "rect",
+     "fill": "#ffffff",
+     "radius": 13
+    },
+    "rc_cta_label": {
+     "slot": "ctaLabel",
+     "x": 49,
+     "y": 181.5,
+     "w": 189,
+     "h": 13,
+     "fontSize": 18,
+     "type": "text",
+     "text": "Auckland emergency",
+     "baselineFit": "cap",
+     "align": "left"
+    },
+    "rc_cta_icon": {
+     "slot": "ctaIcon",
+     "x": 240,
+     "y": 178.5,
+     "w": 19,
+     "h": 19,
+     "type": "image"
+    },
+    "rc_lockup": {
+     "slot": "lockup",
+     "x": 93,
+     "y": 210,
+     "w": 115,
+     "h": 28,
+     "type": "image"
+    }
+   }
+  },
+  "336x280": {
+   "method": "recomposed:square",
+   "rejected": [],
+   "dropped": [
+    "message"
+   ],
+   "needsReview": true,
+   "elements": {
+    "rc_panel": {
+     "slot": "panel",
+     "x": 0,
+     "y": 0,
+     "w": 336,
+     "h": 280,
+     "type": "rect",
+     "fill": "#005b9f"
+    },
+    "rc_photo": {
+     "slot": "photo",
+     "x": -20,
+     "y": -31,
+     "w": 376,
+     "h": 201,
+     "type": "image"
+    },
+    "rc_scrim": {
+     "slot": "scrim",
+     "x": 0,
+     "y": 0,
+     "w": 336,
+     "h": 118,
+     "type": "rect",
+     "fill": "#0c253b"
+    },
+    "rc_panel_zone": {
+     "slot": "panel",
+     "x": 0,
+     "y": 182,
+     "w": 336,
+     "h": 98,
+     "type": "rect",
+     "fill": "#005b9f"
+    },
+    "rc_band_ground": {
+     "slot": "panel",
+     "x": 0,
+     "y": 168,
+     "w": 336,
+     "h": 14,
+     "type": "rect",
+     "fill": "#005b9f"
+    },
+    "rc_band_0": {
+     "slot": "band",
+     "x": 0,
+     "y": 168,
+     "w": 155,
+     "h": 14,
+     "type": "image"
+    },
+    "rc_band_1": {
+     "slot": "band",
+     "x": 155,
+     "y": 168,
+     "w": 155,
+     "h": 14,
+     "type": "image"
+    },
+    "rc_band_2": {
+     "slot": "band",
+     "x": 310,
+     "y": 168,
+     "w": 155,
+     "h": 14,
+     "type": "image"
+    },
+    "rc_headline": {
+     "slot": "headline",
+     "x": 27,
+     "y": 55,
+     "w": 282,
+     "h": 47,
+     "fontSize": 74,
+     "type": "text",
+     "text": "QU:aK:es",
+     "baselineFit": "cap",
+     "align": "center"
+    },
+    "rc_subheadline": {
+     "slot": "subheadline",
+     "x": 17,
+     "y": 111,
+     "w": 302,
+     "h": 15,
+     "fontSize": 22,
+     "type": "text",
+     "text": "CAN STRIKE SUDDENLY",
+     "baselineFit": "cap",
+     "align": "center"
+    },
+    "rc_cta": {
+     "slot": "cta",
+     "x": 56,
+     "y": 198,
+     "w": 224,
+     "h": 26,
+     "type": "rect",
+     "fill": "#ffffff",
+     "radius": 13
+    },
+    "rc_cta_label": {
+     "slot": "ctaLabel",
+     "x": 67,
+     "y": 204.5,
+     "w": 189,
+     "h": 13,
+     "fontSize": 18,
+     "type": "text",
+     "text": "Auckland emergency",
+     "baselineFit": "cap",
+     "align": "left"
+    },
+    "rc_cta_icon": {
+     "slot": "ctaIcon",
+     "x": 258,
+     "y": 201.5,
+     "w": 19,
+     "h": 19,
+     "type": "image"
+    },
+    "rc_lockup": {
+     "slot": "lockup",
+     "x": 104,
+     "y": 235,
+     "w": 128,
+     "h": 31,
+     "type": "image"
+    }
+   }
+  },
+  "300x600": {
+   "method": "recomposed:portrait",
+   "rejected": [],
+   "dropped": [],
+   "needsReview": false,
+   "elements": {
+    "rc_panel": {
+     "slot": "panel",
+     "x": 0,
+     "y": 0,
+     "w": 300,
+     "h": 600,
+     "type": "rect",
+     "fill": "#005b9f"
+    },
+    "rc_photo": {
+     "slot": "photo",
+     "x": -218,
+     "y": -50,
+     "w": 736,
+     "h": 392,
+     "type": "image"
+    },
+    "rc_scrim": {
+     "slot": "scrim",
+     "x": 0,
+     "y": 0,
+     "w": 300,
+     "h": 239,
+     "type": "rect",
+     "fill": "#0c253b"
+    },
+    "rc_panel_zone": {
+     "slot": "panel",
+     "x": 0,
+     "y": 376,
+     "w": 300,
+     "h": 224,
+     "type": "rect",
+     "fill": "#005b9f"
+    },
+    "rc_band_ground": {
+     "slot": "panel",
+     "x": 0,
+     "y": 341,
+     "w": 300,
+     "h": 35,
+     "type": "rect",
+     "fill": "#005b9f"
+    },
+    "rc_band_0": {
+     "slot": "band",
+     "x": 0,
+     "y": 341,
+     "w": 389,
+     "h": 35,
+     "type": "image"
+    },
+    "rc_headline": {
+     "slot": "headline",
+     "x": 18,
+     "y": 154,
+     "w": 264,
+     "h": 50,
+     "fontSize": 77,
+     "type": "text",
+     "text": "QU:aK:es",
+     "baselineFit": "cap",
+     "align": "center"
+    },
+    "rc_subheadline": {
+     "slot": "subheadline",
+     "x": 18,
+     "y": 213,
+     "w": 264,
+     "h": 15,
+     "fontSize": 22,
+     "type": "text",
+     "text": "CAN STRIKE SUDDENLY",
+     "baselineFit": "cap",
+     "align": "center"
+    },
+    "rc_message": {
+     "slot": "message",
+     "x": 23,
+     "y": 442,
+     "w": 255,
+     "h": 14,
+     "fontSize": 20,
+     "type": "text",
+     "text": "Make a plan today.",
+     "baselineFit": "cap",
+     "align": "center"
+    },
+    "rc_cta": {
+     "slot": "cta",
+     "x": 38,
+     "y": 472,
+     "w": 224,
+     "h": 26,
+     "type": "rect",
+     "fill": "#ffffff",
+     "radius": 13
+    },
+    "rc_cta_label": {
+     "slot": "ctaLabel",
+     "x": 49,
+     "y": 478.5,
+     "w": 189,
+     "h": 13,
+     "fontSize": 18,
+     "type": "text",
+     "text": "Auckland emergency",
+     "baselineFit": "cap",
+     "align": "left"
+    },
+    "rc_cta_icon": {
+     "slot": "ctaIcon",
+     "x": 240,
+     "y": 475.5,
+     "w": 19,
+     "h": 19,
+     "type": "image"
+    },
+    "rc_lockup": {
+     "slot": "lockup",
+     "x": 76,
+     "y": 550,
+     "w": 148,
+     "h": 36,
+     "type": "image"
+    }
+   }
+  },
+  "160x600": {
+   "method": "recomposed:tower",
+   "rejected": [],
+   "dropped": [
+    "message",
+    "subheadline"
+   ],
+   "needsReview": true,
+   "elements": {
+    "rc_panel": {
+     "slot": "panel",
+     "x": 0,
+     "y": 0,
+     "w": 160,
+     "h": 600,
+     "type": "rect",
+     "fill": "#005b9f"
+    },
+    "rc_photo": {
+     "slot": "photo",
+     "x": -272,
+     "y": -59,
+     "w": 703,
+     "h": 374,
+     "type": "image"
+    },
+    "rc_scrim": {
+     "slot": "scrim",
+     "x": 0,
+     "y": 0,
+     "w": 160,
+     "h": 218,
+     "type": "rect",
+     "fill": "#0c253b"
+    },
+    "rc_panel_zone": {
+     "slot": "panel",
+     "x": 0,
+     "y": 339,
+     "w": 160,
+     "h": 261,
+     "type": "rect",
+     "fill": "#005b9f"
+    },
+    "rc_band_ground": {
+     "slot": "panel",
+     "x": 0,
+     "y": 312,
+     "w": 160,
+     "h": 27,
+     "type": "rect",
+     "fill": "#005b9f"
+    },
+    "rc_band_0": {
+     "slot": "band",
+     "x": 0,
+     "y": 312,
+     "w": 300,
+     "h": 27,
+     "type": "image"
+    },
+    "rc_headline": {
+     "slot": "headline",
+     "x": 11,
+     "y": 143,
+     "w": 138,
+     "h": 26,
+     "fontSize": 41,
+     "type": "text",
+     "text": "QU:aK:es",
+     "baselineFit": "cap",
+     "align": "center"
+    },
+    "rc_cta": {
+     "slot": "cta",
+     "x": 6,
+     "y": 451,
+     "w": 148,
+     "h": 24,
+     "type": "rect",
+     "fill": "#ffffff",
+     "radius": 12
+    },
+    "rc_cta_label": {
+     "slot": "ctaLabel",
+     "x": 13,
+     "y": 459,
+     "w": 118,
+     "h": 8,
+     "fontSize": 11,
+     "type": "text",
+     "text": "Auckland emergency",
+     "baselineFit": "cap",
+     "align": "left"
+    },
+    "rc_cta_icon": {
+     "slot": "ctaIcon",
+     "x": 133,
+     "y": 454,
+     "w": 18,
+     "h": 18,
+     "type": "image"
+    },
+    "rc_lockup": {
+     "slot": "lockup",
+     "x": 35,
+     "y": 569,
+     "w": 91,
+     "h": 22,
+     "type": "image"
+    }
+   }
+  },
+  "120x600": {
+   "method": "recomposed:tower",
+   "rejected": [],
+   "dropped": [
+    "message",
+    "subheadline"
+   ],
+   "needsReview": true,
+   "elements": {
+    "rc_panel": {
+     "slot": "panel",
+     "x": 0,
+     "y": 0,
+     "w": 120,
+     "h": 600,
+     "type": "rect",
+     "fill": "#005b9f"
+    },
+    "rc_photo": {
+     "slot": "photo",
+     "x": -292,
+     "y": -59,
+     "w": 703,
+     "h": 374,
+     "type": "image"
+    },
+    "rc_scrim": {
+     "slot": "scrim",
+     "x": 0,
+     "y": 0,
+     "w": 120,
+     "h": 218,
+     "type": "rect",
+     "fill": "#0c253b"
+    },
+    "rc_panel_zone": {
+     "slot": "panel",
+     "x": 0,
+     "y": 339,
+     "w": 120,
+     "h": 261,
+     "type": "rect",
+     "fill": "#005b9f"
+    },
+    "rc_band_ground": {
+     "slot": "panel",
+     "x": 0,
+     "y": 312,
+     "w": 120,
+     "h": 27,
+     "type": "rect",
+     "fill": "#005b9f"
+    },
+    "rc_band_0": {
+     "slot": "band",
+     "x": 0,
+     "y": 312,
+     "w": 300,
+     "h": 27,
+     "type": "image"
+    },
+    "rc_headline": {
+     "slot": "headline",
+     "x": 8,
+     "y": 146,
+     "w": 104,
+     "h": 21,
+     "fontSize": 32,
+     "type": "text",
+     "text": "QU:aK:es",
+     "baselineFit": "cap",
+     "align": "center"
+    },
+    "rc_cta": {
+     "slot": "cta",
+     "x": 6,
+     "y": 455,
+     "w": 108,
+     "h": 24,
+     "type": "rect",
+     "fill": "#ffffff",
+     "radius": 12
+    },
+    "rc_cta_label": {
+     "slot": "ctaLabel",
+     "x": 13,
+     "y": 464,
+     "w": 94,
+     "h": 6,
+     "fontSize": 9,
+     "type": "text",
+     "text": "Auckland emergency",
+     "baselineFit": "cap",
+     "align": "center"
+    },
+    "rc_lockup": {
+     "slot": "lockup",
+     "x": 25,
+     "y": 576,
+     "w": 70,
+     "h": 17,
+     "type": "image"
+    }
+   }
+  },
+  "1080x1080": {
+   "method": "recomposed:square",
+   "rejected": [],
+   "dropped": [
+    "lockup"
+   ],
+   "needsReview": true,
+   "elements": {
+    "rc_panel": {
+     "slot": "panel",
+     "x": 0,
+     "y": 0,
+     "w": 1080,
+     "h": 1080,
+     "type": "rect",
+     "fill": "#005b9f"
+    },
+    "rc_photo": {
+     "slot": "photo",
+     "x": -142,
+     "y": -78,
+     "w": 1362,
+     "h": 726,
+     "type": "image"
+    },
+    "rc_scrim": {
+     "slot": "scrim",
+     "x": 0,
+     "y": 0,
+     "w": 1080,
+     "h": 454,
+     "type": "rect",
+     "fill": "#0c253b"
+    },
+    "rc_panel_zone": {
+     "slot": "panel",
+     "x": 0,
+     "y": 702,
+     "w": 1080,
+     "h": 378,
+     "type": "rect",
+     "fill": "#005b9f"
+    },
+    "rc_band_ground": {
+     "slot": "panel",
+     "x": 0,
+     "y": 648,
+     "w": 1080,
+     "h": 54,
+     "type": "rect",
+     "fill": "#005b9f"
+    },
+    "rc_band_0": {
+     "slot": "band",
+     "x": 0,
+     "y": 648,
+     "w": 600,
+     "h": 54,
+     "type": "image"
+    },
+    "rc_band_1": {
+     "slot": "band",
+     "x": 600,
+     "y": 648,
+     "w": 600,
+     "h": 54,
+     "type": "image"
+    },
+    "rc_headline": {
+     "slot": "headline",
+     "x": 86,
+     "y": 225,
+     "w": 907,
+     "h": 167,
+     "fontSize": 260,
+     "type": "text",
+     "text": "QU:aK:es",
+     "baselineFit": "cap",
+     "align": "center"
+    },
+    "rc_subheadline": {
+     "slot": "subheadline",
+     "x": 65,
+     "y": 423,
+     "w": 950,
+     "h": 51,
+     "fontSize": 76,
+     "type": "text",
+     "text": "CAN STRIKE SUDDENLY",
+     "baselineFit": "cap",
+     "align": "center"
+    },
+    "rc_message": {
+     "slot": "message",
+     "x": 81,
+     "y": 812,
+     "w": 918,
+     "h": 47,
+     "fontSize": 69,
+     "type": "text",
+     "text": "Make a plan today.",
+     "baselineFit": "cap",
+     "align": "center"
+    },
+    "rc_cta": {
+     "slot": "cta",
+     "x": 221,
+     "y": 894,
+     "w": 638,
+     "h": 76,
+     "type": "rect",
+     "fill": "#ffffff",
+     "radius": 38
+    },
+    "rc_cta_label": {
+     "slot": "ctaLabel",
+     "x": 252,
+     "y": 914.5,
+     "w": 539,
+     "h": 35,
+     "fontSize": 52,
+     "type": "text",
+     "text": "Auckland emergency",
+     "baselineFit": "cap",
+     "align": "left"
+    },
+    "rc_cta_icon": {
+     "slot": "ctaIcon",
+     "x": 793,
+     "y": 904,
+     "w": 56,
+     "h": 56,
+     "type": "image"
+    }
+   }
+  },
+  "1080x1920": {
+   "method": "recomposed:portrait",
+   "rejected": [],
+   "dropped": [],
+   "needsReview": false,
+   "elements": {
+    "rc_panel": {
+     "slot": "panel",
+     "x": 0,
+     "y": 0,
+     "w": 1080,
+     "h": 1920,
+     "type": "rect",
+     "fill": "#005b9f"
+    },
+    "rc_photo": {
+     "slot": "photo",
+     "x": -640,
+     "y": -161,
+     "w": 2357,
+     "h": 1256,
+     "type": "image"
+    },
+    "rc_scrim": {
+     "slot": "scrim",
+     "x": 0,
+     "y": 0,
+     "w": 1080,
+     "h": 764,
+     "type": "rect",
+     "fill": "#0c253b"
+    },
+    "rc_panel_zone": {
+     "slot": "panel",
+     "x": 0,
+     "y": 1205,
+     "w": 1080,
+     "h": 715,
+     "type": "rect",
+     "fill": "#005b9f"
+    },
+    "rc_band_ground": {
+     "slot": "panel",
+     "x": 0,
+     "y": 1092,
+     "w": 1080,
+     "h": 113,
+     "type": "rect",
+     "fill": "#005b9f"
+    },
+    "rc_band_0": {
+     "slot": "band",
+     "x": 0,
+     "y": 1092,
+     "w": 1255,
+     "h": 113,
+     "type": "image"
+    },
+    "rc_headline": {
+     "slot": "headline",
+     "x": 65,
+     "y": 480,
+     "w": 950,
+     "h": 176,
+     "fontSize": 274,
+     "type": "text",
+     "text": "QU:aK:es",
+     "baselineFit": "cap",
+     "align": "center"
+    },
+    "rc_subheadline": {
+     "slot": "subheadline",
+     "x": 65,
+     "y": 689,
+     "w": 950,
+     "h": 54,
+     "fontSize": 80,
+     "type": "text",
+     "text": "CAN STRIKE SUDDENLY",
+     "baselineFit": "cap",
+     "align": "center"
+    },
+    "rc_message": {
+     "slot": "message",
+     "x": 81,
+     "y": 1404,
+     "w": 918,
+     "h": 49,
+     "fontSize": 72,
+     "type": "text",
+     "text": "Make a plan today.",
+     "baselineFit": "cap",
+     "align": "center"
+    },
+    "rc_cta": {
+     "slot": "cta",
+     "x": 205,
+     "y": 1501,
+     "w": 670,
+     "h": 80,
+     "type": "rect",
+     "fill": "#ffffff",
+     "radius": 40
+    },
+    "rc_cta_label": {
+     "slot": "ctaLabel",
+     "x": 237,
+     "y": 1522.5,
+     "w": 567,
+     "h": 37,
+     "fontSize": 55,
+     "type": "text",
+     "text": "Auckland emergency",
+     "baselineFit": "cap",
+     "align": "left"
+    },
+    "rc_cta_icon": {
+     "slot": "ctaIcon",
+     "x": 806,
+     "y": 1511.5,
+     "w": 59,
+     "h": 59,
+     "type": "image"
+    },
+    "rc_lockup": {
+     "slot": "lockup",
+     "x": 273,
+     "y": 1738,
+     "w": 535,
+     "h": 130,
+     "type": "image"
+    }
+   }
+  },
+  "1920x1080": {
+   "method": "recomposed:landscape",
+   "rejected": [],
+   "dropped": [],
+   "needsReview": false,
+   "elements": {
+    "rc_panel": {
+     "slot": "panel",
+     "x": 0,
+     "y": 0,
+     "w": 1920,
+     "h": 1080,
+     "type": "rect",
+     "fill": "#005b9f"
+    },
+    "rc_photo": {
+     "slot": "photo",
+     "x": -616,
+     "y": -86,
+     "w": 2189,
+     "h": 1166,
+     "type": "image"
+    },
+    "rc_scrim": {
+     "slot": "scrim",
+     "x": 0,
+     "y": 0,
+     "w": 960,
+     "h": 911,
+     "type": "rect",
+     "fill": "#0c253b"
+    },
+    "rc_panel_zone": {
+     "slot": "panel",
+     "x": 960,
+     "y": 183,
+     "w": 960,
+     "h": 897,
+     "type": "rect",
+     "fill": "#005b9f"
+    },
+    "rc_band_ground": {
+     "slot": "panel",
+     "x": 960,
+     "y": 0,
+     "w": 960,
+     "h": 183,
+     "type": "rect",
+     "fill": "#005b9f"
+    },
+    "rc_band_0": {
+     "slot": "band",
+     "x": 960,
+     "y": 0,
+     "w": 2032,
+     "h": 183,
+     "type": "image"
+    },
+    "rc_headline": {
+     "slot": "headline",
+     "x": 86,
+     "y": 409,
+     "w": 787,
+     "h": 146,
+     "fontSize": 227,
+     "type": "text",
+     "text": "QU:aK:es",
+     "baselineFit": "cap",
+     "align": "center"
+    },
+    "rc_subheadline": {
+     "slot": "subheadline",
+     "x": 54,
+     "y": 582,
+     "w": 852,
+     "h": 45,
+     "fontSize": 66,
+     "type": "text",
+     "text": "CAN STRIKE SUDDENLY",
+     "baselineFit": "cap",
+     "align": "center"
+    },
+    "rc_message": {
+     "slot": "message",
+     "x": 1032,
+     "y": 545,
+     "w": 816,
+     "h": 41,
+     "fontSize": 60,
+     "type": "text",
+     "text": "Make a plan today.",
+     "baselineFit": "cap",
+     "align": "center"
+    },
+    "rc_cta": {
+     "slot": "cta",
+     "x": 1161,
+     "y": 634,
+     "w": 558,
+     "h": 66,
+     "type": "rect",
+     "fill": "#ffffff",
+     "radius": 33
+    },
+    "rc_cta_label": {
+     "slot": "ctaLabel",
+     "x": 1188,
+     "y": 651.5,
+     "w": 471,
+     "h": 31,
+     "fontSize": 45,
+     "type": "text",
+     "text": "Auckland emergency",
+     "baselineFit": "cap",
+     "align": "left"
+    },
+    "rc_cta_icon": {
+     "slot": "ctaIcon",
+     "x": 1661,
+     "y": 642.5,
+     "w": 49,
+     "h": 49,
+     "type": "image"
+    },
+    "rc_lockup": {
+     "slot": "lockup",
+     "x": 1200,
+     "y": 916,
+     "w": 480,
+     "h": 117,
+     "type": "image"
+    }
+   }
+  },
+  "960x256": {
+   "method": "exact-clone",
+   "rejected": [],
+   "dropped": [],
+   "needsReview": false,
+   "elements": {
+    "idml_img_0": {
+     "slot": null,
+     "x": -0.59,
+     "y": 0,
+     "w": 480.59,
+     "h": 256,
+     "type": "image"
+    },
+    "idml_rect_1": {
+     "slot": null,
+     "x": -0.59,
+     "y": 0,
+     "w": 480.59,
+     "h": 216,
+     "type": "rect",
+     "fill": "#0c253b"
+    },
+    "idml_rect_2": {
+     "slot": null,
+     "x": 480,
+     "y": 0,
+     "w": 480,
+     "h": 256,
+     "type": "rect",
+     "fill": "#005b9f"
+    },
+    "idml_txt_3": {
+     "slot": null,
+     "x": 36.77,
+     "y": 70,
+     "w": 389.34,
+     "h": 69.98,
+     "fontSize": 110,
+     "type": "text",
+     "text": "QU:aK:es",
+     "baselineFit": "cap",
+     "align": "center"
+    },
+    "idml_txt_4": {
+     "slot": null,
+     "x": 47.33,
+     "y": 153.48,
+     "w": 368.21,
+     "h": 21.22,
+     "fontSize": 32,
+     "type": "text",
+     "text": "CAN STRIKE SUDDENLY",
+     "baselineFit": "cap",
+     "align": "center"
+    },
+    "idml_raster_5": {
+     "slot": null,
+     "x": 480,
+     "y": -0.2,
+     "w": 479.75,
+     "h": 43.22,
+     "type": "image"
+    },
+    "idml_txt_83": {
+     "slot": null,
+     "x": 587.44,
+     "y": 96.19,
+     "w": 264.46,
+     "h": 19.62,
+     "fontSize": 29,
+     "type": "text",
+     "text": "Make a plan today.",
+     "baselineFit": "cap",
+     "align": "center"
+    },
+    "idml_raster_86": {
+     "slot": null,
+     "x": 622.56,
+     "y": 188.24,
+     "w": 194.55,
+     "h": 47.38,
+     "type": "image"
+    },
+    "idml_rect_172": {
+     "slot": null,
+     "x": 586.32,
+     "y": 136.81,
+     "w": 266.68,
+     "h": 32.2,
+     "type": "rect",
+     "fill": "#ffffff",
+     "radius": 16.28
+    },
+    "idml_txt_173": {
+     "slot": null,
+     "x": 599.34,
+     "y": 144.22,
+     "w": 221.01,
+     "h": 14.44,
+     "fontSize": 22,
+     "type": "text",
+     "text": "Auckland emergency",
+     "baselineFit": "cap",
+     "align": "left"
+    },
+    "idml_raster_174": {
+     "slot": null,
+     "x": 824.86,
+     "y": 141.02,
+     "w": 23.79,
+     "h": 23.79,
+     "type": "image"
+    }
+   }
+  },
+  "384x592": {
+   "method": "recomposed:portrait",
+   "rejected": [],
+   "dropped": [],
+   "needsReview": false,
+   "elements": {
+    "rc_panel": {
+     "slot": "panel",
+     "x": 0,
+     "y": 0,
+     "w": 384,
+     "h": 592,
+     "type": "rect",
+     "fill": "#005b9f"
+    },
+    "rc_photo": {
+     "slot": "photo",
+     "x": -172,
+     "y": -50,
+     "w": 727,
+     "h": 388,
+     "type": "image"
+    },
+    "rc_scrim": {
+     "slot": "scrim",
+     "x": 0,
+     "y": 0,
+     "w": 384,
+     "h": 236,
+     "type": "rect",
+     "fill": "#0c253b"
+    },
+    "rc_panel_zone": {
+     "slot": "panel",
+     "x": 0,
+     "y": 372,
+     "w": 384,
+     "h": 220,
+     "type": "rect",
+     "fill": "#005b9f"
+    },
+    "rc_band_ground": {
+     "slot": "panel",
+     "x": 0,
+     "y": 337,
+     "w": 384,
+     "h": 35,
+     "type": "rect",
+     "fill": "#005b9f"
+    },
+    "rc_band_0": {
+     "slot": "band",
+     "x": 0,
+     "y": 337,
+     "w": 389,
+     "h": 35,
+     "type": "image"
+    },
+    "rc_headline": {
+     "slot": "headline",
+     "x": 23,
+     "y": 141,
+     "w": 338,
+     "h": 64,
+     "fontSize": 99,
+     "type": "text",
+     "text": "QU:aK:es",
+     "baselineFit": "cap",
+     "align": "center"
+    },
+    "rc_subheadline": {
+     "slot": "subheadline",
+     "x": 23,
+     "y": 217,
+     "w": 338,
+     "h": 20,
+     "fontSize": 29,
+     "type": "text",
+     "text": "CAN STRIKE SUDDENLY",
+     "baselineFit": "cap",
+     "align": "center"
+    },
+    "rc_message": {
+     "slot": "message",
+     "x": 29,
+     "y": 425,
+     "w": 326,
+     "h": 18,
+     "fontSize": 26,
+     "type": "text",
+     "text": "Make a plan today.",
+     "baselineFit": "cap",
+     "align": "center"
+    },
+    "rc_cta": {
+     "slot": "cta",
+     "x": 69,
+     "y": 458,
+     "w": 246,
+     "h": 29,
+     "type": "rect",
+     "fill": "#ffffff",
+     "radius": 14.5
+    },
+    "rc_cta_label": {
+     "slot": "ctaLabel",
+     "x": 81,
+     "y": 465.5,
+     "w": 207,
+     "h": 14,
+     "fontSize": 20,
+     "type": "text",
+     "text": "Auckland emergency",
+     "baselineFit": "cap",
+     "align": "left"
+    },
+    "rc_cta_icon": {
+     "slot": "ctaIcon",
+     "x": 290,
+     "y": 462,
+     "w": 21,
+     "h": 21,
+     "type": "image"
+    },
+    "rc_lockup": {
+     "slot": "lockup",
+     "x": 98,
+     "y": 528,
+     "w": 189,
+     "h": 46,
+     "type": "image"
+    }
+   }
+  },
+  "768x1184": {
+   "method": "recomposed:portrait",
+   "rejected": [],
+   "dropped": [],
+   "needsReview": false,
+   "elements": {
+    "rc_panel": {
+     "slot": "panel",
+     "x": 0,
+     "y": 0,
+     "w": 768,
+     "h": 1184,
+     "type": "rect",
+     "fill": "#005b9f"
+    },
+    "rc_photo": {
+     "slot": "photo",
+     "x": -344,
+     "y": -99,
+     "w": 1455,
+     "h": 775,
+     "type": "image"
+    },
+    "rc_scrim": {
+     "slot": "scrim",
+     "x": 0,
+     "y": 0,
+     "w": 768,
+     "h": 472,
+     "type": "rect",
+     "fill": "#0c253b"
+    },
+    "rc_panel_zone": {
+     "slot": "panel",
+     "x": 0,
+     "y": 744,
+     "w": 768,
+     "h": 440,
+     "type": "rect",
+     "fill": "#005b9f"
+    },
+    "rc_band_ground": {
+     "slot": "panel",
+     "x": 0,
+     "y": 674,
+     "w": 768,
+     "h": 70,
+     "type": "rect",
+     "fill": "#005b9f"
+    },
+    "rc_band_0": {
+     "slot": "band",
+     "x": 0,
+     "y": 674,
+     "w": 777,
+     "h": 70,
+     "type": "image"
+    },
+    "rc_headline": {
+     "slot": "headline",
+     "x": 46,
+     "y": 284,
+     "w": 676,
+     "h": 125,
+     "fontSize": 195,
+     "type": "text",
+     "text": "QU:aK:es",
+     "baselineFit": "cap",
+     "align": "center"
+    },
+    "rc_subheadline": {
+     "slot": "subheadline",
+     "x": 46,
+     "y": 432,
+     "w": 676,
+     "h": 39,
+     "fontSize": 57,
+     "type": "text",
+     "text": "CAN STRIKE SUDDENLY",
+     "baselineFit": "cap",
+     "align": "center"
+    },
+    "rc_message": {
+     "slot": "message",
+     "x": 58,
+     "y": 850,
+     "w": 653,
+     "h": 35,
+     "fontSize": 51,
+     "type": "text",
+     "text": "Make a plan today.",
+     "baselineFit": "cap",
+     "align": "center"
+    },
+    "rc_cta": {
+     "slot": "cta",
+     "x": 145,
+     "y": 916,
+     "w": 479,
+     "h": 57,
+     "type": "rect",
+     "fill": "#ffffff",
+     "radius": 28.5
+    },
+    "rc_cta_label": {
+     "slot": "ctaLabel",
+     "x": 168,
+     "y": 931,
+     "w": 405,
+     "h": 27,
+     "fontSize": 39,
+     "type": "text",
+     "text": "Auckland emergency",
+     "baselineFit": "cap",
+     "align": "left"
+    },
+    "rc_cta_icon": {
+     "slot": "ctaIcon",
+     "x": 575,
+     "y": 923.5,
+     "w": 42,
+     "h": 42,
+     "type": "image"
+    },
+    "rc_lockup": {
+     "slot": "lockup",
+     "x": 195,
+     "y": 1055,
+     "w": 379,
+     "h": 92,
+     "type": "image"
+    }
+   }
+  },
+  "2688x672": {
+   "method": "scaled",
+   "rejected": [
+    "The sub-line is missing.",
+    "The message line is missing.",
+    "The call-to-action is missing.",
+    "The pattern band is missing.",
+    "The photograph is missing.",
+    "The logo tile / lockup is missing."
+   ],
+   "dropped": [],
+   "needsReview": false,
+   "elements": {
+    "idml_img_0": {
+     "slot": null,
+     "x": 0,
+     "y": 0,
+     "w": 1262,
+     "h": 672,
+     "type": "image"
+    },
+    "idml_rect_1": {
+     "slot": null,
+     "x": 0,
+     "y": 0,
+     "w": 1262,
+     "h": 567,
+     "type": "rect",
+     "fill": "#0c253b"
+    },
+    "idml_rect_2": {
+     "slot": null,
+     "x": 1262,
+     "y": 0,
+     "w": 1426,
+     "h": 672,
+     "type": "rect",
+     "fill": "#005b9f"
+    },
+    "idml_txt_3": {
+     "slot": null,
+     "x": 98,
+     "y": 183,
+     "w": 1053,
+     "h": 184,
+     "fontSize": 289,
+     "type": "text",
+     "text": "QU:aK:es",
+     "baselineFit": "cap",
+     "align": "center"
+    },
+    "idml_txt_4": {
+     "slot": null,
+     "x": 126,
+     "y": 402,
+     "w": 996,
+     "h": 56,
+     "fontSize": 84,
+     "type": "text",
+     "text": "CAN STRIKE SUDDENLY",
+     "baselineFit": "cap",
+     "align": "center"
+    },
+    "idml_raster_5": {
+     "slot": null,
+     "x": 1262,
+     "y": -1,
+     "w": 1259,
+     "h": 113,
+     "type": "image"
+    },
+    "idml_txt_83": {
+     "slot": null,
+     "x": 1627,
+     "y": 253,
+     "w": 715,
+     "h": 51,
+     "fontSize": 76,
+     "type": "text",
+     "text": "Make a plan today.",
+     "baselineFit": "cap",
+     "align": "center"
+    },
+    "idml_raster_86": {
+     "slot": null,
+     "x": 1719,
+     "y": 494,
+     "w": 511,
+     "h": 124,
+     "type": "image"
+    },
+    "idml_rect_172": {
+     "slot": null,
+     "x": 1624,
+     "y": 359,
+     "w": 700,
+     "h": 85,
+     "type": "rect",
+     "fill": "#ffffff",
+     "radius": 16.28
+    },
+    "idml_txt_173": {
+     "slot": null,
+     "x": 1658,
+     "y": 382,
+     "w": 597,
+     "h": 39,
+     "fontSize": 58,
+     "type": "text",
+     "text": "Auckland emergency",
+     "baselineFit": "cap",
+     "align": "left"
+    },
+    "idml_raster_174": {
+     "slot": null,
+     "x": 2250,
+     "y": 370.5,
+     "w": 62,
+     "h": 62,
+     "type": "image"
+    }
+   }
+  },
+  "1200x627": {
+   "method": "recomposed:landscape",
+   "rejected": [],
+   "dropped": [],
+   "needsReview": false,
+   "elements": {
+    "rc_panel": {
+     "slot": "panel",
+     "x": 0,
+     "y": 0,
+     "w": 1200,
+     "h": 627,
+     "type": "rect",
+     "fill": "#005b9f"
+    },
+    "rc_photo": {
+     "slot": "photo",
+     "x": -336,
+     "y": -50,
+     "w": 1271,
+     "h": 677,
+     "type": "image"
+    },
+    "rc_scrim": {
+     "slot": "scrim",
+     "x": 0,
+     "y": 0,
+     "w": 600,
+     "h": 529,
+     "type": "rect",
+     "fill": "#0c253b"
+    },
+    "rc_panel_zone": {
+     "slot": "panel",
+     "x": 600,
+     "y": 106,
+     "w": 600,
+     "h": 521,
+     "type": "rect",
+     "fill": "#005b9f"
+    },
+    "rc_band_ground": {
+     "slot": "panel",
+     "x": 600,
+     "y": 0,
+     "w": 600,
+     "h": 106,
+     "type": "rect",
+     "fill": "#005b9f"
+    },
+    "rc_band_0": {
+     "slot": "band",
+     "x": 600,
+     "y": 0,
+     "w": 1177,
+     "h": 106,
+     "type": "image"
+    },
+    "rc_headline": {
+     "slot": "headline",
+     "x": 54,
+     "y": 232,
+     "w": 492,
+     "h": 92,
+     "fontSize": 143,
+     "type": "text",
+     "text": "QU:aK:es",
+     "baselineFit": "cap",
+     "align": "center"
+    },
+    "rc_subheadline": {
+     "slot": "subheadline",
+     "x": 31,
+     "y": 341,
+     "w": 538,
+     "h": 29,
+     "fontSize": 42,
+     "type": "text",
+     "text": "CAN STRIKE SUDDENLY",
+     "baselineFit": "cap",
+     "align": "center"
+    },
+    "rc_message": {
+     "slot": "message",
+     "x": 645,
+     "y": 305,
+     "w": 510,
+     "h": 26,
+     "fontSize": 38,
+     "type": "text",
+     "text": "Make a plan today.",
+     "baselineFit": "cap",
+     "align": "center"
+    },
+    "rc_cta": {
+     "slot": "cta",
+     "x": 724,
+     "y": 367,
+     "w": 353,
+     "h": 42,
+     "type": "rect",
+     "fill": "#ffffff",
+     "radius": 21
+    },
+    "rc_cta_label": {
+     "slot": "ctaLabel",
+     "x": 741,
+     "y": 378,
+     "w": 298,
+     "h": 20,
+     "fontSize": 29,
+     "type": "text",
+     "text": "Auckland emergency",
+     "baselineFit": "cap",
+     "align": "left"
+    },
+    "rc_cta_icon": {
+     "slot": "ctaIcon",
+     "x": 1041,
+     "y": 372.5,
+     "w": 31,
+     "h": 31,
+     "type": "image"
+    },
+    "rc_lockup": {
+     "slot": "lockup",
+     "x": 750,
+     "y": 525,
+     "w": 300,
+     "h": 73,
+     "type": "image"
+    }
+   }
+  }
+ }
+}

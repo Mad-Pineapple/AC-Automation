@@ -1,0 +1,11 @@
+{
+  "note": "Masters are rows in the LOCAL database (ids differ per machine). Re-record after re-importing a master.",
+  "sizes": ["970x250", "728x90", "320x50", "300x250", "336x280", "300x600", "160x600", "120x600", "1080x1080", "1080x1920", "1920x1080", "960x256", "384x592", "768x1184", "2688x672", "1200x627"],
+  "families": [
+    { "key": "getready-portrait-storms", "masterId": 1402 },
+    { "key": "getready-portrait-quakes", "masterId": 1403 },
+    { "key": "getready-portrait-tsunami", "masterId": 1404 },
+    { "key": "getready-wide-storms", "masterId": 1432 },
+    { "key": "getready-wide-quakes", "masterId": 1433 }
+  ]
+}
