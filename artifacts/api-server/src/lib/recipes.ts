@@ -181,7 +181,9 @@ export const RECIPES: Record<FormatClass, Recipe> = {
   // 728×90 / 320×50: one row — photo, headline, CTA, full-height logo tile.
   strip: {
     axis: "row",
-    photoFrac: 0.3,
+    // Designers, 19 Sep: the hazard word sits ON the photo; the blue panel
+    // carries the message and the pill. The photo zone is wide enough for it.
+    photoFrac: 0.4,
     bandFrac: 0,
     bandAt: "none",
     headlineWidthFrac: 1,

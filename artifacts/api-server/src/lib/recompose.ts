@@ -222,6 +222,7 @@ export async function recomposeToFormat(
   // Parts the class recipe does not carry at all (a tower keeps no
   // sub-line, a strip no message) are dropped by rule, and said so.
   for (const [slot, has] of [["subheadline", !!sem.subheadline], ["message", !!sem.message], ["kicker", !!sem.kicker], ["band", !!sem.band], ["cutout", sem.cutouts.length > 0]] as Array<[string, boolean]>) {
+    if (slot === "message" && recipe.axis === "row") continue; // decided where the strip's panel is stacked
     if (has && !(keep as Set<string>).has(slot)) drop(slot, `${slot === "cutout" ? "Cut-out" : slot === "subheadline" ? "Sub-line" : slot === "kicker" ? "Kicker line" : slot === "band" ? "Pattern band" : "Message"} left out: the ${formatClass} recipe does not carry it.`, true);
   }
   const panelFill = sem.panelFill ?? OCEAN;
@@ -252,7 +253,7 @@ export async function recomposeToFormat(
     panelZone = { x: pw, y: bh, w: dstW - pw, h: dstH - bh };
   } else {
     const tile = opts.brand.logoUrl && !social ? dstH : 0;
-    const pw = hasPhoto ? clamp(Math.max(r(dstH * 1.3), r(dstW * recipe.photoFrac)), 0, r(dstW * 0.42)) : 0;
+    const pw = hasPhoto ? clamp(Math.max(r(dstH * 2.4), r(dstW * recipe.photoFrac)), 0, r(dstW * 0.5)) : 0;
     photoZone = { x: 0, y: 0, w: pw, h: dstH };
     panelZone = { x: pw, y: 0, w: dstW - pw - tile, h: dstH };
     if (tile) tileZone = { x: dstW - tile, y: 0, w: tile, h: tile };
@@ -382,7 +383,7 @@ export async function recomposeToFormat(
       targetH,
       minH: CTA_MIN_PX,
       maxH,
-      maxW: panelZone.w * (recipe.axis === "row" ? 0.5 : Math.min(0.92, recipe.ctaMaxWidthFrac + 0.15)),
+      maxW: panelZone.w * (recipe.axis === "row" ? (hasPhoto ? 0.88 : 0.5) : Math.min(0.92, recipe.ctaMaxWidthFrac + 0.15)),
       minLabelPx: budget === "micro" ? Math.min(8, LABEL_FLOOR_PX) : LABEL_FLOOR_PX,
       icon: !!sem.ctaIcon,
       allowTwoLines: formatClass === "tower" || dstW < 200,
@@ -402,13 +403,18 @@ export async function recomposeToFormat(
     const text = recipe.headlineWordPerLine && words.length > 1 ? words.join("\n") : rawText;
     const zoneW = copyZone.w - margin * 2;
     if (recipe.axis === "row") {
-      // One row: headline flexes between the photo and the CTA.
-      const ctaW = ctaPlanned()?.w ?? 0;
-      const box: Box = { x: panelZone.x + margin, y: panelZone.y, w: Math.max(20, panelZone.w - ctaW - margin * 3), h: dstH };
+      // One row. With a photo, the headline sits ON the photo (centred), as
+      // on every other Get Ready size; the panel is left to the message and
+      // the pill. Without a photo it shares the panel with the pill.
+      const onPhoto = hasPhoto && photoZone.w > 40;
+      const ctaW = onPhoto ? 0 : (ctaPlanned()?.w ?? 0);
+      const box: Box = onPhoto
+        ? { x: photoZone.x + margin, y: 0, w: Math.max(20, photoZone.w - margin * 2), h: dstH }
+        : { x: panelZone.x + margin, y: panelZone.y, w: Math.max(20, panelZone.w - ctaW - margin * 3), h: dstH };
       let fit = fitText(text, { w: box.w, h: dstH * recipe.headlineMaxHeightFrac }, { ...fontSpec(hl), minSize: headlineMin, maxSize: dstH, lineHeight: 1.0, maxLines: 1 });
       if (!fit.fits) fit = fitText(text, { w: box.w, h: dstH * 0.86 }, { ...fontSpec(hl), minSize: headlineMin, maxSize: dstH, lineHeight: 1.0, maxLines: 2 });
       const h = r(fit.height);
-      elements.push(textEl("rc_headline", "headline", "headline", hl, { x: box.x, y: r((dstH - h) / 2), w: box.w, h }, fit.fontSize, fit.lines.join("\n"), "left", 1.0));
+      elements.push(textEl("rc_headline", "headline", "headline", hl, { x: box.x, y: r((dstH - h) / 2), w: box.w, h }, fit.fontSize, fit.lines.join("\n"), onPhoto ? "center" : "left", 1.0));
       if (!fit.fits) { notes.push("Headline does not fit the strip at the minimum size — shorten the copy."); needsReview = true; }
       if (sem.kicker) drop("kicker", "Kicker line dropped: strips carry the headline only.", true);
     } else {
@@ -544,9 +550,36 @@ export async function recomposeToFormat(
   }
 
   if (recipe.axis === "row") {
-    // Strip: CTA sits at the right of the panel zone, vertically centred.
+    // Strip: the panel carries the message above the pill, centred. When the
+    // strip is too short for both, the pill stays and the message goes.
     const cta = items.find((i) => i.kind === "cta");
-    if (cta) elements.push(...cta.build(panelZone.x + panelZone.w - cta.w - margin, r((dstH - cta.h) / 2)));
+    let msgItem: { w: number; h: number; build: (x: number, y: number) => FreeformElement[] } | null = null;
+    if (sem.message && hasPhoto) {
+      const msg = sem.message;
+      const mText = msg.text.replace(/\s+/g, " ").trim();
+      const mw = r(panelZone.w * 0.9);
+      const mMax = Math.max(messageMin, r(dstH * 0.2));
+      const mFit = fitText(mText, { w: mw, h: mMax * 1.3 }, { ...fontSpec(msg), minSize: Math.min(messageMin, 11), maxSize: mMax, lineHeight: 1.1, maxLines: 1 });
+      const mh = r(mFit.height);
+      const gapY = Math.max(3, r(dstH * 0.06));
+      if (mFit.fits && mh + gapY + (cta?.h ?? 0) <= dstH - Math.max(6, margin)) {
+        msgItem = { w: mw, h: mh, build: (x, y) => [textEl("rc_message", "message", "body", msg, { x, y, w: mw, h: mh }, mFit.fontSize, mFit.lines.join("\n"), "center", 1.1)] };
+      } else {
+        drop("message", "Message left out: this strip is too short to carry it above the pill.", true);
+      }
+    } else if (sem.message) {
+      drop("message", "Message left out: the strip carries the headline and the pill only.", true);
+    }
+    if (msgItem) {
+      const gapY = Math.max(3, r(dstH * 0.06));
+      const totalH = msgItem.h + (cta ? gapY + cta.h : 0);
+      let y = r((dstH - totalH) / 2);
+      elements.push(...msgItem.build(panelZone.x + r((panelZone.w - msgItem.w) / 2), y));
+      y += msgItem.h + gapY;
+      if (cta) elements.push(...cta.build(panelZone.x + r((panelZone.w - cta.w) / 2), y));
+    } else if (cta) {
+      elements.push(...cta.build(hasPhoto ? panelZone.x + r((panelZone.w - cta.w) / 2) : panelZone.x + panelZone.w - cta.w - margin, r((dstH - cta.h) / 2)));
+    }
     if (tileZone && opts.brand.logoUrl) {
       elements.push({ id: "rc_logo", type: "image", slot: "logo", role: "logo", src: opts.brand.logoUrl, fit: "contain", ...tileZone, locked: true } as FreeformImage);
     }

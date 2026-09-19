@@ -16,7 +16,7 @@ any cell that is wrong; add rows for anything missing. Status: **draft, 2026-09-
 |---|---|---|
 | Tall (portrait, tower) | stack: photo on top, band, panel below | |
 | Wide, landscape | columns: photo left, panel right, band along the panel's top | |
-| Strip (≤120px tall or ≥5:1) | one row: photo, headline, pill, full-height logo tile | no shipped example yet |
+| Strip (≤120px tall or ≥5:1) | one row: photo WITH the hazard word on it, blue panel with the message above the pill, full-height logo tile | Designer ruling 2026-09-19: the hazard word never sits on the blue panel |
 | Square (1080 social) | stack | no logo at all on the social square |
 
 ## Zone shares
