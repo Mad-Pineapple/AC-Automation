@@ -246,3 +246,19 @@ more than 30% from the original. It never resizes (neighbours would move).
 - Weight: cover-fit photos are cropped to the part on the canvas (+5% for
   motion) before the 2× resize; opaque RGBA goes JPEG; only the National 2
   weights a banner sets are packaged. 160×600 went 572KB → 136KB.
+
+## Knowledge base + baseline (2026-09-20)
+
+- `tools/baseline` is the regression guard (see its README). Run `compare`
+  before shipping anything that can move a layout.
+- Guideline passages no longer ride in build notes; the editor shows them on
+  request. Designer-feedback summaries are scoped to the campaign
+  (`campaignKeyOf`), and a Wrong needs a fault or a note (server-enforced).
+- Campaign styles page (`/knowledge/styles`): learned layouts per campaign in
+  plain words, set aside / restore (archived flag inside the profile JSON,
+  `updatedAt` untouched so "newest wins" is unchanged), and a deliberately
+  narrow Combine: ticked layouts only, no InDesign-bridge masters, newest
+  import per size+variant, must add an axis.
+- Geometry engine interpolates only between masters of the SAME axis.
+  Landscape keeps the campaign schema / recipe unless a landscape master was
+  measured.

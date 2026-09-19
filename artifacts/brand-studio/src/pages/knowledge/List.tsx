@@ -12,7 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Sparkles, Trash2, ImagePlus, Wand2, ImageIcon, BookOpen, FileText } from "lucide-react";
+import { Sparkles, Trash2, ImagePlus, Wand2, ImageIcon, BookOpen, FileText, Ruler } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useMe } from "@/hooks/use-me";
 
@@ -125,6 +125,10 @@ export default function KnowledgeList() {
           <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight">Knowledge</h1>
           <p className="text-muted-foreground mt-1.5">Brand guidelines &amp; learned creatives</p>
         </div>
+        <div className="flex flex-wrap gap-2 justify-end">
+          <Link href="/knowledge/styles">
+            <Button variant="outline" data-testid="button-campaign-styles" title="The measured numbers every new size is built from, per campaign"><Ruler className="w-4 h-4 mr-2" />Campaign styles</Button>
+          </Link>
         {isAdmin && (
           <div className="flex gap-2">
             <Link href="/knowledge/guidelines">
@@ -135,6 +139,7 @@ export default function KnowledgeList() {
             </Link>
           </div>
         )}
+        </div>
       </div>
 
       <section className="space-y-4">

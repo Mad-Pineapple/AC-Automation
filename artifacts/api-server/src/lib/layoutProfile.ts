@@ -75,6 +75,9 @@ export interface MasterMeasurement {
 }
 
 export interface LayoutProfile {
+  /** Set aside, not deleted: an archived layout is never chosen for a build
+   *  and can be restored. Used when a campaign's imports are combined. */
+  archived?: boolean;
   version: 1 | 2;
   name: string;
   sources: Array<{ templateId: number; name: string; width: number; height: number; axis: Axis; formatClass: FormatClass }>;
@@ -395,7 +398,9 @@ export async function updateProfileRules(id: number, edits: unknown): Promise<St
   if (!p) return null;
   const rules = mergeRules(p.profile, edits);
   const profile: LayoutProfile = { ...p.profile, rules };
-  const [saved] = await db.update(layoutProfilesTable).set({ profile: JSON.stringify(profile), updatedAt: new Date() }).where(eq(layoutProfilesTable.id, id)).returning();
+  // updatedAt is left alone: the newest layout wins for a master, and
+  // setting one aside and restoring it must not change which one that is.
+  const [saved] = await db.update(layoutProfilesTable).set({ profile: JSON.stringify(profile) }).where(eq(layoutProfilesTable.id, id)).returning();
   return parseRow(saved);
 }
 
@@ -492,8 +497,50 @@ export async function profileForMaster(masterId: number, sourceTemplateId?: numb
     .from(layoutProfilesTable)
     .where(sql`string_to_array(${layoutProfilesTable.sourceKey}, ',')::int[] && ${sql.raw(`ARRAY[${ids.map((n) => Number(n)).join(",")}]::int[]`)}`)
     .orderBy(desc(layoutProfilesTable.updatedAt))
-    .limit(1);
-  return rows[0] ? parseRow(rows[0]) : null;
+    .limit(12);
+  const live = rows.map(parseRow).find((p) => !p.profile.archived);
+  return live ?? null;
+}
+
+/** Archive or restore a layout. Nothing is deleted. */
+export async function setProfileArchived(id: number, archived: boolean): Promise<StoredProfile | null> {
+  const current = await getProfile(id);
+  if (!current) return null;
+  const profile: LayoutProfile = { ...current.profile, archived: archived || undefined };
+  const [saved] = await db.update(layoutProfilesTable).set({ profile: JSON.stringify(profile), updatedAt: new Date() }).where(eq(layoutProfilesTable.id, id)).returning();
+  return saved ? parseRow(saved) : null;
+}
+
+/** The measured numbers a designer would recognise, in plain words. */
+export function describeProfilePlainly(profile: LayoutProfile): string[] {
+  const out: string[] = [];
+  const pct = (v: number) => `${Math.round(v * 1000) / 10}%`;
+  const byAxis = (axis: Axis) => (profile.geometryMasters ?? []).filter((g) => (profile.sources.find((x) => x.templateId === g.templateId)?.axis ?? "stacked") === axis);
+  for (const axis of ["stacked", "side"] as Axis[]) {
+    const gms = byAxis(axis);
+    if (!gms.length) continue;
+    const cls = axis === "stacked" ? "portrait" : "wide";
+    const z = profile.zones[cls as FormatClass];
+    const where = axis === "stacked" ? "Tall layouts (photo over panel)" : "Wide layouts (photo beside panel)";
+    const g = gms[0];
+    const short = Math.min(g.width, g.height);
+    const hl = g.elements["headline:0"], cta = g.elements["cta:0"], label = g.elements["ctaLabel:0"], sub = g.elements["subheadline:0"], msg = g.elements["message:0"], lock = g.elements["lockup:0"];
+    const bits: string[] = [];
+    if (z) bits.push(`photo takes ${pct(z.photoFrac)} of the ${axis === "stacked" ? "height" : "width"}`, `pattern band is ${pct(z.bandFrac)} of the height`);
+    if (hl?.fontSize) bits.push(`heading type is ${pct(hl.fontSize)} of the short side`);
+    if (hl?.fontSize && sub?.fontSize) bits.push(`sub-line is ${Math.round((sub.fontSize / hl.fontSize) * 100)}% of the heading`);
+    if (hl?.fontSize && msg?.fontSize) bits.push(`message is ${Math.round((msg.fontSize / hl.fontSize) * 100)}% of the heading`);
+    if (hl?.fontSize && cta) bits.push(`pill is ${Math.round(((cta.h * g.height) / (hl.fontSize * short)) * 100)}% of the heading`);
+    if (cta && label?.fontSize) bits.push(`pill label is ${Math.round(((label.fontSize * short) / (cta.h * g.height)) * 100)}% of the pill`);
+    if (lock) bits.push(`logo lockup is ${pct((lock.h * g.height) / short)} of the short side`);
+    out.push(`${where}, measured on ${gms.map((m) => `${m.width}×${m.height}`).filter((v, i, a) => a.indexOf(v) === i).join(", ")}: ${bits.join("; ")}.`);
+  }
+  // Only evidence when masters of DIFFERENT sizes carry the same button.
+  const distinctSizes = new Set(profile.sources.map((x) => `${x.width}x${x.height}`)).size;
+  if (profile.cta.fixedPx && distinctSizes > 1) out.push(`The button is a fixed ${profile.cta.fixedPx.w}×${profile.cta.fixedPx.h}px asset at the measured scale.`);
+  const missing = (["stacked", "side"] as Axis[]).filter((a) => !profile.measuredAxes.includes(a));
+  if (missing.length) out.push(`No ${missing.map((a) => (a === "stacked" ? "tall" : "wide")).join(" or ")} master measured yet — those sizes use the studio's standard numbers until one is added.`);
+  return out;
 }
 
 export interface ResolvedStyle { schema: StyleSchema | null; source: "profile" | "builtin" | "none"; profileId?: number; label: string; profile?: LayoutProfile }

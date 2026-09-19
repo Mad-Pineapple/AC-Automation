@@ -40,6 +40,7 @@ import CompareTemplates from "@/pages/templates/Compare";
 import KnowledgeList from "@/pages/knowledge/List";
 import LearnArtwork from "@/pages/knowledge/Learn";
 import KnowledgeGuidelines from "@/pages/knowledge/Guidelines";
+import CampaignStyles from "@/pages/knowledge/CampaignStyles";
 import { TemplateRegistry } from "@/components/TemplateRegistry";
 
 // Every generated API call carries the Clerk session token (see lib/apiAuth).
@@ -195,6 +196,7 @@ function AppRoutes() {
         <Route path="/knowledge" component={KnowledgeList} />
         <Route path="/knowledge/learn" component={LearnArtwork} />
         <Route path="/knowledge/guidelines" component={KnowledgeGuidelines} />
+        <Route path="/knowledge/styles" component={CampaignStyles} />
         <Route path="/library" component={LibraryPage} />
         <Route path="/brands" component={BrandList} />
         <Route path="/brands/new" component={NewBrand} />
