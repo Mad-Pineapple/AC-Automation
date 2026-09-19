@@ -13,7 +13,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Pencil, Trash2, FileUp, Hammer, ArrowUpRight, LayoutTemplate } from "lucide-react";
+import { Pencil, Trash2, FileUp, Hammer, ArrowUpRight, LayoutTemplate, Play } from "lucide-react";
 import { TemplateThumbnail, LayoutOptions } from "@/components/TemplateRenderer";
 import { useToast } from "@/hooks/use-toast";
 import { useMe } from "@/hooks/use-me";
@@ -299,6 +299,13 @@ export default function WipList() {
               <Button variant="ghost" onClick={clearAll} disabled={clearing} data-testid="button-clear-wip">
                 {clearing ? "Clearing…" : "Clear all"}
               </Button>
+            )}
+            {wipTemplates.length > 0 && (
+              <Link href={selected.size > 0 ? `/wip/banners?ids=${[...selected].join(",")}` : "/wip/banners"}>
+                <Button variant="outline" data-testid="button-banner-preview" title="See the sizes playing together as HTML banners">
+                  <Play className="w-4 h-4 mr-2" />{selected.size > 0 ? `Preview HTML banners (${selected.size})` : "HTML banner preview"}
+                </Button>
+              </Link>
             )}
             <Link href="/wip/import">
               <Button data-testid="button-import-wip"><FileUp className="w-4 h-4 mr-2" />Upload artwork</Button>

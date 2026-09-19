@@ -9,6 +9,15 @@
 // HTML / Statics / Print) and where the placement actually runs.
 export type AdaptGroup = "OOH" | "HTML" | "Statics" | "Print";
 
+/** Which way a size runs, in the words a designer uses. */
+export type Orientation = "Portrait" | "Landscape" | "Square";
+export function orientationOf(width: number, height: number): Orientation {
+  const ratio = width / Math.max(1, height);
+  if (ratio > 1.05) return "Landscape";
+  if (ratio < 0.95) return "Portrait";
+  return "Square";
+}
+
 export const ADAPT_GROUPS: { key: AdaptGroup; label: string; hint: string }[] = [
   { key: "OOH", label: "OOH", hint: "Digital out-of-home screens — delivered as stills or short loops to the panel operator" },
   { key: "HTML", label: "HTML", hint: "HTML5 display banners — DV360 / GDN, exported as a zip with click tags" },

@@ -31,6 +31,7 @@ import Performance from "@/pages/Performance";
 import TeamPage from "@/pages/team";
 import TemplateList from "@/pages/templates/List";
 import WipList from "@/pages/wip/List";
+import BannerPreview from "@/pages/wip/BannerPreview";
 import NewTemplate from "@/pages/templates/New";
 import ImportPdf from "@/pages/templates/ImportPdf";
 import CampaignBuild from "@/pages/campaigns/Build";
@@ -184,6 +185,7 @@ function AppRoutes() {
         <Route path="/templates" component={TemplateList} />
         <Route path="/wip" component={WipList} />
         <Route path="/wip/import" component={ImportPdf} />
+        <Route path="/wip/banners" component={BannerPreview} />
         <Route path="/wip/:id/compare" component={CompareTemplates} />
         <Route path="/wip/:id" component={EditTemplate} />
         <Route path="/templates/new" component={NewTemplate} />

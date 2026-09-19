@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useParams, Link, useLocation } from "wouter";
 import { useGetTemplate, useListTemplates, useListBrands, getGetTemplateQueryKey, getListTemplatesQueryKey, useClaudeReviewTemplate, useUndoClaudeReviewTemplate, Template } from "@workspace/api-client-react";
-import { ChevronLeft, Pencil, AlertTriangle, Sparkles, Loader2, RefreshCw, Undo2 } from "lucide-react";
+import { ChevronLeft, Pencil, AlertTriangle, Sparkles, Loader2, RefreshCw, Undo2, Play } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useMe } from "@/hooks/use-me";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -283,6 +283,13 @@ export default function CompareTemplates() {
             {master.name} · {pieces.length} piece{pieces.length === 1 ? "" : "s"} created from it
           </p>
         </div>
+        {location.startsWith("/wip/") && (
+          <Link href={`/wip/banners?family=${master.id}`}>
+            <Button type="button" variant="outline" className="gap-1.5" data-testid="button-family-banner-preview" title="See every size playing together as HTML banners">
+              <Play className="w-4 h-4" />HTML banner preview
+            </Button>
+          </Link>
+        )}
         <ExportStaticMenu templateId={master.id} templateName={master.name} familyIds={[master.id, ...pieces.map((t) => t.id)]} />
       </div>
 
