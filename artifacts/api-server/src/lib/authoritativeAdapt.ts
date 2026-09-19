@@ -190,6 +190,20 @@ export function adaptAuthoritativeConfig(
     }
   }
   const elements = master.elements.map((e) => byId.get(e.id) ?? e);
+  // A pill's label box follows the pill's inner width (a frame that just
+  // fitted in InDesign must not wrap after rounding at the new size).
+  for (const members of groups.values()) {
+    const pill = members.find((m) => m.slot === "cta" && m.type === "rect");
+    const label = members.find((m) => m.slot === "ctaLabel" && m.type === "text");
+    if (!pill || !label) continue;
+    const pb = elements.find((e) => e.id === pill.id), lb = elements.find((e) => e.id === label.id);
+    if (!pb || !lb) continue;
+    const pad = Math.max(2, lb.x - pb.x);
+    const icon = members.find((m) => m.slot === "ctaIcon");
+    const ib = icon ? elements.find((e) => e.id === icon.id) : undefined;
+    const right = ib ? ib.x - Math.max(2, Math.round(pad / 2)) : pb.x + pb.w - pad;
+    lb.w = Math.max(1, round(right - lb.x));
+  }
   // Studio floors still hold on the bridge path: copy and pills below them
   // are raised to the floor inside their box and flagged for a look.
   const rules = opts.rules;
