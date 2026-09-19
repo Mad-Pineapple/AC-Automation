@@ -20,7 +20,7 @@ import sharp from "sharp";
 import type { DroppedPart, FreeformConfig, FreeformElement, FreeformImage, FreeformRect, FreeformText, LayoutOption } from "./freeform";
 import { aspectDistance, classifyAspect, classifyBudget, needsRebuild, type FormatClass, type PixelBudget } from "./formatCatalog";
 import { inferSlots, type Box, type SemanticMaster } from "./slots";
-import { recipeFor, type Recipe } from "./recipes";
+import { recipeFor, RECIPES, type Recipe } from "./recipes";
 import { fitText, prepareMeasurement, type FontSpec, capHeightPx, fontResolution } from "./textMeasure";
 import { planCta, masterLabelRatio, pillHeightFromHeadline, type CtaPlan } from "./ctaPlan";
 import { LABEL_FLOOR_PX, type RuleLayer } from "./partRulesLayer";
@@ -165,6 +165,29 @@ function inferSubjectFocus(
   }
   if (!Number.isFinite(fx) || !Number.isFinite(fy)) return null;
   return { x: clamp(fx, 0, 1), y: clamp(fy, 0, 1) };
+}
+
+/**
+ * Where the master sets its copy block (kicker + heading + sub-line) in the
+ * visible photo area, as a share of that area's height. The designer places
+ * it per picture — on the Get Ready masters the block centre is 51% down
+ * for Storms, 54% for Quakes and 62% for Tsunami — so one constant per shape
+ * cannot be right for all three.
+ */
+function masterCopyCentre(sem: ReturnType<typeof inferSlots>, srcW: number, srcH: number): number | null {
+  const pb = sem.photoBox;
+  if (!pb || !sem.headline) return null;
+  let vy0 = Math.max(0, pb.y), vy1 = Math.min(srcH, pb.y + pb.h);
+  const panel = sem.panelBox;
+  if (panel && panel.w >= srcW * 0.9 && panel.y > vy0 && panel.y < vy1) vy1 = panel.y;
+  if (sem.band && sem.band.w >= srcW * 0.9 && sem.band.y > vy0 && sem.band.y < vy1) vy1 = sem.band.y;
+  const zoneH = vy1 - vy0;
+  if (zoneH < 8) return null;
+  const parts = [sem.kicker, sem.headline, sem.subheadline].filter((t): t is NonNullable<typeof t> => !!t).filter((t) => t.y + t.h / 2 >= vy0 && t.y + t.h / 2 <= vy1);
+  if (!parts.some((t) => t === sem.headline)) return null;
+  const top = Math.min(...parts.map((t) => t.y)), bottom = Math.max(...parts.map((t) => t.y + t.h));
+  const frac = ((top + bottom) / 2 - vy0) / zoneH;
+  return Number.isFinite(frac) ? frac : null;
 }
 
 function fontSpec(t: FreeformText | null | undefined, scale = 1): FontSpec {
@@ -574,7 +597,24 @@ export async function recomposeToFormat(
       // With no cut-out on the photo, the headline drops onto the subject
       // (shipped Quakes vs Storms) so the lower photo zone never reads empty.
       const hasCutout = elements.some((e) => e.id === "rc_cutout");
-      const centreFrac = hasCutout ? recipe.headlineCentreFrac : recipe.headlineCentreFracBare;
+      const classCentre = hasCutout ? recipe.headlineCentreFrac : recipe.headlineCentreFracBare;
+      // The heading keeps the place the designer gave it on THIS picture,
+      // moved by the difference between the two shapes' usual positions.
+      // Measured on the studio's own pairs: every hazard's block sits 6–7
+      // points higher in the 960×256 than in the 384×592 (Storms 51→44,
+      // Quakes 54→48, Tsunami 62→56), which is the recipes' own difference
+      // (0.56 → 0.49). A single constant put every hazard at 56%: Storms'
+      // heading sat on the car. An approved piece's measured position still
+      // leads when there is one.
+      const srcClass = classifyAspect(srcW, srcH);
+      const srcRecipe = RECIPES[srcClass];
+      const srcCentre = sem.cutouts.length > 0 ? srcRecipe.headlineCentreFrac : srcRecipe.headlineCentreFracBare;
+      const masterCentre = hasPhoto && srcRecipe.axis !== "row" ? masterCopyCentre(sem, srcW, srcH) : null;
+      const approvedLeads = ovAll.headlineCentreFrac != null || ovAll.headlineCentreFracBare != null;
+      const centreFrac = masterCentre != null && !approvedLeads ? clamp(masterCentre + (classCentre - srcCentre), 0.22, 0.78) : classCentre;
+      if (masterCentre != null && !approvedLeads && Math.abs(centreFrac - classCentre) >= 0.01) {
+        notes.push(`Heading placed as on the master: its copy sits ${Math.round(masterCentre * 100)}% down the photo there, ${Math.round(centreFrac * 100)}% here.`);
+      }
       const centreY = copyZone.y + copyZone.h * centreFrac;
       const y0 = r(clamp(centreY - blockH / 2, copyZone.y + margin, copyZone.y + copyZone.h - blockH - margin));
       const hlY = y0 + kickH + kickGap;
