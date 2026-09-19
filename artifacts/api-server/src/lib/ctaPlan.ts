@@ -140,52 +140,48 @@ export function planCta(input: CtaPlanInput): CtaPlan {
   let lines = [label];
   let fits = true;
 
-  // 0. A narrow zone that may set the label on two lines does so BEFORE the
-  //    label collapses: a 160px tower carried "Auckland emergency
-  //    management" on one 9px line in a sliver of a pill. Two lines at a
-  //    readable size win when one line would lose more than a quarter.
-  let twoLineDone = false;
-  if (g.w > input.maxW && input.allowTwoLines && input.maxW / g.w < 0.75 && /\s/.test(label)) {
-    const tryAt = (fs: number) => {
-      const hh = clamp(fs / labelRatio, input.minH, input.maxH);
-      const pad = r(hh * Math.min(padRatio, 0.45));
-      const inner = Math.max(10, input.maxW - pad * 2);
-      const wrapped = wrapText(label, inner, input.spec, fs);
-      const ok = wrapped.length === 2 && wrapped.every((l) => measureLine(l, input.spec, fs) <= inner + 0.01);
-      return ok ? { wrapped, pad, widest: Math.max(...wrapped.map((l) => measureLine(l, input.spec, fs))) } : null;
+  // 1. Too wide: the pill stays what it is — ONE line with its icon — and
+  //    the label takes the largest size that fits the zone. The size is
+  //    searched, not scaled once: the width is not linear in the type size
+  //    (pads, gap and icon ride the pill height, which stops at its floor),
+  //    and a single scale step left a 160px tower with a 10px label, no
+  //    icon, and later a two-line blob that no longer read as a search
+  //    field. Master spacing first, then tight spacing, both with the icon.
+  const want = fontSize;
+  if (g.w > input.maxW) {
+    const solve = (): boolean => {
+      for (let fs = want; fs >= minLabel - 0.01; fs -= 0.25) {
+        fontSize = fs;
+        h = clamp(fs / labelRatio, input.minH, input.maxH);
+        g = geometry();
+        if (g.w <= input.maxW) return true;
+      }
+      return false;
     };
-    for (let fs = fontSize; fs >= Math.max(minLabel, fontSize * 0.6); fs -= 0.5) {
-      const t = tryAt(fs);
-      if (!t) continue;
-      fontSize = fs;
-      icon = false;
-      lines = t.wrapped;
-      const padY = Math.max(3, fs * 0.45);
-      h = r(fs * 1.15 * 2 + padY * 2);
-      g = { padX: t.pad, iconSize: 0, iconGap: 0, iconInset: 0, labelW: t.widest, w: Math.min(r(input.maxW), r(Math.ceil(t.widest + fs * 0.2) + 2 + t.pad * 2)) };
-      notes.push("Pill label set on 2 lines to keep it legible at this width.");
-      twoLineDone = true;
-      break;
+    const comfortable = Math.max(minLabel, Math.min(want, 11));
+    let ok = solve() && fontSize >= want * 0.85;
+    if (!ok) {
+      padRatio = Math.min(padRatio, 0.3);
+      gapRatio = Math.min(gapRatio, 0.15);
+      ok = solve() && fontSize >= comfortable;
     }
-  }
-  // 1. Too wide: label and pill shrink together down to the floor.
-  if (!twoLineDone && g.w > input.maxW) {
-    const k = input.maxW / g.w;
-    fontSize = Math.max(minLabel, fontSize * k);
-    h = clamp(fontSize / labelRatio, input.minH, input.maxH);
-    g = geometry();
-  }
-  // 1b. Still too wide: tighten the padding towards the floor before
-  //     anything else gives.
-  if (g.w > input.maxW && (padRatio > 0.3 || gapRatio > 0.2)) {
-    padRatio = Math.min(padRatio, 0.3);
-    gapRatio = Math.min(gapRatio, 0.2);
-    g = geometry();
+    if (!ok) {
+      // Leave the state at the smallest size so the steps below can decide.
+      fontSize = Math.max(minLabel, Math.min(want, fontSize));
+      h = clamp(fontSize / labelRatio, input.minH, input.maxH);
+      g = geometry();
+    }
   }
   // 2. Still too wide: give up the icon before the words.
   if (g.w > input.maxW && icon) {
     icon = false;
-    g = geometry();
+    // Without the icon the label takes back the room it frees.
+    for (let fs = want; fs >= minLabel - 0.01; fs -= 0.25) {
+      fontSize = fs;
+      h = clamp(fs / labelRatio, input.minH, input.maxH);
+      g = geometry();
+      if (g.w <= input.maxW) break;
+    }
     notes.push("Pill icon dropped: no room beside the label at this size.");
   }
   // 3. Still too wide: two lines on a tall pill, never a cut word.

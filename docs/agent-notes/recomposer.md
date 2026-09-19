@@ -190,3 +190,12 @@ file (was up to 12%).
   over the flooded car).
 - **Narrow towers** set the pill label on two lines before it collapses to
   the 9px floor.
+- **Designer rulings, 19 Sep (evening).** (1) 160×600 pill: the two-line
+  label made a blob with no icon — wrong. The pill is always ONE line with
+  its search icon; `planCta` now searches for the largest label that fits
+  (master spacing, then tight spacing), gives up the icon only when the
+  label would fall under the floor, and towers may run the pill to 6px from
+  each edge. Two lines is the last resort only. (2) 300×250 headline was
+  too small for its space: headline height now follows the photo zone's
+  aspect, interpolated between the two masters (0.32 of zone height at
+  aspect 1.14 → 0.45 at 1.9), never below the class recipe's value.

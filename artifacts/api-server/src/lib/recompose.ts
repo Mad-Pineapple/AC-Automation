@@ -460,7 +460,14 @@ export async function recomposeToFormat(
       targetH,
       minH: CTA_MIN_PX,
       maxH,
-      maxW: panelZone.w * (recipe.axis === "row" ? (hasPhoto ? 0.88 : 0.5) : Math.min(0.92, recipe.ctaMaxWidthFrac + 0.15)),
+      // A narrow column gives the pill the whole column inside the margins:
+      // the small-budget cap (62% + 15%) left a 160px tower 123px for a
+      // search pill, which cost it the icon and set the label at 10px.
+      maxW: recipe.axis === "row"
+        ? panelZone.w * (hasPhoto ? 0.88 : 0.5)
+        : formatClass === "tower" || dstW < 200
+          ? Math.max(panelZone.w * 0.8, panelZone.w - Math.min(margin * 2, 12))
+          : panelZone.w * Math.min(0.92, recipe.ctaMaxWidthFrac + 0.15),
       minLabelPx: budget === "micro" ? Math.min(8, LABEL_FLOOR_PX) : LABEL_FLOOR_PX,
       icon: !!sem.ctaIcon,
       allowTwoLines: formatClass === "tower" || dstW < 200,
@@ -499,7 +506,16 @@ export async function recomposeToFormat(
       // The masters' headline run is measured as a share of the WHOLE zone
       // (88% of 384 on the portrait, 81% of 480 on the wide); taking the
       // share of the inset width set every rebuilt headline a size small.
-      const box = { w: Math.min(zoneW, copyZone.w * recipe.headlineWidthFrac), h: copyZone.h * recipe.headlineMaxHeightFrac };
+      // How tall the headline may run follows the SHAPE of the photo zone,
+      // read off the studio's two masters: in the 384×337 zone (aspect 1.14)
+      // the type is 0.28 of the zone's height; in the 480×256 zone (aspect
+      // 1.9) it is 0.43, because a flatter zone has the width to carry it.
+      // A per-class constant left a 300×250 (zone 300×145, as flat as the
+      // wide) with a headline half the width of its space.
+      const zoneAspect = copyZone.w / Math.max(1, copyZone.h);
+      const shapeFrac = 0.32 + clamp((zoneAspect - 1.14) / (1.9 - 1.14), 0, 1) * (0.45 - 0.32);
+      const maxHFrac = recipe.axis === "stacked" || recipe.axis === "side" ? Math.max(recipe.headlineMaxHeightFrac, shapeFrac) : recipe.headlineMaxHeightFrac;
+      const box = { w: Math.min(zoneW, copyZone.w * recipe.headlineWidthFrac), h: copyZone.h * maxHFrac };
       const fit = fitText(text, box, { ...fontSpec(hl), minSize: headlineMin, maxSize: copyZone.h, lineHeight: 1.02, maxLines });
       if (!fit.fits) { notes.push("Headline shrank to the floor size and still overflows — shorten the copy."); needsReview = true; }
       // One line: the box is the CAP HEIGHT, as InDesign frames it, so the
