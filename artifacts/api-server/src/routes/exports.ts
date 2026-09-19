@@ -203,6 +203,29 @@ function pdfQuery(q: Request["query"]): PdfQuery {
 // Routes
 // ---------------------------------------------------------------------------
 
+/**
+ * POST /render-config { config, width, height } → PNG of a layout that is not
+ * saved anywhere (a dry-run build). Lets before/after sheets and checks be
+ * drawn with the real renderer without adding pieces to WIP.
+ */
+router.post("/render-config", requireAuth, async (req, res) => {
+  const width = Number(req.body?.width), height = Number(req.body?.height);
+  const raw = req.body?.config;
+  if (!Number.isInteger(width) || !Number.isInteger(height) || width < 16 || height < 16 || width > 8000 || height > 8000 || !raw || raw.kind !== "freeform") {
+    res.status(400).json({ error: "config (freeform), width and height are required" });
+    return;
+  }
+  try {
+    const png = await renderFreeformToPng(normalizeFreeformConfig(raw), width, height, { scale: 1, loadImage: makeImageLoader(req) });
+    res.set("Content-Type", "image/png");
+    res.set("Cache-Control", "no-store");
+    res.send(png);
+  } catch (err) {
+    logger.error({ err }, "render-config failed");
+    res.status(500).json({ error: "Failed to render PNG" });
+  }
+});
+
 router.get("/templates/:id/export.png", requireAuth, async (req, res) => {
   const t = await loadTemplate(req, res);
   if (!t) return;
