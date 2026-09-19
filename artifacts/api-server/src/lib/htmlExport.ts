@@ -158,8 +158,18 @@ async function optimizeForExport(
     const maxH = Math.max(16, Math.round(boxH * 2));
     const needsResize = (meta.width ?? 0) > maxW || (meta.height ?? 0) > maxH;
     const pipeline = needsResize ? img.resize({ width: maxW, height: maxH, fit: "inside", withoutEnlargement: true }) : img;
-    if (meta.hasAlpha) {
+    // An alpha CHANNEL is not transparency: photos cropped from a document
+    // PDF are RGBA with every pixel opaque, and keeping them PNG shipped a
+    // 430KB photograph in a 160×600 banner. Only real transparency stays PNG.
+    let transparent = !!meta.hasAlpha;
+    if (transparent) {
+      try { transparent = !(await sharp(bytes, { failOn: "none" }).stats()).isOpaque; } catch { /* keep PNG */ }
+    }
+    if (transparent) {
       return { bytes: await pipeline.png({ compressionLevel: 9, palette: true }).toBuffer(), contentType: "image/png" };
+    }
+    if (meta.hasAlpha) {
+      return { bytes: await pipeline.flatten({ background: "#ffffff" }).jpeg({ quality: 82, mozjpeg: true }).toBuffer(), contentType: "image/jpeg" };
     }
     return { bytes: await pipeline.jpeg({ quality: 82, mozjpeg: true }).toBuffer(), contentType: "image/jpeg" };
   } catch {
@@ -467,6 +477,22 @@ export async function buildHtmlPackage(opts: HtmlExportOptions): Promise<HtmlPac
         !storyFrames && copyMotion === "block"
           ? `<div class="block-reveal" style="position:absolute;left:${el.x}px;top:${el.y}px;width:${el.w}px;height:${el.h}px;background:${accent};animation:blockwipe .9s cubic-bezier(.7,0,.3,1) ${blockDelay}s both;transform-origin:left center;pointer-events:none"></div>\n`
           : "";
+      // Cap-height frames (baselineFit "cap"): the frame hugs the capitals
+      // and the PNG renderer sits the baseline on the frame's bottom edge.
+      // Plain CSS would hang a full line box from the frame's top and set
+      // the type ~0.3em low. An empty inline-block strut as tall as the
+      // frame has its baseline at its own bottom, so the line's baseline
+      // lands on the frame bottom in any font, with no metrics needed. The
+      // dynamic-copy and typewriter hooks move to the inner span because
+      // both replace textContent.
+      const capFit = el.baselineFit === "cap" && !!el.text && !el.text.includes("\n") && el.h > 0;
+      if (capFit) {
+        const delay = (copyLead + delayFor(el)).toFixed(2);
+        body.push(
+          `${blockMarkup}<div class="el text ${el.role}" style="${base};${textStyle(el, brandFont)};line-height:0;white-space:nowrap;${anim}"><span style="display:inline-block;width:0;height:${el.h}px"></span><span class="capline${extraCls}"${dyn} data-delay="${delay}">${esc(el.text)}</span></div>`,
+        );
+        continue;
+      }
       body.push(
         `${blockMarkup}<div class="el text ${el.role}${extraCls}"${dyn} data-delay="${(copyLead + delayFor(el)).toFixed(2)}" style="${base};${textStyle(el, brandFont)};${anim}">${esc(el.text)}</div>`,
       );
