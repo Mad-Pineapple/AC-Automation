@@ -35,7 +35,9 @@ export type MasterFamily = NonNullable<FreeformConfig["masterFamily"]>;
 export function familyForTarget(width: number, height: number): MasterFamily {
   const ratio = width / height;
   if (ratio <= 0.55) return "slim-portrait";
-  if (ratio < 0.82) return "portrait";
+  // Squares belong with the portrait (stacked) family: the studio's square
+  // is a stack (photo over panel), never a photo beside a panel column.
+  if (ratio < 1.25) return "portrait";
   if (ratio >= 2.75) return "slim-landscape";
   return "landscape";
 }
@@ -155,12 +157,18 @@ export function adaptAuthoritativeConfig(
         continue;
       }
       if (el.type === "image" && stretched && !isLogo && (el.slot === "band" || el.slot === "photo" || el.slot === "panel")) {
-        // Bands, panels and photos inside a mixed block crop to the block's
-        // flexible extent rather than sitting short in it.
+        // Bands, panels and photos inside a mixed block follow the block on
+        // the axes THEY span (a band across the panel's top keeps its own
+        // height and follows the width); on the other axis they keep their
+        // uniform size and their edge.
         const fx0 = source.w > 0 ? (el.x - source.x) / source.w : 0, fx1 = source.w > 0 ? (el.x + el.w - source.x) / source.w : 1;
         const fy0 = source.h > 0 ? (el.y - source.y) / source.h : 0, fy1 = source.h > 0 ? (el.y + el.h - source.y) / source.h : 1;
-        const bw = Math.max(1, round((fx1 - fx0) * box.w)), bh = c.flexH ? Math.max(1, round((fy1 - fy0) * box.h)) : h;
-        byId.set(el.id, { ...el, x: round(box.x + fx0 * box.w), y: round(box.y + fy0 * box.h), w: bw, h: bh, fit: "cover" });
+        const spansX = fx1 - fx0 >= 0.9, spansY = fy1 - fy0 >= 0.9;
+        const bw = spansX ? Math.max(1, round((fx1 - fx0) * box.w)) : w;
+        const bh = spansY ? Math.max(1, round((fy1 - fy0) * box.h)) : h;
+        const bx = spansX ? round(box.x + fx0 * box.w) : fx0 <= 0.02 ? box.x : fx1 >= 0.98 ? box.x + box.w - bw : round(box.x + ((fx0 + fx1) / 2) * box.w - bw / 2);
+        const by = spansY ? round(box.y + fy0 * box.h) : fy0 <= 0.02 ? box.y : fy1 >= 0.98 ? box.y + box.h - bh : round(box.y + ((fy0 + fy1) / 2) * box.h - bh / 2);
+        byId.set(el.id, { ...el, x: bx, y: by, w: bw, h: bh, fit: "cover" });
         continue;
       }
       let x = box.x + offX, y = box.y + offY;

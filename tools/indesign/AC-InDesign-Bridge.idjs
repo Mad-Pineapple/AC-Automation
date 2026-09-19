@@ -40,7 +40,7 @@
     return "";
   }
   function slotFor(role) { return ({ background:"photo", hero:"photo", headline:"headline", subheadline:"subheadline", body:"message", cta:"cta", logo:"logo", decoration:"band", legal:"other" })[role] || "other"; }
-  function familyFor(w, h) { const r = w / h; return r <= 0.55 ? "slim-portrait" : r < 0.82 ? "portrait" : r >= 2.75 ? "slim-landscape" : "landscape"; }
+  function familyFor(w, h) { const r = w / h; return r <= 0.55 ? "slim-portrait" : r < 1.25 ? "portrait" : r >= 2.75 ? "slim-landscape" : "landscape"; }
   function pageSize(page) { const b = page.bounds; return { width:Number(b[3])-Number(b[1]), height:Number(b[2])-Number(b[0]), top:Number(b[0]), left:Number(b[1]) }; }
   function bounds(item, page) { const b=item.geometricBounds,p=page.bounds; return { x:Number(b[1])-Number(p[1]), y:Number(b[0])-Number(p[0]), w:Number(b[3])-Number(b[1]), h:Number(b[2])-Number(b[0]) }; }
   function visible(item) { try { return item.visible !== false && item.nonprinting !== true && item.itemLayer.visible !== false; } catch (_) { return true; } }
