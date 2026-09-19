@@ -262,3 +262,19 @@ more than 30% from the original. It never resizes (neighbours would move).
 - Geometry engine interpolates only between masters of the SAME axis.
   Landscape keeps the campaign schema / recipe unless a landscape master was
   measured.
+- **Check against a real file** (`/knowledge/check`, `lib/layoutCompare.ts`):
+  dry-run builds the real file's size from another master, measures both as
+  shares (`measureShares`) and lists the gaps in percentage points. "Learn
+  from this file" (`POST /layout-profiles/learn-from-real`) re-learns the
+  master's layout with the real file added — ordinary imports only, newest
+  per size+variant. Measuring changes nothing; learning is the only action
+  that moves builds, and it is confirmed by the designer.
+- Front-end previews: `freeformImageStyle` sets `maxWidth: "none"` — the
+  global `img { max-width: 100% }` squeezed cover-fit photos wider than
+  their canvas, so thumbnails showed half the photo area as bare panel while
+  PNG / HTML5 were right.
+- Open finding from the first check (Storms portrait built from the wide
+  master): heading centre is +6 points low in the photo area (real 45%,
+  built 51%; Quakes +2). The stacked recipe's "bare" centre (0.56) is lower
+  than the studio's. Not changed — it would move every approved tall size;
+  needs Rachel's go-ahead and a baseline `--accept`.

@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { Link } from "wouter";
 import { useAuth } from "@clerk/react";
-import { Archive, ArchiveRestore, ChevronLeft, Combine, Loader2, Ruler, ThumbsDown, ThumbsUp } from "lucide-react";
+import { Archive, ArchiveRestore, ChevronLeft, Combine, Loader2, Ruler, Scale, ThumbsDown, ThumbsUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -71,7 +71,12 @@ export default function CampaignStyles() {
       <div className="flex items-center gap-4">
         <Link href="/knowledge" className="rounded-full p-2 transition-colors hover:bg-muted"><ChevronLeft className="h-5 w-5" /></Link>
         <div>
-          <h1 className="text-3xl font-extrabold tracking-tight md:text-4xl">Campaign styles</h1>
+          <div className="flex flex-wrap items-center gap-3">
+            <h1 className="text-3xl font-extrabold tracking-tight md:text-4xl">Campaign styles</h1>
+            <Link href="/knowledge/check">
+              <Button variant="outline" size="sm" data-testid="button-check-real"><Scale className="mr-2 h-4 w-4" />Check against a real file</Button>
+            </Link>
+          </div>
           <p className="mt-1.5 text-muted-foreground">
             The measured numbers every new size is built from, per campaign. Learned from the masters you upload; shown here in plain words.
           </p>

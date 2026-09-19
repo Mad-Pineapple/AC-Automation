@@ -11,6 +11,10 @@ import { Router } from "express";
 import { requireAuth, requireAdmin } from "../middlewares/requireAuth";
 import { learnProfile, listProfiles, getProfile, deleteProfile, updateProfileRules, mergeRules, setProfileArchived, describeProfilePlainly, type StoredProfile } from "../lib/layoutProfile";
 import { campaignKeyOf, ensureFeedbackTable } from "../lib/feedbackLearning";
+import { compareLayouts } from "../lib/layoutCompare";
+import { isFreeformConfig, normalizeFreeformConfig } from "../lib/freeform";
+import { profileForMaster } from "../lib/layoutProfile";
+import { eq } from "drizzle-orm";
 import { db, templatesTable } from "@workspace/db";
 import { inArray, sql } from "drizzle-orm";
 
@@ -154,6 +158,52 @@ router.post("/layout-profiles/combine", requireAdmin, async (req, res): Promise<
     if (p.profile.sources.every((x) => masterIds.includes(x.templateId))) { await setProfileArchived(p.id, true); setAside.push(p.id); }
   }
   res.status(201).json({ ...formatProfile(learned.stored), skipped: [...learned.skipped, ...left], archived: setAside });
+});
+
+/**
+ * POST /layout-compare { realId, builtConfig } — measure a build against a
+ * size the studio really made (a WIP master with live layers). The build is
+ * whatever the client got from a dry-run adapt at the real file's size, so
+ * nothing is saved and nothing changes. Measuring only.
+ */
+router.post("/layout-compare", requireAuth, async (req, res): Promise<void> => {
+  const realId = Number(req.body?.realId);
+  if (!Number.isInteger(realId) || realId <= 0) { res.status(400).json({ error: "realId is required" }); return; }
+  const [real] = await db.select().from(templatesTable).where(eq(templatesTable.id, realId));
+  if (!real) { res.status(404).json({ error: "That real file is no longer in the studio." }); return; }
+  let realParsed: unknown;
+  try { realParsed = JSON.parse(real.config || "{}"); } catch { realParsed = {}; }
+  if (!isFreeformConfig(realParsed) || !isFreeformConfig(req.body?.builtConfig)) { res.status(400).json({ error: "Both pieces need live layers to be measured (an InDesign package with its IDML)." }); return; }
+  const comparison = compareLayouts(normalizeFreeformConfig(realParsed), normalizeFreeformConfig(req.body.builtConfig), real.width, real.height);
+  res.json({ real: { id: real.id, name: real.name, width: real.width, height: real.height }, ...comparison });
+});
+
+/**
+ * POST /layout-profiles/learn-from-real { masterId, realId } — add a real
+ * file to the layout the master builds from, so its shape is MEASURED rather
+ * than estimated. Same safety rules as combine: ordinary imports only, the
+ * newest import per size and variant. Re-learns INTO the campaign's layout
+ * (designer rule edits are kept).
+ */
+router.post("/layout-profiles/learn-from-real", requireAdmin, async (req, res): Promise<void> => {
+  const masterId = Number(req.body?.masterId), realId = Number(req.body?.realId);
+  if (![masterId, realId].every((n) => Number.isInteger(n) && n > 0) || masterId === realId) { res.status(400).json({ error: "masterId and realId are required and must differ" }); return; }
+  const current = await profileForMaster(masterId);
+  const wanted = [...new Set([masterId, realId, ...((current?.profile.sources ?? []).map((x) => x.templateId))])];
+  const rows = await db.select().from(templatesTable).where(inArray(templatesTable.id, wanted));
+  if (!rows.some((r) => r.id === realId)) { res.status(404).json({ error: "That real file is no longer in the studio." }); return; }
+  const newest = new Map<string, number>();
+  for (const row of rows.sort((a, b) => a.id - b.id)) {
+    let bridge = false;
+    try { bridge = JSON.parse(row.config || "{}")?.sourceMode === "indesign-bridge"; } catch { /* ordinary import */ }
+    if (bridge) continue;
+    newest.set(`${row.width}x${row.height}|${(row.name.split(" — ").pop() ?? "").toLowerCase()}`, row.id);
+  }
+  const ids = [...newest.values()];
+  if (!ids.includes(realId)) { res.status(422).json({ error: "An InDesign-bridge export keeps its own layout and cannot be learned into another." }); return; }
+  const learned = await learnProfile(ids, current?.name ?? null, (req as any).clerkUserId ?? null);
+  if (!learned) { res.status(422).json({ error: "The real file could not be measured: it needs a recognised heading." }); return; }
+  res.status(201).json({ ...formatProfile(learned.stored), skipped: learned.skipped });
 });
 
 router.get("/layout-profiles", requireAuth, async (_req, res): Promise<void> => {

@@ -796,7 +796,12 @@ export function freeformImageStyle(el: FreeformElement): React.CSSProperties {
     typeof el.focusX === "number" || typeof el.focusY === "number"
       ? `${Math.round((el.focusX ?? 0.5) * 100)}% ${Math.round((el.focusY ?? 0.5) * 100)}%`
       : "center";
-  return { objectFit: fit, objectPosition, borderRadius: el.radius ?? 0 };
+  // maxWidth "none": the global stylesheet caps every <img> at 100% of its
+  // container. A cover-fit photo is often wider than its canvas (a wide
+  // photograph in a 384px portrait is a 740px box hung at x −179), and the
+  // cap squeezed it to the canvas width — so previews showed half the photo
+  // area as bare panel while the PNG and HTML5 exports were right.
+  return { objectFit: fit, objectPosition, borderRadius: el.radius ?? 0, maxWidth: "none", maxHeight: "none" };
 }
 
 /**
