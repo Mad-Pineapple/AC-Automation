@@ -9,6 +9,7 @@ import { adaptFreeformConfig } from "./freeform";
 import { inferSlots } from "./slots";
 import { measureLine, wrapText } from "./textMeasure";
 import { slotForText, LABEL_FLOOR_PX, type RuleLayer } from "./partRulesLayer";
+import { resolveLiquid } from "./liquid";
 import type { GeometryBox, GeometryMaster, LayoutProfile } from "./layoutProfile";
 
 interface KeyedElement { key: string; element: FreeformElement }
@@ -138,7 +139,15 @@ export function adaptGeometryProfile(
   let matched = 0;
   // Part rules: a part pinned "none" is left out of this size entirely.
   const droppedByRule = new Set(keyed.filter(({ element }) => { const part = slotForText(element as { slot?: string; role?: string }); return part ? rules?.pin(part) === "none" : false; }).map(({ element }) => element.id));
+  const liquidScale = Math.min(dstW / srcW, dstH / srcH);
   const elements = keyed.filter(({ element }) => !droppedByRule.has(element.id)).map(({ key, element }) => {
+    // A designer's liquid-layout switches beat the measured geometry.
+    if (element.constraints && Object.keys(element.constraints).length) {
+      const box = resolveLiquid(element, element.constraints, { x: 0, y: 0, w: srcW, h: srcH }, { x: 0, y: 0, w: dstW, h: dstH }, liquidScale);
+      matched++;
+      if (element.type === "text") return { ...element, ...box, fontSize: fitText(element, element.fontSize * liquidScale, box.w, box.h, rules) };
+      return { ...element, ...box };
+    }
     const measured = targetBox(a, b, key, t);
     if (!measured) return fallbackById.get(element.id) ?? element;
     matched++;

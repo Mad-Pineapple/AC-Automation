@@ -5,6 +5,7 @@
  * Brand Creative Automation Platform API
  * OpenAPI spec version: 0.1.0
  */
+import type { FreeformElementConstraints } from './freeformElementConstraints';
 import type { FreeformElementFocusBox } from './freeformElementFocusBox';
 import type { FreeformElementGradient } from './freeformElementGradient';
 
@@ -61,4 +62,7 @@ export interface FreeformElement {
   /** Locked elements are pinned brand furniture: brief copy/imagery is never poured into them (their captured content always renders), and editors treat them as read-only.
    */
   locked?: boolean;
+  /** Liquid-layout switches (InDesign's object-based model): pin the element to zone edges and let its width/height flex. Absent means inferred from the master.
+   */
+  constraints?: FreeformElementConstraints;
 }

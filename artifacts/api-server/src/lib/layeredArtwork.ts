@@ -888,7 +888,7 @@ export function adaptLayered(master: FreeformConfig, srcW: number, srcH: number,
       let fit: "contain" | "cover" = "contain";
       if (bh > capH) {
         bh = capH;
-        if (bandRule.size === "fit-width") {
+        if (bandRule.size === "fit-width" || partBand.constraints?.flexW) {
           // Rule: the band fills the zone width. Keep the full width and let
           // the motif crop at the ends rather than shrinking and centring.
           fit = "cover";

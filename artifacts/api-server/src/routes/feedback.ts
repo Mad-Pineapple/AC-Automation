@@ -21,6 +21,11 @@ import { ObjectStorageService } from "../lib/objectStorage";
 import { makeImageLoader } from "./exports";
 import { profileForMaster, updateProfileRules } from "../lib/layoutProfile";
 import { PART_RULE_SLOTS, type PartRuleSlot } from "../lib/styleSpecs/getReadyBurst2";
+import { templatesTable } from "@workspace/db";
+import { eq } from "drizzle-orm";
+import { normalizeFreeformConfig, isFreeformConfig } from "../lib/freeform";
+import { inferSlots } from "../lib/slots";
+import { describeConstraints, type LiquidConstraints } from "../lib/liquid";
 
 const ensureTable = ensureFeedbackTable;
 
@@ -119,7 +124,43 @@ router.post("/feedback", requireAuth, async (req, res): Promise<void> => {
       req.log.warn({ err, subjectId }, "feedback: could not move the verdict into the profile's rules");
     }
   }
-  res.status(201).json({ ok: true, rememberedId, ...(ruleUpdated ? { ruleUpdated } : {}) });
+  // Position verdicts set liquid-layout pins on the MASTER's element, so
+  // every later build of the family follows them: "full width of the box" →
+  // pinned left + right, flexible width; "bleed to the top" → pinned top.
+  let pinsUpdated: { masterId: number; elementId: string; constraints: LiquidConstraints; words: string } | null = null;
+  if (subjectType === "template" && verdict === "incorrect" && slot && slot !== "whole" && slot !== "copy") {
+    try {
+      const text = `${expectedV ?? ""} ${cleanNote ?? ""}`.toLowerCase();
+      const c: LiquidConstraints = {};
+      if (/full[- ]width|edge to edge|whole width|length of the (box|panel)/.test(text)) { c.pinLeft = true; c.pinRight = true; c.flexW = true; }
+      if (/full[- ]height|whole height/.test(text)) { c.pinTop = true; c.pinBottom = true; c.flexH = true; }
+      if (/top of the (box|panel|artwork|canvas)|to the top|bleed(s)? (off|to) the top/.test(text)) c.pinTop = true;
+      if (/bottom of the (box|panel|artwork|canvas)|to the bottom|bleed(s)? (off|to) the bottom/.test(text)) c.pinBottom = true;
+      if (/left edge|to the left|bleed(s)? (off|to) the left/.test(text)) c.pinLeft = true;
+      if (/right edge|to the right|bleed(s)? (off|to) the right/.test(text)) c.pinRight = true;
+      if (Object.keys(c).length > 0) {
+        const masterId = snap.sourceTemplateId ?? subjectId;
+        const [m] = await db.select().from(templatesTable).where(eq(templatesTable.id, masterId));
+        if (m) {
+          const raw = JSON.parse(m.config || "{}");
+          if (isFreeformConfig(raw)) {
+            const cfg = normalizeFreeformConfig(raw);
+            const sem = inferSlots(cfg, m.width, m.height);
+            const target = cfg.elements.find((e) => e.slot === slot) ?? (sem.elements.find((e) => e.slot === slot) as { id: string } | undefined);
+            if (target) {
+              const elements = cfg.elements.map((e) => (e.id === target.id ? { ...e, constraints: { ...(e.constraints ?? {}), ...c } } : e));
+              await db.update(templatesTable).set({ config: JSON.stringify({ ...raw, elements }), updatedAt: new Date() }).where(eq(templatesTable.id, m.id));
+              pinsUpdated = { masterId: m.id, elementId: target.id, constraints: c, words: describeConstraints(c) };
+              req.log.info({ masterId: m.id, slot, constraints: c }, "feedback: liquid pins set on the master from a verdict");
+            }
+          }
+        }
+      }
+    } catch (err) {
+      req.log.warn({ err, subjectId }, "feedback: could not set liquid pins from the verdict");
+    }
+  }
+  res.status(201).json({ ok: true, rememberedId, ...(ruleUpdated ? { ruleUpdated } : {}), ...(pinsUpdated ? { pinsUpdated } : {}) });
   void backfillOnce(req);
 });
 

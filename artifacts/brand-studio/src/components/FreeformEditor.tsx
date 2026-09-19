@@ -846,6 +846,53 @@ function Inspector({
         </p>
       )}
 
+      {/* Liquid layout (InDesign's object-based model): pins to the zone
+          edges and springs on width/height. Nothing set = inferred from
+          where the element sits in the master. */}
+      {(() => {
+        const c = (el.constraints ?? {}) as { pinTop?: boolean; pinBottom?: boolean; pinLeft?: boolean; pinRight?: boolean; flexW?: boolean; flexH?: boolean };
+        const has = Object.values(c).some(Boolean);
+        const toggle = (k: keyof typeof c) => {
+          const next = { ...c, [k]: c[k] ? undefined : true };
+          const clean = Object.fromEntries(Object.entries(next).filter(([, v]) => v === true));
+          onPatch({ constraints: Object.keys(clean).length ? clean : undefined } as Partial<FreeformElement>);
+        };
+        const pinBtn = (k: keyof typeof c, label: string, title: string) => (
+          <button
+            type="button"
+            key={k}
+            onClick={() => toggle(k)}
+            title={title}
+            aria-pressed={!!c[k]}
+            data-testid={`liquid-${k}`}
+            className={`h-6 min-w-6 px-1.5 rounded border text-[11px] font-mono ${c[k] ? "bg-primary text-primary-foreground border-primary" : "border-border text-muted-foreground hover:border-primary/50"}`}
+          >
+            {label}
+          </button>
+        );
+        return (
+          <div className="rounded border border-border/60 px-2 py-1.5 space-y-1" data-testid="liquid-layout">
+            <div className="flex items-center justify-between">
+              <span className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground" title="How this element behaves when the artwork is built at another size">Liquid layout</span>
+              <span className="text-[10px] text-muted-foreground">{has ? "set by you" : "auto from master"}</span>
+            </div>
+            <div className="flex items-center gap-1 flex-wrap">
+              <span className="text-[10px] text-muted-foreground mr-0.5">Pin</span>
+              {pinBtn("pinTop", "T", "Pin to the top of its zone")}
+              {pinBtn("pinBottom", "B", "Pin to the bottom of its zone")}
+              {pinBtn("pinLeft", "L", "Pin to the left edge of its zone")}
+              {pinBtn("pinRight", "R", "Pin to the right edge of its zone")}
+              <span className="text-[10px] text-muted-foreground ml-1 mr-0.5">Flex</span>
+              {pinBtn("flexW", "W", "Width stretches with the zone (pin left + right for full width)")}
+              {pinBtn("flexH", "H", "Height stretches with the zone")}
+              {has && (
+                <button type="button" onClick={() => onPatch({ constraints: undefined } as Partial<FreeformElement>)} className="ml-auto text-[10px] text-muted-foreground hover:underline" data-testid="liquid-auto">Auto</button>
+              )}
+            </div>
+          </div>
+        );
+      })()}
+
       {/* Native disabled propagation: every field goes read-only while locked. */}
       <fieldset disabled={!!el.locked} className="space-y-4 border-0 m-0 p-0 min-w-0 disabled:opacity-60">
 

@@ -244,7 +244,15 @@ export const ListTemplatesResponseItem = zod.object({
   "radius": zod.number().optional(),
   "borderColor": zod.string().optional(),
   "borderWidth": zod.number().optional(),
-  "locked": zod.boolean().optional().describe('Locked elements are pinned brand furniture: brief copy\/imagery is never poured into them (their captured content always renders), and editors treat them as read-only.\n')
+  "locked": zod.boolean().optional().describe('Locked elements are pinned brand furniture: brief copy\/imagery is never poured into them (their captured content always renders), and editors treat them as read-only.\n'),
+  "constraints": zod.object({
+  "pinTop": zod.boolean().optional(),
+  "pinBottom": zod.boolean().optional(),
+  "pinLeft": zod.boolean().optional(),
+  "pinRight": zod.boolean().optional(),
+  "flexW": zod.boolean().optional(),
+  "flexH": zod.boolean().optional()
+}).optional().describe('Liquid-layout switches (InDesign\'s object-based model): pin the element to zone edges and let its width\/height flex. Absent means inferred from the master.\n')
 }).describe('A single positioned element in a freeform template layout.')).optional(),
   "adaptMethod": zod.string().optional().describe('How an adapted template was derived: recomposed:<class> | key-visual | panel | scaled'),
   "rejected": zod.array(zod.string()).optional().describe('Reasons the automated layout failed the mandatory-element gate; empty or absent when it passed'),
@@ -332,7 +340,15 @@ export const CreateTemplateBody = zod.object({
   "radius": zod.number().optional(),
   "borderColor": zod.string().optional(),
   "borderWidth": zod.number().optional(),
-  "locked": zod.boolean().optional().describe('Locked elements are pinned brand furniture: brief copy\/imagery is never poured into them (their captured content always renders), and editors treat them as read-only.\n')
+  "locked": zod.boolean().optional().describe('Locked elements are pinned brand furniture: brief copy\/imagery is never poured into them (their captured content always renders), and editors treat them as read-only.\n'),
+  "constraints": zod.object({
+  "pinTop": zod.boolean().optional(),
+  "pinBottom": zod.boolean().optional(),
+  "pinLeft": zod.boolean().optional(),
+  "pinRight": zod.boolean().optional(),
+  "flexW": zod.boolean().optional(),
+  "flexH": zod.boolean().optional()
+}).optional().describe('Liquid-layout switches (InDesign\'s object-based model): pin the element to zone edges and let its width\/height flex. Absent means inferred from the master.\n')
 }).describe('A single positioned element in a freeform template layout.')).optional(),
   "adaptMethod": zod.string().optional().describe('How an adapted template was derived: recomposed:<class> | key-visual | panel | scaled'),
   "rejected": zod.array(zod.string()).optional().describe('Reasons the automated layout failed the mandatory-element gate; empty or absent when it passed'),
@@ -422,7 +438,15 @@ export const GetTemplateResponse = zod.object({
   "radius": zod.number().optional(),
   "borderColor": zod.string().optional(),
   "borderWidth": zod.number().optional(),
-  "locked": zod.boolean().optional().describe('Locked elements are pinned brand furniture: brief copy\/imagery is never poured into them (their captured content always renders), and editors treat them as read-only.\n')
+  "locked": zod.boolean().optional().describe('Locked elements are pinned brand furniture: brief copy\/imagery is never poured into them (their captured content always renders), and editors treat them as read-only.\n'),
+  "constraints": zod.object({
+  "pinTop": zod.boolean().optional(),
+  "pinBottom": zod.boolean().optional(),
+  "pinLeft": zod.boolean().optional(),
+  "pinRight": zod.boolean().optional(),
+  "flexW": zod.boolean().optional(),
+  "flexH": zod.boolean().optional()
+}).optional().describe('Liquid-layout switches (InDesign\'s object-based model): pin the element to zone edges and let its width\/height flex. Absent means inferred from the master.\n')
 }).describe('A single positioned element in a freeform template layout.')).optional(),
   "adaptMethod": zod.string().optional().describe('How an adapted template was derived: recomposed:<class> | key-visual | panel | scaled'),
   "rejected": zod.array(zod.string()).optional().describe('Reasons the automated layout failed the mandatory-element gate; empty or absent when it passed'),
@@ -513,7 +537,15 @@ export const UpdateTemplateBody = zod.object({
   "radius": zod.number().optional(),
   "borderColor": zod.string().optional(),
   "borderWidth": zod.number().optional(),
-  "locked": zod.boolean().optional().describe('Locked elements are pinned brand furniture: brief copy\/imagery is never poured into them (their captured content always renders), and editors treat them as read-only.\n')
+  "locked": zod.boolean().optional().describe('Locked elements are pinned brand furniture: brief copy\/imagery is never poured into them (their captured content always renders), and editors treat them as read-only.\n'),
+  "constraints": zod.object({
+  "pinTop": zod.boolean().optional(),
+  "pinBottom": zod.boolean().optional(),
+  "pinLeft": zod.boolean().optional(),
+  "pinRight": zod.boolean().optional(),
+  "flexW": zod.boolean().optional(),
+  "flexH": zod.boolean().optional()
+}).optional().describe('Liquid-layout switches (InDesign\'s object-based model): pin the element to zone edges and let its width\/height flex. Absent means inferred from the master.\n')
 }).describe('A single positioned element in a freeform template layout.')).optional(),
   "adaptMethod": zod.string().optional().describe('How an adapted template was derived: recomposed:<class> | key-visual | panel | scaled'),
   "rejected": zod.array(zod.string()).optional().describe('Reasons the automated layout failed the mandatory-element gate; empty or absent when it passed'),
@@ -595,7 +627,15 @@ export const UpdateTemplateResponse = zod.object({
   "radius": zod.number().optional(),
   "borderColor": zod.string().optional(),
   "borderWidth": zod.number().optional(),
-  "locked": zod.boolean().optional().describe('Locked elements are pinned brand furniture: brief copy\/imagery is never poured into them (their captured content always renders), and editors treat them as read-only.\n')
+  "locked": zod.boolean().optional().describe('Locked elements are pinned brand furniture: brief copy\/imagery is never poured into them (their captured content always renders), and editors treat them as read-only.\n'),
+  "constraints": zod.object({
+  "pinTop": zod.boolean().optional(),
+  "pinBottom": zod.boolean().optional(),
+  "pinLeft": zod.boolean().optional(),
+  "pinRight": zod.boolean().optional(),
+  "flexW": zod.boolean().optional(),
+  "flexH": zod.boolean().optional()
+}).optional().describe('Liquid-layout switches (InDesign\'s object-based model): pin the element to zone edges and let its width\/height flex. Absent means inferred from the master.\n')
 }).describe('A single positioned element in a freeform template layout.')).optional(),
   "adaptMethod": zod.string().optional().describe('How an adapted template was derived: recomposed:<class> | key-visual | panel | scaled'),
   "rejected": zod.array(zod.string()).optional().describe('Reasons the automated layout failed the mandatory-element gate; empty or absent when it passed'),
@@ -759,7 +799,15 @@ export const DissectPdfResponse = zod.object({
   "radius": zod.number().optional(),
   "borderColor": zod.string().optional(),
   "borderWidth": zod.number().optional(),
-  "locked": zod.boolean().optional().describe('Locked elements are pinned brand furniture: brief copy\/imagery is never poured into them (their captured content always renders), and editors treat them as read-only.\n')
+  "locked": zod.boolean().optional().describe('Locked elements are pinned brand furniture: brief copy\/imagery is never poured into them (their captured content always renders), and editors treat them as read-only.\n'),
+  "constraints": zod.object({
+  "pinTop": zod.boolean().optional(),
+  "pinBottom": zod.boolean().optional(),
+  "pinLeft": zod.boolean().optional(),
+  "pinRight": zod.boolean().optional(),
+  "flexW": zod.boolean().optional(),
+  "flexH": zod.boolean().optional()
+}).optional().describe('Liquid-layout switches (InDesign\'s object-based model): pin the element to zone edges and let its width\/height flex. Absent means inferred from the master.\n')
 }).describe('A single positioned element in a freeform template layout.')).optional(),
   "adaptMethod": zod.string().optional().describe('How an adapted template was derived: recomposed:<class> | key-visual | panel | scaled'),
   "rejected": zod.array(zod.string()).optional().describe('Reasons the automated layout failed the mandatory-element gate; empty or absent when it passed'),
@@ -847,7 +895,15 @@ export const DissectImageResponse = zod.object({
   "radius": zod.number().optional(),
   "borderColor": zod.string().optional(),
   "borderWidth": zod.number().optional(),
-  "locked": zod.boolean().optional().describe('Locked elements are pinned brand furniture: brief copy\/imagery is never poured into them (their captured content always renders), and editors treat them as read-only.\n')
+  "locked": zod.boolean().optional().describe('Locked elements are pinned brand furniture: brief copy\/imagery is never poured into them (their captured content always renders), and editors treat them as read-only.\n'),
+  "constraints": zod.object({
+  "pinTop": zod.boolean().optional(),
+  "pinBottom": zod.boolean().optional(),
+  "pinLeft": zod.boolean().optional(),
+  "pinRight": zod.boolean().optional(),
+  "flexW": zod.boolean().optional(),
+  "flexH": zod.boolean().optional()
+}).optional().describe('Liquid-layout switches (InDesign\'s object-based model): pin the element to zone edges and let its width\/height flex. Absent means inferred from the master.\n')
 }).describe('A single positioned element in a freeform template layout.')).optional(),
   "adaptMethod": zod.string().optional().describe('How an adapted template was derived: recomposed:<class> | key-visual | panel | scaled'),
   "rejected": zod.array(zod.string()).optional().describe('Reasons the automated layout failed the mandatory-element gate; empty or absent when it passed'),
@@ -2521,7 +2577,15 @@ export const ClaudeReviewTemplateResponse = zod.object({
   "radius": zod.number().optional(),
   "borderColor": zod.string().optional(),
   "borderWidth": zod.number().optional(),
-  "locked": zod.boolean().optional().describe('Locked elements are pinned brand furniture: brief copy\/imagery is never poured into them (their captured content always renders), and editors treat them as read-only.\n')
+  "locked": zod.boolean().optional().describe('Locked elements are pinned brand furniture: brief copy\/imagery is never poured into them (their captured content always renders), and editors treat them as read-only.\n'),
+  "constraints": zod.object({
+  "pinTop": zod.boolean().optional(),
+  "pinBottom": zod.boolean().optional(),
+  "pinLeft": zod.boolean().optional(),
+  "pinRight": zod.boolean().optional(),
+  "flexW": zod.boolean().optional(),
+  "flexH": zod.boolean().optional()
+}).optional().describe('Liquid-layout switches (InDesign\'s object-based model): pin the element to zone edges and let its width\/height flex. Absent means inferred from the master.\n')
 }).describe('A single positioned element in a freeform template layout.')).optional(),
   "adaptMethod": zod.string().optional().describe('How an adapted template was derived: recomposed:<class> | key-visual | panel | scaled'),
   "rejected": zod.array(zod.string()).optional().describe('Reasons the automated layout failed the mandatory-element gate; empty or absent when it passed'),
@@ -2615,7 +2679,15 @@ export const UndoClaudeReviewTemplateResponse = zod.object({
   "radius": zod.number().optional(),
   "borderColor": zod.string().optional(),
   "borderWidth": zod.number().optional(),
-  "locked": zod.boolean().optional().describe('Locked elements are pinned brand furniture: brief copy\/imagery is never poured into them (their captured content always renders), and editors treat them as read-only.\n')
+  "locked": zod.boolean().optional().describe('Locked elements are pinned brand furniture: brief copy\/imagery is never poured into them (their captured content always renders), and editors treat them as read-only.\n'),
+  "constraints": zod.object({
+  "pinTop": zod.boolean().optional(),
+  "pinBottom": zod.boolean().optional(),
+  "pinLeft": zod.boolean().optional(),
+  "pinRight": zod.boolean().optional(),
+  "flexW": zod.boolean().optional(),
+  "flexH": zod.boolean().optional()
+}).optional().describe('Liquid-layout switches (InDesign\'s object-based model): pin the element to zone edges and let its width\/height flex. Absent means inferred from the master.\n')
 }).describe('A single positioned element in a freeform template layout.')).optional(),
   "adaptMethod": zod.string().optional().describe('How an adapted template was derived: recomposed:<class> | key-visual | panel | scaled'),
   "rejected": zod.array(zod.string()).optional().describe('Reasons the automated layout failed the mandatory-element gate; empty or absent when it passed'),

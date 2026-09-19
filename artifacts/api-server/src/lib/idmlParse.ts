@@ -20,6 +20,7 @@
  *  - Document order = z-order. Rotated/skewed items imported axis-aligned
  *    (their bounding box) with a warning.
  */
+import { constraintsFromIdml } from "./liquid";
 import { XMLParser } from "fast-xml-parser";
 import type JSZip from "jszip";
 import { cmykToHex, rgbToHex } from "./colorAdapter";
@@ -34,6 +35,12 @@ export interface IdmlParseResult {
 type Matrix = [number, number, number, number, number, number];
 
 const IDENTITY: Matrix = [1, 0, 0, 1, 0, 0];
+
+/** The item's InDesign object-based liquid rule, when the designer set one. */
+function liquidOf(item: Record<string, any> | undefined): { constraints?: NonNullable<ReturnType<typeof constraintsFromIdml>> } {
+  const c = constraintsFromIdml(item?.["@_HorizontalLayoutConstraints"], item?.["@_VerticalLayoutConstraints"]);
+  return c ? { constraints: c } : {};
+}
 
 function parseMatrix(raw: unknown): Matrix {
   if (typeof raw !== "string") return IDENTITY;
@@ -645,6 +652,7 @@ export async function parseIdmlToLayouts(
         // wrapped in another box, inset, or moved.
         elements.push({
           ...sourceLayer,
+          ...liquidOf(item),
           id: `idml_logo_${idCounter++}`,
           type: "image",
           role: "logo",
@@ -688,6 +696,7 @@ export async function parseIdmlToLayouts(
       const letterSpacing = story.tracking ? Math.round((story.tracking / 1000) * story.fontSize * 100) / 100 : 0;
       elements.push({
         ...sourceLayer,
+        ...liquidOf(item),
         ...(capFit ? { baselineFit: "cap" } : {}),
         id: `idml_txt_${idCounter++}`,
         type: "text",
@@ -717,6 +726,7 @@ export async function parseIdmlToLayouts(
       // square photo. Reproduce the frame from the document PDF instead.
       elements.push({
         ...sourceLayer,
+        ...liquidOf(item),
         id: `idml_img_${idCounter++}`,
         type: "rasterRegion",
         photoFallback: true,
@@ -779,6 +789,7 @@ export async function parseIdmlToLayouts(
         }
         elements.push({
           ...sourceLayer,
+          ...liquidOf(item),
           id: `idml_img_${idCounter++}`,
           type: "image",
           role: sourceLayerRole === "logo" ? "logo" : sourceLayerRole === "decoration" ? "decoration" : "product",
@@ -802,6 +813,7 @@ export async function parseIdmlToLayouts(
         }
         elements.push({
           ...sourceLayer,
+          ...liquidOf(item),
           id: `idml_img_${idCounter++}`,
           type: "rasterRegion",
           photoFallback: true,
@@ -828,6 +840,7 @@ export async function parseIdmlToLayouts(
       if (fill || hasStroke) {
         elements.push({
           ...sourceLayer,
+          ...liquidOf(item),
           id: `idml_raster_${idCounter++}`,
           type: "rasterRegion",
           x,
@@ -893,6 +906,7 @@ export async function parseIdmlToLayouts(
       }
       elements.push({
         ...sourceLayer,
+        ...liquidOf(item),
         id: `idml_rect_${idCounter++}`,
         type: "rect",
         fill,

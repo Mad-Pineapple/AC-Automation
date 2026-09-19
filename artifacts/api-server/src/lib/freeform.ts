@@ -46,6 +46,8 @@ export interface DroppedPart {
   byRule: boolean;
 }
 
+import { sanitizeConstraints, effectiveConstraints, resolveLiquid, type LiquidConstraints } from "./liquid";
+
 export interface FreeformBase {
   id: string;
   x: number;
@@ -71,6 +73,9 @@ export interface FreeformBase {
   anchorX?: "left" | "center" | "right" | "stretch";
   anchorY?: "top" | "center" | "bottom" | "stretch";
   scaleMode?: "uniform" | "fill" | "fixed";
+  /** Liquid-layout switches (pin top/bottom/left/right, flexible width/height),
+   * see lib/liquid.ts. Absent = inferred from the master. */
+  constraints?: LiquidConstraints;
 }
 
 export interface FreeformText extends FreeformBase {
@@ -406,38 +411,30 @@ export function adaptFreeformConfig(
     const bx0 = Math.min(...members.map((m) => m.x)), by0 = Math.min(...members.map((m) => m.y));
     const bx1 = Math.max(...members.map((m) => m.x + m.w)), by1 = Math.max(...members.map((m) => m.y + m.h));
     const B: Box = { x: bx0, y: by0, w: bx1 - bx0, h: by1 - by0 };
-    const w = Math.max(1, R(B.w * scale));
-    const h = Math.max(1, R(B.h * scale));
-    let x: number;
-    let y: number;
+    // Liquid layout: the cluster's own switches (a designer's, an IDML
+    // rule's, or a verdict's) else switches inferred from where it sits in
+    // its zone. Pinned edges keep their scaled offset, pinned-both stretches,
+    // unpinned keeps its share of the zone.
     const zone = zoneOf(B);
     const zNew = zone ? placed.get(zone.id) : undefined;
-    if (zone && zNew) {
-      // Same relative position inside the zone as in the master.
-      const fx = (B.x + B.w / 2 - zone.x) / Math.max(1, zone.w);
-      const fy = (B.y + B.h / 2 - zone.y) / Math.max(1, zone.h);
-      x = R(zNew.x + fx * zNew.w - w / 2);
-      y = R(zNew.y + fy * zNew.h - h / 2);
-      // Stay inside the zone where the master kept it inside.
-      if (B.x >= zone.x && B.x + B.w <= zone.x + zone.w) x = Math.min(Math.max(x, zNew.x), Math.max(zNew.x, zNew.x + zNew.w - w));
-      if (B.y >= zone.y && B.y + B.h <= zone.y + zone.h) y = Math.min(Math.max(y, zNew.y), Math.max(zNew.y, zNew.y + zNew.h - h));
-    } else {
-      x = adaptAxis(B.x, B.w, srcW, dstW, w);
-      y = adaptAxis(B.y, B.h, srcH, dstH, h);
-    }
-    // Flush in the master stays flush: a cluster that met a canvas edge
-    // snaps to it rather than landing a scaled sliver away.
-    const bel = B as unknown as El;
-    if (touchesL(bel) && B.x >= 0) x = 0;
-    if (touchesR(bel) && B.x + B.w <= srcW) x = dstW - w;
-    if (touchesT(bel) && B.y >= 0) y = 0;
-    if (touchesB(bel) && B.y + B.h <= srcH) y = dstH - h;
-    // Preserve containment, but only where the master was contained — bleed
-    // is a design choice.
-    if (B.x >= 0 && B.x + B.w <= srcW) x = Math.min(Math.max(x, 0), Math.max(0, dstW - w));
-    if (B.y >= 0 && B.y + B.h <= srcH) y = Math.min(Math.max(y, 0), Math.max(0, dstH - h));
+    const zoneSrc: Box = zone ?? { x: 0, y: 0, w: srcW, h: srcH };
+    const zoneDst: Box = zone && zNew ? zNew : { x: 0, y: 0, w: dstW, h: dstH };
+    const explicit = members.map((m) => m.constraints).find((c) => c && Object.keys(c).length);
+    const c = effectiveConstraints(explicit, B, zoneSrc);
+    const placedBox = resolveLiquid(B, c, zoneSrc, zoneDst, scale);
+    let x = placedBox.x;
+    let y = placedBox.y;
+    const w = placedBox.w;
+    const h = placedBox.h;
+    // Unpinned axes stay inside the zone where the master kept them inside.
+    if (!c.pinLeft && !c.pinRight && B.x >= zoneSrc.x && B.x + B.w <= zoneSrc.x + zoneSrc.w) x = Math.min(Math.max(x, zoneDst.x), Math.max(zoneDst.x, zoneDst.x + zoneDst.w - w));
+    if (!c.pinTop && !c.pinBottom && B.y >= zoneSrc.y && B.y + B.h <= zoneSrc.y + zoneSrc.h) y = Math.min(Math.max(y, zoneDst.y), Math.max(zoneDst.y, zoneDst.y + zoneDst.h - h));
+    // Members keep their scaled offsets inside the cluster; a stretched
+    // cluster stretches its single member.
+    const kx = members.length === 1 ? w / Math.max(1, B.w * scale) : 1;
+    const ky = members.length === 1 ? h / Math.max(1, B.h * scale) : 1;
     for (const m of members) {
-      newBox.set(m.id, { x: x + R((m.x - B.x) * scale), y: y + R((m.y - B.y) * scale), w: Math.max(1, R(m.w * scale)), h: Math.max(1, R(m.h * scale)) });
+      newBox.set(m.id, { x: x + R((m.x - B.x) * scale * kx), y: y + R((m.y - B.y) * scale * ky), w: Math.max(1, R(m.w * scale * kx)), h: Math.max(1, R(m.h * scale * ky)) });
     }
   }
 
@@ -517,6 +514,7 @@ export function normalizeFreeformConfig(raw: unknown): FreeformConfig {
       ...(el.anchorX === "left" || el.anchorX === "center" || el.anchorX === "right" || el.anchorX === "stretch" ? { anchorX: el.anchorX } : {}),
       ...(el.anchorY === "top" || el.anchorY === "center" || el.anchorY === "bottom" || el.anchorY === "stretch" ? { anchorY: el.anchorY } : {}),
       ...(el.scaleMode === "uniform" || el.scaleMode === "fill" || el.scaleMode === "fixed" ? { scaleMode: el.scaleMode } : {}),
+      ...(sanitizeConstraints(el.constraints) ? { constraints: sanitizeConstraints(el.constraints) } : {}),
     };
 
     if (el.type === "text") {

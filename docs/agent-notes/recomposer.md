@@ -113,3 +113,20 @@ loses its first line) and paints the cut regions out of the panel graphic in the
 (`panelMasked: true` on the panel image), so any engine can draw the panel and its parts together
 without doubling. `resplitLegacyPanel` re-cuts a master split before masking existed; the adapt route
 runs it once on the next build of such a master and persists the result.
+
+## Liquid layout constraints (2026-09-19, audit addendum)
+
+`lib/liquid.ts` — InDesign's object-based model per element: `constraints { pinTop, pinBottom, pinLeft,
+pinRight, flexW, flexH }` (on `FreeformBase`, in the API schema, kept by normalize). Resolution per
+axis: pinned both → stretch between the pins; pinned one side → ride that edge keeping the scaled
+offset; unpinned → the centre keeps its share of the zone. Offsets scale with the canvas (min ratio).
+Sources, in order: the element's own switches (editor widget in the properties panel, IDML
+`Horizontal/VerticalLayoutConstraints` when a designer applied an object-based rule, or a position
+verdict — "full width of the box" → pinned left + right + flexible width, "to the top" → pinned top,
+written onto the MASTER's element by `POST /feedback`); else inferred from the master (flush to a
+zone edge → pinned; spanning ≥96% of the zone axis → pinned both + flexible).
+Consulted by `adaptFreeformConfig` (cluster-level: any member's explicit switches win, else inferred
+against the cluster's zone), the geometry engine (explicit switches beat the measured box) and the
+layered band (`flexW` = full width). The recompose/key-visual engines rebuild from slots and do not
+read pins. None of the delivered IDML packages carry object rules yet (all default, page rule
+UseMaster).

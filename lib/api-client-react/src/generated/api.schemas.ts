@@ -170,6 +170,19 @@ export type FreeformElementGradient = {
 };
 
 /**
+ * Liquid-layout switches (InDesign's object-based model): pin the element to zone edges and let its width/height flex. Absent means inferred from the master.
+
+ */
+export type FreeformElementConstraints = {
+  pinTop?: boolean;
+  pinBottom?: boolean;
+  pinLeft?: boolean;
+  pinRight?: boolean;
+  flexW?: boolean;
+  flexH?: boolean;
+};
+
+/**
  * A single positioned element in a freeform template layout.
  */
 export interface FreeformElement {
@@ -222,6 +235,9 @@ export interface FreeformElement {
   /** Locked elements are pinned brand furniture: brief copy/imagery is never poured into them (their captured content always renders), and editors treat them as read-only.
    */
   locked?: boolean;
+  /** Liquid-layout switches (InDesign's object-based model): pin the element to zone edges and let its width/height flex. Absent means inferred from the master.
+   */
+  constraints?: FreeformElementConstraints;
 }
 
 export type PrincipleScoresContrastDetailItem = {

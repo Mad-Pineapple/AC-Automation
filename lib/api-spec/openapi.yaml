@@ -2182,6 +2182,19 @@ components:
             Locked elements are pinned brand furniture: brief copy/imagery is
             never poured into them (their captured content always renders),
             and editors treat them as read-only.
+        constraints:
+          type: object
+          description: >
+            Liquid-layout switches (InDesign's object-based model): pin the
+            element to zone edges and let its width/height flex. Absent means
+            inferred from the master.
+          properties:
+            pinTop: { type: boolean }
+            pinBottom: { type: boolean }
+            pinLeft: { type: boolean }
+            pinRight: { type: boolean }
+            flexW: { type: boolean }
+            flexH: { type: boolean }
       required:
         - type
 
