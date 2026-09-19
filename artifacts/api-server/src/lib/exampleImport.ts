@@ -132,7 +132,7 @@ export async function importExample(
       return {
         kind,
         layouts: layoutsFromIdml(res.idmlLayouts, baseName),
-        warnings: [...new Set(res.idmlLayouts.flatMap((l) => l.warnings))],
+        warnings: [...new Set([...res.idmlLayouts.flatMap((l) => l.warnings), ...res.skipped.map((k) => `Link "${k.name}": ${k.reason}.`)])],
         assets: res.imported,
         folder: `Package — ${baseName}`,
       };

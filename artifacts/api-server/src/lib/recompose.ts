@@ -22,7 +22,7 @@ import { aspectDistance, classifyAspect, classifyBudget, needsRebuild, type Form
 import { inferSlots, type Box, type SemanticMaster } from "./slots";
 import { recipeFor, type Recipe } from "./recipes";
 import { fitText, prepareMeasurement, type FontSpec, capHeightPx, fontResolution } from "./textMeasure";
-import { planCta, type CtaPlan } from "./ctaPlan";
+import { planCta, masterLabelRatio, type CtaPlan } from "./ctaPlan";
 import { LABEL_FLOOR_PX, type RuleLayer } from "./partRulesLayer";
 import { guidelineLogoPlacement, isSocialSquare } from "./logoRules";
 import { ObjectStorageService } from "./objectStorage";
@@ -114,6 +114,57 @@ function coverPlace(
     x = clamp(x, zone.x + zone.w - w, zone.x); y = clamp(y, zone.y + zone.h - h, zone.y);
   }
   return { x: r(x), y: r(y), w: r(w), h: r(h) };
+}
+
+/**
+ * Where the subject is, read off the master when nobody has marked it.
+ *
+ * A designer sets the copy over the quiet part of the photograph and leaves
+ * the subject clear below it (the flooded car under "STORMS", the cracked
+ * road under "QUAKES"). So the subject is the part of the visible photo
+ * zone under the copy block. Returned as fractions of the image itself, so
+ * a new shape can keep that part of the picture in view — a centre crop
+ * of the Storms photo on a 960×256 showed only dark trees.
+ */
+function inferSubjectFocus(
+  sem: ReturnType<typeof inferSlots>,
+  photo: FreeformImage,
+  natural: { w: number; h: number },
+  srcW: number,
+  srcH: number,
+): { x: number; y: number } | null {
+  const pb = sem.photoBox;
+  if (!pb || natural.w <= 0 || natural.h <= 0) return null;
+  let vx0 = Math.max(0, pb.x), vy0 = Math.max(0, pb.y), vx1 = Math.min(srcW, pb.x + pb.w), vy1 = Math.min(srcH, pb.y + pb.h);
+  const panel = sem.panelBox;
+  if (panel) {
+    // A panel laid over a full-canvas photo hides that part of it.
+    if (panel.w >= srcW * 0.9 && panel.y > vy0 && panel.y < vy1) vy1 = panel.y;
+    else if (panel.h >= srcH * 0.9 && panel.x > vx0 && panel.x < vx1) vx1 = panel.x;
+  }
+  const zoneH = vy1 - vy0;
+  if (vx1 - vx0 < 8 || zoneH < 8) return null;
+  const copy: Box[] = [];
+  for (const t of [sem.kicker, sem.headline, sem.subheadline]) if (t && t.y + t.h / 2 >= vy0 && t.y + t.h / 2 <= vy1) copy.push({ x: t.x, y: t.y, w: t.w, h: t.h });
+  if (!copy.length) return null;
+  const copyBottom = Math.max(...copy.map((t) => t.y + t.h));
+  if (vy1 - copyBottom < zoneH * 0.18) return null;
+  const mx = (vx0 + vx1) / 2;
+  const my = (copyBottom + vy1) / 2;
+  const sr = (photo as FreeformImage & { srcRect?: { x: number; y: number; w: number; h: number } }).srcRect;
+  let fx: number, fy: number;
+  if (sr) {
+    fx = sr.x + ((mx - pb.x) / pb.w) * sr.w;
+    fy = sr.y + ((my - pb.y) / pb.h) * sr.h;
+  } else {
+    const k = Math.max(pb.w / natural.w, pb.h / natural.h);
+    const dw = natural.w * k, dh = natural.h * k;
+    const ox = (pb.w - dw) * (photo.focusX ?? 0.5), oy = (pb.h - dh) * (photo.focusY ?? 0.5);
+    fx = (mx - pb.x - ox) / dw;
+    fy = (my - pb.y - oy) / dh;
+  }
+  if (!Number.isFinite(fx) || !Number.isFinite(fy)) return null;
+  return { x: clamp(fx, 0, 1), y: clamp(fy, 0, 1) };
 }
 
 function fontSpec(t: FreeformText | null | undefined, scale = 1): FontSpec {
@@ -269,12 +320,23 @@ export async function recomposeToFormat(
   if (hasPhoto && sem.photo) {
     const photo = sem.photo;
     const natural = (await loadSize(photo.src as string)) ?? { w: photo.w, h: photo.h };
-    const focus = photo.focusBox
-      ? { x: photo.focusBox.x + photo.focusBox.w / 2, y: photo.focusBox.y + photo.focusBox.h / 2 }
-      : { x: photo.focusX ?? 0.5, y: photo.focusY ?? 0.45 };
+    // A focus a person or the vision model marked is trusted. The automatic
+    // "attention" pass is not: it reads contrast, and on the Storms photo it
+    // picked the bare trees over the flooded car. The designer's own layout
+    // (where the copy was NOT put) outranks it.
+    const trusted = photo.focusSource === "vision" || photo.focusSource === "designer";
+    const inferred = !trusted && recipe.axis !== "row" ? inferSubjectFocus(sem, photo, natural, srcW, srcH) : null;
+    const focus = inferred
+      ? inferred
+      : photo.focusBox
+        ? { x: photo.focusBox.x + photo.focusBox.w / 2, y: photo.focusBox.y + photo.focusBox.h / 2 }
+        : { x: photo.focusX ?? 0.5, y: photo.focusY ?? 0.45 };
     // Tall zones want the subject a touch below centre (headline sits above
-    // it); wide zones want it centred.
-    const target = recipe.axis === "stacked" ? { x: 0.5, y: 0.55 } : { x: 0.5, y: 0.5 };
+    // it); wide zones want it centred. A subject read off the master sits
+    // where the master had it: under the copy (the shipped Storms wide has
+    // the car centred 80% down the photo zone).
+    const target = inferred ? { x: 0.5, y: 0.82 } : recipe.axis === "stacked" ? { x: 0.5, y: 0.55 } : { x: 0.5, y: 0.5 };
+    if (inferred) notes.push("Photo crop keeps the part of the picture the master leaves clear under the copy.");
     const subjectBox = photo.focusSource === "vision" || photo.focusSource === "designer" ? photo.focusBox ?? null : null;
     const placed = coverPlace(photoZone, natural.w, natural.h, focus, recipe.photoOversize, target, subjectBox);
     if (subjectBox && photo.subject) {
@@ -297,7 +359,14 @@ export async function recomposeToFormat(
   // ---- 3. Scrim over the photo zone ------------------------------------------------
   if (hasPhoto && sem.headline && keep.has("headline")) {
     const ms = sem.scrim;
-    const frac = ms && sem.photoBox ? clamp(ms.h / Math.max(1, sem.photoBox.h), 0.35, 1) : 0.75;
+    // Same axis: the master's own scrim share carries. Across axes it does
+    // not — the studio runs the scrim 70% down a stacked photo and 84% down
+    // a side one (measured on the 384×592 and 960×256 masters); carrying
+    // the wide's 84% onto a portrait darkened the whole photograph.
+    const masterAxis = sem.axis === "stacked" || sem.axis === "side" ? sem.axis : srcW / Math.max(1, srcH) >= 1.12 ? "side" : "stacked";
+    const crossAxis = recipe.axis !== "row" && masterAxis !== recipe.axis;
+    const classShare = recipe.axis === "side" ? 0.84 : 0.7;
+    const frac = crossAxis && ms ? classShare : ms && sem.photoBox ? clamp(ms.h / Math.max(1, sem.photoBox.h), 0.35, 1) : 0.75;
     const topAligned = !ms || !sem.photoBox || ms.y <= sem.photoBox.y + sem.photoBox.h * 0.15;
     const sh = r(photoZone.h * (recipe.axis === "row" ? 1 : frac));
     const box: Box = { x: photoZone.x, y: topAligned ? photoZone.y : photoZone.y + photoZone.h - sh, w: photoZone.w, h: sh };
@@ -364,22 +433,30 @@ export async function recomposeToFormat(
   // Planned before the headline so a strip's headline is fitted beside the
   // real pill instead of an estimate it later overlaps.
   const CTA_MIN_PX = rules?.rules.cta?.minPx ?? (budget === "micro" ? 18 : 24);
+  const COMFORT_LABEL_PX = 18;
   const ctaPlanned = (): CtaPlan | null => {
     if (!sem.cta || !keep.has("cta")) return null;
     const cta = sem.cta;
     const maxH = recipe.axis === "row" ? dstH * 0.64 : panelZone.h * 0.4;
-    const targetH = Math.max(recipe.ctaFloorPx, short * recipe.ctaHeightFrac);
+    // The recipe's pixel floor exists to keep the LABEL readable (it was
+    // learned on DV360 buttons, whose label is 42% of the button: 43px →
+    // 18px type). A search pill sets its label at 68% of the pill, so the
+    // same 18px label needs only a 27px pill — the shipped 384×592 pill is
+    // 28.9px, and forcing 43px there cost it the icon and the message.
+    const labelShare = sem.ctaLabel ? masterLabelRatio({ ctaH: cta.h, ctaW: cta.w, labelFontSize: sem.ctaLabel.fontSize }) : 0.42;
+    const floorH = Math.min(recipe.ctaFloorPx, COMFORT_LABEL_PX / labelShare);
+    const targetH = Math.max(floorH, short * recipe.ctaHeightFrac);
     if (!sem.ctaLabel) {
       // A pill with no live label keeps the master's proportions.
       const aspect = cta.w / Math.max(1, cta.h) || 4;
       const h = r(clamp(targetH, CTA_MIN_PX, maxH));
       const w = r(Math.min(h * aspect, panelZone.w * recipe.ctaMaxWidthFrac));
-      return { h, w, fontSize: 0, padX: r(h * 0.45), iconSize: 0, iconGap: 0, lines: [], fits: true, labelRatio: 0.5, padRatio: 0.45, notes: [] };
+      return { h, w, fontSize: 0, padX: r(h * 0.45), iconSize: 0, iconGap: 0, iconInset: 0, lines: [], fits: true, labelRatio: 0.5, padRatio: 0.45, notes: [] };
     }
     return planCta({
       label: sem.ctaLabel.text,
       spec: fontSpec(sem.ctaLabel),
-      master: { ctaH: cta.h, ctaW: cta.w, labelFontSize: sem.ctaLabel.fontSize, labelText: sem.ctaLabel.text, labelSpec: fontSpec(sem.ctaLabel), hasIcon: !!sem.ctaIcon },
+      master: { ctaH: cta.h, ctaW: cta.w, labelFontSize: sem.ctaLabel.fontSize, labelText: sem.ctaLabel.text, labelSpec: fontSpec(sem.ctaLabel), hasIcon: !!sem.ctaIcon, labelInset: sem.ctaLabel.x - cta.x },
       targetH,
       minH: CTA_MIN_PX,
       maxH,
@@ -419,17 +496,29 @@ export async function recomposeToFormat(
       if (sem.kicker) drop("kicker", "Kicker line dropped: strips carry the headline only.", true);
     } else {
       const maxLines = recipe.headlineWordPerLine ? Math.max(1, words.length) : 2;
-      const box = { w: zoneW * recipe.headlineWidthFrac, h: copyZone.h * recipe.headlineMaxHeightFrac };
+      // The masters' headline run is measured as a share of the WHOLE zone
+      // (88% of 384 on the portrait, 81% of 480 on the wide); taking the
+      // share of the inset width set every rebuilt headline a size small.
+      const box = { w: Math.min(zoneW, copyZone.w * recipe.headlineWidthFrac), h: copyZone.h * recipe.headlineMaxHeightFrac };
       const fit = fitText(text, box, { ...fontSpec(hl), minSize: headlineMin, maxSize: copyZone.h, lineHeight: 1.02, maxLines });
       if (!fit.fits) { notes.push("Headline shrank to the floor size and still overflows — shorten the copy."); needsReview = true; }
-      const hlH = r(fit.height);
+      // One line: the box is the CAP HEIGHT, as InDesign frames it, so the
+      // sub-line sits the master's 0.12em under the letters — a line-height
+      // box left a visible hole between headline and sub-line.
+      const hlCap = fit.lines.length === 1;
+      const hlH = hlCap ? Math.max(1, r(capHeightPx(fontSpec(hl), fit.fontSize))) : r(fit.height);
       // Sub-headline rides directly under the headline at the recipe ratio.
       let subFit: ReturnType<typeof fitText> | null = null;
       const sub = sem.subheadline;
       if (sub && keep.has("subheadline")) {
         const subText = sub.text.replace(/\s+/g, " ").trim();
         const subMax = Math.max(sublineMin, r(fit.fontSize * recipe.subheadRatio));
-        subFit = fitText(subText, { w: zoneW * 0.9, h: subMax * 2.4 }, { ...fontSpec(sub), minSize: sublineMin, maxSize: subMax, lineHeight: 1.1, maxLines: 2 });
+        // One line first, as on every master (the sub-line runs 83% of the
+        // zone at 0.29 of the headline); it may give up a fifth of its size
+        // to stay on one line before it is allowed to break in two.
+        const subW = Math.min(zoneW, copyZone.w * 0.9);
+        const oneLine = fitText(subText, { w: subW, h: subMax * 1.3 }, { ...fontSpec(sub), minSize: Math.max(sublineMin, r(subMax * 0.8)), maxSize: subMax, lineHeight: 1.1, maxLines: 1 });
+        subFit = oneLine.fits ? oneLine : fitText(subText, { w: zoneW * 0.9, h: subMax * 2.4 }, { ...fontSpec(sub), minSize: sublineMin, maxSize: subMax, lineHeight: 1.1, maxLines: 2 });
         if (!subFit.fits && budget !== "large" && (rules?.drop("subheadline") ?? true)) { subFit = null; drop("subheadline", "Sub-headline dropped: no legible room under the headline.", rules?.drop("subheadline") === true); }
       }
       // Kicker: the line above the headline, at the master's ratio to it.
@@ -444,7 +533,9 @@ export async function recomposeToFormat(
       const kickGap = kickFit ? r(fit.fontSize * 0.15) : 0;
       const kickH = kickFit ? r(kickFit.height) : 0;
       const gap = subFit ? r(fit.fontSize * 0.12) : 0;
-      const blockH = kickH + kickGap + hlH + gap + (subFit ? r(subFit.height) : 0);
+      const subCap = !!subFit && subFit.lines.length === 1;
+      const subH = subFit ? (subCap ? Math.max(1, r(capHeightPx(fontSpec(sub as FreeformText), subFit.fontSize))) : r(subFit.height)) : 0;
+      const blockH = kickH + kickGap + hlH + gap + subH;
       // With no cut-out on the photo, the headline drops onto the subject
       // (shipped Quakes vs Storms) so the lower photo zone never reads empty.
       const hasCutout = elements.some((e) => e.id === "rc_cutout");
@@ -457,10 +548,10 @@ export async function recomposeToFormat(
         const kw = r(zoneW * 0.9);
         elements.push(textEl("rc_kicker", "kicker", "subhead", kick, { x: copyZone.x + r((copyZone.w - kw) / 2), y: y0, w: kw, h: kickH }, kickFit.fontSize, kickFit.lines.join("\n"), "center", 1.1));
       }
-      elements.push(textEl("rc_headline", "headline", "headline", hl, hlBox, fit.fontSize, fit.lines.join("\n"), "center", 1.02));
+      elements.push(textEl("rc_headline", "headline", "headline", hl, hlBox, fit.fontSize, fit.lines.join("\n"), "center", 1.02, hlCap ? { baselineFit: "cap" } : {}));
       if (subFit) {
-        const sw = r(zoneW * 0.9);
-        elements.push(textEl("rc_subheadline", "subheadline", "subhead", sub as FreeformText, { x: copyZone.x + r((copyZone.w - sw) / 2), y: hlY + hlH + gap, w: sw, h: r(subFit.height) }, subFit.fontSize, subFit.lines.join("\n"), "center", 1.1));
+        const sw = r(subFit.lines.length === 1 ? Math.min(zoneW, copyZone.w * 0.9) : zoneW * 0.9);
+        elements.push(textEl("rc_subheadline", "subheadline", "subhead", sub as FreeformText, { x: copyZone.x + r((copyZone.w - sw) / 2), y: hlY + hlH + gap, w: sw, h: subH }, subFit.fontSize, subFit.lines.join("\n"), "center", 1.1, subCap ? { baselineFit: "cap" } : {}));
       }
       // Alternatives a designer can switch to without re-running.
       const alt = (label: string, frac: number, score: number) => {
@@ -485,8 +576,9 @@ export async function recomposeToFormat(
     const w = r(panelZone.w * 0.85);
     const fit = fitText(text, { w, h: maxSize * 2.5 }, { ...fontSpec(msg), minSize: messageMin, maxSize, lineHeight: 1.15, maxLines: 2 });
     if (fit.fits) {
-      const h = r(fit.height);
-      items.push({ kind: "message", w, h, build: (x, y) => [textEl("rc_message", "message", "body", msg, { x, y, w, h }, fit.fontSize, fit.lines.join("\n"), "center", 1.15)] });
+      const cap = fit.lines.length === 1;
+      const h = cap ? Math.max(1, r(capHeightPx(fontSpec(msg), fit.fontSize))) : r(fit.height);
+      items.push({ kind: "message", w, h, build: (x, y) => [textEl("rc_message", "message", "body", msg, { x, y, w, h }, fit.fontSize, fit.lines.join("\n"), "center", 1.15, cap ? { baselineFit: "cap" } : {})] });
     } else {
       drop("message", "Message dropped: it would not fit the panel legibly.", rules?.drop("message") === true);
     }
@@ -509,7 +601,7 @@ export async function recomposeToFormat(
         out.push({ ...cta, id: "rc_cta", slot: "cta", role: "decoration", fit: "contain", x, y, w: ctaW, h: ctaH, locked: true } as FreeformImage);
       }
       if (sem.ctaLabel && ctaPlan.lines.length > 0) {
-        const lw = ctaW - padX * 2 - (iconSize ? iconSize + ctaPlan.iconGap : 0);
+        const lw = iconSize ? ctaW - padX - iconSize - ctaPlan.iconInset - 2 : ctaW - padX * 2;
         if (ctaPlan.lines.length === 1) {
           // Centre the label's CAP HEIGHT on the pill's centre line — the same
           // cap-fit frame InDesign uses — so the copy sits dead centre in both
@@ -527,7 +619,7 @@ export async function recomposeToFormat(
         }
       }
       if (sem.ctaIcon && iconSize) {
-        out.push({ ...sem.ctaIcon, id: "rc_cta_icon", slot: "ctaIcon", role: "decoration", fit: "contain", x: x + ctaW - padX - iconSize, y: y + r((ctaH - iconSize) / 2), w: iconSize, h: iconSize, locked: true } as FreeformImage);
+        out.push({ ...sem.ctaIcon, id: "rc_cta_icon", slot: "ctaIcon", role: "decoration", fit: "contain", x: x + ctaW - ctaPlan.iconInset - iconSize, y: y + r((ctaH - iconSize) / 2), w: iconSize, h: iconSize, locked: true } as FreeformImage);
       }
       return out;
     };
@@ -593,8 +685,15 @@ export async function recomposeToFormat(
     const wantsTileNow = () => !items.some((i) => i.kind === "lockup") && !!opts.brand.logoUrl && !social && keep.has("lockup");
     const tileReserve = wantsTileNow() ? (guidelineLogoPlacement(dstW, dstH)?.tile.w ?? 0) : 0;
     const inner = panelZone.h - r(margin * 1.5);
-    let gap = clamp(r(panelZone.h * 0.07), 4, 48);
+    // Message → pill gap measured on the masters: 21px under a 29px message
+    // (wide), 14px under 26px (portrait) — about 0.6 of the message size now
+    // that the message box is its cap height.
+    const msgItem0 = items.find((i) => i.kind === "message");
+    let gap = clamp(Math.max(r(panelZone.h * 0.07), msgItem0 ? r(msgItem0.h * 0.75) : 0), 4, 48);
     const total = () => items.reduce((s, i) => s + i.h, 0) + gap * Math.max(0, items.length - 1);
+    // Tighten the gaps before a part goes: on a 300×250 the message fits
+    // with a closer stack, and a designer keeps the line over the air.
+    if (total() > inner) gap = Math.max(4, r(gap * 0.55));
     if (total() > inner && (rules?.drop("message") ?? true)) {
       const idx = items.findIndex((i) => i.kind === "message");
       if (idx >= 0) { items.splice(idx, 1); drop("message", "Message dropped: the panel is too short for message, CTA and lockup.", rules?.drop("message") === true); }
@@ -613,12 +712,16 @@ export async function recomposeToFormat(
     // bottom whenever the panel has room to spare.
     const lockupItem = items.find((i) => i.kind === "lockup");
     const spare = panelZone.h - total();
-    if (lockupItem && spare > total() * 0.6) {
+    if (lockupItem && spare >= gap) {
       const rest = items.filter((i) => i !== lockupItem);
       const restH = rest.reduce((s, i) => s + i.h, 0) + gap * Math.max(0, rest.length - 1);
-      const lockupY = panelZone.y + panelZone.h - lockupItem.h - r(margin * 1.2);
-      // Message + pill centred on the upper third of the room above the lockup.
-      let y = r(clamp(panelZone.y + (lockupY - panelZone.y) * 0.42 - restH / 2, panelZone.y + margin, lockupY - restH - gap));
+      // Bottom margin measured on the masters: 20px under a 47px lockup
+      // (wide), 17px (portrait) — 0.4 of the lockup's height.
+      const lockupY = panelZone.y + panelZone.h - lockupItem.h - Math.max(r(margin * 0.8), r(lockupItem.h * 0.4));
+      // Message + pill sit just below the middle of the room above the
+      // lockup: measured 0.62 (wide) and 0.53 (portrait) of that room.
+      const groupFrac = recipe.axis === "side" ? 0.6 : 0.54;
+      let y = r(clamp(panelZone.y + (lockupY - panelZone.y) * groupFrac - restH / 2, panelZone.y + Math.max(4, r(margin * 0.5)), lockupY - restH - gap));
       for (const item of rest) {
         elements.push(...item.build(panelZone.x + r((stackW - item.w) / 2), y));
         y += item.h + gap;

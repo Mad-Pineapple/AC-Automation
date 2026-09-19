@@ -18,6 +18,7 @@ import { eq, inArray, desc, sql } from "drizzle-orm";
 import { normalizeFreeformConfig, type FreeformConfig, type FreeformElement } from "./freeform";
 import { classifyFormat, type FormatClass } from "./formatCatalog";
 import { inferSlots } from "./slots";
+import { RECIPES } from "./recipes";
 import { styleSchemaFor, PART_RULE_SLOTS, type StyleSchema, type DisplayAxisRule, type ZoneRule, type PartRule, type PartRules, type PartRuleSlot } from "./styleSpecs/getReadyBurst2";
 
 type Axis = "stacked" | "side";
@@ -287,13 +288,15 @@ export function buildProfile(measurements: MasterMeasurement[], name: string): L
   const dAvg = side.length ? averageAxis(side) : null;
   const measuredClasses = new Set(measurements.map((x) => x.formatClass));
   const zones = {} as LayoutProfile["zones"];
+  // An axis nobody measured keeps the class recipe's calibrated numbers. A
+  // band is 5.9% of a portrait's height and 16.9% of a wide's: borrowing
+  // one axis's share for the other gave wides a hairline band and portraits
+  // a band so deep the message no longer fitted.
   for (const cls of STACKED_CLASSES) {
-    const src = sAvg ?? dAvg;
-    zones[cls] = { axis: "stacked", photoFrac: sAvg ? sAvg.photoFrac : cls === "square" ? 0.55 : 0.57, displayPhotoFrac: sAvg ? sAvg.photoFrac : undefined, bandFrac: src ? src.bandFrac : 0.05, bandAt: "seam", tolerance: measuredClasses.has(cls) ? 0.03 : 0.05, measured: measuredClasses.has(cls) };
+    zones[cls] = { axis: "stacked", photoFrac: sAvg ? sAvg.photoFrac : RECIPES[cls].photoFrac, displayPhotoFrac: sAvg ? sAvg.photoFrac : undefined, bandFrac: sAvg ? sAvg.bandFrac : RECIPES[cls].bandFrac, bandAt: "seam", tolerance: measuredClasses.has(cls) ? 0.03 : 0.05, measured: measuredClasses.has(cls) };
   }
   for (const cls of SIDE_CLASSES) {
-    const src = dAvg ?? sAvg;
-    zones[cls] = { axis: "side", photoFrac: dAvg ? dAvg.photoFrac : cls === "landscape" ? 0.55 : 0.6, displayPhotoFrac: dAvg ? dAvg.photoFrac : undefined, bandFrac: src ? src.bandFrac : 0.15, bandAt: "panelTop", tolerance: measuredClasses.has(cls) ? 0.03 : 0.05, measured: measuredClasses.has(cls) };
+    zones[cls] = { axis: "side", photoFrac: dAvg ? dAvg.photoFrac : RECIPES[cls].photoFrac, displayPhotoFrac: dAvg ? dAvg.photoFrac : undefined, bandFrac: dAvg ? dAvg.bandFrac : RECIPES[cls].bandFrac, bandAt: "panelTop", tolerance: measuredClasses.has(cls) ? 0.03 : 0.05, measured: measuredClasses.has(cls) };
   }
   zones.strip = { axis: "row", photoFrac: 0.3, bandFrac: 0, bandAt: "none", tolerance: 0.05, measured: measuredClasses.has("strip") };
 
@@ -353,9 +356,14 @@ export function profileToStyleSchema(profile: LayoutProfile, id: number): StyleS
     photo: { role: "photo", zone: "photo", size: { ofZoneW: 1, ofZoneH: 1 }, anchor: {}, rule: "Covers its zone; the master's framing is kept on same-axis builds." },
   };
   const zones = {} as Record<FormatClass, ZoneRule>;
+  // Profiles stored before the fix above carry the borrowed numbers: an
+  // unmeasured axis reads the named campaign schema when the profile's name
+  // matches one, else the class recipe.
+  const named = styleSchemaFor(profile.name);
   for (const k of Object.keys(profile.zones) as FormatClass[]) {
     const { measured: _m, ...z } = profile.zones[k];
-    zones[k] = z;
+    const axisMeasured = z.axis === "row" || profile.measuredAxes.includes(z.axis as Axis);
+    zones[k] = axisMeasured ? z : named?.zones[k] ?? { ...z, photoFrac: RECIPES[k].photoFrac, displayPhotoFrac: undefined, bandFrac: RECIPES[k].bandFrac };
   }
   return {
     id: `profile-${id}`,

@@ -245,7 +245,10 @@ export function checkMandatory(master: FreeformConfig, adapted: FreeformConfig, 
   for (const [slot, rule] of Object.entries(partRules)) {
     const els = bySlot.get(slot) ?? [];
     for (const el of els) {
-      const dim = slot === "logo" ? Math.min(el.w, el.h) : el.h;
+      // Copy is judged by its type size — the engines apply minPx as a font
+      // floor, and a cap-height box (baselineFit "cap") is shorter than the
+      // type it holds, so its height said "9px" of a 13px line.
+      const dim = slot === "logo" ? Math.min(el.w, el.h) : el.type === "text" ? el.fontSize : el.h;
       if (rule.minPx && dim < rule.minPx) reasons.push(`"${label(el)}" is ${Math.round(dim)}px — under the ${rule.minPx}px minimum set in the profile's rules.`);
       for (const other of rule.neverOverlap ?? []) {
         for (const o of bySlot.get(other) ?? []) {

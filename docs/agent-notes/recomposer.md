@@ -146,3 +146,47 @@ canvas on an axis rejects, under 60% flags, on the whole-composition paths. `che
 longer counts a pill and its own label as a collision and judges lockups by height. The bridge
 script v2 infers pins by edge (no thirds), exports text frames inside groups as live text (hidden
 while the group renders) and lists the fonts used.
+
+## Ground-truth refinement (2026-09-19)
+
+Method: import the studio's real master of shape A, build shape B from it,
+and measure the build against the studio's real master of shape B
+(384×592 ↔ 960×256, Get Ready). Every number below came from that, not
+from taste. After the pass every measured share is within ~3% of the real
+file (was up to 12%).
+
+- **Profiles never borrow across axes.** `buildProfile` used the side
+  master's band share for stacked zones and vice-versa (band is 5.9% of a
+  portrait's height, 16.9% of a wide's). Wides got a hairline band and a
+  60% photo; portraits got a 17% band and lost the message. An unmeasured
+  axis now reads the named campaign schema, else the class recipe —
+  also applied on read (`profileToStyleSchema`) so stored profiles heal.
+- **Empty links are missing links.** Slimmed packages carry 0-byte files in
+  Links/. They were stored as the photo, so the master and everything built
+  from it had no photograph. `indesignPackage.ts` now skips empty or
+  undecodable images; the IDML parser crops the frame from the document PDF
+  and the import warns by file name.
+- **Search pill modelled from the master**: label ratio ceiling 0.6 → 0.72
+  (real 0.66–0.68), left inset read from the master's label x, icon 0.74 of
+  the pill height sitting concentric in the round end, gap read from the
+  master.
+- **Pill floor is a label floor.** The recipe's pixel floor (43px, learned
+  on DV360 buttons whose label is 42% of the button) is capped at
+  18px ÷ label ratio. The 384×592 search pill is 28.9px in the real file.
+- **Cap-height copy boxes.** One-line headline, sub-line and message boxes
+  are their cap height with `baselineFit: "cap"`, as InDesign frames them,
+  so the 0.12em gap under the headline is the visible gap. The gate judges
+  copy floors by `fontSize`, not box height.
+- **Headline width is a share of the whole zone** (88% portrait, 81% wide),
+  capped by the margins. Sub-line tries one line first (may give up 20%).
+- **Panel stack**: lockup always bottom-anchored with 0.4 of its height
+  under it; message + pill centred at 0.6 (side) / 0.54 (stacked) of the
+  room above it; gaps tighten before a part is dropped.
+- **Scrim share is per axis when crossing axes**: 0.70 stacked, 0.84 side.
+- **Photo crop follows the designer's layout.** With no person- or
+  vision-marked focus, the subject is the part of the master's photo zone
+  left clear under the copy; it is placed 82% down the new zone. The
+  automatic "attention" focus no longer outranks this (it picked the trees
+  over the flooded car).
+- **Narrow towers** set the pill label on two lines before it collapses to
+  the 9px floor.

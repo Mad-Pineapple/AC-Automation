@@ -186,6 +186,23 @@ export async function importInDesignPackage(
         continue;
       }
       const bytes = Buffer.from(await entry.async("arraybuffer"));
+      // An empty or unreadable link is a missing link. Slimmed packages ship
+      // 0-byte placeholders in Links/; storing one gave a master whose photo
+      // was a blank frame, and every size built from it had no photograph.
+      // Skipped here, the IDML parser crops the frame from the document PDF.
+      if (bytes.length === 0) {
+        result.skipped.push({ name, reason: "empty file (0 bytes) — its frame was reproduced from the document PDF instead; re-package with the real link for full quality" });
+        continue;
+      }
+      if (e in IMAGE_TYPES && e !== ".svg") {
+        try {
+          const meta = await sharp(bytes).metadata();
+          if (!meta.width || !meta.height) throw new Error("no dimensions");
+        } catch {
+          result.skipped.push({ name, reason: "could not be read as an image — its frame was reproduced from the document PDF instead" });
+          continue;
+        }
+      }
 
       if (e in IMAGE_TYPES) {
         const storedPath = await objectStorageService.uploadBytes(bytes, IMAGE_TYPES[e]);
