@@ -130,3 +130,19 @@ against the cluster's zone), the geometry engine (explicit switches beat the mea
 layered band (`flexW` = full width). The recompose/key-visual engines rebuild from slots and do not
 read pins. None of the delivered IDML packages carry object rules yet (all default, page rule
 UseMaster).
+
+## InDesign bridge accuracy (2026-09-19)
+
+`lib/authoritativeAdapt.ts` now places bridge blocks with the liquid resolver: designer `constraints`
+win, else bridge anchors merged with span inference (a block spanning the page is pinned both sides
+and flexible whatever a v1 anchor said), else inference. A stretched single image or rect crops/fills
+its box; logos never flex; text re-aligns inside a stretched block. Studio floors apply (raised and
+flagged). Import maps anchors → `constraints` (one vocabulary with the editor). A target between two
+SAME-AXIS masters is blended block by block (`adaptAuthoritativeBetween`, method
+`indesign-interpolated`); copy keeps its side of the panel and colliding copy is nudged. A slim
+target with no slim master is no longer a 422: it is built from the nearest master by the ordinary
+engines and marked REVIEW (`X-Adapt-Softened`). Coverage gate (`contentCoverage`): under 40% of the
+canvas on an axis rejects, under 60% flags, on the whole-composition paths. `checkMandatory` no
+longer counts a pill and its own label as a collision and judges lockups by height. The bridge
+script v2 infers pins by edge (no thirds), exports text frames inside groups as live text (hidden
+while the group renders) and lists the fonts used.

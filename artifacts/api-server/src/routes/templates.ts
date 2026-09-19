@@ -17,7 +17,8 @@ import { analyseGwdHtml, motionForElements, type GwdLeaf } from "../lib/gwdMotio
 import { resolveStyleSchema, learnProfile, getProfile } from "../lib/layoutProfile";
 import type { LayoutProfile } from "../lib/layoutProfile";
 import { adaptGeometryProfile } from "../lib/geometryAdapt";
-import { adaptAuthoritativeConfig, selectAuthoritativeSource } from "../lib/authoritativeAdapt";
+import { adaptAuthoritativeConfig, adaptAuthoritativeBetween, selectAuthoritativeSource, nearestAuthoritativeSource, targetBetweenMasters, masterAxis } from "../lib/authoritativeAdapt";
+import { contentCoverage } from "../lib/layoutCheck";
 import { ruleLayerFor } from "../lib/partRulesLayer";
 import { guidelinesForConfig, guidelineNotes, topicsPerElement } from "../lib/guidelines";
 import type { StyleSchema } from "../lib/styleSpecs/getReadyBurst2";
@@ -227,6 +228,7 @@ async function adaptOne(
   hints: FormatHints = {},
   styleOverride?: { schema: StyleSchema | null; label: string; profile?: LayoutProfile } | null,
   render?: { loadImage: ImageLoader; brandFontFamily?: string } | null,
+  family?: Array<{ id: number; width: number; height: number; config: FreeformConfig }> | null,
 ): Promise<{ config: FreeformConfig; method: string; spec: ReturnType<typeof describeFormat>; reference: Reference | null; rejected: string[] }> {
   let adapted: FreeformConfig | null = null;
   let method = "scaled";
@@ -237,10 +239,33 @@ async function adaptOne(
   // A bridge master is already semantically authored in InDesign. Its
   // explicit blocks and anchors are authoritative, so none of the inferred
   // profile, key-visual, panel or campaign-recipe engines may replace it.
+  const bridgeRules = ruleLayerFor(styleOverride ? styleOverride.schema : styleSchemaFor(master.name));
   if (masterConfig.sourceMode === "indesign-bridge" && masterConfig.authoritativeGeometry) {
-    adapted = adaptAuthoritativeConfig(masterConfig, master.width, master.height, width, height);
-    method = "indesign-authoritative";
-    notes.push(...(adapted.adaptNotes ?? []));
+    // A target whose shape lies BETWEEN two bridge masters is interpolated
+    // from both (the geometry profile measured at import), not copied from
+    // one and fitted: that is what makes a square from a portrait and a
+    // landscape instead of a strip on a square.
+    const fam = (family ?? []).filter((s) => s.width > 0 && s.height > 0 && s.config.sourceMode === "indesign-bridge");
+    if (fam.length >= 2 && targetBetweenMasters(fam, width, height)) {
+      const lt = Math.log(width / height);
+      const below = fam.filter((s) => Math.log(s.width / s.height) <= lt).sort((p, q) => Math.log(q.width / q.height) - Math.log(p.width / p.height))[0];
+      const above = fam.filter((s) => Math.log(s.width / s.height) >= lt).sort((p, q) => Math.log(p.width / p.height) - Math.log(q.width / q.height))[0];
+      // Only masters that lay out along the same axis can be blended: a
+      // photo-over-panel master and a photo-beside-panel master describe two
+      // designs, and a blend of them is neither. Those fall to the nearer
+      // master's own pins.
+      const sameAxis = below && above && masterAxis(below.config, below.width, below.height) !== null && masterAxis(below.config, below.width, below.height) === masterAxis(above.config, above.width, above.height);
+      if (below && above && below !== above && sameAxis) {
+        adapted = adaptAuthoritativeBetween(below, above, width, height, { rules: bridgeRules });
+        method = "indesign-interpolated";
+        notes.push(...(adapted.adaptNotes ?? []));
+      }
+    }
+    if (!adapted) {
+      adapted = adaptAuthoritativeConfig(masterConfig, master.width, master.height, width, height, { rules: bridgeRules });
+      method = "indesign-authoritative";
+      notes.push(...(adapted.adaptNotes ?? []));
+    }
   }
   // 0. An approved piece in the family is the reference: scale it when the
   //    shape is near-identical, otherwise rebuild with its measured
@@ -352,7 +377,7 @@ async function adaptOne(
   let rejected = gate(adapted);
   // A rejected result is not simply labelled: the next engine gets a turn
   // and the build keeps whichever result has the fewest rejections.
-  if (rejected.length > 0 && method !== "scaled" && method !== "indesign-authoritative") {
+  if (rejected.length > 0 && method !== "scaled" && method !== "indesign-authoritative" && method !== "indesign-interpolated") {
     const attempts: Array<{ label: string; run: () => Promise<FreeformConfig | null> }> = [];
     if (!method.startsWith("recomposed") && shouldRecompose(masterConfig, master.width, master.height, width, height)) {
       attempts.push({ label: `recomposed:${spec.formatClass}`, run: async () => (await recomposeToFormat(masterConfig, master.width, master.height, width, height, { brand: brandInfo, formatClass: spec.formatClass, rules }))?.config ?? null });
@@ -376,7 +401,18 @@ async function adaptOne(
     }
   }
   const issues = checkLayout(adapted, width, height);
-  const needsReview = adapted.needsReview === true || (adapted.droppedParts ?? []).length > 0;
+  // Coverage gate: a composition that occupies well under the canvas is not
+  // finished artwork, however faithful its blocks (a landscape master fitted
+  // onto a square left 70% empty). Applies to the paths that place whole
+  // compositions; the recompose engines fill their zones by construction.
+  let coverageReview = false;
+  if (["indesign-authoritative", "indesign-interpolated", "geometry-profile", "scaled", "scaled:approved"].includes(method)) {
+    const cov = contentCoverage(adapted, width, height);
+    const minCov = Math.min(cov.x, cov.y);
+    if (minCov < 0.4) rejected.push(`The artwork covers only ${Math.round(cov.x * 100)}% of the width and ${Math.round(cov.y * 100)}% of the height of this canvas.`);
+    else if (minCov < 0.6) { notes.push(`Check: the artwork covers ${Math.round(cov.x * 100)}% of the width and ${Math.round(cov.y * 100)}% of the height — the rest is ground.`); coverageReview = true; }
+  }
+  const needsReview = adapted.needsReview === true || (adapted.droppedParts ?? []).length > 0 || coverageReview;
   if (needsReview && rejected.length === 0) notes.push("Review: a part was dropped or fitted at its floor — a designer should look before sign-off.");
   // Design principles: alignment, margins and balance from the geometry;
   // contrast behind copy from the rendered piece. Low contrast on the
@@ -649,20 +685,10 @@ router.post("/templates/:id/adapt", requireAdmin, async (req, res): Promise<void
       } catch { /* an unrelated or invalid profile source is ignored */ }
     }
   }
-  if (authoritativeSources.length) {
-    const missing: string[] = [];
-    for (const raw of rawTargets) {
-      if (typeof raw !== "object" || raw === null) continue;
-      const target = raw as Record<string, unknown>;
-      const width = Number(target.width), height = Number(target.height);
-      if (!Number.isFinite(width) || !Number.isFinite(height)) continue;
-      if (!selectAuthoritativeSource(authoritativeSources, width, height)) missing.push(`${width}×${height}`);
-    }
-    if (missing.length) {
-      res.status(422).json({ error: `Generation stopped. ${missing.join(", ")} require the matching slim InDesign master. Export portrait, landscape, slim portrait and slim landscape together with AC-InDesign-Bridge.idjs, then upload the new package.` });
-      return;
-    }
-  }
+  // A slim target with no slim master is no longer a hard stop: it is built
+  // from the nearest master by the recompose engines (the bridge geometry is
+  // not authoritative for a shape it was never drawn for) and marked REVIEW.
+  let softenedCount = 0;
   for (const raw of rawTargets) {
     if (typeof raw !== "object" || raw === null) continue;
     const t = raw as Record<string, unknown>;
@@ -675,9 +701,14 @@ router.post("/templates/:id/adapt", requireAdmin, async (req, res): Promise<void
       typeof t.name === "string" && t.name.trim()
         ? t.name.trim().slice(0, 120)
         : `${master.name} ${width}×${height}`;
-    const chosen = authoritativeSources.length ? selectAuthoritativeSource(authoritativeSources, width, height) : null;
+    const strict = authoritativeSources.length ? selectAuthoritativeSource(authoritativeSources, width, height) : null;
+    const softened = authoritativeSources.length > 0 && !strict;
+    const chosen = strict ?? (authoritativeSources.length ? nearestAuthoritativeSource(authoritativeSources, width, height) : null);
     const sourceMaster = chosen ? { id: chosen.id, width: chosen.width, height: chosen.height, name: chosen.name } : master;
-    const sourceConfig = chosen?.config ?? masterConfig;
+    const sourceConfig: FreeformConfig = softened && chosen
+      ? { ...chosen.config, authoritativeGeometry: false, adaptNotes: [...(chosen.config.adaptNotes ?? []), `No slim InDesign master for ${width}×${height}: rebuilt from the nearest master ("${chosen.name}") by the layout engines — review before sign-off, or export a slim master with AC-InDesign-Bridge.idjs.`] }
+      : (chosen?.config ?? masterConfig);
+    if (softened) softenedCount++;
 
     // Same dimensions must reproduce the imported master exactly. In
     // particular, do not send it through adaptOne or Artwork Guard, both of
@@ -715,7 +746,7 @@ router.post("/templates/:id/adapt", requireAdmin, async (req, res): Promise<void
       name: typeof t.formatName === "string" ? t.formatName : typeof t.name === "string" ? t.name : null,
       channel: typeof t.channel === "string" ? t.channel : null,
     };
-    const { config: adaptedConfig, method, spec, rejected } = await adaptOne(sourceMaster, sourceConfig, width, height, brandInfo, (req as any).log, exemplars, undefined, hints, resolvedStyle.source === "none" ? null : { schema: resolvedStyle.schema, label: resolvedStyle.label, profile: resolvedStyle.profile }, { loadImage: makeImageLoader(req), brandFontFamily: brand?.fontFamily ?? "National 2" });
+    const { config: adaptedConfig, method, spec, rejected } = await adaptOne(sourceMaster, sourceConfig, width, height, brandInfo, (req as any).log, exemplars, undefined, hints, resolvedStyle.source === "none" ? null : { schema: resolvedStyle.schema, label: resolvedStyle.label, profile: resolvedStyle.profile }, { loadImage: makeImageLoader(req), brandFontFamily: brand?.fontFamily ?? "National 2" }, softened ? null : authoritativeSources);
     // Guideline reminders for what is on the piece (logo tile, band, photo…).
     let merged = subjectNotes.length ? normalizeFreeformConfig({ ...adaptedConfig, adaptNotes: [...(adaptedConfig.adaptNotes ?? []), ...subjectNotes] }) : adaptedConfig;
     let elementGuidelines: Awaited<ReturnType<typeof guidelinesForConfig>> = [];
@@ -777,6 +808,7 @@ router.post("/templates/:id/adapt", requireAdmin, async (req, res): Promise<void
     const cleanNotes = (merged.adaptNotes ?? []).filter((n) => !n.startsWith("Rejected:") && !n.startsWith("Check: Claude") && !n.startsWith("Check: AI Artwork Guard"));
     const storedConfig = {
       ...merged,
+      ...(softened ? { needsReview: true } : {}),
       adaptNotes: [...finalRejected.map((r) => `Rejected: ${r}`), ...cleanNotes],
       rejected: finalRejected.length ? finalRejected : undefined,
       ...(guardReview ? { claudeReview: guardReview, aiArtworkGuard: { enabled: true, provider: guardReview.answeredBy ?? guardReview.model, reviewedDuringBuild: true } } : {}),
@@ -805,6 +837,7 @@ router.post("/templates/:id/adapt", requireAdmin, async (req, res): Promise<void
     return;
   }
   if (rejectedCount > 0) res.setHeader("X-Adapt-Rejected", String(rejectedCount));
+  if (softenedCount > 0) res.setHeader("X-Adapt-Softened", String(softenedCount));
   res.status(201).json(created.map(formatTemplate));
 });
 

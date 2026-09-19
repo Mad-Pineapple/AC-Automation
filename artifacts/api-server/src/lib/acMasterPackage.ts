@@ -3,6 +3,8 @@ import type JSZip from "jszip";
 import { ObjectStorageService } from "./objectStorage";
 import { normalizeFreeformConfig, type FreeformConfig, type SlotRole } from "./freeform";
 import type { ImportedPackageAsset } from "./indesignPackage";
+import { constraintsFromAnchors } from "./authoritativeAdapt";
+import { sanitizeConstraints } from "./liquid";
 
 export const AC_MASTER_SCHEMA = "nz.govt.auckland.artwork-master/v1";
 
@@ -90,6 +92,9 @@ export async function parseAcMasterPackage(
         slot: typeof raw.slot === "string" ? raw.slot : slotForRole(role),
         layoutBlock: safeName(raw.block, role).replace(/[^\w:.-]/g, "_").slice(0, 80),
         anchorX: raw.anchorX, anchorY: raw.anchorY, scaleMode: raw.scaleMode,
+        // One vocabulary: the bridge's pins (v2 manifests carry them; v1
+        // anchors are mapped) become the same constraints the editor edits.
+        ...((() => { const c = sanitizeConstraints((raw as { constraints?: unknown }).constraints) ?? constraintsFromAnchors({ anchorX: typeof raw.anchorX === "string" ? raw.anchorX : undefined, anchorY: typeof raw.anchorY === "string" ? raw.anchorY : undefined, scaleMode: typeof raw.scaleMode === "string" ? raw.scaleMode : undefined }); return c ? { constraints: c } : {}; })()),
         ...(raw.locked === true ? { locked: true } : {}),
       };
       if (raw.kind === "text") {
@@ -135,6 +140,8 @@ export async function parseAcMasterPackage(
     });
   }
   if (!layouts.length) throw new Error("The InDesign bridge package had no usable master layouts.");
+  const fonts = [...new Set(layouts.flatMap((l) => l.config.elements.filter((e): e is Extract<typeof e, { type: "text" }> => e.type === "text").map((e) => e.fontFamily).filter((f): f is string => !!f)))];
+  if (fonts.length) warnings.push(`Fonts used: ${fonts.join(", ")}. Copy is measured with these faces only when they are in the Library; add them there if they are not.`);
   warnings.unshift(`Authoritative InDesign package: ${layouts.length} master${layouts.length === 1 ? "" : "s"} imported. Generic recipe guessing is disabled for this family.`);
   return { layouts, imported, warnings };
 }

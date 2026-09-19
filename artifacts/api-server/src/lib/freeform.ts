@@ -438,6 +438,21 @@ export function adaptFreeformConfig(
     }
   }
 
+  // A pill's label box follows the pill's inner width, so a label that just
+  // fitted its master box never wraps after rounding at the new size.
+  for (const members of clusters.values()) {
+    const pill = members.find((m) => m.slot === "cta" && m.type === "rect");
+    const label = members.find((m) => m.slot === "ctaLabel" && m.type === "text");
+    if (!pill || !label) continue;
+    const pb = newBox.get(pill.id), lb = newBox.get(label.id);
+    if (!pb || !lb) continue;
+    const pad = Math.max(2, lb.x - pb.x);
+    const icon = members.find((m) => m.slot === "ctaIcon");
+    const ib = icon ? newBox.get(icon.id) : undefined;
+    const right = ib ? ib.x - Math.max(2, R(pad / 2)) : pb.x + pb.w - pad;
+    newBox.set(label.id, { ...lb, w: Math.max(1, right - lb.x) });
+  }
+
   const elements = master.elements.map((el) => {
     // Full-bleed backgrounds restretch rather than scale-and-anchor.
     if (fullBleed(el)) {

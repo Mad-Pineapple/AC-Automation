@@ -219,6 +219,11 @@ export async function recomposeToFormat(
   let needsReview = sem.notes.length > 0;
   const dropped: DroppedPart[] = [];
   const drop = (slot: string, reason: string, byRule: boolean) => { dropped.push({ slot, reason, byRule }); notes.push(reason); };
+  // Parts the class recipe does not carry at all (a tower keeps no
+  // sub-line, a strip no message) are dropped by rule, and said so.
+  for (const [slot, has] of [["subheadline", !!sem.subheadline], ["message", !!sem.message], ["kicker", !!sem.kicker], ["band", !!sem.band], ["cutout", sem.cutouts.length > 0]] as Array<[string, boolean]>) {
+    if (has && !(keep as Set<string>).has(slot)) drop(slot, `${slot === "cutout" ? "Cut-out" : slot === "subheadline" ? "Sub-line" : slot === "kicker" ? "Kicker line" : slot === "band" ? "Pattern band" : "Message"} left out: the ${formatClass} recipe does not carry it.`, true);
+  }
   const panelFill = sem.panelFill ?? OCEAN;
   const rules = opts.rules;
   const headlineMin = rules?.floor("headline") ?? HEADLINE_MIN_PX;

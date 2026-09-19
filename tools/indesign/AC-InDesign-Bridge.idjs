@@ -1,5 +1,5 @@
 /**
- * Auckland Artwork Studio, InDesign bridge v1
+ * Auckland Artwork Studio, InDesign bridge v2 (liquid-layout pins, live text in groups)
  *
  * Open the approved key-visual documents in InDesign, close unrelated
  * documents, then run this file from Window > Utilities > Scripts.
@@ -44,17 +44,26 @@
   function pageSize(page) { const b = page.bounds; return { width:Number(b[3])-Number(b[1]), height:Number(b[2])-Number(b[0]), top:Number(b[0]), left:Number(b[1]) }; }
   function bounds(item, page) { const b=item.geometricBounds,p=page.bounds; return { x:Number(b[1])-Number(p[1]), y:Number(b[0])-Number(p[0]), w:Number(b[3])-Number(b[1]), h:Number(b[2])-Number(b[0]) }; }
   function visible(item) { try { return item.visible !== false && item.nonprinting !== true && item.itemLayer.visible !== false; } catch (_) { return true; } }
-  function anchors(role, b, W, H) {
-    if (role === "background") return { anchorX:"stretch", anchorY:"stretch", scaleMode:"fill" };
-    if (role === "logo") return { anchorX:"right", anchorY:"bottom", scaleMode:"uniform" };
-    const cx=b.x+b.w/2,cy=b.y+b.h/2;
-    return {
-      anchorX: labelAnchor(role,"X") || (cx < W/3 ? "left" : cx > W*2/3 ? "right" : "center"),
-      anchorY: labelAnchor(role,"Y") || (cy < H/3 ? "top" : cy > H*2/3 ? "bottom" : "center"),
-      scaleMode:"uniform",
-    };
+  // Liquid-layout switches, the same rule the app uses: flush to a page edge
+  // (proportional tolerance) → pinned there; spanning ≥96% of an axis →
+  // pinned both sides and flexible; otherwise unpinned (proportional).
+  // Backgrounds fill; logos ride their edges and never flex. Anchor words
+  // are derived for older app versions.
+  function constraintsFor(role, b, W, H) {
+    const tx=Math.max(2,W*0.012),ty=Math.max(2,H*0.012),c={};
+    const left=b.x<=tx,right=b.x+b.w>=W-tx,top=b.y<=ty,bottom=b.y+b.h>=H-ty,spansW=b.w>=W*0.96,spansH=b.h>=H*0.96;
+    if (role==="background") return {pinTop:true,pinBottom:true,pinLeft:true,pinRight:true,flexW:true,flexH:true};
+    if (left||spansW) c.pinLeft=true; if (right||spansW) c.pinRight=true; if (top||spansH) c.pinTop=true; if (bottom||spansH) c.pinBottom=true;
+    if (spansW) c.flexW=true; if (spansH) c.flexH=true;
+    if (role==="logo") { delete c.flexW; delete c.flexH; if (!c.pinRight&&!c.pinLeft) c.pinRight=true; if (!c.pinBottom&&!c.pinTop) c.pinBottom=true; }
+    return c;
   }
-  function labelAnchor() { return ""; }
+  function anchorsFrom(c, role) {
+    const ax=c.pinLeft&&c.pinRight?"stretch":c.pinLeft?"left":c.pinRight?"right":"center";
+    const ay=c.pinTop&&c.pinBottom?"stretch":c.pinTop?"top":c.pinBottom?"bottom":"center";
+    return { anchorX:ax, anchorY:ay, scaleMode: role==="background"||(c.flexW&&c.flexH)?"fill":"uniform" };
+  }
+  function anchors(role, b, W, H) { const c=constraintsFor(role,b,W,H); return Object.assign(anchorsFrom(c,role),{constraints:c}); }
   function hex2(n) { const s=Math.max(0,Math.min(255,Math.round(n))).toString(16); return s.length<2?"0"+s:s; }
   function textColor(text) {
     try {
@@ -99,7 +108,7 @@
     if (!documents.length) throw Error("Open the approved InDesign key visuals first.");
     const destination=await fs.getFolder(); if(!destination) return;
     const stamp=Date.now().toString(36),folder=await destination.createFolder("AC-InDesign-Masters-"+stamp),assetFolder=await folder.createFolder("assets");
-    const manifest={schema:SCHEMA,createdAt:new Date().toISOString(),campaign:safe(documents[0].name.replace(/\.[^.]+$/, ""),"campaign"),pages:[]};
+    const manifest={schema:SCHEMA,version:2,createdAt:new Date().toISOString(),campaign:safe(documents[0].name.replace(/\.[^.]+$/, ""),"campaign"),pages:[],fonts:[]};
     const zipEntries=[],warnings=[];
     // Preserve enough raster detail for print and OOH derivatives. The app
     // still uses the InDesign frame geometry, so the higher-resolution PNGs
@@ -115,11 +124,22 @@
           if (!role) { warnings.push(doc.name+" page "+page.name+": skipped untagged layer "+layerName); continue; }
           const b=bounds(item,page); if (!(b.w>0&&b.h>0)) continue;
           const explicitBlock=label(item,"block"),a=anchors(role,b,size.width,size.height);
-          const common={id:pageKey+"_"+safe(role+"_"+i,"item"),layerName,role,slot:slotFor(role),block:explicitBlock||role,anchorX:label(item,"anchorX")||a.anchorX,anchorY:label(item,"anchorY")||a.anchorY,scaleMode:label(item,"scaleMode")||a.scaleMode,x:b.x,y:b.y,w:b.w,h:b.h,locked:role==="logo"};
+          const common={id:pageKey+"_"+safe(role+"_"+i,"item"),layerName,role,slot:slotFor(role),block:explicitBlock||role,anchorX:label(item,"anchorX")||a.anchorX,anchorY:label(item,"anchorY")||a.anchorY,scaleMode:label(item,"scaleMode")||a.scaleMode,constraints:a.constraints,x:b.x,y:b.y,w:b.w,h:b.h,locked:role==="logo"};
           if (isTextFrame(item)) elements.push(Object.assign(common,textData(item)));
           else {
+            // Text frames INSIDE a group stay live: they are exported as text
+            // (in the group's block) and hidden while the group's artwork is
+            // rendered, so copy is never baked into a picture.
+            const innerText=[];
+            try { for (const sub of toArray(item.allPageItems)) if (isTextFrame(sub)&&visible(sub)) innerText.push(sub); } catch (_) {}
+            for (let k=0;k<innerText.length;k++) {
+              const tb=bounds(innerText[k],page);
+              elements.push(Object.assign({id:common.id+"_t"+k,layerName,role,slot:slotFor(role),block:common.block,anchorX:common.anchorX,anchorY:common.anchorY,scaleMode:"uniform",constraints:a.constraints,x:tb.x,y:tb.y,w:tb.w,h:tb.h,locked:false},textData(innerText[k])));
+              try { innerText[k].visible=false; } catch (_) {}
+            }
             const fileName=pageKey+"-"+String(i+1).padStart(3,"0")+"-"+safe(role,"art")+".png",assetPath="assets/"+fileName,file=await assetFolder.createFile(fileName,{overwrite:true});
-            item.exportFile(ExportFormat.PNG_FORMAT,file,false);
+            try { item.exportFile(ExportFormat.PNG_FORMAT,file,false); }
+            finally { for (const t of innerText) { try { t.visible=true; } catch (_) {} } }
             elements.push(Object.assign(common,{kind:"image",assetPath,fit:"contain"}));
             zipEntries.push({name:assetPath,data:await file.read({format:formats.binary})});
           }
@@ -128,6 +148,8 @@
         manifest.pages.push({name:safe(doc.name.replace(/\.[^.]+$/, "")+" "+page.name,"Master "+pageNo),document:doc.name,page:String(page.name),width:size.width,height:size.height,masterFamily:label(page,"masterFamily")||familyFor(size.width,size.height),elements});
       }
     }
+    // Faces used, so the studio can check they are in the app's Library.
+    const faces={}; manifest.pages.forEach(pg=>pg.elements.forEach(el=>{ if (el.kind==="text"&&el.fontFamily) faces[el.fontFamily]=true; })); manifest.fonts=Object.keys(faces);
     if (!manifest.pages.length) throw Error("No tagged artwork was found. Name visible InDesign layers art:background, art:hero, art:headline, art:body, art:cta, art:logo or art:decoration.");
     const json=JSON.stringify(manifest,null,2),manifestFile=await folder.createFile("ac-master.json",{overwrite:true});await manifestFile.write(json,{format:formats.utf8});zipEntries.unshift({name:"ac-master.json",data:json});
     const report=["Auckland Artwork Studio InDesign bridge",manifest.pages.length+" master page(s) exported.",warnings.length+" warning(s).","",...warnings].join("\n"),reportFile=await folder.createFile("export-report.txt",{overwrite:true});await reportFile.write(report,{format:formats.utf8});zipEntries.push({name:"export-report.txt",data:report});

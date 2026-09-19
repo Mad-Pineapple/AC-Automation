@@ -177,9 +177,14 @@ export function checkMandatory(master: FreeformConfig, adapted: FreeformConfig, 
   const logoMin = Math.max(24, Math.round(short / 8));
   for (const el of adapted.elements) {
     if (el.type !== "image") continue;
-    if (el.slot === "logo" || el.role === "logo") {
+    if (el.slot === "lockup") {
+      // A lockup (wide mark) is judged on its height, never as a square tile,
+      // whatever role it carries.
+      const lockupMin = isStrip ? 14 : Math.max(16, Math.round(short * 0.05));
+      if (el.h < lockupMin) reasons.push(`Lockup is ${Math.round(el.h)}px tall — under the ${lockupMin}px minimum for this canvas.`);
+    } else if (el.slot === "logo" || el.role === "logo") {
       if (Math.min(el.w, el.h) < logoMin) reasons.push(`Logo tile is ${Math.round(el.w)}×${Math.round(el.h)}px — under the ${logoMin}px minimum for this canvas.`);
-    } else if (el.slot === "lockup") {
+    } else if (false) {
       const lockupMin = isStrip ? 14 : Math.max(16, Math.round(short * 0.05));
       if (el.h < lockupMin) reasons.push(`Lockup is ${Math.round(el.h)}px tall — under the ${lockupMin}px minimum for this canvas.`);
     }
@@ -217,8 +222,11 @@ export function checkMandatory(master: FreeformConfig, adapted: FreeformConfig, 
   let designedOverlap = 0;
   for (const c of masterCopy) for (const k of masterCutouts) designedOverlap = Math.max(designedOverlap, overlapFrac(c, k));
   const cutoutTolerance = Math.max(0.15, designedOverlap + 0.1);
+  // A pill drawn as an image holds its label (and icon) by design.
+  const ctaFamily = (e: FreeformConfig["elements"][number]) => e.slot === "cta" || e.slot === "ctaLabel" || e.slot === "ctaIcon" || (e.type === "text" && e.role === "cta");
   for (let i = 0; i < copyish.length; i++) {
     for (let j = i + 1; j < copyish.length; j++) {
+      if (ctaFamily(copyish[i]) && ctaFamily(copyish[j])) continue;
       const f = overlapFrac(copyish[i], copyish[j]);
       if (f > 0.15) reasons.push(`"${label(copyish[i])}" and "${label(copyish[j])}" overlap by ${Math.round(f * 100)}%.`);
     }
@@ -253,4 +261,19 @@ export function checkMandatory(master: FreeformConfig, adapted: FreeformConfig, 
 function label(el: { id: string; type: string; slot?: string; text?: string }): string {
   if (el.type === "text" && el.text) return el.text.replace(/\s+/g, " ").slice(0, 28);
   return el.slot ?? el.id;
+}
+
+
+/**
+ * How much of the canvas the composition occupies, per axis, ignoring
+ * full-bleed grounds and the photo. A landscape master fitted uniformly
+ * onto a square leaves a strip at the bottom and 70% empty canvas above;
+ * nothing else measured that.
+ */
+export function contentCoverage(cfg: FreeformConfig, width: number, height: number): { x: number; y: number; box: { x: number; y: number; w: number; h: number } | null } {
+  const content = cfg.elements.filter((e) => !(e.w >= width * 0.9 && e.h >= height * 0.9) && e.slot !== "photo" && !(e.type === "image" && e.role === "product") && e.w > 0 && e.h > 0);
+  if (content.length === 0) return { x: 1, y: 1, box: null };
+  const x0 = Math.max(0, Math.min(...content.map((e) => e.x))), y0 = Math.max(0, Math.min(...content.map((e) => e.y)));
+  const x1 = Math.min(width, Math.max(...content.map((e) => e.x + e.w))), y1 = Math.min(height, Math.max(...content.map((e) => e.y + e.h)));
+  return { x: Math.max(0, x1 - x0) / width, y: Math.max(0, y1 - y0) / height, box: { x: x0, y: y0, w: x1 - x0, h: y1 - y0 } };
 }
