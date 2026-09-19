@@ -307,8 +307,18 @@ async function adaptOne(
   // edge-anchor the portrait layout onto it (band across the photo, no
   // panel, tiny headline) and, because every import learns a profile, it
   // hijacked every build. Outside the measured range the recipe engines lead.
-  const measuredShapes = (styleOverride?.profile?.geometryMasters ?? []).map((m) => ({ width: m.width, height: m.height }));
-  if (!adapted && styleOverride?.profile && targetBetweenMasters(measuredShapes, width, height)) {
+  // …and only between masters laid out on the SAME axis. A square sits
+  // between a portrait and a wide master by shape, but one stacks photo over
+  // panel and the other sets them side by side: blending the two put the
+  // band across the photo and lost the sub-line (caught by tools/baseline
+  // when the portrait and wide Get Ready masters were learned together).
+  const profSources = styleOverride?.profile?.sources ?? [];
+  const axisOfMaster = (m: { templateId?: number; width: number; height: number }) =>
+    profSources.find((x) => x.templateId === m.templateId)?.axis ?? (m.width / Math.max(1, m.height) >= 1.12 ? "side" : "stacked");
+  const geoMasters = styleOverride?.profile?.geometryMasters ?? [];
+  const bracketed = (["stacked", "side"] as const).some((axis) =>
+    targetBetweenMasters(geoMasters.filter((m) => axisOfMaster(m) === axis).map((m) => ({ width: m.width, height: m.height })), width, height));
+  if (!adapted && styleOverride?.profile && bracketed) {
     const geometric = adaptGeometryProfile(masterConfig, master.width, master.height, width, height, styleOverride.profile, rules);
     if (geometric) {
       adapted = geometric.config;

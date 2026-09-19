@@ -363,7 +363,11 @@ export function profileToStyleSchema(profile: LayoutProfile, id: number): StyleS
   for (const k of Object.keys(profile.zones) as FormatClass[]) {
     const { measured: _m, ...z } = profile.zones[k];
     const axisMeasured = z.axis === "row" || profile.measuredAxes.includes(z.axis as Axis);
-    zones[k] = axisMeasured ? z : named?.zones[k] ?? { ...z, photoFrac: RECIPES[k].photoFrac, displayPhotoFrac: undefined, bandFrac: RECIPES[k].bandFrac };
+    // A 16:9 landscape is not a 3.75:1 wide: the wide master's 50/50 split
+    // and deep band are no evidence for it. Unless a landscape master was
+    // itself measured, landscape keeps the campaign schema / class recipe.
+    const classEvidence = k !== "landscape" || profile.zones[k].measured;
+    zones[k] = axisMeasured && classEvidence ? z : named?.zones[k] ?? { ...z, photoFrac: RECIPES[k].photoFrac, displayPhotoFrac: undefined, bandFrac: RECIPES[k].bandFrac };
   }
   return {
     id: `profile-${id}`,
