@@ -71,7 +71,7 @@ function targetBox(a: GeometryMaster, b: GeometryMaster, key: string, t: number)
 function fitText(el: Extract<FreeformElement, { type: "text" }>, proposed: number, width: number, height: number, rules?: RuleLayer): number {
   const part = slotForText(el);
   const floor = part === "cta" ? LABEL_FLOOR_PX : part ? (rules?.floor(part) ?? (part === "headline" ? 12 : 8)) : 8;
-  const spec = { family: el.fontFamily, weight: el.fontWeight, letterSpacing: el.letterSpacing };
+  const spec = { family: el.fontFamily, weight: el.fontWeight, ...(el.letterSpacing !== undefined && el.fontSize > 0 ? { letterSpacingEm: el.letterSpacing / el.fontSize } : {}) };
   const lineHeight = el.lineHeight ?? 1.2;
   const fitsAt = (size: number) => {
     const lines = wrapText(el.text, width, spec, size);

@@ -245,7 +245,7 @@ export default function EditTemplate() {
   );
 }
 
-import { ADAPT_PRESETS } from "@/lib/adaptPresets";
+import { ADAPT_PRESETS, CHECK_SET, CHECK_SET_KEYS } from "@/lib/adaptPresets";
 import { SizePicker } from "@/components/SizePicker";
 import { PieceGuidelines } from "@/components/PieceGuidelines";
 
@@ -317,7 +317,20 @@ function AdaptDialog({ templateId, templateName, base }: { templateId: number; t
           everything else keeps its size ratio and edge anchoring (a bottom-right logo
           stays bottom-right). Locked elements stay locked.
         </p>
-        <div className="max-h-[55vh] overflow-y-auto pr-1">
+        <div className="rounded-md border border-primary/30 bg-primary/5 p-3 flex flex-wrap items-center gap-3" data-testid="check-set-panel">
+          <div className="flex-1 min-w-[16rem]">
+            <p className="text-sm font-medium">Start with the check set — 6 sizes</p>
+            <p className="text-xs text-muted-foreground">
+              {CHECK_SET.map((p) => `${p.width}×${p.height}`).join(" · ")}. One of each shape: tall, square, landscape,
+              an HTML banner to check the animation, a thin tall and a thin wide. Fix and approve these first —
+              every other size is then built from the approved pieces.
+            </p>
+          </div>
+          <Button type="button" variant="secondary" size="sm" onClick={() => setSelected(new Set<string>(CHECK_SET_KEYS))} data-testid="button-select-check-set">
+            Select the check set
+          </Button>
+        </div>
+        <div className="max-h-[45vh] overflow-y-auto pr-1">
           <SizePicker
             selected={selected}
             onToggle={toggle}

@@ -302,7 +302,7 @@ export async function composeKeyVisualAdaptation(
         // The pill is sized from its measured label at the master's own
         // label-to-pill ratio (lib/ctaPlan.ts) — no character-count estimate.
         const labelEl = sem.ctaLabel!;
-        const spec: FontSpec = { family: labelEl.fontFamily, weight: labelEl.fontWeight === 700 ? 700 : 400, letterSpacing: labelEl.letterSpacing };
+        const spec: FontSpec = { family: labelEl.fontFamily, weight: labelEl.fontWeight === 700 ? 700 : 400, ...(labelEl.letterSpacing !== undefined && labelEl.fontSize > 0 ? { letterSpacingEm: labelEl.letterSpacing / labelEl.fontSize } : {}) };
         const p = planCta({
           label: labelEl.text,
           spec,

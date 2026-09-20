@@ -34,6 +34,9 @@ const family = (v: unknown): FreeformConfig["masterFamily"] =>
 const slotForRole = (role: string): SlotRole => ({
   background: "photo", hero: "photo", headline: "headline", subheadline: "subheadline",
   body: "message", cta: "cta", logo: "logo", decoration: "band", legal: "other",
+  // Key-visual roles: the anther is the shaped picture; title, badge,
+  // strapline and credit are found by their layoutBlock.
+  anther: "cutout", scrim: "scrim", title: "other", badge: "other", strapline: "other", credit: "other",
 } as Record<string, SlotRole>)[role] ?? "other";
 
 export function findAcMasterManifest(zip: JSZip): JSZip.JSZipObject | null {
@@ -98,13 +101,16 @@ export async function parseAcMasterPackage(
         ...(raw.locked === true ? { locked: true } : {}),
       };
       if (raw.kind === "text") {
+        // An empty frame left inside a group is not copy.
+        if (!String(raw.text ?? "").trim()) continue;
         elements.push({
           ...common, type: "text",
           role: role === "headline" ? "headline" : role === "subheadline" ? "subhead" : role === "cta" ? "cta" : role === "body" || role === "legal" ? "body" : "other",
           text: String(raw.text ?? "").slice(0, 2000),
           fontSize: Math.max(1, finite(raw.fontSize, 16)),
-          fontWeight: finite(raw.fontWeight, 400) >= 600 ? 700 : 400,
-          fontFamily: typeof raw.fontFamily === "string" ? raw.fontFamily : undefined,
+          fontWeight: finite(raw.fontWeight, 400) >= 600 || (typeof raw.fontFamily === "string" && /\t.*(bold|black|heavy|semibold)/i.test(raw.fontFamily)) ? 700 : 400,
+          // InDesign names a face "Family<TAB>Style" ("National 2 Condensed\tBold").
+          fontFamily: typeof raw.fontFamily === "string" ? raw.fontFamily.split("\t")[0].trim() : undefined,
           color: typeof raw.color === "string" ? raw.color : "#11263d",
           align: raw.align === "center" || raw.align === "right" ? raw.align : "left",
           lineHeight: Math.max(0.5, finite(raw.lineHeight, 1.2)),
@@ -115,9 +121,12 @@ export async function parseAcMasterPackage(
         const assetPath = typeof raw.assetPath === "string" ? raw.assetPath.replace(/^\/+/, "") : "";
         const src = stored.get(assetPath);
         if (!src) continue;
+        // A wide logo is a LOCK-UP (wordmark + pōhutukawa), not the square tile:
+        // the tile's minimum size does not apply to it.
+        if (role === "logo" && common.w / Math.max(1, common.h) > 1.5) (common as { slot: string }).slot = "lockup";
         elements.push({
           ...common, type: "image",
-          role: role === "logo" ? "logo" : role === "hero" || role === "background" ? "product" : "decoration",
+          role: role === "logo" ? "logo" : role === "hero" || role === "background" || role === "anther" ? "product" : "decoration",
           src,
           fit: raw.fit === "cover" ? "cover" : "contain",
           ...(raw.opacity !== undefined ? { opacity: Math.max(0, Math.min(1, finite(raw.opacity, 1))) } : {}),

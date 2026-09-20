@@ -67,6 +67,8 @@ export interface RecomposeOptions {
 }
 
 export interface DisplayCta {
+  /** Keep the master's call to action; apply only `look`. */
+  lookOnly?: boolean;
   label: string;
   fill: string;
   labelColor: string;
@@ -271,7 +273,8 @@ function fontSpec(t: FreeformText | null | undefined, scale = 1): FontSpec {
     family: t?.fontFamily,
     weight: t?.fontWeight === 700 ? 700 : 400,
     italic: t?.fontStyle === "italic",
-    letterSpacing: t?.letterSpacing !== undefined ? t.letterSpacing * scale : undefined,
+    // Tracking travels with the type size (see FontSpec.letterSpacingEm).
+    ...(t?.letterSpacing !== undefined && t.fontSize > 0 ? { letterSpacingEm: (t.letterSpacing * scale) / t.fontSize } : {}),
   };
 }
 
@@ -333,6 +336,8 @@ export function shouldRecompose(master: FreeformConfig, srcW: number, srcH: numb
 /** Shapes closer than this are "the same": scale, don't rebuild. */
 const SAME_SHAPE_TOLERANCE = 0.08;
 
+const shortMessageEarly = (t: string) => t.replace(/\s+/g, " ").trim().length <= 24;
+
 export async function recomposeToFormat(
   master: FreeformConfig,
   srcW: number,
@@ -387,8 +392,10 @@ export async function recomposeToFormat(
   // The online look applies only when the master carries the out-of-home
   // device (a display master already IS the online look and is reproduced).
   const normLabel = (t: string | undefined) => (t ?? "").replace(/\s+/g, " ").trim().toLowerCase();
-  const displayCta = opts.displayCta && sem.cta && sem.ctaLabel && normLabel(sem.ctaLabel.text) !== normLabel(opts.displayCta.label) ? opts.displayCta : null;
-  const look = displayCta?.look ?? null;
+  const displayRaw = opts.displayCta && sem.cta && sem.ctaLabel && normLabel(sem.ctaLabel.text) !== normLabel(opts.displayCta.label) ? opts.displayCta : null;
+  const look = displayRaw?.look ?? null;
+  // lookOnly: the online look applies, the master's own pill stays.
+  const displayCta = displayRaw && !displayRaw.lookOnly ? displayRaw : null;
   const lookOv: Partial<Recipe> = look && base.axis !== "row"
     ? { ...(look.photoFrac ? { photoFrac: look.photoFrac } : {}), ...(look.bandOfShort ? { bandFrac: (look.bandOfShort * Math.min(dstW, dstH)) / dstH } : {}) }
     : {};
@@ -453,7 +460,24 @@ export async function recomposeToFormat(
   // Squares too: heading across the top, anther lower-left, copy beside it.
   const squareHeader = antherLayout && formatClass === "square";
   const headerOnTop = headerFromMaster || (antherLayout && recipe.axis === "stacked") || squareHeader;
-  const headerH = headerFromMaster ? r(dstH * clamp((sem.photoBox as Box).y / Math.max(1, srcH) + 0.02, 0.12, 0.24)) : squareHeader ? r(dstH * 0.2) : headerOnTop ? r(dstH * 0.17) : 0;
+  // Designer's call: in the anther layout the heading runs as wide as the
+  // margins allow (the tall master's spans 92% of the width) and the header is
+  // as tall as that heading needs — not a fixed slice that capped a square's
+  // heading at half the size the width could carry.
+  const headerH = (() => {
+    if (!headerOnTop) return 0;
+    const fromMaster = headerFromMaster ? r(dstH * clamp((sem.photoBox as Box).y / Math.max(1, srcH) + 0.02, 0.12, 0.24)) : 0;
+    if (!antherLayout || !sem.headline) return fromMaster || r(dstH * 0.17);
+    const hl = sem.headline;
+    const padX = Math.max(margin, r((guidelineLogoPlacement(dstW, dstH)?.tile.w ?? short / 6) / 2));
+    const room = dstH * (squareHeader ? 0.3 : formatClass === "tower" ? 0.16 : 0.2);
+    const fit = fitText(hl.text.replace(/\s+/g, " ").trim(), { w: (dstW - padX * 2) * 0.96, h: room }, { ...fontSpec(hl), minSize: headlineMin, maxSize: Math.max(headlineMin, room), lineHeight: 1.02, maxLines: 2 });
+    // The header holds the heading's full line box plus the page margin above
+    // and a little air below (sizing it to the cap height starved the fit
+    // that follows and set a 300×600 heading at 60px instead of 72).
+    const needs = fit.height + padX * 1.35;
+    return r(clamp(needs, dstH * 0.1, dstH * (squareHeader ? 0.32 : 0.24)));
+  })();
   // Bottom row of the anther layout: pattern to the left of the tile.
   const guideTile = guidelineLogoPlacement(dstW, dstH)?.tile ?? null;
   const tileSide = antherLayout && recipe.axis !== "row" ? (formatClass === "tower" ? r(dstW / 2) : (guideTile?.w ?? r(short / 6))) : 0;
@@ -468,7 +492,9 @@ export async function recomposeToFormat(
   if (antherLayout && recipe.axis === "stacked") {
     // Heading · anther (circle margin to margin, up to 46% of the height) ·
     // message and pill · bottom row (pattern + tile).
-    const zoneH = Math.min(dstW, r(dstH * 0.46));
+    // The anther gives way before copy leaves (rule K4): with a message to
+    // carry, the panel under it keeps at least 26% of the height.
+    const zoneH = Math.min(dstW, r(dstH * 0.46), sem.message ? Math.max(r(dstH * 0.3), dstH - headerH - tileSide - r(dstH * 0.26)) : Infinity);
     photoZone = { x: 0, y: headerH, w: dstW, h: zoneH };
     const top = headerH + zoneH;
     panelZone = { x: 0, y: top, w: dstW, h: Math.max(30, dstH - top - tileSide) };
@@ -477,7 +503,9 @@ export async function recomposeToFormat(
     // heading, message and pill in the column beside it; bottom row under them.
     // A square gives the anther the larger share (its circle is the picture);
     // wider canvases give it a zone about as wide as they are tall.
-    const zoneW = formatClass === "square" ? r(dstW * 0.6) : clamp(r(dstH * 1.0), r(dstW * 0.3), r(dstW * 0.5));
+    // Squares: the anther takes the larger share where there are pixels to
+    // spare; on an MREC the pill's label has to stay readable, so they split evenly.
+    const zoneW = formatClass === "square" ? r(dstW * (short >= 600 ? 0.61 : 0.53)) : clamp(r(dstH * 1.0), r(dstW * 0.3), r(dstW * 0.5));
     photoZone = { x: 0, y: headerH, w: zoneW, h: dstH - headerH };
     panelZone = { x: zoneW, y: headerH, w: dstW - zoneW, h: Math.max(30, dstH - headerH - tileSide) };
   } else if (recipe.axis === "stacked") {
@@ -537,7 +565,7 @@ export async function recomposeToFormat(
     // A photo cut to a shape is shown whole (a cover crop slices the anther
     // in half); a rectangle of pixels covers its zone as before.
     const antherPlaced = antherShape
-      ? placeAnther(photoZone, { w: dstW, h: dstH }, antherShape.aspect ? { w: antherShape.aspect * 1000, h: 1000 } : natural, antherShape, halfTile)
+      ? placeAnther(photoZone, { w: dstW, h: dstH }, antherShape.aspect ? { w: antherShape.aspect * 1000, h: 1000 } : natural, antherShape, halfTile, recipe.axis === "stacked" || squareHeader ? r(halfTile * 0.3) : undefined)
       : null;
     if (antherPlaced) {
       notes.push(`${ANTHER_RULE.title}: shown whole, as large as the margins allow${antherShape?.kind === "anther" ? ", its stem running off the artwork's edge" : ""}.`);
@@ -758,7 +786,7 @@ export async function recomposeToFormat(
     const aspect = patternEl.w / Math.max(1, patternEl.h);
     const tower = formatClass === "tower";
     const x0 = recipe.axis === "side" ? panelZone.x : 0;
-    const x1 = tower ? dstW : dstW - tileSide;
+    const x1 = tower || social ? dstW : dstW - tileSide;
     const bottom = tower ? dstH - tileSide : dstH;
     let ph = tower ? r(Math.min(tileSide * 0.5, (x1 - x0) / aspect)) : tileSide;
     let pw = r(ph * aspect);
@@ -775,8 +803,9 @@ export async function recomposeToFormat(
     const hl = sem.headline;
     const text = hl.text.replace(/\s+/g, " ").trim();
     const zone: Box = headerOnTop ? { x: 0, y: 0, w: dstW, h: headerH } : panelZone;
-    const w = r(zone.w - margin * 2);
-    const maxH = headerOnTop ? zone.h - margin * 1.2 : zone.h * 0.34;
+    const padX = antherLayout ? halfTile : margin;
+    const w = r(zone.w - (headerOnTop ? padX : margin) * 2);
+    const maxH = headerOnTop ? zone.h - (antherLayout ? padX * 0.3 : margin * 1.2) : zone.h * 0.34;
     const fit = fitText(text, { w: w * 0.96, h: maxH }, { ...fontSpec(hl), minSize: headlineMin, maxSize: Math.max(headlineMin, maxH), lineHeight: 1.02, maxLines: headerOnTop ? 2 : 3 });
     if (!fit.fits) { notes.push("Heading shrank to the floor size and still overflows — shorten the copy."); needsReview = true; }
     groundHeadlinePx = fit.fontSize;
@@ -845,8 +874,20 @@ export async function recomposeToFormat(
       // stops at 27%). Width still limits it.
       const capShare = look?.headlineCapOfShort ? capHeightPx(fontSpec(hl), 100) / 100 : 0;
       const lookH = capShare > 0 ? ((look!.headlineCapOfShort as number) * short / capShare) * 1.04 : 0;
-      const box = { w: Math.min(zoneW, copyZone.w * recipe.headlineWidthFrac), h: Math.max(copyZone.h * maxHFrac, Math.min(lookH, copyZone.h * 0.7)) };
+      // SQUARES HOLD THE HEADING'S SHARE (rule K14): every square is the same
+      // design at any pixel size, and its heading runs as wide as it does on
+      // the campaign's other versions (the masters': 81–88% of the zone).
+      // A height cap meant for flat zones left a 1080×1080 heading at 65% of
+      // the width with empty photograph around it.
+      const masterHlShare = sem.headline ? sem.headline.w / Math.max(1, (sem.photoBox as Box | null)?.w ?? srcW) : 0;
+      const squareFill = formatClass === "square" && recipe.axis === "stacked" && !antherLayout;
+      const box = squareFill
+        ? { w: Math.min(zoneW, copyZone.w * clamp(masterHlShare, recipe.headlineWidthFrac, 0.9)), h: Math.max(copyZone.h * 0.5, Math.min(lookH, copyZone.h * 0.7)) }
+        : { w: Math.min(zoneW, copyZone.w * recipe.headlineWidthFrac), h: Math.max(copyZone.h * maxHFrac, Math.min(lookH, copyZone.h * 0.7)) };
       const fit = fitText(text, box, { ...fontSpec(hl), minSize: headlineMin, maxSize: copyZone.h, lineHeight: 1.02, maxLines });
+      // Did the square rule really enlarge this heading? (A heading already
+      // bound by its width — Flood's — is untouched, and so is its position.)
+      const squareGrew = squareFill && fit.fontSize > fitText(text, { w: Math.min(zoneW, copyZone.w * recipe.headlineWidthFrac), h: Math.max(copyZone.h * maxHFrac, Math.min(lookH, copyZone.h * 0.7)) }, { ...fontSpec(hl), minSize: headlineMin, maxSize: copyZone.h, lineHeight: 1.02, maxLines }).fontSize * 1.03;
       if (!fit.fits) { notes.push("Headline shrank to the floor size and still overflows — shorten the copy."); needsReview = true; }
       // One line: the box is the CAP HEIGHT, as InDesign frames it, so the
       // sub-line sits the master's 0.12em under the letters — a line-height
@@ -907,7 +948,9 @@ export async function recomposeToFormat(
       if (masterCentre != null && !approvedLeads && Math.abs(centreFrac - classCentre) >= 0.01) {
         notes.push(`Heading placed as on the master: its copy sits ${Math.round(masterCentre * 100)}% down the photo there, ${Math.round(centreFrac * 100)}% here.`);
       }
-      const centreY = copyZone.y + copyZone.h * centreFrac;
+      // A square's larger heading grows UPWARD: its foot stays where the
+      // master's sits over the picture's subject (the sub-line clear of the car).
+      const centreY = copyZone.y + copyZone.h * (centreFrac - (squareGrew ? 0.04 : 0));
       const y0 = r(clamp(centreY - blockH / 2, copyZone.y + margin, copyZone.y + copyZone.h - blockH - margin));
       const hlY = y0 + kickH + kickGap;
       const hlBox: Box = { x: copyZone.x + r((copyZone.w - box.w) / 2), y: hlY, w: r(box.w), h: hlH };
@@ -951,8 +994,21 @@ export async function recomposeToFormat(
     // never past half the heading: a share of the short side is not the same
     // thing on a 960×256 as on a 300×600, so it is no rule for other builds.
     const groundFloor = copyOnGround ? Math.min(r(short * masterMsgShare * 0.6), r(headlineSize * 0.5)) : 0;
-    const maxSize = Math.max(messageMin, r(headlineSize * msgRatio), groundFloor, formatClass === "tower" ? r(dstW * 0.1) : 0);
-    const w = r(panelZone.w * 0.85);
+    // FILL (key-visual rule K5): where the column holds only the message and
+    // the pill (the logo is a corner tile, not a lockup in the stack), copy
+    // sized from a small master leaves a tall panel four-fifths empty. There
+    // the message may grow to the size at which two lines span the column —
+    // never past 62% of the heading, so the hierarchy holds.
+    const fillFloor = !sem.lockup && recipe.axis === "stacked" && !shortMessageEarly(msg.text)
+      ? Math.min(r(panelZone.w * 0.85 / Math.max(8, Math.ceil(msg.text.replace(/\s+/g, " ").trim().length / 2) * 0.5)), r(headlineSize * 0.62))
+      : 0;
+    // One square design at every pixel size (rule K14): the anther square's
+    // body copy is set against its COLUMN (a tenth of its width), as the
+    // 300×250 already is — not from the heading, which left a 1080 square's
+    // copy at half the MREC's proportion.
+    const squareCopy = antherLayout && formatClass === "square" ? r(panelZone.w * 0.1) : 0;
+    const maxSize = Math.max(messageMin, r(headlineSize * msgRatio), groundFloor, fillFloor, squareCopy, formatClass === "tower" ? r(dstW * 0.1) : 0);
+    const w = r(panelZone.w * (antherLayout ? 0.92 : 0.85));
     const msgLines = formatClass === "tower" ? 3 : 2;
     // One line first (every master sets the message on one line): it gives
     // up size before it breaks in two. On the online 970×250 the panel is
@@ -968,16 +1024,42 @@ export async function recomposeToFormat(
     // same 6% slack as a single line: set to the pixel, the renderer re-wrapped
     // a line and left a word on its own.
     const ownLines = msg.text.split(/\n+/).map((l) => l.replace(/\s+/g, " ").trim()).filter(Boolean);
-    const own = antherLayout && ownLines.length > 1
-      ? fitText(ownLines.join("\n"), { w: w * 0.94, h: maxSize * (ownLines.length + 0.6) }, { ...fontSpec(msg), minSize: messageMin, maxSize, lineHeight: 1.15, maxLines: ownLines.length })
-      : null;
-    const fit = own?.fits && own.lines.length === ownLines.length
+    // SENSE BREAKS (key-visual rule K10): copy in a narrow column breaks where
+    // the sentence does — after a full stop, a comma or a dash — never
+    // mid-phrase ("Body copy here. Body / copy, body copy."). Every grouping
+    // of the sense units is tried; the designer's own breaks win unless
+    // another grouping sets the copy at least 15% larger.
+    const own = (() => {
+      if (!antherLayout) return null;
+      const units = ownLines.flatMap((l) => l.split(/(?<=[.,;:!?—–])\s+/)).map((u) => u.trim()).filter(Boolean);
+      if (units.length < 2 || units.length > 5) return null;
+      const limit = formatClass === "tower" ? 4 : 3;
+      const tryLines = (lines: string[]) => {
+        const f = fitText(lines.join("\n"), { w: w * 0.9, h: maxSize * 1.15 * (lines.length + 0.4) }, { ...fontSpec(msg), minSize: messageMin, maxSize, lineHeight: 1.15, maxLines: lines.length });
+        return f.fits && f.lines.length === lines.length ? f : null;
+      };
+      let best: ReturnType<typeof tryLines> = null;
+      for (let mask = 0; mask < 1 << (units.length - 1); mask++) {
+        const lines: string[] = [units[0]];
+        for (let i = 1; i < units.length; i++) { if (mask & (1 << (i - 1))) lines.push(units[i]); else lines[lines.length - 1] += " " + units[i]; }
+        if (lines.length < 2 || lines.length > limit) continue;
+        const f = tryLines(lines);
+        if (f && (!best || f.fontSize > best.fontSize || (f.fontSize === best.fontSize && f.lines.length < best.lines.length))) best = f;
+      }
+      const designers = ownLines.length > 1 ? tryLines(ownLines) : null;
+      return designers && (!best || designers.fontSize >= best.fontSize * 0.87) ? designers : best;
+    })();
+    const fit = own
       ? own
       : oneLine?.fits ? oneLine : fitText(text, { w: w * 0.94, h: maxSize * (msgLines + 0.5) }, { ...fontSpec(msg), minSize: messageMin, maxSize, lineHeight: 1.15, maxLines: msgLines });
     if (fit.fits) {
       const cap = fit.lines.length === 1;
       const h = cap ? Math.max(1, r(capHeightPx(fontSpec(msg), fit.fontSize))) : r(fit.height);
-      items.push({ kind: "message", w, h, build: (x, y) => [textEl("rc_message", "message", "body", msg, { x, y, w, h }, fit.fontSize, fit.lines.join("\n"), "center", 1.15, cap ? { baselineFit: "cap" } : {})] });
+      // Centred copy loses nothing to a wider frame, and a frame the full
+      // width of its column can never force a second wrap (an orphaned
+      // "copy." on the 160×600 and 300×250).
+      const boxW = antherLayout ? Math.max(w, panelZone.w - 4) : w;
+      items.push({ kind: "message", w: boxW, h, build: (x, y) => [textEl("rc_message", "message", "body", msg, { x, y, w: boxW, h }, fit.fontSize, fit.lines.join("\n"), "center", 1.15, cap ? { baselineFit: "cap" } : {})] });
     } else {
       drop("message", "Message dropped: it would not fit the panel legibly.", rules?.drop("message") === true);
     }
@@ -1116,6 +1198,9 @@ export async function recomposeToFormat(
     // Tighten the gaps before a part goes: on a 300×250 the message fits
     // with a closer stack, and a designer keeps the line over the air.
     if (total() > inner) gap = Math.max(4, r(gap * 0.55));
+    // Anther layouts set the message on two lines, so a gap taken from the
+    // block's height is far too airy: air goes before copy does (rule K4).
+    if (antherLayout && total() > inner) gap = Math.max(4, r(panelZone.h * 0.05));
     if (total() > inner && (rules?.drop("message") ?? true)) {
       const idx = items.findIndex((i) => i.kind === "message");
       if (idx >= 0) { items.splice(idx, 1); drop("message", "Message dropped: the panel is too short for message, CTA and lockup.", rules?.drop("message") === true); }

@@ -412,6 +412,12 @@ async function drawImageCanvas(ctx: SKRSContext2D, el: FreeformImage, img: Decod
     bitmap = await canvasLoadImage(await sharp(img.bytes).png().toBuffer());
   }
   const { dx, dy, dw, dh } = placeImage(box, img.width, img.height, el);
+  // A large reduction (a 1350px anther drawn 150px wide) is resampled
+  // properly first: the canvas's own scaling skips pixels at that ratio and
+  // left shaped pictures with a ragged rim and broken keylines.
+  if (dw > 0 && dh > 0 && dw / Math.max(1, img.width) < 0.6) {
+    try { bitmap = await canvasLoadImage(await sharp(img.bytes).resize(Math.max(1, Math.round(dw)), Math.max(1, Math.round(dh)), { fit: "fill", kernel: "lanczos3" }).png().toBuffer()); } catch { /* keep the original bitmap */ }
+  }
   ctx.save();
   ctx.globalAlpha = el.opacity ?? 1;
   roundRectPath(ctx, box, clampRadius(box, el.radius));

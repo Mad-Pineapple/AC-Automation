@@ -562,8 +562,21 @@ export async function parseIdmlToLayouts(
       cta: "cta",
       logo: "logo",
       lockup: "lockup",
+      // Key-visual layers (docs/style-specs/key-visual-layouts.md §3).
+      background: "photo",
+      "key visual": "photo",
+      anther: "cutout",
+      dates: "subheadline",
+      date: "subheadline",
+      button: "cta",
+      search: "cta",
+      pattern: "band",
+      band: "band",
     };
-    return { layerName, ...(key && slots[key] ? { slot: slots[key] } : {}) };
+    // Named blocks the key-visual composer looks for. "Title" is a campaign
+    // lock-up drawn as artwork (Auckland Heritage Festival), not live type.
+    const blocks: Record<string, string> = { title: "title", "title lockup": "title", badge: "badge", roundel: "badge", strapline: "strapline", tagline: "strapline", credit: "credit", "photo credit": "credit" };
+    return { layerName, ...(key && slots[key] ? { slot: slots[key] } : {}), ...(key && blocks[key] ? { layoutBlock: blocks[key] } : {}) };
   };
   const spreadRefs = asArray(designMap?.Document?.["idPkg:Spread"]).map((s: any) => s?.["@_src"]).filter(Boolean);
   if (spreadRefs.length === 0) {

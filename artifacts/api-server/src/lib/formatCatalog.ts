@@ -62,6 +62,8 @@ export const STRIP_MAX_HEIGHT = 120;
 export interface FormatHints {
   name?: string | null;
   channel?: string | null;
+  /** Swap the master's call to action for the campaign's online button (off unless asked). */
+  onlineButton?: boolean;
 }
 
 const STRIP_NAME = /\b(leaderboard|mobile banner|smartphone banner|super ?banner|big banner|banner strip|strip|companion|top banner|footer banner|sticky)\b/i;

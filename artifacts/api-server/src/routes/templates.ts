@@ -11,6 +11,7 @@ import { recomposeToFormat, shouldRecompose, type DisplayCta } from "../lib/reco
 import { checkLayout, checkMandatory } from "../lib/layoutCheck";
 import { applyPillRule } from "../lib/pillRule";
 import { analyseShape, keyOutGround, type AntherShape } from "../lib/anther";
+import { isAntherKeyVisual, composeAntherKeyVisual } from "../lib/kvAnther";
 import { prepareMeasurement } from "../lib/textMeasure";
 import { scoreGeometry, scoreContrast, contrastBaseline, type PrincipleScores } from "../lib/principles";
 import { ensureSubjects, detectSubject } from "../lib/subjectDetect";
@@ -244,7 +245,12 @@ async function adaptOne(
   // explicit blocks and anchors are authoritative, so none of the inferred
   // profile, key-visual, panel or campaign-recipe engines may replace it.
   const bridgeRules = ruleLayerFor(styleOverride ? styleOverride.schema : styleSchemaFor(master.name));
-  if (masterConfig.sourceMode === "indesign-bridge" && masterConfig.authoritativeGeometry) {
+  // One exception: a full-bleed key visual with an anther. Pins can scale it
+  // to its own shape, but a different shape needs the anther composer (pins
+  // squeeze the anther and shrink the logo under its floor); the bridge's
+  // named blocks are exactly what that composer reads.
+  const bridgeAntherKv = masterConfig.sourceMode === "indesign-bridge" && isAntherKeyVisual(masterConfig, master.width, master.height) && aspectDistance(master.width, master.height, width, height) > 0.02;
+  if (masterConfig.sourceMode === "indesign-bridge" && masterConfig.authoritativeGeometry && !bridgeAntherKv) {
     // A target whose shape lies BETWEEN two bridge masters is interpolated
     // from both (the geometry profile measured at import), not copied from
     // one and fitted: that is what makes a square from a portrait and a
@@ -302,6 +308,17 @@ async function adaptOne(
   // One rule layer for every engine below: the campaign's part rules
   // (floors, drops, pins) or the studio floors when no schema applies.
   const rules = ruleLayerFor(styleOverride ? styleOverride.schema : styleSchemaFor(master.name));
+  // Full-bleed key visual with an anther (Heritage Festival style): composed by
+  // its own rules (lib/kvAnther.ts) — anther whole with the photograph locked
+  // to it, reading order fixed, parts leaving in a set order.
+  if (!adapted && isAntherKeyVisual(masterConfig, master.width, master.height)) {
+    try {
+      const kv = await composeAntherKeyVisual(masterConfig, master.width, master.height, width, height);
+      if (kv) { adapted = kv.config; method = "key-visual:anther"; notes.push(...kv.notes); }
+    } catch (err) {
+      log?.warn({ err, templateId: master.id, width, height }, "anther key-visual composer failed; falling back");
+    }
+  }
   // The geometry engine INTERPOLATES measured layer boxes between masters of
   // different shapes. It is only evidence for a target that lies between two
   // measured shapes. With one shape measured (three portrait hazards), a
@@ -358,7 +375,7 @@ async function adaptOne(
   if (!adapted && shouldRecompose(masterConfig, master.width, master.height, width, height)) {
     try {
       const specZone = styleSpec?.zones[spec.formatClass];
-      displayCta = displayCtaFor(master.name, width, height);
+      displayCta = displayCtaFor(master.name, width, height, hints.onlineButton === true);
       const rc = await recomposeToFormat(masterConfig, master.width, master.height, width, height, {
         brand: brandInfo,
         formatClass: spec.formatClass,
@@ -431,7 +448,7 @@ async function adaptOne(
   if (rejected.length > 0 && method !== "scaled" && method !== "indesign-authoritative" && method !== "indesign-interpolated") {
     const attempts: Array<{ label: string; run: () => Promise<FreeformConfig | null> }> = [];
     if (!method.startsWith("recomposed") && shouldRecompose(masterConfig, master.width, master.height, width, height)) {
-      attempts.push({ label: `recomposed:${spec.formatClass}`, run: async () => (await recomposeToFormat(masterConfig, master.width, master.height, width, height, { brand: brandInfo, formatClass: spec.formatClass, rules, displayCta: displayCtaFor(master.name, width, height) }))?.config ?? null });
+      attempts.push({ label: `recomposed:${spec.formatClass}`, run: async () => (await recomposeToFormat(masterConfig, master.width, master.height, width, height, { brand: brandInfo, formatClass: spec.formatClass, rules, displayCta: displayCtaFor(master.name, width, height, hints.onlineButton === true) }))?.config ?? null });
     }
     attempts.push({ label: "scaled", run: async () => adaptFreeformConfig(masterConfig, master.width, master.height, width, height) });
     for (const attempt of attempts) {
@@ -550,7 +567,7 @@ router.post("/templates/:id/detect-subject", requireAdmin, async (req, res): Pro
  * master's own call-to-action is then reproduced by the pill formula.
  */
 const HTML_BANNER_SIZES = new Set(["300x250", "336x280", "300x600", "300x1050", "160x600", "120x600", "970x250", "970x90", "728x90", "760x120", "468x60", "320x50", "300x50", "320x100", "320x480"]);
-function displayCtaFor(masterName: string, width: number, height: number): DisplayCta | null {
+function displayCtaFor(masterName: string, width: number, height: number, onlineButton = false): DisplayCta | null {
   // Only the sizes produced as HTML5 banners (the HTML group of the size
   // picker). Companions, native and social tiles are stills and keep the
   // master's own call-to-action.
@@ -576,7 +593,40 @@ function displayCtaFor(masterName: string, width: number, height: number): Displ
     if (hlDisplay) look.headlineCapOfShort = zone!.axis === "side" ? hlDisplay.side : hlDisplay.stacked;
   }
   // Shipped DV360 buttons set their label at 42% of the button's height.
-  return { label, fill, labelColor, heightOfShort: part.display, reference: { w: part.fixedPx.w, h: part.fixedPx.h, labelPx: Math.round(part.fixedPx.h * 0.42) }, look };
+  // The master's own call to action is the campaign's (ruling 2026-09-20:
+  // swapping Storms' search pill for LEARN MORE was wrong). The online button
+  // is used only when a build asks for it; the measured online LOOK still applies.
+  return { label, fill, labelColor, heightOfShort: part.display, reference: { w: part.fixedPx.w, h: part.fixedPx.h, labelPx: Math.round(part.fixedPx.h * 0.42) }, look, lookOnly: !onlineButton };
+}
+
+/** A layered master's panel parts (band, message, lockup) are drawn "contain"
+ *  in boxes that can be far wider than the picture (a 600×76 band in a
+ *  1440×105 box). The engines size parts by their BOX, so copy stayed small
+ *  and the band stopped short of the edges. For the builds, each box is
+ *  tightened (in memory) to the rectangle the picture really occupies — the
+ *  master renders exactly as before and is not rewritten. */
+const partAspectCache = new Map<string, number | null>();
+async function withBandMotif(config: FreeformConfig, loadImage: ImageLoader): Promise<FreeformConfig> {
+  let changed = false;
+  const elements = await Promise.all(config.elements.map(async (el) => {
+    if (el.type !== "image" || !el.src || !(el as { panelPart?: boolean }).panelPart || (el.fit ?? "contain") !== "contain") return el;
+    try {
+      if (!partAspectCache.has(el.src)) {
+        const bytes = await loadImage(el.src);
+        let aspect: number | null = null;
+        if (bytes) { const sharp = (await import("sharp")).default; const m = await sharp(bytes).metadata(); if (m.width && m.height) aspect = m.width / m.height; }
+        partAspectCache.set(el.src, aspect);
+      }
+      const a = partAspectCache.get(el.src);
+      if (!a) return el;
+      const boxA = el.w / Math.max(1, el.h);
+      if (Math.abs(boxA / a - 1) < 0.05) return el;
+      changed = true;
+      if (boxA > a) { const w = el.h * a; return { ...el, x: el.x + (el.w - w) / 2, w }; }
+      const h = el.w / a; return { ...el, y: el.y + (el.h - h) / 2, h };
+    } catch { return el; }
+  }));
+  return changed ? ({ ...config, elements } as FreeformConfig) : config;
 }
 
 /** Mark images that are cut to a shape (lib/anther.ts). In memory only: the
@@ -761,7 +811,7 @@ router.post("/templates/:id/adapt", requireAdmin, async (req, res): Promise<void
   const exemplars = await approvedExemplars(master.id);
   // Photos cut to a shape (the anther) are read once, from their own
   // transparency, so every engine and the gate can keep them whole.
-  masterConfig = await withShapes(masterConfig, makeImageLoader(req));
+  masterConfig = await withBandMotif(await withShapes(masterConfig, makeImageLoader(req)), makeImageLoader(req));
   // Flat artwork (copy baked in) can only be scaled to a near-identical
   // shape. Refuse the whole call up front rather than produce re-crops the
   // studio has rejected — nothing is created, the message says what to do.
@@ -816,7 +866,9 @@ router.post("/templates/:id/adapt", requireAdmin, async (req, res): Promise<void
     for (const row of rows) {
       try {
         const cfg = normalizeFreeformConfig(JSON.parse(row.config || "{}"));
-        if (cfg.sourceMode === "indesign-bridge" && cfg.authoritativeGeometry) authoritativeSources.push({ id: row.id, name: row.name, width: row.width, height: row.height, config: cfg });
+        // Shaped pictures (an anther) are recognised on bridge masters too, so
+        // the gate can keep them whole and the anther composer can read them.
+        if (cfg.sourceMode === "indesign-bridge" && cfg.authoritativeGeometry) authoritativeSources.push({ id: row.id, name: row.name, width: row.width, height: row.height, config: await withShapes(cfg, makeImageLoader(req)) });
       } catch { /* an unrelated or invalid profile source is ignored */ }
     }
   }
@@ -881,6 +933,7 @@ router.post("/templates/:id/adapt", requireAdmin, async (req, res): Promise<void
     const hints: FormatHints = {
       name: typeof t.formatName === "string" ? t.formatName : typeof t.name === "string" ? t.name : null,
       channel: typeof t.channel === "string" ? t.channel : null,
+      onlineButton: t.onlineButton === true || req.body?.onlineButton === true,
     };
     const { config: adaptedConfig, method, spec, rejected } = await adaptOne(sourceMaster, sourceConfig, width, height, brandInfo, (req as any).log, exemplars, undefined, hints, resolvedStyle.source === "none" ? null : { schema: resolvedStyle.schema, label: resolvedStyle.label, profile: resolvedStyle.profile }, { loadImage: makeImageLoader(req), brandFontFamily: brand?.fontFamily ?? "National 2" }, softened ? null : authoritativeSources);
     // Guideline reminders for what is on the piece (logo tile, band, photo…).
@@ -1547,7 +1600,7 @@ router.post("/templates/:id/redo", requireAdmin, async (req, res): Promise<void>
     await ensureBrandFontsRegistered();
     // The corrected, approved pieces of this family are the reference — never
     // the piece being redone itself.
-    masterConfig = await withShapes(masterConfig, makeImageLoader(req));
+    masterConfig = await withBandMotif(await withShapes(masterConfig, makeImageLoader(req)), makeImageLoader(req));
     const exemplars = await approvedExemplars(master.id);
     // Never follow the piece itself, nor a duplicate of it under another id.
     const pieceCfg = (() => { try { const r = JSON.parse(piece.config || "{}"); return isFreeformConfig(r) ? normalizeFreeformConfig(r) : null; } catch { return null; } })();

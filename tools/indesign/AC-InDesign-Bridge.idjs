@@ -31,15 +31,22 @@
     if (/^background\b/.test(raw)) return "background";
     if (/^(hero|photo|image|key.?visual)\b/.test(raw)) return "hero";
     if (/^headline\b/.test(raw)) return "headline";
-    if (/^(subheadline|subhead)\b/.test(raw)) return "subheadline";
+    if (/^(subheadline|subhead|dates?)\b/.test(raw)) return "subheadline";
     if (/^(body|message|copy)\b/.test(raw)) return "body";
     if (/^(cta|button|search)\b/.test(raw)) return "cta";
     if (/^(logo|lockup)\b/.test(raw)) return "logo";
-    if (/^(decoration|pattern|band|motif|anther)\b/.test(raw)) return "decoration";
+    // Key-visual layers (docs/style-specs/key-visual-layouts.md §3).
+    if (/^anther\b/.test(raw)) return "anther";
+    if (/^title\b/.test(raw)) return "title";
+    if (/^(badge|roundel)\b/.test(raw)) return "badge";
+    if (/^(strapline|tagline)\b/.test(raw)) return "strapline";
+    if (/^(credit|photo credit)\b/.test(raw)) return "credit";
+    if (/^(tint|shade|scrim|overlay|fade)\b/.test(raw)) return "scrim";
+    if (/^(decoration|pattern|band|motif)\b/.test(raw)) return "decoration";
     if (/^(legal|terms)\b/.test(raw)) return "legal";
     return "";
   }
-  function slotFor(role) { return ({ background:"photo", hero:"photo", headline:"headline", subheadline:"subheadline", body:"message", cta:"cta", logo:"logo", decoration:"band", legal:"other" })[role] || "other"; }
+  function slotFor(role) { return ({ background:"photo", hero:"photo", headline:"headline", subheadline:"subheadline", body:"message", cta:"cta", logo:"logo", decoration:"band", legal:"other", anther:"cutout", scrim:"scrim", title:"other", badge:"other", strapline:"other", credit:"other" })[role] || "other"; }
   function familyFor(w, h) { const r = w / h; return r <= 0.55 ? "slim-portrait" : r < 1.25 ? "portrait" : r >= 2.75 ? "slim-landscape" : "landscape"; }
   function pageSize(page) { const b = page.bounds; return { width:Number(b[3])-Number(b[1]), height:Number(b[2])-Number(b[0]), top:Number(b[0]), left:Number(b[1]) }; }
   function bounds(item, page) { const b=item.geometricBounds,p=page.bounds; return { x:Number(b[1])-Number(p[1]), y:Number(b[0])-Number(p[0]), w:Number(b[3])-Number(b[1]), h:Number(b[2])-Number(b[0]) }; }
@@ -78,14 +85,44 @@
   }
   function alignment(text) { const v=String(text.justification||"").toLowerCase(); return v.indexOf("center")>=0?"center":v.indexOf("right")>=0?"right":"left"; }
   function textData(item) {
-    const story=item.parentStory,t=story.texts.item(0),size=Number(t.pointSize)||16,leading=Number(t.leading);
+    // Type inside a scaled frame or group reports its UNSCALED point size:
+    // the size on the artwork is that times the frame's vertical scale.
+    const story=item.parentStory,t=story.texts.item(0),k=vscale(item),size=(Number(t.pointSize)||16)*k,leading=Number(t.leading)*k;
     return {
-      kind:"text", text:String(story.contents||"").replace(/\r/g,"\n"), fontSize:size,
+      // Type set with the ALL CAPS style is capitals on the artwork: carry it as such.
+      kind:"text", text:(/ALL_CAPS/i.test(String(t.capitalization||""))?String(story.contents||"").toUpperCase():String(story.contents||"")).replace(/\r/g,"\n"), fontSize:size,
       fontWeight:/bold|black|heavy|semibold/i.test(String(t.fontStyle||""))?700:400,
       fontFamily:String(t.appliedFont&&t.appliedFont.name||"National 2"), color:textColor(t),
-      align:alignment(t), lineHeight:Number.isFinite(leading)&&leading>0?leading/size:1.2,
+      // The first PARAGRAPH's alignment: a story with mixed settings reports a
+      // misleading value for the whole text.
+      align:alignment((()=>{ try { return item.paragraphs.item(0); } catch (_) { return t; } })()), lineHeight:Number.isFinite(leading)&&leading>0&&leading<size*4?leading/size:1.2,
       letterSpacing:(Number(t.tracking)||0)/1000*size,
     };
+  }
+  function vscale(item) { try { const m=item.transformValuesOf(CoordinateSpaces.PASTEBOARD_COORDINATES)[0].matrixValues; const v=Math.sqrt(m[2]*m[2]+m[3]*m[3]); return v>0.01?v:1; } catch (_) { return 1; } }
+  function hasCopy(item) { try { return String(item.parentStory.contents||"").replace(/\s/g,"").length>0; } catch (_) { return false; } }
+  // Lock-ups are artwork: their type stays in the picture. Only copy that the
+  // app re-sets at other sizes is exported live.
+  const LIVE_ROLES={headline:1,subheadline:1,body:1,cta:1,strapline:1,legal:1};
+  function rotated(item) { try { const r=Math.abs(Number(item.absoluteRotationAngle)||0)%360; return r>1 && r<359; } catch (_) { return false; } }
+  // One frame, two type sizes (an event name with its dates set smaller
+  // beneath): each run of lines at one size becomes its own live element, so
+  // the app can size, keep or drop the dates on their own. Returns null when
+  // the frame is a single size.
+  function sizeRuns(item, page) {
+    try {
+      const k=vscale(item),lines=toArray(item.lines),top0=Number(page.bounds[0]),fb=bounds(item,page),runs=[];
+      for (const ln of lines) {
+        const txt=String(ln.contents||"").replace(/[\r\n]+$/,""); if (!txt.replace(/\s/g,"")) continue;
+        const size=(Number(ln.characters.item(0).pointSize)||0)*k; if (!(size>0)) continue;
+        const top=Number(ln.baseline)-Number(ln.ascent)*k-top0,bottom=Number(ln.baseline)+Number(ln.descent)*k-top0;
+        const last=runs[runs.length-1];
+        if (last&&Math.abs(last.size-size)/last.size<0.06) { last.text+="\n"+txt; last.bottom=bottom; }
+        else runs.push({size,text:txt,top,bottom});
+      }
+      if (runs.length<2) return null;
+      return runs.map(r=>({text:r.text,fontSize:r.size,x:fb.x,w:fb.w,y:r.top,h:Math.max(1,r.bottom-r.top)}));
+    } catch (_) { return null; }
   }
   function isTextFrame(item) { try { return item.constructor.name === "TextFrame"; } catch (_) { return false; } }
   function showMessage(message) {
@@ -114,10 +151,14 @@
     // still uses the InDesign frame geometry, so the higher-resolution PNGs
     // improve output quality without changing positions or proportions.
     try { app.pngExportPreferences.transparentBackground=true; app.pngExportPreferences.exportResolution=300; app.pngExportPreferences.pngQuality=PNGQualityEnum.MAXIMUM; } catch (_) {}
+    // A large-format page (2160×3840) at 300ppi is a 9000×16000 PNG per layer:
+    // the resolution follows the page so the longest side exports near 4000px.
+    const resolutionFor=(w,h)=>Math.max(72,Math.min(300,Math.round(72*4000/Math.max(1,w,h))));
     let pageNo=0;
     for (const doc of documents) {
       for (const page of toArray(doc.pages)) {
         const size=pageSize(page),pageKey="p"+(++pageNo),elements=[];
+        try { app.pngExportPreferences.exportResolution=resolutionFor(size.width,size.height); } catch (_) {}
         let items=toArray(page.pageItems).filter(visible).reverse();
         for (let i=0;i<items.length;i++) {
           const item=items[i],layerName=String(item.itemLayer&&item.itemLayer.name||""),role=roleFromLayer(layerName);
@@ -125,22 +166,32 @@
           const b=bounds(item,page); if (!(b.w>0&&b.h>0)) continue;
           const explicitBlock=label(item,"block"),a=anchors(role,b,size.width,size.height);
           const common={id:pageKey+"_"+safe(role+"_"+i,"item"),layerName,role,slot:slotFor(role),block:explicitBlock||role,anchorX:label(item,"anchorX")||a.anchorX,anchorY:label(item,"anchorY")||a.anchorY,scaleMode:label(item,"scaleMode")||a.scaleMode,constraints:a.constraints,x:b.x,y:b.y,w:b.w,h:b.h,locked:role==="logo"};
-          if (isTextFrame(item)) elements.push(Object.assign(common,textData(item)));
+          // Rotated type (a picture credit up the edge) is artwork: the app sets
+          // live type level, so it is exported as a picture rather than re-set sideways.
+          if (isTextFrame(item) && !rotated(item) && LIVE_ROLES[role]) {
+            const runs=sizeRuns(item,page);
+            if (!runs) elements.push(Object.assign(common,textData(item)));
+            else runs.forEach((r,ri)=>{ const sub=ri>0&&role==="headline"?"subheadline":role; elements.push(Object.assign({},common,textData(item),{id:common.id+(ri?"_r"+ri:""),role:sub,slot:slotFor(sub),block:sub,text:r.text,fontSize:r.fontSize,x:r.x,y:r.y,w:r.w,h:r.h})); });
+          }
+          else if (isTextFrame(item) && !rotated(item) && !hasCopy(item)) continue;
           else {
             // Text frames INSIDE a group stay live: they are exported as text
             // (in the group's block) and hidden while the group's artwork is
             // rendered, so copy is never baked into a picture.
             const innerText=[];
-            try { for (const sub of toArray(item.allPageItems)) if (isTextFrame(sub)&&visible(sub)) innerText.push(sub); } catch (_) {}
+            try { if (LIVE_ROLES[role]) for (const sub of toArray(item.allPageItems)) if (isTextFrame(sub)&&visible(sub)&&hasCopy(sub)&&!rotated(sub)) innerText.push(sub); } catch (_) {}
+            const liveType=[];
             for (let k=0;k<innerText.length;k++) {
               const tb=bounds(innerText[k],page);
-              elements.push(Object.assign({id:common.id+"_t"+k,layerName,role,slot:slotFor(role),block:common.block,anchorX:common.anchorX,anchorY:common.anchorY,scaleMode:"uniform",constraints:a.constraints,x:tb.x,y:tb.y,w:tb.w,h:tb.h,locked:false},textData(innerText[k])));
+              liveType.push(Object.assign({id:common.id+"_t"+k,layerName,role,slot:slotFor(role),block:common.block,anchorX:common.anchorX,anchorY:common.anchorY,scaleMode:"uniform",constraints:a.constraints,x:tb.x,y:tb.y,w:tb.w,h:tb.h,locked:false},textData(innerText[k])));
               try { innerText[k].visible=false; } catch (_) {}
             }
             const fileName=pageKey+"-"+String(i+1).padStart(3,"0")+"-"+safe(role,"art")+".png",assetPath="assets/"+fileName,file=await assetFolder.createFile(fileName,{overwrite:true});
             try { item.exportFile(ExportFormat.PNG_FORMAT,file,false); }
             finally { for (const t of innerText) { try { t.visible=true; } catch (_) {} } }
             elements.push(Object.assign(common,{kind:"image",assetPath,fit:"contain"}));
+            // The picture first, its live type above it (a label drawn under its pill is invisible).
+            for (const lt of liveType) elements.push(lt);
             zipEntries.push({name:assetPath,data:await file.read({format:formats.binary})});
           }
         }

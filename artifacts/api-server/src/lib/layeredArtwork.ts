@@ -712,6 +712,17 @@ export function adaptLayered(master: FreeformConfig, srcW: number, srcH: number,
     // The shipped pieces run the glyph headline to 93% of the zone width.
     const maxW = photoZone.w * 0.94;
     if (hBox.w * s > maxW) s = maxW / Math.max(1, hBox.w);
+    // Squares hold the heading's share (rule K14): the heading runs as wide
+    // as on the master (its share of the photo's width), whatever the pixel
+    // size — a 300×250 and a 1080×1080 are the same design.
+    if (cls === "square" && recipe.axis === "stacked") {
+      const mPanel = by("panel")[0];
+      const mPhotoW = photo ? Math.min(photo.w, srcW) : mPanel ? mPanel.w : srcW;
+      const share = Math.max(0.8, Math.min(0.94, hBox.w / Math.max(1, mPhotoW)));
+      const sWide = (photoZone.w * share) / Math.max(1, hBox.w);
+      const groupScaled = groupH * sWide;
+      if (groupScaled <= photoZone.h * 0.66) s = sWide;
+    }
     const hw = hBox.w * s, hh = hBox.h * s;
     gx = r(photoZone.x + (photoZone.w - hw) / 2);
     const copyPin = ruleOf("headline").pin ?? "measured";
@@ -785,51 +796,43 @@ export function adaptLayered(master: FreeformConfig, srcW: number, srcH: number,
       out.push({ ...photo, id: "ly_photo", fit: "fill" as "cover", x: r(box.x), y: r(box.y), w: r(box.w), h: r(box.h) });
       photoPlaced = true;
       if (cutout && cutoutBox && carMapped) {
-        // The cut-out is the car in the photo: keep it exactly over it.
-        cutoutBox = { x: r(carMapped.x), y: r(carMapped.y), w: r(carMapped.w), h: r(carMapped.h) };
+        // The cut-out is the car in the photo: keep it exactly over it —
+        // unless the copy now sits over it, where a second copy of the
+        // subject in FRONT of the type is wrong; the photograph's own stays.
+        if (carMapped.y >= copyBottom - 2) cutoutBox = { x: r(carMapped.x), y: r(carMapped.y), w: r(carMapped.w), h: r(carMapped.h) };
+        else { cutoutBox = null; drop("cutout", "Cut-out layer left out: at this shape the copy sits over the subject, so the photograph's own subject is shown under the shade instead of a second copy in front of the type.", true); }
       }
     }
   }
   let panX = typeof photo?.focusX === "number" ? photo.focusX : 0.5;
   let panY = typeof photo?.focusY === "number" ? photo.focusY : 0.5;
+
   if (photo && cutout && cutoutBox && !rowLike && !photoPlaced) {
+    // ONE PICTURE (docs/style-specs/key-visual-layouts.md, rule K2): the
+    // cut-out is the photograph's own subject lifted onto a layer, so it
+    // stays registered on the photograph at the photograph's scale. Moving
+    // the window "off the car" left two cars at most sizes.
     const photoAspect = photo.w / Math.max(1, photo.h);
     let rw = photoZone.w, rh = rw / photoAspect;
     if (rh < photoZone.h) { rh = photoZone.h; rw = rh * photoAspect; }
     const sx = rw / Math.max(1, photo.w), sy = rh / Math.max(1, photo.h);
     const slackX = Math.max(0, rw - photoZone.w), slackY = Math.max(0, rh - photoZone.h);
-    // The photo's own car in the oversize photo's px.
-    const cx0 = (cutout.x - photo.x) * sx, cx1 = cx0 + cutout.w * sx;
-    const cy0 = (cutout.y - photo.y) * sy, cy1 = cy0 + cutout.h * sy;
+    const car: Box = { x: (cutout.x - photo.x) * sx, y: (cutout.y - photo.y) * sy, w: cutout.w * sx, h: cutout.h * sy };
+    // The window that keeps the subject whole and nearest the master's place in the zone.
+    const kept = panToKeepBox(slackX, slackY, { w: photoZone.w, h: photoZone.h }, car, { x: panX, y: panY });
+    panX = kept.x; panY = kept.y;
     const winX = panX * slackX, winY = panY * slackY;
-    const mapped: Box = { x: photoZone.x + cx0 - winX, y: photoZone.y + cy0 - winY, w: cx1 - cx0, h: cy1 - cy0 };
-    const covered = overlap(mapped, cutoutBox) / Math.max(1, area(mapped));
-    if (covered < 0.85) {
-      // Move the window the shortest distance that leaves the photo's own car
-      // out (left/right for columns, above for wide zones); keep the current
-      // framing when no window can.
-      type Cand = { px: number; py: number; o: number; d: number };
-      const cands: Cand[] = [];
-      const ovl = (px: number, py: number) => {
-        const ix = Math.max(0, Math.min(px + photoZone.w, cx1) - Math.max(px, cx0));
-        const iy = Math.max(0, Math.min(py + photoZone.h, cy1) - Math.max(py, cy0));
-        return (ix * iy) / Math.max(1, (cx1 - cx0) * (cy1 - cy0));
-      };
-      const push = (px: number, py: number) => { px = Math.max(0, Math.min(slackX, px)); py = Math.max(0, Math.min(slackY, py)); cands.push({ px, py, o: ovl(px, py), d: Math.abs(px - winX) + Math.abs(py - winY) }); };
-      push(cx0 - photoZone.w - photoZone.w * 0.04, winY);
-      push(cx1 + photoZone.w * 0.04, winY);
-      push(winX, cy0 - photoZone.h - photoZone.h * 0.04);
-      push(winX, cy1 + photoZone.h * 0.04);
-      const ok = cands.filter((c) => c.o <= 0.12).sort((a, b) => a.d - b.d)[0];
-      if (ok) {
-        panX = slackX > 0 ? ok.px / slackX : panX;
-        panY = slackY > 0 ? ok.py / slackY : panY;
-        notes.push("Photo window moved just off its own car so the cut-out is the only car.");
-      } else {
-        const least = cands.sort((a, b) => a.o - b.o)[0];
-        if (least && least.o < ovl(winX, winY)) { panX = slackX > 0 ? least.px / slackX : panX; panY = slackY > 0 ? least.py / slackY : panY; }
-        notes.push("Check: the photo's own car may show beside the cut-out at this size.");
-      }
+    const mapped: Box = { x: photoZone.x + car.x - winX, y: photoZone.y + car.y - winY, w: car.w, h: car.h };
+    const wholeX = mapped.x >= photoZone.x - 1 && mapped.x + mapped.w <= photoZone.x + photoZone.w + 1;
+    const clearOfCopy = mapped.y >= copyBottom - 2;
+    out.push({ ...photo, id: "ly_photo", fit: "fill" as "cover", x: r(photoZone.x - winX), y: r(photoZone.y - winY), w: r(rw), h: r(rh) });
+    photoPlaced = true;
+    if (wholeX && clearOfCopy) {
+      cutoutBox = { x: r(mapped.x), y: r(mapped.y), w: r(mapped.w), h: r(mapped.h) };
+      notes.push("The cut-out stays registered on the photograph (one picture): same scale, same place.");
+    } else {
+      cutoutBox = null;
+      drop("cutout", wholeX ? "Cut-out layer left out: at this shape the copy sits over the subject, so the photograph's own subject is shown under the shade instead of a second copy in front of the type." : "Cut-out layer left out: the subject is wider than this window, so the photograph is centred on it instead of showing a second, floating copy.", true);
     }
   }
   if (photo && !cutout && !photoPlaced && photo.focusBox) {
@@ -899,6 +902,23 @@ export function adaptLayered(master: FreeformConfig, srcW: number, srcH: number,
       // Rule: pinned to the panel's outer edge (the seam) unless a designer
       // asked for it centred in the panel.
       const by = bandRule.pin === "centre" ? panelZone.y + (panelZone.h - bh) / 2 : panelZone.y;
+      const panelSrcW = panelImg?.w ?? srcW;
+      if (partBand.w < panelSrcW * 0.85) {
+        // The band picture is a MOTIF shorter than its panel (a display
+        // master's band captured mid-build). A pattern band runs edge to
+        // edge (every OOH master; guidelines p.15): repeat the motif from the
+        // zone's leading edge, the last repeat running off the far edge.
+        let th = Math.min(partBand.h * (panelZone.w / Math.max(1, panelSrcW)), capH);
+        th = Math.max(th, Math.min(capH, shallow ? 14 : 18));
+        const tw = th * (partBand.w / Math.max(1, partBand.h));
+        const gapT = Math.max(1, r(tw * 0.012));
+        const reachesEdge = panelZone.x + panelZone.w >= dstW - 1;
+        const n = reachesEdge ? Math.ceil(panelZone.w / (tw + gapT)) : Math.max(1, Math.floor((panelZone.w + gapT) / (tw + gapT)));
+        const startX = reachesEdge ? panelZone.x : panelZone.x + (panelZone.w - (n * tw + (n - 1) * gapT)) / 2;
+        for (let i = 0; i < Math.min(n, 12); i++) out.push({ ...partBand, id: i === 0 ? "ly_band" : `ly_band_${i}`, fit: "fill" as "cover", x: r(startX + i * (tw + gapT)), y: r(by), w: r(tw), h: r(th) });
+        bh = th;
+        notes.push("Pattern band repeated edge to edge: the master's band picture is a motif shorter than its panel.");
+      } else
       out.push({ ...partBand, id: "ly_band", fit, x: r(panelZone.x + (panelZone.w - bw) / 2), y: r(by), w: r(bw), h: r(bh) });
       stackTop = bandRule.pin === "centre" ? panelZone.y + margin : panelZone.y + bh + margin / 2;
     }
@@ -921,11 +941,34 @@ export function adaptLayered(master: FreeformConfig, srcW: number, srcH: number,
       const fitW = ctaRule.size === "fit-width" ? panelInner.w * 0.85 : ctaW;
       items.push({ el: cta, w: fitW, h: wantFixed ? ctaH : fitW * (cta.h / Math.max(1, cta.w)), minH: ctaRule.minPx ?? recipe.ctaFloorPx, fixed: wantFixed });
     }
-    if (partLockup) items.push({ el: partLockup, w: partLockup.w * ps, h: partLockup.h * ps, minH: lockRule.minPx ?? 14, fixed: false });
+    if (partLockup) items.push({ el: partLockup, w: partLockup.w * ps, h: partLockup.h * ps, minH: lockRule.minPx ?? 16, fixed: false });
     // Width caps per part, then a common shrink when the column is too tall.
-    const capW = (it: Item) => (it.el === partMessage ? panelInner.w * 0.9 : it.el === partLockup ? panelInner.w * 0.7 : panelInner.w * 0.85);
+    const capW = (it: Item) => (it.el === partMessage ? panelInner.w * 0.9 : it.el === partLockup ? panelInner.w * (panelInner.w < 200 ? 0.96 : 0.7) : panelInner.w * 0.85);
     for (const it of items) { if (it.w > capW(it)) { const k = capW(it) / it.w; it.w *= k; it.h *= k; } }
+    // A message that is a PICTURE of one line of type cannot be re-wrapped:
+    // where the width makes it unreadable it leaves, rather than sit as a grey hairline.
+    const mi = items.findIndex((it) => it.el === partMessage);
+    if (mi >= 0 && items[mi].h < 9) { items.splice(mi, 1); drop("message", "Message left out: it is a picture of a single line of type and cannot be read at this width. Supply a two-line version for towers.", true); }
+    // FILL (rule K5): a column that uses under two thirds of its zone grows,
+    // every part by the same factor, until a width cap or 72% of the zone.
+    {
+      const flex = items.filter((it) => !it.fixed);
+      const used = items.reduce((a, it) => a + it.h, 0) + Math.max(4, margin / 2) * (items.length - 1);
+      const room = Math.max(10, (panelZone.y + panelZone.h - (shallow ? margin / 2 : margin)) - stackTop);
+      if (!shallow && flex.length && used < room * 0.62) {
+        // Each part grows toward the same target, stopping at its OWN width
+        // cap — a pill already at its cap no longer holds the logo back.
+        const k = Math.min((room * 0.72) / used, 1.8);
+        if (k > 1.04) { for (const it of flex) { const ki = Math.max(1, Math.min(k, capW(it) / it.w)); it.w *= ki; it.h *= ki; } notes.push(`Panel copy enlarged up to ${Math.round((k - 1) * 100)}% to fill its zone (it was set for a wider panel).`); }
+      }
+    }
     const total = () => items.reduce((a, it) => a + it.h, 0) + gapPx * (items.length - 1);
+    // Leaving order (rule K4): on a shallow panel the message leaves before
+    // the pill or the lockup are squeezed under their floors.
+    if (shallow && total() > avail) {
+      const i = items.findIndex((it) => it.el === partMessage);
+      if (i >= 0 && items.length > 1) { items.splice(i, 1); drop("message", "Message left out: this panel is too shallow for the message, the button and the logo — the button and the logo stay.", true); }
+    }
     // Parts marked drop-when-tight leave a shallow column before anything is squeezed below its minimum.
     if (total() > avail) {
       const droppable = items.filter((it) => (it.el === partMessage && msgRule.dropWhenTight) || (it.el === partLockup && lockRule.dropWhenTight));
@@ -965,14 +1008,25 @@ export function adaptLayered(master: FreeformConfig, srcW: number, srcH: number,
     }) : null;
     if (anchored && anchored.some((v) => Number.isNaN(v))) anchored = null;
     if (anchored) {
-      for (let i = 1; i < items.length; i++) if (anchored[i] < anchored[i - 1] + items[i - 1].h + gapPx) { anchored = null; break; }
+      // Anchors hold only while the stack still breathes: each gap at least
+      // 40% of the smaller neighbour, and the last part clear of the edge.
+      for (let i = 1; i < items.length; i++) {
+        const need = Math.max(gapPx, Math.min(items[i].h, items[i - 1].h) * 0.4);
+        if (anchored[i] < anchored[i - 1] + items[i - 1].h + need) { anchored = null; break; }
+      }
+      const last = items.length - 1;
+      if (anchored && last >= 0 && anchored[last] + items[last].h > stackBottom - gapPx * 0.5) anchored = null;
     }
-    let y = stackTop + Math.max(0, (avail - total()) / 2);
+    // Otherwise the column is spaced EVENLY in its zone (equal air above,
+    // between and below), never bunched with one hole over it.
+    const sumH = items.reduce((a, it) => a + it.h, 0);
+    const even = Math.max(gapPx, Math.min((avail - sumH) / (items.length + 1), Math.max(...items.map((it) => it.h), 1) * 1.1));
+    let y = stackTop + Math.max(0, (avail - sumH - even * (items.length - 1)) / 2);
     for (const [i, it] of items.entries()) {
       const id = it.el === partMessage ? "ly_message" : it.el === partLockup ? "ly_lockup" : "ly_cta";
       const yy = anchored ? anchored[i] : y;
       out.push({ ...it.el, id, fit: "contain", x: r(panelZone.x + (panelZone.w - it.w) / 2), y: r(yy), w: r(it.w), h: r(it.h) });
-      y += it.h + gapPx;
+      y += it.h + even;
     }
     if (panelImg) notes.push("Panel re-stacked from its parts (band, message, button, lockup) for this zone.");
   } else {

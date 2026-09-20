@@ -42,7 +42,7 @@ export const ANTHER_RULE = {
   id: "anther-never-cropped",
   title: "The anther is never cropped",
   lines: [
-    "The anther's circle sits wholly inside the artwork; nothing is laid over it.",
+    "The anther's circle sits wholly inside the artwork; nothing is laid over the picture in it (a badge may ride its rim).",
     "It is as big as the margins allow (margin = half the pōhutukawa tile).",
     "The stem runs off the artwork's edge — left, lower left at 45°, or bottom centre — with its straight lines showing.",
     "The stem is never covered by the pōhutukawa tile and never heads for the lower-right corner.",
@@ -202,11 +202,16 @@ export interface AntherPlacement {
  * slid towards the edge its stem heads for until the stem runs off the
  * artwork (never past the margin on that side).
  */
-export function placeAnther(zone: Box, canvas: { w: number; h: number }, natural: { w: number; h: number }, shape: AntherShape, margin: number): AntherPlacement {
+export function placeAnther(zone: Box, canvas: { w: number; h: number }, natural: { w: number; h: number }, shape: AntherShape, margin: number, marginY?: number): AntherPlacement {
   const notes: string[] = [];
   // Rule 5: on a narrow zone the margin gives way rather than the picture.
   const m = Math.min(margin, Math.min(zone.w, zone.h) * 0.08);
-  const D = Math.max(16, Math.min(zone.w, zone.h) - m * 2);
+  // The half-tile margin is a PAGE margin (to the artwork's edges). Between
+  // the anther and the heading or copy above and below it only a little air
+  // is needed — taking the full margin there as well made a tall build's
+  // anther a fifth smaller than the designer's own tall master.
+  const my = marginY == null ? m : Math.min(marginY, m);
+  const D = Math.max(16, Math.min(zone.w - m * 2, zone.h - my * 2));
   const imgW = D / (2 * shape.r);
   const imgH = imgW * (natural.h / Math.max(1, natural.w));
   let cx = zone.x + zone.w / 2, cy = zone.y + zone.h / 2;
@@ -216,7 +221,7 @@ export function placeAnther(zone: Box, canvas: { w: number; h: number }, natural
     const reaches = () => { const t = tip(); return t.x <= 0 || t.y <= 0 || t.x >= canvas.w || t.y >= canvas.h; };
     if (!reaches()) {
       // Slide along the stem's main heading, the circle staying in its margins.
-      const room = { left: cx - D / 2 - (zone.x + m), right: zone.x + zone.w - m - (cx + D / 2), up: cy - D / 2 - (zone.y + m), down: zone.y + zone.h - m - (cy + D / 2) };
+      const room = { left: cx - D / 2 - (zone.x + m), right: zone.x + zone.w - m - (cx + D / 2), up: cy - D / 2 - (zone.y + my), down: zone.y + zone.h - my - (cy + D / 2) };
       const t = tip();
       if (vx < 0 && Math.abs(vx) >= Math.abs(vy) * 0.5) cx -= Math.min(Math.max(0, room.left), t.x);
       else if (vx > 0 && Math.abs(vx) >= Math.abs(vy) * 0.5) cx += Math.min(Math.max(0, room.right), canvas.w - t.x);
@@ -228,6 +233,25 @@ export function placeAnther(zone: Box, canvas: { w: number; h: number }, natural
     }
     if (!reaches()) notes.push("Check: the anther's stem ends inside the artwork at this size — it should run off an edge (brand guidelines p.28).");
     if (vx > 0 && vy > 0) notes.push("Check: this anther's stem heads for the lower-right corner, where the pōhutukawa tile sits (brand guidelines p.28).");
+  }
+  // The stem's END is a straight cut — the master's own artwork edge. That
+  // cut side of the picture must sit ON or PAST the same edge here, or the
+  // handle visibly stops short with a gap beside it. The circle then keeps
+  // the distance from that edge that the designer gave it in the master.
+  if (shape.kind === "anther" && shape.stemX != null && shape.stemY != null) {
+    const left = cx - shape.cx * imgW, top = cy - shape.cy * imgH;
+    const cutLeft = shape.stemX < 0.04, cutRight = shape.stemX > 0.96;
+    const cutTop = !cutLeft && !cutRight && shape.stemY < 0.04, cutBottom = !cutLeft && !cutRight && shape.stemY > 0.96;
+    const before = { cx, cy };
+    if (cutLeft && left > -1) cx -= Math.min(left + 1, Math.max(0, cx - D / 2 - 1));
+    else if (cutRight && left + imgW < canvas.w + 1) cx += Math.min(canvas.w + 1 - (left + imgW), Math.max(0, canvas.w - 1 - (cx + D / 2)));
+    else if (cutTop && top > -1) cy -= Math.min(top + 1, Math.max(0, cy - D / 2 - 1));
+    else if (cutBottom && top + imgH < canvas.h + 1) cy += Math.min(canvas.h + 1 - (top + imgH), Math.max(0, canvas.h - 1 - (cy + D / 2)));
+    if (before.cx !== cx || before.cy !== cy) {
+      notes.push("Anther moved to the edge its stem runs off, so the handle meets the edge cleanly (as in the master).");
+      const i = notes.findIndex((n) => n.startsWith("Check: the anther's stem ends inside"));
+      if (i >= 0) notes.splice(i, 1);
+    }
   }
   const box = { x: Math.round(cx - shape.cx * imgW), y: Math.round(cy - shape.cy * imgH), w: Math.round(imgW), h: Math.round(imgH) };
   return { box, circle: { cx, cy, r: D / 2 }, notes };
@@ -252,14 +276,16 @@ export function checkAnther(
     if (c.cx - c.r < -tol || c.cy - c.r < -tol || c.cx + c.r > canvasW + tol || c.cy + c.r > canvasH + tol) {
       reasons.push("The anther is cropped by the edge of the artwork. Brand schema: the anther is never cropped — this size needs a designer.");
     }
-    // Anything solid laid over the circle (its inner square is enough to tell).
-    const k = c.r * 0.7;
+    // Anything solid laid over the PICTURE in the circle. A badge may ride the
+    // anther's rim — the Heritage Festival master sets one on its shoulder — so
+    // the test is the core of the circle (its middle 55%), not its whole disc.
+    const k = c.r * 0.55;
     const inner = { x0: c.cx - k, y0: c.cy - k, x1: c.cx + k, y1: c.cy + k };
     for (const over of elements.slice(idx + 1)) {
       if (over.type === "text" || (over.opacity ?? 1) < 0.5) continue;
       if (over.type === "image" && over.shape) continue;
       const ix = Math.min(inner.x1, over.x + over.w) - Math.max(inner.x0, over.x), iy = Math.min(inner.y1, over.y + over.h) - Math.max(inner.y0, over.y);
-      if (ix > 0 && iy > 0 && (ix * iy) / ((inner.x1 - inner.x0) * (inner.y1 - inner.y0)) > 0.04) {
+      if (ix > 0 && iy > 0 && (ix * iy) / ((inner.x1 - inner.x0) * (inner.y1 - inner.y0)) > 0.05) {
         reasons.push(`The anther is covered by the ${over.slot ?? over.role ?? "layer"} above it. Brand schema: nothing is laid over the anther.`);
         break;
       }

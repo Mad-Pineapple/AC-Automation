@@ -33,6 +33,7 @@ export const ADAPT_PRESETS = [
   // Display (DV360 / GDN)
   { key: "mrec", label: "MREC Display", width: 300, height: 250, group: "HTML", placement: "DV360 / GDN — in-content medium rectangle, desktop and mobile" },
   { key: "half_page", label: "Half Page", width: 300, height: 600, group: "HTML", placement: "DV360 / GDN — sidebar half page, desktop" },
+  { key: "wide_skyscraper", label: "Wide Skyscraper", width: 160, height: 600, group: "HTML", placement: "DV360 / GDN — sidebar skyscraper, desktop (the council's usual tall slim format)" },
   { key: "skyscraper", label: "Skyscraper", width: 120, height: 600, group: "HTML", placement: "DV360 / GDN — narrow sidebar, desktop" },
   { key: "billboard", label: "Billboard", width: 970, height: 250, group: "HTML", placement: "DV360 / GDN — top-of-page billboard, desktop" },
   { key: "banner", label: "Leaderboard", width: 728, height: 90, group: "HTML", placement: "DV360 / GDN — top-of-page leaderboard, desktop" },
@@ -111,3 +112,13 @@ export type AdaptPreset = (typeof ADAPT_PRESETS)[number];
 export function presetsByGroup(): { group: (typeof ADAPT_GROUPS)[number]; presets: AdaptPreset[] }[] {
   return ADAPT_GROUPS.map((group) => ({ group, presets: ADAPT_PRESETS.filter((p) => p.group === group.key) })).filter((g) => g.presets.length > 0);
 }
+
+/**
+ * The CHECK SET: the six sizes built first from a newly uploaded key visual.
+ * One of each proportion the engine lays out differently — tall, square,
+ * landscape, the 300×250 HTML banner (check its animation), a thin tall and a
+ * thin wide. Fix and approve these; every other size is then built with the
+ * approved pieces as its reference (docs/style-specs/key-visual-layouts.md).
+ */
+export const CHECK_SET_KEYS = ["story", "social_square", "council_screen_landscape", "mrec", "wide_skyscraper", "banner"] as const;
+export const CHECK_SET: AdaptPreset[] = CHECK_SET_KEYS.map((k) => ADAPT_PRESETS.find((p) => p.key === k)).filter((p): p is AdaptPreset => !!p);

@@ -50,3 +50,36 @@ Family is inferred from page shape:
 | Slim landscape | 2.75 and above |
 
 Extreme targets stop if the corresponding slim master is missing. Exact-size targets are cloned without adaptation.
+
+## Key-visual layer names (added 20 Sep 2026)
+
+Besides the `art:` names above (the `art:` prefix is optional), the bridge now
+understands the layers a campaign key visual uses. Name the LAYER, one job per layer:
+
+| Layer | What goes on it |
+|---|---|
+| `Background` | the photograph, GROUPED with its tint so InDesign renders the blend into one picture |
+| `Shade` (or `Tint`, `Fade`) | fades/shades over the photograph, left separate |
+| `Anther` | the anther holding its picture — one object |
+| `Title` | the campaign title lock-up (artwork) |
+| `Headline` | event name — live type |
+| `Dates` | dates — live type (dates set smaller in the Headline frame are split off automatically) |
+| `Body` | message copy — live type |
+| `CTA` | the pill and its label together |
+| `Badge` | roundel on the anther's shoulder (its type stays in the picture) |
+| `Strapline` | "Tāmaki Turuki. Altogether Auckland." — live type |
+| `Pattern` | pattern |
+| `Logo` | logo or lock-up |
+| `Credit` | picture credit (rotated type is exported as a picture) |
+
+What the bridge does with them: every layer is rendered by InDesign itself to a
+transparent PNG (so blends, fades, polygon frames and vector art are exact),
+copy the app re-sets stays live, and type inside scaled groups is exported at
+the size it really appears. Large pages export at a resolution that keeps the
+longest side near 4000px.
+
+Tested 20 Sep 2026 on the Auckland Heritage Festival file: named layers →
+bridge package → WIP master → the six check sizes, all built by the
+key-visual composer with nothing rejected. The plain "File ▸ Package" IDML
+route was tested the same day and is NOT suitable for this kind of artwork
+(vector lock-ups dropped, the anther's polygon frame missing, tints flattened).

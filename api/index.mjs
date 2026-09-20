@@ -481,15 +481,15 @@ var require_browser = __commonJS({
       }
     }
     function load() {
-      let r4;
+      let r6;
       try {
-        r4 = exports2.storage.getItem("debug") || exports2.storage.getItem("DEBUG");
+        r6 = exports2.storage.getItem("debug") || exports2.storage.getItem("DEBUG");
       } catch (error40) {
       }
-      if (!r4 && typeof process !== "undefined" && "env" in process) {
-        r4 = process.env.DEBUG;
+      if (!r6 && typeof process !== "undefined" && "env" in process) {
+        r6 = process.env.DEBUG;
       }
-      return r4;
+      return r6;
     }
     function localstorage() {
       try {
@@ -3493,13 +3493,13 @@ var require_dbcs_codec = __commonJS({
         return -1;
       }
       var l = 0;
-      var r4 = table.length;
-      while (l < r4 - 1) {
-        var mid = l + (r4 - l + 1 >> 1);
+      var r6 = table.length;
+      while (l < r6 - 1) {
+        var mid = l + (r6 - l + 1 >> 1);
         if (table[mid] <= val) {
           l = mid;
         } else {
-          r4 = mid;
+          r6 = mid;
         }
       }
       return l;
@@ -16867,7 +16867,7 @@ var require_get_intrinsic = __commonJS({
     var max = require_max();
     var min = require_min();
     var pow = require_pow();
-    var round2 = require_round();
+    var round3 = require_round();
     var sign = require_sign();
     var $Function = Function;
     var getEvalledConstructor = function(expressionSyntax) {
@@ -16981,7 +16981,7 @@ var require_get_intrinsic = __commonJS({
       "%Math.max%": max,
       "%Math.min%": min,
       "%Math.pow%": pow,
-      "%Math.round%": round2,
+      "%Math.round%": round3,
       "%Math.sign%": sign,
       "%Reflect.getPrototypeOf%": $ReflectGPO
     };
@@ -21213,24 +21213,24 @@ var require_charset = __commonJS({
     function getCharsetPriority(charset, accepted, index) {
       var priority = { o: -1, q: 0, s: 0 };
       for (var i = 0; i < accepted.length; i++) {
-        var spec = specify(charset, accepted[i], index);
-        if (spec && (priority.s - spec.s || priority.q - spec.q || priority.o - spec.o) < 0) {
-          priority = spec;
+        var spec3 = specify(charset, accepted[i], index);
+        if (spec3 && (priority.s - spec3.s || priority.q - spec3.q || priority.o - spec3.o) < 0) {
+          priority = spec3;
         }
       }
       return priority;
     }
-    function specify(charset, spec, index) {
+    function specify(charset, spec3, index) {
       var s2 = 0;
-      if (spec.charset.toLowerCase() === charset.toLowerCase()) {
+      if (spec3.charset.toLowerCase() === charset.toLowerCase()) {
         s2 |= 1;
-      } else if (spec.charset !== "*") {
+      } else if (spec3.charset !== "*") {
         return null;
       }
       return {
         i: index,
-        o: spec.i,
-        q: spec.q,
+        o: spec3.i,
+        q: spec3.q,
         s: s2
       };
     }
@@ -21249,11 +21249,11 @@ var require_charset = __commonJS({
     function compareSpecs(a, b) {
       return b.q - a.q || b.s - a.s || a.o - b.o || a.i - b.i || 0;
     }
-    function getFullCharset(spec) {
-      return spec.charset;
+    function getFullCharset(spec3) {
+      return spec3.charset;
     }
-    function isQuality(spec) {
-      return spec.q > 0;
+    function isQuality(spec3) {
+      return spec3.q > 0;
     }
   }
 });
@@ -21311,25 +21311,25 @@ var require_encoding = __commonJS({
     function getEncodingPriority(encoding, accepted, index) {
       var priority = { encoding, o: -1, q: 0, s: 0 };
       for (var i = 0; i < accepted.length; i++) {
-        var spec = specify(encoding, accepted[i], index);
-        if (spec && (priority.s - spec.s || priority.q - spec.q || priority.o - spec.o) < 0) {
-          priority = spec;
+        var spec3 = specify(encoding, accepted[i], index);
+        if (spec3 && (priority.s - spec3.s || priority.q - spec3.q || priority.o - spec3.o) < 0) {
+          priority = spec3;
         }
       }
       return priority;
     }
-    function specify(encoding, spec, index) {
+    function specify(encoding, spec3, index) {
       var s2 = 0;
-      if (spec.encoding.toLowerCase() === encoding.toLowerCase()) {
+      if (spec3.encoding.toLowerCase() === encoding.toLowerCase()) {
         s2 |= 1;
-      } else if (spec.encoding !== "*") {
+      } else if (spec3.encoding !== "*") {
         return null;
       }
       return {
         encoding,
         i: index,
-        o: spec.i,
-        q: spec.q,
+        o: spec3.i,
+        q: spec3.q,
         s: s2
       };
     }
@@ -21362,11 +21362,11 @@ var require_encoding = __commonJS({
     function compareSpecs(a, b) {
       return b.q - a.q || b.s - a.s || a.o - b.o || a.i - b.i;
     }
-    function getFullEncoding(spec) {
-      return spec.encoding;
+    function getFullEncoding(spec3) {
+      return spec3.encoding;
     }
-    function isQuality(spec) {
-      return spec.q > 0;
+    function isQuality(spec3) {
+      return spec3.q > 0;
     }
   }
 });
@@ -21415,30 +21415,30 @@ var require_language = __commonJS({
     function getLanguagePriority(language, accepted, index) {
       var priority = { o: -1, q: 0, s: 0 };
       for (var i = 0; i < accepted.length; i++) {
-        var spec = specify(language, accepted[i], index);
-        if (spec && (priority.s - spec.s || priority.q - spec.q || priority.o - spec.o) < 0) {
-          priority = spec;
+        var spec3 = specify(language, accepted[i], index);
+        if (spec3 && (priority.s - spec3.s || priority.q - spec3.q || priority.o - spec3.o) < 0) {
+          priority = spec3;
         }
       }
       return priority;
     }
-    function specify(language, spec, index) {
+    function specify(language, spec3, index) {
       var p = parseLanguage(language);
       if (!p) return null;
       var s2 = 0;
-      if (spec.full.toLowerCase() === p.full.toLowerCase()) {
+      if (spec3.full.toLowerCase() === p.full.toLowerCase()) {
         s2 |= 4;
-      } else if (spec.prefix.toLowerCase() === p.full.toLowerCase()) {
+      } else if (spec3.prefix.toLowerCase() === p.full.toLowerCase()) {
         s2 |= 2;
-      } else if (spec.full.toLowerCase() === p.prefix.toLowerCase()) {
+      } else if (spec3.full.toLowerCase() === p.prefix.toLowerCase()) {
         s2 |= 1;
-      } else if (spec.full !== "*") {
+      } else if (spec3.full !== "*") {
         return null;
       }
       return {
         i: index,
-        o: spec.i,
-        q: spec.q,
+        o: spec3.i,
+        q: spec3.q,
         s: s2
       };
     }
@@ -21457,11 +21457,11 @@ var require_language = __commonJS({
     function compareSpecs(a, b) {
       return b.q - a.q || b.s - a.s || a.o - b.o || a.i - b.i || 0;
     }
-    function getFullLanguage(spec) {
-      return spec.full;
+    function getFullLanguage(spec3) {
+      return spec3.full;
     }
-    function isQuality(spec) {
-      return spec.q > 0;
+    function isQuality(spec3) {
+      return spec3.q > 0;
     }
   }
 });
@@ -21516,33 +21516,33 @@ var require_mediaType = __commonJS({
     function getMediaTypePriority(type, accepted, index) {
       var priority = { o: -1, q: 0, s: 0 };
       for (var i = 0; i < accepted.length; i++) {
-        var spec = specify(type, accepted[i], index);
-        if (spec && (priority.s - spec.s || priority.q - spec.q || priority.o - spec.o) < 0) {
-          priority = spec;
+        var spec3 = specify(type, accepted[i], index);
+        if (spec3 && (priority.s - spec3.s || priority.q - spec3.q || priority.o - spec3.o) < 0) {
+          priority = spec3;
         }
       }
       return priority;
     }
-    function specify(type, spec, index) {
+    function specify(type, spec3, index) {
       var p = parseMediaType(type);
       var s2 = 0;
       if (!p) {
         return null;
       }
-      if (spec.type.toLowerCase() == p.type.toLowerCase()) {
+      if (spec3.type.toLowerCase() == p.type.toLowerCase()) {
         s2 |= 4;
-      } else if (spec.type != "*") {
+      } else if (spec3.type != "*") {
         return null;
       }
-      if (spec.subtype.toLowerCase() == p.subtype.toLowerCase()) {
+      if (spec3.subtype.toLowerCase() == p.subtype.toLowerCase()) {
         s2 |= 2;
-      } else if (spec.subtype != "*") {
+      } else if (spec3.subtype != "*") {
         return null;
       }
-      var keys = Object.keys(spec.params);
+      var keys = Object.keys(spec3.params);
       if (keys.length > 0) {
         if (keys.every(function(k) {
-          return spec.params[k] == "*" || (spec.params[k] || "").toLowerCase() == (p.params[k] || "").toLowerCase();
+          return spec3.params[k] == "*" || (spec3.params[k] || "").toLowerCase() == (p.params[k] || "").toLowerCase();
         })) {
           s2 |= 1;
         } else {
@@ -21551,8 +21551,8 @@ var require_mediaType = __commonJS({
       }
       return {
         i: index,
-        o: spec.i,
-        q: spec.q,
+        o: spec3.i,
+        q: spec3.q,
         s: s2
       };
     }
@@ -21571,11 +21571,11 @@ var require_mediaType = __commonJS({
     function compareSpecs(a, b) {
       return b.q - a.q || b.s - a.s || a.o - b.o || a.i - b.i || 0;
     }
-    function getFullType(spec) {
-      return spec.type + "/" + spec.subtype;
+    function getFullType(spec3) {
+      return spec3.type + "/" + spec3.subtype;
     }
-    function isQuality(spec) {
-      return spec.q > 0;
+    function isQuality(spec3) {
+      return spec3.q > 0;
     }
     function quoteCount(string4) {
       var count = 0;
@@ -42182,10 +42182,10 @@ var require_schemas = __commonJS({
       inst["~standard"] = {
         validate: (value) => {
           try {
-            const r4 = (0, parse_js_1.safeParse)(inst, value);
-            return r4.success ? { value: r4.data } : { issues: r4.error?.issues };
+            const r6 = (0, parse_js_1.safeParse)(inst, value);
+            return r6.success ? { value: r6.data } : { issues: r6.error?.issues };
           } catch (_2) {
-            return (0, parse_js_1.safeParseAsync)(inst, value).then((r4) => r4.success ? { value: r4.data } : { issues: r4.error?.issues });
+            return (0, parse_js_1.safeParseAsync)(inst, value).then((r6) => r6.success ? { value: r6.data } : { issues: r6.error?.issues });
           }
         },
         vendor: "zod",
@@ -42773,11 +42773,11 @@ var require_schemas = __commonJS({
           unrecognized.push(key);
           continue;
         }
-        const r4 = _catchall.run({ value: input[key], issues: [] }, ctx2);
-        if (r4 instanceof Promise) {
-          proms.push(r4.then((r5) => handlePropertyResult(r5, payload, key, input)));
+        const r6 = _catchall.run({ value: input[key], issues: [] }, ctx2);
+        if (r6 instanceof Promise) {
+          proms.push(r6.then((r7) => handlePropertyResult(r7, payload, key, input)));
         } else {
-          handlePropertyResult(r4, payload, key, input);
+          handlePropertyResult(r6, payload, key, input);
         }
       }
       if (unrecognized.length) {
@@ -42843,11 +42843,11 @@ var require_schemas = __commonJS({
         const shape = value.shape;
         for (const key of value.keys) {
           const el = shape[key];
-          const r4 = el._zod.run({ value: input[key], issues: [] }, ctx2);
-          if (r4 instanceof Promise) {
-            proms.push(r4.then((r5) => handlePropertyResult(r5, payload, key, input)));
+          const r6 = el._zod.run({ value: input[key], issues: [] }, ctx2);
+          if (r6 instanceof Promise) {
+            proms.push(r6.then((r7) => handlePropertyResult(r7, payload, key, input)));
           } else {
-            handlePropertyResult(r4, payload, key, input);
+            handlePropertyResult(r6, payload, key, input);
           }
         }
         if (!catchall) {
@@ -42939,7 +42939,7 @@ var require_schemas = __commonJS({
           return final;
         }
       }
-      const nonaborted = results.filter((r4) => !util3.aborted(r4));
+      const nonaborted = results.filter((r6) => !util3.aborted(r6));
       if (nonaborted.length === 1) {
         final.value = nonaborted[0].value;
         return nonaborted[0];
@@ -43496,7 +43496,7 @@ var require_schemas = __commonJS({
         if (def.innerType._zod.optin === "optional") {
           const result = def.innerType._zod.run(payload, ctx2);
           if (result instanceof Promise)
-            return result.then((r4) => handleOptionalResult(r4, payload.value));
+            return result.then((r6) => handleOptionalResult(r6, payload.value));
           return handleOptionalResult(result, payload.value);
         }
         if (payload.value === void 0) {
@@ -43905,11 +43905,11 @@ var require_schemas = __commonJS({
       };
       inst._zod.check = (payload) => {
         const input = payload.value;
-        const r4 = def.fn(input);
-        if (r4 instanceof Promise) {
-          return r4.then((r5) => handleRefineResult2(r5, payload, input, inst));
+        const r6 = def.fn(input);
+        if (r6 instanceof Promise) {
+          return r6.then((r7) => handleRefineResult2(r7, payload, input, inst));
         }
-        handleRefineResult2(r4, payload, input, inst);
+        handleRefineResult2(r6, payload, input, inst);
         return;
       };
     });
@@ -53591,7 +53591,7 @@ var require_schemas2 = __commonJS({
     exports2.object = object2;
     exports2.strictObject = strictObject2;
     exports2.looseObject = looseObject2;
-    exports2.union = union3;
+    exports2.union = union4;
     exports2.discriminatedUnion = discriminatedUnion2;
     exports2.intersection = intersection2;
     exports2.tuple = tuple2;
@@ -53675,7 +53675,7 @@ var require_schemas2 = __commonJS({
       inst.nullish = () => optional2(nullable2(inst));
       inst.nonoptional = (params) => nonoptional2(inst, params);
       inst.array = () => array2(inst);
-      inst.or = (arg) => union3([inst, arg]);
+      inst.or = (arg) => union4([inst, arg]);
       inst.and = (arg) => intersection2(inst, arg);
       inst.transform = (tx) => pipe2(inst, transform2(tx));
       inst.default = (def2) => _default3(inst, def2);
@@ -54155,7 +54155,7 @@ var require_schemas2 = __commonJS({
       exports2.ZodType.init(inst, def);
       inst.options = def.options;
     });
-    function union3(options, params) {
+    function union4(options, params) {
       return new exports2.ZodUnion({
         type: "union",
         options,
@@ -54597,7 +54597,7 @@ var require_schemas2 = __commonJS({
     exports2.stringbool = stringbool2;
     function json3(params) {
       const jsonSchema2 = lazy2(() => {
-        return union3([string4(params), number4(), boolean5(), _null4(), array2(jsonSchema2), record2(string4(), jsonSchema2)]);
+        return union4([string4(params), number4(), boolean5(), _null4(), array2(jsonSchema2), record2(string4(), jsonSchema2)]);
       });
       return jsonSchema2;
     }
@@ -64358,11 +64358,11 @@ var require_webidl = __commonJS({
       return x;
     };
     webidl.util.IntegerPart = function(n) {
-      const r4 = Math.floor(Math.abs(n));
+      const r6 = Math.floor(Math.abs(n));
       if (n < 0) {
-        return -1 * r4;
+        return -1 * r6;
       }
-      return r4;
+      return r6;
     };
     webidl.util.Stringify = function(V) {
       const type = webidl.util.Type(V);
@@ -72217,7 +72217,7 @@ var require_dns = __commonJS({
       #defaultPick(origin, hostnameRecords, affinity) {
         let ip = null;
         const { records, offset } = hostnameRecords;
-        let family;
+        let family2;
         if (this.dualStack) {
           if (affinity == null) {
             if (offset == null || offset === maxInt) {
@@ -72229,28 +72229,28 @@ var require_dns = __commonJS({
             }
           }
           if (records[affinity] != null && records[affinity].ips.length > 0) {
-            family = records[affinity];
+            family2 = records[affinity];
           } else {
-            family = records[affinity === 4 ? 6 : 4];
+            family2 = records[affinity === 4 ? 6 : 4];
           }
         } else {
-          family = records[affinity];
+          family2 = records[affinity];
         }
-        if (family == null || family.ips.length === 0) {
+        if (family2 == null || family2.ips.length === 0) {
           return ip;
         }
-        if (family.offset == null || family.offset === maxInt) {
-          family.offset = 0;
+        if (family2.offset == null || family2.offset === maxInt) {
+          family2.offset = 0;
         } else {
-          family.offset++;
+          family2.offset++;
         }
-        const position = family.offset % family.ips.length;
-        ip = family.ips[position] ?? null;
+        const position = family2.offset % family2.ips.length;
+        ip = family2.ips[position] ?? null;
         if (ip == null) {
           return ip;
         }
         if (Date.now() - ip.timestamp > ip.ttl) {
-          family.ips.splice(position, 1);
+          family2.ips.splice(position, 1);
           return this.pick(origin, hostnameRecords, affinity);
         }
         return ip;
@@ -75962,8 +75962,8 @@ var require_cache = __commonJS({
           if (typeof request2 === "string") {
             continue;
           }
-          const r4 = request2[kState];
-          if (!urlIsHttpHttpsScheme(r4.url) || r4.method !== "GET") {
+          const r6 = request2[kState];
+          if (!urlIsHttpHttpsScheme(r6.url) || r6.method !== "GET") {
             throw webidl.errors.exception({
               header: prefix,
               message: "Expected http/s scheme when method is not GET."
@@ -75972,19 +75972,19 @@ var require_cache = __commonJS({
         }
         const fetchControllers = [];
         for (const request2 of requests) {
-          const r4 = new Request2(request2)[kState];
-          if (!urlIsHttpHttpsScheme(r4.url)) {
+          const r6 = new Request2(request2)[kState];
+          if (!urlIsHttpHttpsScheme(r6.url)) {
             throw webidl.errors.exception({
               header: prefix,
               message: "Expected http/s scheme."
             });
           }
-          r4.initiator = "fetch";
-          r4.destination = "subresource";
-          requestList.push(r4);
+          r6.initiator = "fetch";
+          r6.destination = "subresource";
+          requestList.push(r6);
           const responsePromise = createDeferredPromise2();
           fetchControllers.push(fetching({
-            request: r4,
+            request: r6,
             processResponse(response) {
               if (response.type === "error" || response.status === 206 || response.status < 200 || response.status > 299) {
                 responsePromise.reject(webidl.errors.exception({
@@ -76136,20 +76136,20 @@ var require_cache = __commonJS({
         webidl.argumentLengthCheck(arguments, 1, prefix);
         request2 = webidl.converters.RequestInfo(request2, prefix, "request");
         options = webidl.converters.CacheQueryOptions(options, prefix, "options");
-        let r4 = null;
+        let r6 = null;
         if (request2 instanceof Request2) {
-          r4 = request2[kState];
-          if (r4.method !== "GET" && !options.ignoreMethod) {
+          r6 = request2[kState];
+          if (r6.method !== "GET" && !options.ignoreMethod) {
             return false;
           }
         } else {
           assert2(typeof request2 === "string");
-          r4 = new Request2(request2)[kState];
+          r6 = new Request2(request2)[kState];
         }
         const operations = [];
         const operation = {
           type: "delete",
-          request: r4,
+          request: r6,
           options
         };
         operations.push(operation);
@@ -76181,15 +76181,15 @@ var require_cache = __commonJS({
         const prefix = "Cache.keys";
         if (request2 !== void 0) request2 = webidl.converters.RequestInfo(request2, prefix, "request");
         options = webidl.converters.CacheQueryOptions(options, prefix, "options");
-        let r4 = null;
+        let r6 = null;
         if (request2 !== void 0) {
           if (request2 instanceof Request2) {
-            r4 = request2[kState];
-            if (r4.method !== "GET" && !options.ignoreMethod) {
+            r6 = request2[kState];
+            if (r6.method !== "GET" && !options.ignoreMethod) {
               return [];
             }
           } else if (typeof request2 === "string") {
-            r4 = new Request2(request2)[kState];
+            r6 = new Request2(request2)[kState];
           }
         }
         const promise2 = createDeferredPromise2();
@@ -76199,7 +76199,7 @@ var require_cache = __commonJS({
             requests.push(requestResponse[0]);
           }
         } else {
-          const requestResponses = this.#queryCache(r4, options);
+          const requestResponses = this.#queryCache(r6, options);
           for (const requestResponse of requestResponses) {
             requests.push(requestResponse[0]);
           }
@@ -76263,14 +76263,14 @@ var require_cache = __commonJS({
                   message: "put operation should have an associated response"
                 });
               }
-              const r4 = operation.request;
-              if (!urlIsHttpHttpsScheme(r4.url)) {
+              const r6 = operation.request;
+              if (!urlIsHttpHttpsScheme(r6.url)) {
                 throw webidl.errors.exception({
                   header: "Cache.#batchCacheOperations",
                   message: "expected http or https scheme"
                 });
               }
-              if (r4.method !== "GET") {
+              if (r6.method !== "GET") {
                 throw webidl.errors.exception({
                   header: "Cache.#batchCacheOperations",
                   message: "not get method"
@@ -76353,15 +76353,15 @@ var require_cache = __commonJS({
         return true;
       }
       #internalMatchAll(request2, options, maxResponses = Infinity) {
-        let r4 = null;
+        let r6 = null;
         if (request2 !== void 0) {
           if (request2 instanceof Request2) {
-            r4 = request2[kState];
-            if (r4.method !== "GET" && !options.ignoreMethod) {
+            r6 = request2[kState];
+            if (r6.method !== "GET" && !options.ignoreMethod) {
               return [];
             }
           } else if (typeof request2 === "string") {
-            r4 = new Request2(request2)[kState];
+            r6 = new Request2(request2)[kState];
           }
         }
         const responses = [];
@@ -76370,7 +76370,7 @@ var require_cache = __commonJS({
             responses.push(requestResponse[1]);
           }
         } else {
-          const requestResponses = this.#queryCache(r4, options);
+          const requestResponses = this.#queryCache(r6, options);
           for (const requestResponse of requestResponses) {
             responses.push(requestResponse[1]);
           }
@@ -81341,10 +81341,10 @@ function __rest(s2, e) {
   return t;
 }
 function __decorate(decorators, target, key, desc2) {
-  var c = arguments.length, r4 = c < 3 ? target : desc2 === null ? desc2 = Object.getOwnPropertyDescriptor(target, key) : desc2, d;
-  if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r4 = Reflect.decorate(decorators, target, key, desc2);
-  else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r4 = (c < 3 ? d(r4) : c > 3 ? d(target, key, r4) : d(target, key)) || r4;
-  return c > 3 && r4 && Object.defineProperty(target, key, r4), r4;
+  var c = arguments.length, r6 = c < 3 ? target : desc2 === null ? desc2 = Object.getOwnPropertyDescriptor(target, key) : desc2, d;
+  if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r6 = Reflect.decorate(decorators, target, key, desc2);
+  else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r6 = (c < 3 ? d(r6) : c > 3 ? d(target, key, r6) : d(target, key)) || r6;
+  return c > 3 && r6 && Object.defineProperty(target, key, r6), r6;
 }
 function __param(paramIndex, decorator) {
   return function(target, key) {
@@ -81471,14 +81471,14 @@ function __values(o) {
 function __read(o, n) {
   var m = typeof Symbol === "function" && o[Symbol.iterator];
   if (!m) return o;
-  var i = m.call(o), r4, ar = [], e;
+  var i = m.call(o), r6, ar = [], e;
   try {
-    while ((n === void 0 || n-- > 0) && !(r4 = i.next()).done) ar.push(r4.value);
+    while ((n === void 0 || n-- > 0) && !(r6 = i.next()).done) ar.push(r6.value);
   } catch (error40) {
     e = { error: error40 };
   } finally {
     try {
-      if (r4 && !r4.done && (m = i["return"])) m.call(i);
+      if (r6 && !r6.done && (m = i["return"])) m.call(i);
     } finally {
       if (e) throw e.error;
     }
@@ -81492,10 +81492,10 @@ function __spread() {
 }
 function __spreadArrays() {
   for (var s2 = 0, i = 0, il = arguments.length; i < il; i++) s2 += arguments[i].length;
-  for (var r4 = Array(s2), k = 0, i = 0; i < il; i++)
+  for (var r6 = Array(s2), k = 0, i = 0; i < il; i++)
     for (var a = arguments[i], j = 0, jl = a.length; j < jl; j++, k++)
-      r4[k] = a[j];
-  return r4;
+      r6[k] = a[j];
+  return r6;
 }
 function __await(v) {
   return this instanceof __await ? (this.v = v, this) : new __await(v);
@@ -81520,8 +81520,8 @@ function __asyncGenerator(thisArg, _arguments, generator) {
       settle(q[0][3], e);
     }
   }
-  function step(r4) {
-    r4.value instanceof __await ? Promise.resolve(r4.value.v).then(fulfill, reject) : settle(q[0][2], r4);
+  function step(r6) {
+    r6.value instanceof __await ? Promise.resolve(r6.value.v).then(fulfill, reject) : settle(q[0][2], r6);
   }
   function fulfill(value) {
     resume("next", value);
@@ -91272,12 +91272,12 @@ var require_UPNG = __commonJS({
             v = b.w;
             C2 = b.d;
             d = l(b.u, (1 << j) - 1, J + h, N, d, b.v);
-            var r4 = V.V(b.v, 0, J, b.C);
-            X = (1 << r4) - 1;
+            var r6 = V.V(b.v, 0, J, b.C);
+            X = (1 << r6) - 1;
             var S = V.V(b.v, J, h, b.D);
             u = (1 << S) - 1;
-            M(b.C, r4);
-            I2(b.C, r4, v);
+            M(b.C, r6);
+            I2(b.C, r6, v);
             M(b.D, S);
             I2(b.D, S, C2);
           }
@@ -91821,8 +91821,8 @@ var require_UPNG = __commonJS({
         wAs(data, offset, "PLTE");
         offset += 4;
         for (var i = 0; i < dl; i++) {
-          var ti = i * 3, c = nimg.plte[i], r4 = c & 255, g = c >>> 8 & 255, b = c >>> 16 & 255;
-          data[offset + ti + 0] = r4;
+          var ti = i * 3, c = nimg.plte[i], r6 = c & 255, g = c >>> 8 & 255, b = c >>> 16 & 255;
+          data[offset + ti + 0] = r6;
           data[offset + ti + 1] = g;
           data[offset + ti + 2] = b;
         }
@@ -92063,15 +92063,15 @@ var require_UPNG = __commonJS({
         var r0 = frm.rect, r1 = frms[j - 1].rect;
         var miX = Math.min(r0.x, r1.x), miY = Math.min(r0.y, r1.y);
         var maX = Math.max(r0.x + r0.width, r1.x + r1.width), maY = Math.max(r0.y + r0.height, r1.y + r1.height);
-        var r4 = {
+        var r6 = {
           x: miX,
           y: miY,
           width: maX - miX,
           height: maY - miY
         };
         frms[j - 1].dispose = 1;
-        if (j - 1 != 0) UPNG.encode._updateFrame(bufs, w, h, frms, j - 1, r4, evenCrd);
-        UPNG.encode._updateFrame(bufs, w, h, frms, j, r4, evenCrd);
+        if (j - 1 != 0) UPNG.encode._updateFrame(bufs, w, h, frms, j - 1, r6, evenCrd);
+        UPNG.encode._updateFrame(bufs, w, h, frms, j, r6, evenCrd);
       }
       var area3 = 0;
       if (bufs.length != 1) for (var i = 0; i < frms.length; i++) {
@@ -92080,13 +92080,13 @@ var require_UPNG = __commonJS({
       }
       return frms;
     };
-    UPNG.encode._updateFrame = function(bufs, w, h, frms, i, r4, evenCrd) {
+    UPNG.encode._updateFrame = function(bufs, w, h, frms, i, r6, evenCrd) {
       var U8 = Uint8Array, U32 = Uint32Array;
       var pimg = new U8(bufs[i - 1]), pimg32 = new U32(bufs[i - 1]), nimg = i + 1 < bufs.length ? new U8(bufs[i + 1]) : null;
       var cimg = new U8(bufs[i]), cimg32 = new U32(cimg.buffer);
       var mix = w, miy = h, max = -1, may = -1;
-      for (var y = 0; y < r4.height; y++) for (var x = 0; x < r4.width; x++) {
-        var cx = r4.x + x, cy = r4.y + y;
+      for (var y = 0; y < r6.height; y++) for (var x = 0; x < r6.width; x++) {
+        var cx = r6.x + x, cy = r6.y + y;
         var j = cy * w + cx, cc = cimg32[j];
         if (cc == 0 || frms[i - 1].dispose == 0 && pimg32[j] == cc && (nimg == null || nimg[j * 4 + 3] != 0)) {
         } else {
@@ -92101,20 +92101,20 @@ var require_UPNG = __commonJS({
         if ((mix & 1) == 1) mix--;
         if ((miy & 1) == 1) miy--;
       }
-      r4 = {
+      r6 = {
         x: mix,
         y: miy,
         width: max - mix + 1,
         height: may - miy + 1
       };
       var fr = frms[i];
-      fr.rect = r4;
+      fr.rect = r6;
       fr.blend = 1;
-      fr.img = new Uint8Array(r4.width * r4.height * 4);
+      fr.img = new Uint8Array(r6.width * r6.height * 4);
       if (frms[i - 1].dispose == 0) {
-        UPNG._copyTile(pimg, w, h, fr.img, r4.width, r4.height, -r4.x, -r4.y, 0);
-        UPNG.encode._prepareDiff(cimg, w, h, fr.img, r4);
-      } else UPNG._copyTile(cimg, w, h, fr.img, r4.width, r4.height, -r4.x, -r4.y, 0);
+        UPNG._copyTile(pimg, w, h, fr.img, r6.width, r6.height, -r6.x, -r6.y, 0);
+        UPNG.encode._prepareDiff(cimg, w, h, fr.img, r6);
+      } else UPNG._copyTile(cimg, w, h, fr.img, r6.width, r6.height, -r6.x, -r6.y, 0);
     };
     UPNG.encode._prepareDiff = function(cimg, w, h, nimg, rec) {
       UPNG._copyTile(cimg, w, h, nimg, rec.width, rec.height, -rec.x, -rec.y, 2);
@@ -92197,8 +92197,8 @@ var require_UPNG = __commonJS({
       var sb = oimg, tb = nimg32, len = sb.length;
       var inds = new Uint8Array(oimg.length >> 2);
       for (var i = 0; i < len; i += 4) {
-        var r4 = sb[i] * (1 / 255), g = sb[i + 1] * (1 / 255), b = sb[i + 2] * (1 / 255), a = sb[i + 3] * (1 / 255);
-        var nd = UPNG.quantize.getNearest(root, r4, g, b, a);
+        var r6 = sb[i] * (1 / 255), g = sb[i + 1] * (1 / 255), b = sb[i + 2] * (1 / 255), a = sb[i + 3] * (1 / 255);
+        var nd = UPNG.quantize.getNearest(root, r6, g, b, a);
         inds[i >> 2] = nd.ind;
         tb[i >> 2] = nd.est.rgba;
       }
@@ -92276,28 +92276,28 @@ var require_UPNG = __commonJS({
       for (var i = 0; i < leafs.length; i++) leafs[i].ind = i;
       return [root, leafs];
     };
-    UPNG.quantize.getNearest = function(nd, r4, g, b, a) {
+    UPNG.quantize.getNearest = function(nd, r6, g, b, a) {
       if (nd.left == null) {
-        nd.tdst = UPNG.quantize.dist(nd.est.q, r4, g, b, a);
+        nd.tdst = UPNG.quantize.dist(nd.est.q, r6, g, b, a);
         return nd;
       }
-      var planeDst = UPNG.quantize.planeDst(nd.est, r4, g, b, a);
+      var planeDst = UPNG.quantize.planeDst(nd.est, r6, g, b, a);
       var node0 = nd.left, node1 = nd.right;
       if (planeDst > 0) {
         node0 = nd.right;
         node1 = nd.left;
       }
-      var ln = UPNG.quantize.getNearest(node0, r4, g, b, a);
+      var ln = UPNG.quantize.getNearest(node0, r6, g, b, a);
       if (ln.tdst <= planeDst * planeDst) return ln;
-      var rn = UPNG.quantize.getNearest(node1, r4, g, b, a);
+      var rn = UPNG.quantize.getNearest(node1, r6, g, b, a);
       return rn.tdst < ln.tdst ? rn : ln;
     };
-    UPNG.quantize.planeDst = function(est, r4, g, b, a) {
+    UPNG.quantize.planeDst = function(est, r6, g, b, a) {
       var e = est.e;
-      return e[0] * r4 + e[1] * g + e[2] * b + e[3] * a - est.eMq;
+      return e[0] * r6 + e[1] * g + e[2] * b + e[3] * a - est.eMq;
     };
-    UPNG.quantize.dist = function(q, r4, g, b, a) {
-      var d0 = r4 - q[0], d1 = g - q[1], d2 = b - q[2], d3 = a - q[3];
+    UPNG.quantize.dist = function(q, r6, g, b, a) {
+      var d0 = r6 - q[0], d1 = g - q[1], d2 = b - q[2], d3 = a - q[3];
       return d0 * d0 + d1 * d1 + d2 * d2 + d3 * d3;
     };
     UPNG.quantize.splitPixels = function(nimg, nimg32, i0, i1, e, eMq) {
@@ -92325,15 +92325,15 @@ var require_UPNG = __commonJS({
       var m = [0, 0, 0, 0];
       var N = i1 - i0 >> 2;
       for (var i = i0; i < i1; i += 4) {
-        var r4 = nimg[i] * (1 / 255), g = nimg[i + 1] * (1 / 255), b = nimg[i + 2] * (1 / 255), a = nimg[i + 3] * (1 / 255);
-        m[0] += r4;
+        var r6 = nimg[i] * (1 / 255), g = nimg[i + 1] * (1 / 255), b = nimg[i + 2] * (1 / 255), a = nimg[i + 3] * (1 / 255);
+        m[0] += r6;
         m[1] += g;
         m[2] += b;
         m[3] += a;
-        R[0] += r4 * r4;
-        R[1] += r4 * g;
-        R[2] += r4 * b;
-        R[3] += r4 * a;
+        R[0] += r6 * r6;
+        R[1] += r6 * g;
+        R[2] += r6 * b;
+        R[3] += r6 * a;
         R[5] += g * g;
         R[6] += g * b;
         R[7] += g * a;
@@ -92396,9 +92396,9 @@ var require_UPNG = __commonJS({
       for (var i = 0; i < bufs.length; i++) {
         var img = new Uint8Array(bufs[i]), il = img.length;
         for (var j = 0; j < il; j += 4) {
-          var r4 = img[j], g = img[j + 1], b = img[j + 2], a = img[j + 3];
-          if (a == 0) r4 = g = b = 0;
-          nimg[noff + j] = r4;
+          var r6 = img[j], g = img[j + 1], b = img[j + 2], a = img[j + 3];
+          if (a == 0) r6 = g = b = 0;
+          nimg[noff + j] = r6;
           nimg[noff + j + 1] = g;
           nimg[noff + j + 2] = b;
           nimg[noff + j + 3] = a;
@@ -97583,15 +97583,15 @@ var require_rotations = __commonJS({
         degreeAngle = 0;
       }
       var x = rectangle.x, y = rectangle.y, w = rectangle.width, h = rectangle.height;
-      var r4 = exports2.reduceRotation(degreeAngle);
+      var r6 = exports2.reduceRotation(degreeAngle);
       var b = borderWidth / 2;
-      if (r4 === 0)
+      if (r6 === 0)
         return { x: x - b, y: y - b, width: w, height: h };
-      else if (r4 === 90)
+      else if (r6 === 90)
         return { x: x - h + b, y: y - b, width: h, height: w };
-      else if (r4 === 180)
+      else if (r6 === 180)
         return { x: x - w + b, y: y - h + b, width: w, height: h };
-      else if (r4 === 270)
+      else if (r6 === 270)
         return { x: x - b, y: y - w + b, width: h, height: w };
       else
         return { x: x - b, y: y - b, width: w, height: h };
@@ -108575,11 +108575,11 @@ var require_fontkit_umd = __commonJS({
       };
       function findIdx(table, val) {
         if (table[0] > val) return -1;
-        var l = 0, r4 = table.length;
-        while (l < r4 - 1) {
-          var mid = l + Math.floor((r4 - l + 1) / 2);
+        var l = 0, r6 = table.length;
+        while (l < r6 - 1) {
+          var mid = l + Math.floor((r6 - l + 1) / 2);
           if (table[mid] <= val) l = mid;
-          else r4 = mid;
+          else r6 = mid;
         }
         return l;
       }
@@ -129401,12 +129401,12 @@ var require_fontkit_umd = __commonJS({
       function mapOTToAAT(features2) {
         var res = {};
         for (var k in features2) {
-          var r4 = void 0;
-          if (r4 = OTMapping[k]) {
-            if (res[r4[0]] == null) {
-              res[r4[0]] = {};
+          var r6 = void 0;
+          if (r6 = OTMapping[k]) {
+            if (res[r6[0]] == null) {
+              res[r6[0]] = {};
             }
-            res[r4[0]][r4[1]] = features2[k];
+            res[r6[0]][r6[1]] = features2[k];
           }
         }
         return res;
@@ -129429,10 +129429,10 @@ var require_fontkit_umd = __commonJS({
         var res = {};
         if (Array.isArray(features2)) {
           for (var k = 0; k < features2.length; k++) {
-            var r4 = void 0;
+            var r6 = void 0;
             var f = mapFeatureStrings(features2[k]);
-            if (r4 = AATMapping[f[0]] && AATMapping[f[0]][f[1]]) {
-              res[r4] = true;
+            if (r6 = AATMapping[f[0]] && AATMapping[f[0]][f[1]]) {
+              res[r6] = true;
             }
           }
         } else if (typeof features2 === "object") {
@@ -139977,8 +139977,8 @@ function loadNational2() {
   }
   return loadPromise;
 }
-function hasFontFamily(family) {
-  return GlobalFonts.has(family);
+function hasFontFamily(family2) {
+  return GlobalFonts.has(family2);
 }
 function readSfntFamilyName(sfnt) {
   try {
@@ -139992,23 +139992,23 @@ function readSfntFamilyName(sfnt) {
     if (nameOff == null) return null;
     const count = buf.readUInt16BE(nameOff + 2);
     const stringBase = nameOff + buf.readUInt16BE(nameOff + 4);
-    let family = null;
+    let family2 = null;
     let preferred = null;
     for (let i = 0; i < count; i++) {
-      const r4 = nameOff + 6 + i * 12;
-      const platformId = buf.readUInt16BE(r4);
-      const nameId = buf.readUInt16BE(r4 + 6);
+      const r6 = nameOff + 6 + i * 12;
+      const platformId = buf.readUInt16BE(r6);
+      const nameId = buf.readUInt16BE(r6 + 6);
       if (nameId !== 1 && nameId !== 16) continue;
-      const length = buf.readUInt16BE(r4 + 8);
-      const start = stringBase + buf.readUInt16BE(r4 + 10);
+      const length = buf.readUInt16BE(r6 + 8);
+      const start = stringBase + buf.readUInt16BE(r6 + 10);
       const raw2 = Buffer.from(buf.subarray(start, start + length));
       const value = platformId === 3 || platformId === 0 ? raw2.swap16().toString("utf16le") : raw2.toString("latin1");
       const clean = value.replace(/\0/g, "").trim();
       if (!clean) continue;
       if (nameId === 16) preferred = preferred ?? clean;
-      else family = family ?? clean;
+      else family2 = family2 ?? clean;
     }
-    return preferred ?? family;
+    return preferred ?? family2;
   } catch {
     return null;
   }
@@ -140016,10 +140016,10 @@ function readSfntFamilyName(sfnt) {
 function registerFontFromBytes(bytes2) {
   try {
     const sfnt = woffToSfnt(bytes2);
-    const family = readSfntFamilyName(sfnt);
-    if (!family) return null;
-    GlobalFonts.register(Buffer.from(sfnt.buffer, sfnt.byteOffset, sfnt.byteLength), family);
-    return family;
+    const family2 = readSfntFamilyName(sfnt);
+    if (!family2) return null;
+    GlobalFonts.register(Buffer.from(sfnt.buffer, sfnt.byteOffset, sfnt.byteLength), family2);
+    return family2;
   } catch {
     return null;
   }
@@ -140983,18 +140983,18 @@ var require_string_decoder = __commonJS({
     }
     StringDecoder.prototype.write = function(buf) {
       if (buf.length === 0) return "";
-      var r4;
+      var r6;
       var i;
       if (this.lastNeed) {
-        r4 = this.fillLast(buf);
-        if (r4 === void 0) return "";
+        r6 = this.fillLast(buf);
+        if (r6 === void 0) return "";
         i = this.lastNeed;
         this.lastNeed = 0;
       } else {
         i = 0;
       }
-      if (i < buf.length) return r4 ? r4 + this.text(buf, i) : this.text(buf, i);
-      return r4 || "";
+      if (i < buf.length) return r6 ? r6 + this.text(buf, i) : this.text(buf, i);
+      return r6 || "";
     };
     StringDecoder.prototype.end = utf8End;
     StringDecoder.prototype.text = utf8Text;
@@ -141058,8 +141058,8 @@ var require_string_decoder = __commonJS({
     }
     function utf8FillLast(buf) {
       var p = this.lastTotal - this.lastNeed;
-      var r4 = utf8CheckExtraBytes(this, buf, p);
-      if (r4 !== void 0) return r4;
+      var r6 = utf8CheckExtraBytes(this, buf, p);
+      if (r6 !== void 0) return r6;
       if (this.lastNeed <= buf.length) {
         buf.copy(this.lastChar, p, 0, this.lastNeed);
         return this.lastChar.toString(this.encoding, 0, this.lastTotal);
@@ -141076,24 +141076,24 @@ var require_string_decoder = __commonJS({
       return buf.toString("utf8", i, end);
     }
     function utf8End(buf) {
-      var r4 = buf && buf.length ? this.write(buf) : "";
-      if (this.lastNeed) return r4 + "\uFFFD";
-      return r4;
+      var r6 = buf && buf.length ? this.write(buf) : "";
+      if (this.lastNeed) return r6 + "\uFFFD";
+      return r6;
     }
     function utf16Text(buf, i) {
       if ((buf.length - i) % 2 === 0) {
-        var r4 = buf.toString("utf16le", i);
-        if (r4) {
-          var c = r4.charCodeAt(r4.length - 1);
+        var r6 = buf.toString("utf16le", i);
+        if (r6) {
+          var c = r6.charCodeAt(r6.length - 1);
           if (c >= 55296 && c <= 56319) {
             this.lastNeed = 2;
             this.lastTotal = 4;
             this.lastChar[0] = buf[buf.length - 2];
             this.lastChar[1] = buf[buf.length - 1];
-            return r4.slice(0, -1);
+            return r6.slice(0, -1);
           }
         }
-        return r4;
+        return r6;
       }
       this.lastNeed = 1;
       this.lastTotal = 2;
@@ -141101,12 +141101,12 @@ var require_string_decoder = __commonJS({
       return buf.toString("utf16le", i, buf.length - 1);
     }
     function utf16End(buf) {
-      var r4 = buf && buf.length ? this.write(buf) : "";
+      var r6 = buf && buf.length ? this.write(buf) : "";
       if (this.lastNeed) {
         var end = this.lastTotal - this.lastNeed;
-        return r4 + this.lastChar.toString("utf16le", 0, end);
+        return r6 + this.lastChar.toString("utf16le", 0, end);
       }
-      return r4;
+      return r6;
     }
     function base64Text(buf, i) {
       var n = (buf.length - i) % 3;
@@ -141122,9 +141122,9 @@ var require_string_decoder = __commonJS({
       return buf.toString("base64", i, buf.length - n);
     }
     function base64End(buf) {
-      var r4 = buf && buf.length ? this.write(buf) : "";
-      if (this.lastNeed) return r4 + this.lastChar.toString("base64", 0, 3 - this.lastNeed);
-      return r4;
+      var r6 = buf && buf.length ? this.write(buf) : "";
+      if (this.lastNeed) return r6 + this.lastChar.toString("base64", 0, 3 - this.lastNeed);
+      return r6;
     }
     function simpleWrite(buf) {
       return buf.toString(this.encoding);
@@ -145439,8 +145439,8 @@ var require_load = __commonJS({
         for (var i = 0; i < files.length; i++) {
           var input = files[i];
           var unsafeName = input.fileNameStr;
-          var safeName = utils.resolve(input.fileNameStr);
-          zip.file(safeName, input.decompressed, {
+          var safeName2 = utils.resolve(input.fileNameStr);
+          zip.file(safeName2, input.decompressed, {
             binary: true,
             optimizedBinaryString: true,
             date: input.date,
@@ -145451,7 +145451,7 @@ var require_load = __commonJS({
             createFolders: options.createFolders
           });
           if (!input.dir) {
-            zip.file(safeName).unsafeOriginalName = unsafeName;
+            zip.file(safeName2).unsafeOriginalName = unsafeName;
           }
         }
         if (zipEntries.zipComment.length) {
@@ -145542,17 +145542,17 @@ async function renderHtmlToVideo(html, width, height, format, durationMs = DEFAU
       const frameCount = Math.round(durationMs / 1e3 * GIF_FPS);
       const frameDelayMs = 1e3 / GIF_FPS;
       const frames = [];
-      const sharp17 = (await import("sharp")).default;
+      const sharp18 = (await import("sharp")).default;
       const start = Date.now();
       for (let i = 0; i < frameCount; i++) {
         const due = start + i * frameDelayMs;
         const wait = due - Date.now();
         if (wait > 0) await page2.waitForTimeout(wait);
         const png = await page2.screenshot({ type: "png" });
-        frames.push(await sharp17(png).resize(gifW, gifH).ensureAlpha().raw().toBuffer());
+        frames.push(await sharp18(png).resize(gifW, gifH).ensureAlpha().raw().toBuffer());
       }
       await page2.close();
-      const gif = await sharp17(Buffer.concat(frames), {
+      const gif = await sharp18(Buffer.concat(frames), {
         // Animated raw input: `pages` lives inside `raw` (sharp ≥0.33; the
         // published typings don't know the property yet, hence the cast).
         raw: { width: gifW, height: gifH, channels: 4, pages: frames.length }
@@ -150578,9 +150578,9 @@ var init_async_queue = __esm({
           return Promise.resolve({ done: true, value: void 0 });
         }
         return new Promise((resolve2) => {
-          const waiter = (r4) => {
+          const waiter = (r6) => {
             signal?.removeEventListener("abort", onAbort);
-            resolve2(r4);
+            resolve2(r6);
           };
           const onAbort = () => {
             const idx = __classPrivateFieldGet3(this, _AsyncQueue_waiters, "f").indexOf(waiter);
@@ -151165,7 +151165,7 @@ var init_SessionToolRunner = __esm({
     async function _SessionToolRunner_drain2() {
       if (__classPrivateFieldGet3(this, _SessionToolRunner_inFlightCount, "f") === 0)
         return;
-      await Promise.race([new Promise((r4) => __classPrivateFieldSet3(this, _SessionToolRunner_onIdle, r4, "f")), sleep3(DRAIN_TIMEOUT_MS)]);
+      await Promise.race([new Promise((r6) => __classPrivateFieldSet3(this, _SessionToolRunner_onIdle, r6, "f")), sleep3(DRAIN_TIMEOUT_MS)]);
       __classPrivateFieldSet3(this, _SessionToolRunner_onIdle, null, "f");
       if (__classPrivateFieldGet3(this, _SessionToolRunner_inFlightCount, "f") > 0) {
         __classPrivateFieldGet3(this, _SessionToolRunner_logger, "f").warn("drain timeout exceeded");
@@ -153422,7 +153422,7 @@ ${out}`;
 
 // ../../node_modules/.pnpm/@anthropic-ai+sdk@0.123.0_zod@4.1.11/node_modules/@anthropic-ai/sdk/lib/environments/worker.mjs
 function hasMemoryStore(session) {
-  return session.resources.some((r4) => r4.type === "memory_store");
+  return session.resources.some((r6) => r6.type === "memory_store");
 }
 function sessionsTokenFromSecret(secret) {
   if (!secret)
@@ -163892,15 +163892,15 @@ var heroBox_exports = {};
 __export(heroBox_exports, {
   detectHeroBox: () => detectHeroBox
 });
-import sharp12 from "sharp";
+import sharp13 from "sharp";
 async function detectHeroBox(image) {
   try {
-    const meta = await sharp12(image).metadata();
+    const meta = await sharp13(image).metadata();
     const imgW = meta.width ?? 0;
     const imgH = meta.height ?? 0;
     if (!imgW || !imgH) return null;
     const side = Math.max(16, Math.round(Math.min(imgW, imgH) * BOX_FRACTION));
-    const { info } = await sharp12(image).resize(side, side, { fit: "cover", position: sharp12.strategy.attention }).toBuffer({ resolveWithObject: true });
+    const { info } = await sharp13(image).resize(side, side, { fit: "cover", position: sharp13.strategy.attention }).toBuffer({ resolveWithObject: true });
     const left = Math.abs(info.cropOffsetLeft ?? 0);
     const top = Math.abs(info.cropOffsetTop ?? 0);
     const clamp012 = (v) => Math.max(0, Math.min(1, v));
@@ -168361,14 +168361,14 @@ var require_jpeg = __commonJS({
         while (k < 64) {
           const rs = decodeHuffman(component2.huffmanTableAC);
           const s2 = rs & 15;
-          const r4 = rs >> 4;
+          const r6 = rs >> 4;
           if (s2 === 0) {
-            if (r4 < 15)
+            if (r6 < 15)
               break;
             k += 16;
             continue;
           }
-          k += r4;
+          k += r6;
           const z = dctZigZag[k];
           zz[z] = receiveAndExtend(s2);
           k++;
@@ -168392,16 +168392,16 @@ var require_jpeg = __commonJS({
         while (k <= e) {
           const rs = decodeHuffman(component2.huffmanTableAC);
           const s2 = rs & 15;
-          const r4 = rs >> 4;
+          const r6 = rs >> 4;
           if (s2 === 0) {
-            if (r4 < 15) {
-              eobrun = receive(r4) + (1 << r4) - 1;
+            if (r6 < 15) {
+              eobrun = receive(r6) + (1 << r6) - 1;
               break;
             }
             k += 16;
             continue;
           }
-          k += r4;
+          k += r6;
           const z = dctZigZag[k];
           zz[z] = receiveAndExtend(s2) * (1 << successive);
           k++;
@@ -168412,7 +168412,7 @@ var require_jpeg = __commonJS({
       function decodeACSuccessive(component2, zz) {
         let k = spectralStart;
         let e = spectralEnd;
-        let r4 = 0;
+        let r6 = 0;
         while (k <= e) {
           const z = dctZigZag[k];
           const direction = zz[z] < 0 ? -1 : 1;
@@ -168420,20 +168420,20 @@ var require_jpeg = __commonJS({
             case 0:
               const rs = decodeHuffman(component2.huffmanTableAC);
               const s2 = rs & 15;
-              r4 = rs >> 4;
+              r6 = rs >> 4;
               if (s2 === 0) {
-                if (r4 < 15) {
-                  eobrun = receive(r4) + (1 << r4);
+                if (r6 < 15) {
+                  eobrun = receive(r6) + (1 << r6);
                   successiveACState = 4;
                 } else {
-                  r4 = 16;
+                  r6 = 16;
                   successiveACState = 1;
                 }
               } else {
                 if (s2 !== 1)
                   throw new Error("invalid ACn encoding");
                 successiveACNextValue = receiveAndExtend(s2);
-                successiveACState = r4 ? 2 : 3;
+                successiveACState = r6 ? 2 : 3;
               }
               continue;
             case 1:
@@ -168442,8 +168442,8 @@ var require_jpeg = __commonJS({
               if (zz[z]) {
                 zz[z] += (readBit() << successive) * direction;
               } else {
-                r4--;
-                if (r4 === 0)
+                r6--;
+                if (r6 === 0)
                   successiveACState = successiveACState == 2 ? 3 : 0;
               }
               break;
@@ -168564,7 +168564,7 @@ var require_jpeg = __commonJS({
       const blocksPerColumn = component.blocksPerColumn;
       const samplesPerLine = blocksPerLine << 3;
       const R = new Int32Array(64);
-      const r4 = new Uint8Array(64);
+      const r6 = new Uint8Array(64);
       function quantizeAndInverse(zz, dataOut, dataIn) {
         const qt = component.quantizationTable;
         const p = dataIn;
@@ -168692,13 +168692,13 @@ var require_jpeg = __commonJS({
         for (let i = 0; i < 8; i++)
           lines.push(new Uint8Array(samplesPerLine));
         for (let blockCol = 0; blockCol < blocksPerLine; blockCol++) {
-          quantizeAndInverse(component.blocks[blockRow][blockCol], r4, R);
+          quantizeAndInverse(component.blocks[blockRow][blockCol], r6, R);
           let offset = 0;
           const sample = blockCol << 3;
           for (let j = 0; j < 8; j++) {
             const line2 = lines[scanLine + j];
             for (let i = 0; i < 8; i++)
-              line2[sample + i] = r4[offset++];
+              line2[sample + i] = r6[offset++];
           }
         }
       }
@@ -169213,7 +169213,7 @@ var require_helpers = __commonJS({
     exports2.revMap = revMap;
     exports2.createEnum = createEnum;
     exports2.offsetForChannel = offsetForChannel;
-    exports2.clamp = clamp2;
+    exports2.clamp = clamp4;
     exports2.hasAlpha = hasAlpha;
     exports2.resetImageData = resetImageData;
     exports2.imageDataToCanvas = imageDataToCanvas;
@@ -169352,7 +169352,7 @@ var require_helpers = __commonJS({
           return channelId + 1;
       }
     }
-    function clamp2(value, min, max) {
+    function clamp4(value, min, max) {
       return value < min ? min : value > max ? max : value;
     }
     function hasAlpha(data) {
@@ -172886,10 +172886,10 @@ var require_imageResources = __commonJS({
             const horizontalAlignment = clamped(sliceAlignments, (0, psdReader_1.readUint32)(reader));
             const verticalAlignment = clamped(sliceAlignments, (0, psdReader_1.readUint32)(reader));
             const a = (0, psdReader_1.readUint8)(reader);
-            const r4 = (0, psdReader_1.readUint8)(reader);
+            const r6 = (0, psdReader_1.readUint8)(reader);
             const g = (0, psdReader_1.readUint8)(reader);
             const b = (0, psdReader_1.readUint8)(reader);
-            const backgroundColorType = a + r4 + g + b === 0 ? "none" : a === 0 ? "matte" : "color";
+            const backgroundColorType = a + r6 + g + b === 0 ? "none" : a === 0 ? "matte" : "color";
             slices.push({
               id,
               groupId,
@@ -172907,7 +172907,7 @@ var require_imageResources = __commonJS({
               url: url2,
               bounds: { top: top2, left: left2, bottom: bottom2, right: right2 },
               backgroundColorType,
-              backgroundColor: { r: r4, g, b, a }
+              backgroundColor: { r: r6, g, b, a }
             });
           }
           const desc2 = (0, descriptor_1.readVersionAndDescriptor)(reader);
@@ -172944,12 +172944,12 @@ var require_imageResources = __commonJS({
         (0, psdWriter_1.writeUint32)(writer, slices.length);
         for (let i = 0; i < slices.length; i++) {
           const slice = slices[i];
-          let { a, r: r4, g, b } = slice.backgroundColor;
+          let { a, r: r6, g, b } = slice.backgroundColor;
           if (slice.backgroundColorType === "none") {
-            a = r4 = g = b = 0;
+            a = r6 = g = b = 0;
           } else if (slice.backgroundColorType === "matte") {
             a = 0;
-            r4 = g = b = 255;
+            r6 = g = b = 255;
           }
           (0, psdWriter_1.writeUint32)(writer, slice.id);
           (0, psdWriter_1.writeUint32)(writer, slice.groupId);
@@ -172971,7 +172971,7 @@ var require_imageResources = __commonJS({
           (0, psdWriter_1.writeUint32)(writer, sliceAlignments.indexOf(slice.horizontalAlignment));
           (0, psdWriter_1.writeUint32)(writer, sliceAlignments.indexOf(slice.verticalAlignment));
           (0, psdWriter_1.writeUint8)(writer, a);
-          (0, psdWriter_1.writeUint8)(writer, r4);
+          (0, psdWriter_1.writeUint8)(writer, r6);
           (0, psdWriter_1.writeUint8)(writer, g);
           (0, psdWriter_1.writeUint8)(writer, b);
         }
@@ -172982,8 +172982,8 @@ var require_imageResources = __commonJS({
         slices.forEach((s2) => {
           const slice = Object.assign(Object.assign({ sliceID: s2.id, groupID: s2.groupId, origin: descriptor_1.ESliceOrigin.encode(s2.origin), Type: descriptor_1.ESliceType.encode(s2.type), bounds: boundsToBounds(s2.bounds) }, s2.name ? { "Nm  ": s2.name } : {}), { url: s2.url, null: s2.target, Msge: s2.message, altTag: s2.altTag, cellTextIsHTML: s2.cellTextIsHTML, cellText: s2.cellText, horzAlign: descriptor_1.ESliceHorzAlign.encode(s2.horizontalAlignment), vertAlign: descriptor_1.ESliceVertAlign.encode(s2.verticalAlignment), bgColorType: descriptor_1.ESliceBGColorType.encode(s2.backgroundColorType) });
           if (s2.backgroundColorType === "color") {
-            const { r: r4, g, b, a } = s2.backgroundColor;
-            slice.bgColor = { "Rd  ": r4, "Grn ": g, "Bl  ": b, alpha: a };
+            const { r: r6, g, b, a } = s2.backgroundColor;
+            slice.bgColor = { "Rd  ": r6, "Grn ": g, "Bl  ": b, alpha: a };
           }
           slice.topOutset = s2.topOutset || 0;
           slice.leftOutset = s2.leftOutset || 0;
@@ -174360,7 +174360,7 @@ var require_psdReader = __commonJS({
       }
       recoverMemory(reader, lengths.byteLength);
     }
-    function readSection(reader, round2, func, skipEmpty = true, eightBytes = false) {
+    function readSection(reader, round3, func, skipEmpty = true, eightBytes = false) {
       let length = readUint32(reader);
       if (eightBytes) {
         if (length !== 0)
@@ -174380,7 +174380,7 @@ var require_psdReader = __commonJS({
           warnOrThrow(reader, `Unread section data`);
         }
       }
-      while (length % round2) {
+      while (length % round3) {
         length++;
         end++;
       }
@@ -174391,11 +174391,11 @@ var require_psdReader = __commonJS({
       const colorSpace = readUint16(reader);
       switch (colorSpace) {
         case 0: {
-          const r4 = readUint16(reader) / 257;
+          const r6 = readUint16(reader) / 257;
           const g = readUint16(reader) / 257;
           const b = readUint16(reader) / 257;
           skipBytes(reader, 2);
-          return { r: r4, g, b };
+          return { r: r6, g, b };
         }
         case 1: {
           const h = readUint16(reader) / 65535;
@@ -175508,11 +175508,11 @@ var require_text3 = __commonJS({
         if (value !== void 0) {
           let identical = false;
           if (Array.isArray(value)) {
-            identical = runs.every((r4) => arraysEqual(r4.style[key], value));
+            identical = runs.every((r6) => arraysEqual(r6.style[key], value));
           } else if (typeof value === "object") {
-            identical = runs.every((r4) => objectsEqual(r4.style[key], value));
+            identical = runs.every((r6) => objectsEqual(r6.style[key], value));
           } else {
-            identical = runs.every((r4) => r4.style[key] === value);
+            identical = runs.every((r6) => r6.style[key] === value);
           }
           if (identical) {
             base[key] = value;
@@ -175520,17 +175520,17 @@ var require_text3 = __commonJS({
         }
         const styleValue = base[key];
         if (styleValue !== void 0) {
-          for (const r4 of runs) {
+          for (const r6 of runs) {
             let same = false;
             if (Array.isArray(value)) {
-              same = arraysEqual(r4.style[key], value);
+              same = arraysEqual(r6.style[key], value);
             } else if (typeof value === "object") {
-              same = objectsEqual(r4.style[key], value);
+              same = objectsEqual(r6.style[key], value);
             } else {
-              same = r4.style[key] === value;
+              same = r6.style[key] === value;
             }
             if (same)
-              delete r4.style[key];
+              delete r6.style[key];
           }
         }
       }
@@ -179913,7 +179913,7 @@ var require_psdWriter = __commonJS({
       }
       return max;
     }
-    function writeSection(writer, round2, func, writeTotalLength = false, large = false) {
+    function writeSection(writer, round3, func, writeTotalLength = false, large = false) {
       if (large)
         writeUint32(writer, 0);
       const offset = writer.offset;
@@ -179921,7 +179921,7 @@ var require_psdWriter = __commonJS({
       func();
       let length = writer.offset - offset - 4;
       let len = length;
-      while (len % round2) {
+      while (len % round3) {
         writeUint8(writer, 0);
         len++;
       }
@@ -180134,13 +180134,13 @@ var require_psdWriter = __commonJS({
             realFlags |= 1;
           if (realMask.fromVectorData)
             realFlags |= 8;
-          const r4 = layerData.realMask || {};
+          const r6 = layerData.realMask || {};
           writeUint8(writer, realFlags);
           writeUint8(writer, realMask.defaultColor || 0);
-          writeInt32(writer, r4.top || 0);
-          writeInt32(writer, r4.left || 0);
-          writeInt32(writer, r4.bottom || 0);
-          writeInt32(writer, r4.right || 0);
+          writeInt32(writer, r6.top || 0);
+          writeInt32(writer, r6.left || 0);
+          writeInt32(writer, r6.bottom || 0);
+          writeInt32(writer, r6.right || 0);
         }
         if (params && mask) {
           writeUint8(writer, params);
@@ -180168,9 +180168,9 @@ var require_psdWriter = __commonJS({
         if (ranges) {
           writerBlendingRange(writer, ranges.compositeGrayBlendSource);
           writerBlendingRange(writer, ranges.compositeGraphBlendDestinationRange);
-          for (const r4 of ranges.ranges) {
-            writerBlendingRange(writer, r4.sourceRange);
-            writerBlendingRange(writer, r4.destRange);
+          for (const r6 of ranges.ranges) {
+            writerBlendingRange(writer, r6.sourceRange);
+            writerBlendingRange(writer, r6.destRange);
           }
         }
       });
@@ -182369,7 +182369,7 @@ var checkReverificationAuthorization = (params, { factorVerificationAge }) => {
       return factor1FreshEnough && factor2FreshEnough ? "pass" : "fail";
   }
 };
-var combine = (results) => results.some((r4) => r4 === "pass") && results.every((r4) => r4 === "pass" || r4 === "skip");
+var combine = (results) => results.some((r6) => r6 === "pass") && results.every((r6) => r6 === "pass" || r6 === "skip");
 var createCheckAuthorization = (options) => {
   return (params) => {
     if (!options.userId) return false;
@@ -182452,14 +182452,14 @@ var __experimental_JWTPayloadToAuthObjectProperties = (claims) => {
 };
 
 // ../../node_modules/.pnpm/@clerk+shared@4.15.0_react-dom@19.1.0_react@19.1.0__react@19.1.0/node_modules/@clerk/shared/dist/runtime/_chunks/pathToRegexp-CNkSDpje.mjs
-function _(r4) {
-  for (var n = [], e = 0; e < r4.length; ) {
-    var a = r4[e];
+function _(r6) {
+  for (var n = [], e = 0; e < r6.length; ) {
+    var a = r6[e];
     if (a === "*" || a === "+" || a === "?") {
       n.push({
         type: "MODIFIER",
         index: e,
-        value: r4[e++]
+        value: r6[e++]
       });
       continue;
     }
@@ -182467,7 +182467,7 @@ function _(r4) {
       n.push({
         type: "ESCAPED_CHAR",
         index: e++,
-        value: r4[e++]
+        value: r6[e++]
       });
       continue;
     }
@@ -182475,7 +182475,7 @@ function _(r4) {
       n.push({
         type: "OPEN",
         index: e,
-        value: r4[e++]
+        value: r6[e++]
       });
       continue;
     }
@@ -182483,15 +182483,15 @@ function _(r4) {
       n.push({
         type: "CLOSE",
         index: e,
-        value: r4[e++]
+        value: r6[e++]
       });
       continue;
     }
     if (a === ":") {
-      for (var u = "", t = e + 1; t < r4.length; ) {
-        var c = r4.charCodeAt(t);
+      for (var u = "", t = e + 1; t < r6.length; ) {
+        var c = r6.charCodeAt(t);
         if (c >= 48 && c <= 57 || c >= 65 && c <= 90 || c >= 97 && c <= 122 || c === 95) {
-          u += r4[t++];
+          u += r6[t++];
           continue;
         }
         break;
@@ -182506,19 +182506,19 @@ function _(r4) {
     }
     if (a === "(") {
       var o = 1, m = "", t = e + 1;
-      if (r4[t] === "?") throw new TypeError('Pattern cannot start with "?" at '.concat(t));
-      for (; t < r4.length; ) {
-        if (r4[t] === "\\") {
-          m += r4[t++] + r4[t++];
+      if (r6[t] === "?") throw new TypeError('Pattern cannot start with "?" at '.concat(t));
+      for (; t < r6.length; ) {
+        if (r6[t] === "\\") {
+          m += r6[t++] + r6[t++];
           continue;
         }
-        if (r4[t] === ")") {
+        if (r6[t] === ")") {
           if (o--, o === 0) {
             t++;
             break;
           }
-        } else if (r4[t] === "(" && (o++, r4[t + 1] !== "?")) throw new TypeError("Capturing groups are not allowed at ".concat(t));
-        m += r4[t++];
+        } else if (r6[t] === "(" && (o++, r6[t + 1] !== "?")) throw new TypeError("Capturing groups are not allowed at ".concat(t));
+        m += r6[t++];
       }
       if (o) throw new TypeError("Unbalanced pattern at ".concat(e));
       if (!m) throw new TypeError("Missing pattern at ".concat(e));
@@ -182532,7 +182532,7 @@ function _(r4) {
     n.push({
       type: "CHAR",
       index: e,
-      value: r4[e++]
+      value: r6[e++]
     });
   }
   return n.push({
@@ -182541,9 +182541,9 @@ function _(r4) {
     value: ""
   }), n;
 }
-function F(r4, n) {
+function F(r6, n) {
   n === void 0 && (n = {});
-  for (var e = _(r4), a = n.prefixes, u = a === void 0 ? "./" : a, t = n.delimiter, c = t === void 0 ? "/#?" : t, o = [], m = 0, h = 0, p = "", f = function(l) {
+  for (var e = _(r6), a = n.prefixes, u = a === void 0 ? "./" : a, t = n.delimiter, c = t === void 0 ? "/#?" : t, o = [], m = 0, h = 0, p = "", f = function(l) {
     if (h < e.length && e[h].type === l) return e[h++].value;
   }, w = function(l) {
     var v = f(l);
@@ -182597,17 +182597,17 @@ function F(r4, n) {
   }
   return o;
 }
-function H(r4, n) {
+function H(r6, n) {
   var e = [];
-  return I(P(r4, e, n), e, n);
+  return I(P(r6, e, n), e, n);
 }
-function I(r4, n, e) {
+function I(r6, n, e) {
   e === void 0 && (e = {});
   var a = e.decode, u = a === void 0 ? function(t) {
     return t;
   } : a;
   return function(t) {
-    var c = r4.exec(t);
+    var c = r6.exec(t);
     if (!c) return false;
     for (var o = c[0], m = c.index, h = /* @__PURE__ */ Object.create(null), p = function(w) {
       if (c[w] === void 0) return "continue";
@@ -182623,37 +182623,37 @@ function I(r4, n, e) {
     };
   };
 }
-function s(r4) {
-  return r4.replace(/([.+*?=^!:${}()[\]|/\\])/g, "\\$1");
+function s(r6) {
+  return r6.replace(/([.+*?=^!:${}()[\]|/\\])/g, "\\$1");
 }
-function D(r4) {
-  return r4 && r4.sensitive ? "" : "i";
+function D(r6) {
+  return r6 && r6.sensitive ? "" : "i";
 }
-function $(r4, n) {
-  if (!n) return r4;
-  for (var e = /\((?:\?<(.*?)>)?(?!\?)/g, a = 0, u = e.exec(r4.source); u; ) n.push({
+function $(r6, n) {
+  if (!n) return r6;
+  for (var e = /\((?:\?<(.*?)>)?(?!\?)/g, a = 0, u = e.exec(r6.source); u; ) n.push({
     name: u[1] || a++,
     prefix: "",
     suffix: "",
     modifier: "",
     pattern: ""
-  }), u = e.exec(r4.source);
-  return r4;
+  }), u = e.exec(r6.source);
+  return r6;
 }
-function W(r4, n, e) {
-  var a = r4.map(function(u) {
+function W(r6, n, e) {
+  var a = r6.map(function(u) {
     return P(u, n, e).source;
   });
   return new RegExp("(?:".concat(a.join("|"), ")"), D(e));
 }
-function L(r4, n, e) {
-  return U(F(r4, e), n, e);
+function L(r6, n, e) {
+  return U(F(r6, e), n, e);
 }
-function U(r4, n, e) {
+function U(r6, n, e) {
   e === void 0 && (e = {});
   for (var a = e.strict, u = a === void 0 ? false : a, t = e.start, c = t === void 0 ? true : t, o = e.end, m = o === void 0 ? true : o, h = e.encode, p = h === void 0 ? function(v) {
     return v;
-  } : h, f = e.delimiter, w = f === void 0 ? "/#?" : f, d = e.endsWith, M = d === void 0 ? "" : d, A = "[".concat(s(M), "]|$"), T = "[".concat(s(w), "]"), x = c ? "^" : "", C2 = 0, g = r4; C2 < g.length; C2++) {
+  } : h, f = e.delimiter, w = f === void 0 ? "/#?" : f, d = e.endsWith, M = d === void 0 ? "" : d, A = "[".concat(s(M), "]|$"), T = "[".concat(s(w), "]"), x = c ? "^" : "", C2 = 0, g = r6; C2 < g.length; C2++) {
     var i = g[C2];
     if (typeof i == "string") x += s(p(i));
     else {
@@ -182671,13 +182671,13 @@ function U(r4, n, e) {
   }
   if (m) u || (x += "".concat(T, "?")), x += e.endsWith ? "(?=".concat(A, ")") : "$";
   else {
-    var b = r4[r4.length - 1], l = typeof b == "string" ? T.indexOf(b[b.length - 1]) > -1 : b === void 0;
+    var b = r6[r6.length - 1], l = typeof b == "string" ? T.indexOf(b[b.length - 1]) > -1 : b === void 0;
     u || (x += "(?:".concat(T, "(?=").concat(A, "))?")), l || (x += "(?=".concat(T, "|").concat(A, ")"));
   }
   return new RegExp(x, D(e));
 }
-function P(r4, n, e) {
-  return r4 instanceof RegExp ? $(r4, n) : Array.isArray(r4) ? W(r4, n, e) : L(r4, n, e);
+function P(r6, n, e) {
+  return r6 instanceof RegExp ? $(r6, n) : Array.isArray(r6) ? W(r6, n, e) : L(r6, n, e);
 }
 function match(str2, options) {
   try {
@@ -194849,7 +194849,15 @@ var ListTemplatesResponseItem = objectType({
       "radius": numberType().optional(),
       "borderColor": stringType().optional(),
       "borderWidth": numberType().optional(),
-      "locked": booleanType().optional().describe("Locked elements are pinned brand furniture: brief copy/imagery is never poured into them (their captured content always renders), and editors treat them as read-only.\n")
+      "locked": booleanType().optional().describe("Locked elements are pinned brand furniture: brief copy/imagery is never poured into them (their captured content always renders), and editors treat them as read-only.\n"),
+      "constraints": objectType({
+        "pinTop": booleanType().optional(),
+        "pinBottom": booleanType().optional(),
+        "pinLeft": booleanType().optional(),
+        "pinRight": booleanType().optional(),
+        "flexW": booleanType().optional(),
+        "flexH": booleanType().optional()
+      }).optional().describe("Liquid-layout switches (InDesign's object-based model): pin the element to zone edges and let its width/height flex. Absent means inferred from the master.\n")
     }).describe("A single positioned element in a freeform template layout.")).optional(),
     "adaptMethod": stringType().optional().describe("How an adapted template was derived: recomposed:<class> | key-visual | panel | scaled"),
     "rejected": arrayType(stringType()).optional().describe("Reasons the automated layout failed the mandatory-element gate; empty or absent when it passed"),
@@ -194932,7 +194940,15 @@ var CreateTemplateBody = objectType({
       "radius": numberType().optional(),
       "borderColor": stringType().optional(),
       "borderWidth": numberType().optional(),
-      "locked": booleanType().optional().describe("Locked elements are pinned brand furniture: brief copy/imagery is never poured into them (their captured content always renders), and editors treat them as read-only.\n")
+      "locked": booleanType().optional().describe("Locked elements are pinned brand furniture: brief copy/imagery is never poured into them (their captured content always renders), and editors treat them as read-only.\n"),
+      "constraints": objectType({
+        "pinTop": booleanType().optional(),
+        "pinBottom": booleanType().optional(),
+        "pinLeft": booleanType().optional(),
+        "pinRight": booleanType().optional(),
+        "flexW": booleanType().optional(),
+        "flexH": booleanType().optional()
+      }).optional().describe("Liquid-layout switches (InDesign's object-based model): pin the element to zone edges and let its width/height flex. Absent means inferred from the master.\n")
     }).describe("A single positioned element in a freeform template layout.")).optional(),
     "adaptMethod": stringType().optional().describe("How an adapted template was derived: recomposed:<class> | key-visual | panel | scaled"),
     "rejected": arrayType(stringType()).optional().describe("Reasons the automated layout failed the mandatory-element gate; empty or absent when it passed"),
@@ -195016,7 +195032,15 @@ var GetTemplateResponse = objectType({
       "radius": numberType().optional(),
       "borderColor": stringType().optional(),
       "borderWidth": numberType().optional(),
-      "locked": booleanType().optional().describe("Locked elements are pinned brand furniture: brief copy/imagery is never poured into them (their captured content always renders), and editors treat them as read-only.\n")
+      "locked": booleanType().optional().describe("Locked elements are pinned brand furniture: brief copy/imagery is never poured into them (their captured content always renders), and editors treat them as read-only.\n"),
+      "constraints": objectType({
+        "pinTop": booleanType().optional(),
+        "pinBottom": booleanType().optional(),
+        "pinLeft": booleanType().optional(),
+        "pinRight": booleanType().optional(),
+        "flexW": booleanType().optional(),
+        "flexH": booleanType().optional()
+      }).optional().describe("Liquid-layout switches (InDesign's object-based model): pin the element to zone edges and let its width/height flex. Absent means inferred from the master.\n")
     }).describe("A single positioned element in a freeform template layout.")).optional(),
     "adaptMethod": stringType().optional().describe("How an adapted template was derived: recomposed:<class> | key-visual | panel | scaled"),
     "rejected": arrayType(stringType()).optional().describe("Reasons the automated layout failed the mandatory-element gate; empty or absent when it passed"),
@@ -195101,7 +195125,15 @@ var UpdateTemplateBody = objectType({
       "radius": numberType().optional(),
       "borderColor": stringType().optional(),
       "borderWidth": numberType().optional(),
-      "locked": booleanType().optional().describe("Locked elements are pinned brand furniture: brief copy/imagery is never poured into them (their captured content always renders), and editors treat them as read-only.\n")
+      "locked": booleanType().optional().describe("Locked elements are pinned brand furniture: brief copy/imagery is never poured into them (their captured content always renders), and editors treat them as read-only.\n"),
+      "constraints": objectType({
+        "pinTop": booleanType().optional(),
+        "pinBottom": booleanType().optional(),
+        "pinLeft": booleanType().optional(),
+        "pinRight": booleanType().optional(),
+        "flexW": booleanType().optional(),
+        "flexH": booleanType().optional()
+      }).optional().describe("Liquid-layout switches (InDesign's object-based model): pin the element to zone edges and let its width/height flex. Absent means inferred from the master.\n")
     }).describe("A single positioned element in a freeform template layout.")).optional(),
     "adaptMethod": stringType().optional().describe("How an adapted template was derived: recomposed:<class> | key-visual | panel | scaled"),
     "rejected": arrayType(stringType()).optional().describe("Reasons the automated layout failed the mandatory-element gate; empty or absent when it passed"),
@@ -195182,7 +195214,15 @@ var UpdateTemplateResponse = objectType({
       "radius": numberType().optional(),
       "borderColor": stringType().optional(),
       "borderWidth": numberType().optional(),
-      "locked": booleanType().optional().describe("Locked elements are pinned brand furniture: brief copy/imagery is never poured into them (their captured content always renders), and editors treat them as read-only.\n")
+      "locked": booleanType().optional().describe("Locked elements are pinned brand furniture: brief copy/imagery is never poured into them (their captured content always renders), and editors treat them as read-only.\n"),
+      "constraints": objectType({
+        "pinTop": booleanType().optional(),
+        "pinBottom": booleanType().optional(),
+        "pinLeft": booleanType().optional(),
+        "pinRight": booleanType().optional(),
+        "flexW": booleanType().optional(),
+        "flexH": booleanType().optional()
+      }).optional().describe("Liquid-layout switches (InDesign's object-based model): pin the element to zone edges and let its width/height flex. Absent means inferred from the master.\n")
     }).describe("A single positioned element in a freeform template layout.")).optional(),
     "adaptMethod": stringType().optional().describe("How an adapted template was derived: recomposed:<class> | key-visual | panel | scaled"),
     "rejected": arrayType(stringType()).optional().describe("Reasons the automated layout failed the mandatory-element gate; empty or absent when it passed"),
@@ -195312,7 +195352,15 @@ var DissectPdfResponse = objectType({
       "radius": numberType().optional(),
       "borderColor": stringType().optional(),
       "borderWidth": numberType().optional(),
-      "locked": booleanType().optional().describe("Locked elements are pinned brand furniture: brief copy/imagery is never poured into them (their captured content always renders), and editors treat them as read-only.\n")
+      "locked": booleanType().optional().describe("Locked elements are pinned brand furniture: brief copy/imagery is never poured into them (their captured content always renders), and editors treat them as read-only.\n"),
+      "constraints": objectType({
+        "pinTop": booleanType().optional(),
+        "pinBottom": booleanType().optional(),
+        "pinLeft": booleanType().optional(),
+        "pinRight": booleanType().optional(),
+        "flexW": booleanType().optional(),
+        "flexH": booleanType().optional()
+      }).optional().describe("Liquid-layout switches (InDesign's object-based model): pin the element to zone edges and let its width/height flex. Absent means inferred from the master.\n")
     }).describe("A single positioned element in a freeform template layout.")).optional(),
     "adaptMethod": stringType().optional().describe("How an adapted template was derived: recomposed:<class> | key-visual | panel | scaled"),
     "rejected": arrayType(stringType()).optional().describe("Reasons the automated layout failed the mandatory-element gate; empty or absent when it passed"),
@@ -195391,7 +195439,15 @@ var DissectImageResponse = objectType({
       "radius": numberType().optional(),
       "borderColor": stringType().optional(),
       "borderWidth": numberType().optional(),
-      "locked": booleanType().optional().describe("Locked elements are pinned brand furniture: brief copy/imagery is never poured into them (their captured content always renders), and editors treat them as read-only.\n")
+      "locked": booleanType().optional().describe("Locked elements are pinned brand furniture: brief copy/imagery is never poured into them (their captured content always renders), and editors treat them as read-only.\n"),
+      "constraints": objectType({
+        "pinTop": booleanType().optional(),
+        "pinBottom": booleanType().optional(),
+        "pinLeft": booleanType().optional(),
+        "pinRight": booleanType().optional(),
+        "flexW": booleanType().optional(),
+        "flexH": booleanType().optional()
+      }).optional().describe("Liquid-layout switches (InDesign's object-based model): pin the element to zone edges and let its width/height flex. Absent means inferred from the master.\n")
     }).describe("A single positioned element in a freeform template layout.")).optional(),
     "adaptMethod": stringType().optional().describe("How an adapted template was derived: recomposed:<class> | key-visual | panel | scaled"),
     "rejected": arrayType(stringType()).optional().describe("Reasons the automated layout failed the mandatory-element gate; empty or absent when it passed"),
@@ -196670,7 +196726,15 @@ var ClaudeReviewTemplateResponse = objectType({
       "radius": numberType().optional(),
       "borderColor": stringType().optional(),
       "borderWidth": numberType().optional(),
-      "locked": booleanType().optional().describe("Locked elements are pinned brand furniture: brief copy/imagery is never poured into them (their captured content always renders), and editors treat them as read-only.\n")
+      "locked": booleanType().optional().describe("Locked elements are pinned brand furniture: brief copy/imagery is never poured into them (their captured content always renders), and editors treat them as read-only.\n"),
+      "constraints": objectType({
+        "pinTop": booleanType().optional(),
+        "pinBottom": booleanType().optional(),
+        "pinLeft": booleanType().optional(),
+        "pinRight": booleanType().optional(),
+        "flexW": booleanType().optional(),
+        "flexH": booleanType().optional()
+      }).optional().describe("Liquid-layout switches (InDesign's object-based model): pin the element to zone edges and let its width/height flex. Absent means inferred from the master.\n")
     }).describe("A single positioned element in a freeform template layout.")).optional(),
     "adaptMethod": stringType().optional().describe("How an adapted template was derived: recomposed:<class> | key-visual | panel | scaled"),
     "rejected": arrayType(stringType()).optional().describe("Reasons the automated layout failed the mandatory-element gate; empty or absent when it passed"),
@@ -196758,7 +196822,15 @@ var UndoClaudeReviewTemplateResponse = objectType({
       "radius": numberType().optional(),
       "borderColor": stringType().optional(),
       "borderWidth": numberType().optional(),
-      "locked": booleanType().optional().describe("Locked elements are pinned brand furniture: brief copy/imagery is never poured into them (their captured content always renders), and editors treat them as read-only.\n")
+      "locked": booleanType().optional().describe("Locked elements are pinned brand furniture: brief copy/imagery is never poured into them (their captured content always renders), and editors treat them as read-only.\n"),
+      "constraints": objectType({
+        "pinTop": booleanType().optional(),
+        "pinBottom": booleanType().optional(),
+        "pinLeft": booleanType().optional(),
+        "pinRight": booleanType().optional(),
+        "flexW": booleanType().optional(),
+        "flexH": booleanType().optional()
+      }).optional().describe("Liquid-layout switches (InDesign's object-based model): pin the element to zone edges and let its width/height flex. Absent means inferred from the master.\n")
     }).describe("A single positioned element in a freeform template layout.")).optional(),
     "adaptMethod": stringType().optional().describe("How an adapted template was derived: recomposed:<class> | key-visual | panel | scaled"),
     "rejected": arrayType(stringType()).optional().describe("Reasons the automated layout failed the mandatory-element gate; empty or absent when it passed"),
@@ -205867,10 +205939,10 @@ var $ZodType = /* @__PURE__ */ $constructor("$ZodType", (inst, def) => {
   inst["~standard"] = {
     validate: (value) => {
       try {
-        const r4 = safeParse(inst, value);
-        return r4.success ? { value: r4.data } : { issues: r4.error?.issues };
+        const r6 = safeParse(inst, value);
+        return r6.success ? { value: r6.data } : { issues: r6.error?.issues };
       } catch (_2) {
-        return safeParseAsync(inst, value).then((r4) => r4.success ? { value: r4.data } : { issues: r4.error?.issues });
+        return safeParseAsync(inst, value).then((r6) => r6.success ? { value: r6.data } : { issues: r6.error?.issues });
       }
     },
     vendor: "zod",
@@ -206551,14 +206623,14 @@ var $ZodObject = /* @__PURE__ */ $constructor("$ZodObject", (inst, def) => {
       const shape = value.shape;
       for (const key of value.keys) {
         const el = shape[key];
-        const r4 = el._zod.run({ value: input[key], issues: [] }, ctx2);
+        const r6 = el._zod.run({ value: input[key], issues: [] }, ctx2);
         const isOptional = el._zod.optin === "optional" && el._zod.optout === "optional";
-        if (r4 instanceof Promise) {
-          proms.push(r4.then((r5) => isOptional ? handleOptionalObjectResult(r5, payload, key, input) : handleObjectResult(r5, payload, key)));
+        if (r6 instanceof Promise) {
+          proms.push(r6.then((r7) => isOptional ? handleOptionalObjectResult(r7, payload, key, input) : handleObjectResult(r7, payload, key)));
         } else if (isOptional) {
-          handleOptionalObjectResult(r4, payload, key, input);
+          handleOptionalObjectResult(r6, payload, key, input);
         } else {
-          handleObjectResult(r4, payload, key);
+          handleObjectResult(r6, payload, key);
         }
       }
     }
@@ -206576,11 +206648,11 @@ var $ZodObject = /* @__PURE__ */ $constructor("$ZodObject", (inst, def) => {
         unrecognized.push(key);
         continue;
       }
-      const r4 = _catchall.run({ value: input[key], issues: [] }, ctx2);
-      if (r4 instanceof Promise) {
-        proms.push(r4.then((r5) => handleObjectResult(r5, payload, key)));
+      const r6 = _catchall.run({ value: input[key], issues: [] }, ctx2);
+      if (r6 instanceof Promise) {
+        proms.push(r6.then((r7) => handleObjectResult(r7, payload, key)));
       } else {
-        handleObjectResult(r4, payload, key);
+        handleObjectResult(r6, payload, key);
       }
     }
     if (unrecognized.length) {
@@ -207393,11 +207465,11 @@ var $ZodCustom = /* @__PURE__ */ $constructor("$ZodCustom", (inst, def) => {
   };
   inst._zod.check = (payload) => {
     const input = payload.value;
-    const r4 = def.fn(input);
-    if (r4 instanceof Promise) {
-      return r4.then((r5) => handleRefineResult(r5, payload, input, inst));
+    const r6 = def.fn(input);
+    if (r6 instanceof Promise) {
+      return r6.then((r7) => handleRefineResult(r7, payload, input, inst));
     }
-    handleRefineResult(r4, payload, input, inst);
+    handleRefineResult(r6, payload, input, inst);
     return;
   };
 });
@@ -215724,7 +215796,7 @@ async function runFrontifySync() {
   const cookie = await establishGuestSession(portalUrl);
   const storage3 = new ObjectStorageService();
   const existingRows = await db.select({ name: brandAssetsTable.name, folder: brandAssetsTable.folder }).from(brandAssetsTable).where(eq(brandAssetsTable.brandId, brand.id));
-  const existing = new Set(existingRows.map((r4) => `${r4.folder ?? ""}\0${r4.name}`));
+  const existing = new Set(existingRows.map((r6) => `${r6.folder ?? ""}\0${r6.name}`));
   for (const rule of sources) {
     try {
       let page = 1;
@@ -216040,19 +216112,19 @@ function planCampaignBuild(masters, sizes, opts = {}) {
       continue;
     }
     const briefName = (size.names ?? []).find((n) => n && n.trim().length > 0) ?? null;
-    const spec = describeFormat(width, height, briefName, size.channel ?? null);
-    const hasName = !!(spec.entry || briefName);
+    const spec3 = describeFormat(width, height, briefName, size.channel ?? null);
+    const hasName = !!(spec3.entry || briefName);
     for (const [variantKey, groupMasters] of groups) {
       const pick2 = chooseMaster(groupMasters, width, height, { name: briefName, channel: size.channel ?? null, messageType: size.messageType ?? null });
       if (!pick2) {
-        skipped.push({ width: size.width, height: size.height, reason: `${spec.label}: only flat artwork available (copy baked in) \u2014 import the InDesign package or working files to build this shape` });
+        skipped.push({ width: size.width, height: size.height, reason: `${spec3.label}: only flat artwork available (copy baked in) \u2014 import the InDesign package or working files to build this shape` });
         continue;
       }
       const recomposed = !pick2.sameClass || pick2.distance > RECOMPOSE_THRESHOLD;
       const needsReview = !pick2.sameClass || !pick2.sameMessage;
-      if (needsReview) reviewLabels.add(spec.label);
+      if (needsReview) reviewLabels.add(spec3.label);
       const variant = variantKey || null;
-      const namePieces = [prefix, hasName ? spec.label : null, `${width}\xD7${height}`].filter(Boolean).join(" ");
+      const namePieces = [prefix, hasName ? spec3.label : null, `${width}\xD7${height}`].filter(Boolean).join(" ");
       jobs.push({
         masterId: pick2.master.id,
         masterName: pick2.master.name,
@@ -216065,8 +216137,8 @@ function planCampaignBuild(masters, sizes, opts = {}) {
         sourceLabel,
         aspectDistance: Math.round(pick2.distance * 1e3) / 1e3,
         recomposed,
-        formatClass: spec.formatClass,
-        formatLabel: spec.label,
+        formatClass: spec3.formatClass,
+        formatLabel: spec3.label,
         method: recomposed ? "recompose" : "scale",
         needsReview
       });
@@ -216102,8 +216174,8 @@ function campaignFromName(name) {
   return base.replace(/\s+\d{2,4}×\d{2,4}\s*$/, "").trim();
 }
 function metaPlacement(width, height) {
-  const r4 = width / height;
-  const near = (target, tol = 0.04) => Math.abs(r4 - target) <= tol;
+  const r6 = width / height;
+  const near = (target, tol = 0.04) => Math.abs(r6 - target) <= tol;
   if (near(1)) return "Feed (1:1)";
   if (near(4 / 5)) return "Feed (4:5)";
   if (near(9 / 16, 0.03)) return "Stories / Reels (9:16)";
@@ -216118,18 +216190,18 @@ function ratioLabel(w, h) {
   const rw = w / d, rh = h / d;
   return rw > 50 || rh > 50 ? (w / h).toFixed(2) + ":1" : `${rw}:${rh}`;
 }
-function buildTrackingRows(master, family, opts = {}) {
+function buildTrackingRows(master, family2, opts = {}) {
   const campaign = (opts.campaign ?? "").trim() || campaignFromName(master.name);
   const campaignSlug = slug(campaign);
   const source = (opts.source ?? "").trim() || "meta";
   const clickUrl = (opts.clickUrl ?? "").trim();
   const rows = [];
   const seen2 = /* @__PURE__ */ new Set();
-  for (const t of family) {
-    const spec = describeFormat(t.width, t.height);
+  for (const t of family2) {
+    const spec3 = describeFormat(t.width, t.height);
     let variant = variantOf(t.name) ?? variantOf(master.name);
-    if (variant && (slug(variant) === slug(spec.label) || slug(spec.label).includes(slug(variant)))) variant = null;
-    const pieces = [campaignSlug, variant ? slug(variant) : null, slug(spec.label), `${t.width}x${t.height}`].filter(Boolean);
+    if (variant && (slug(variant) === slug(spec3.label) || slug(spec3.label).includes(slug(variant)))) variant = null;
+    const pieces = [campaignSlug, variant ? slug(variant) : null, slug(spec3.label), `${t.width}x${t.height}`].filter(Boolean);
     let adName = pieces.join("_");
     let n = 2;
     while (seen2.has(adName)) adName = `${pieces.join("_")}_${n++}`;
@@ -216148,8 +216220,8 @@ function buildTrackingRows(master, family, opts = {}) {
       width: t.width,
       height: t.height,
       ratio: ratioLabel(t.width, t.height),
-      formatLabel: spec.label,
-      formatClass: spec.formatClass,
+      formatLabel: spec3.label,
+      formatClass: spec3.formatClass,
       variant: variant ?? null,
       placement: metaPlacement(t.width, t.height),
       utmParameters: params,
@@ -216178,9 +216250,9 @@ function trackingRowsToCsv(rows) {
     "Template id"
   ];
   const lines = [header.map(csvCell).join(",")];
-  for (const r4 of rows) {
+  for (const r6 of rows) {
     lines.push(
-      [r4.adName, r4.fileName, `${r4.width}x${r4.height}`, r4.ratio, r4.formatLabel, r4.variant ?? "", r4.placement, r4.destination, r4.utmParameters, r4.dynamicParameters, r4.templateId].map(csvCell).join(",")
+      [r6.adName, r6.fileName, `${r6.width}x${r6.height}`, r6.ratio, r6.formatLabel, r6.variant ?? "", r6.placement, r6.destination, r6.utmParameters, r6.dynamicParameters, r6.templateId].map(csvCell).join(",")
     );
   }
   return "\uFEFF" + lines.join("\r\n") + "\r\n";
@@ -216288,13 +216360,13 @@ async function runMetaSync(days = 30) {
     return result;
   }
   result.fetched = rows.length;
-  for (const r4 of rows) {
-    if (!r4.ad_id || !r4.date_start) continue;
+  for (const r6 of rows) {
+    if (!r6.ad_id || !r6.date_start) continue;
     try {
       await db.execute(sql`INSERT INTO meta_ad_insights
         (day, ad_id, ad_name, adset_name, campaign_id, campaign_name, impressions, reach, clicks, link_clicks, spend, currency, synced_at)
-        VALUES (${r4.date_start}, ${r4.ad_id}, ${r4.ad_name ?? ""}, ${r4.adset_name ?? null}, ${r4.campaign_id ?? null}, ${r4.campaign_name ?? null},
-                ${int2(r4.impressions)}, ${int2(r4.reach)}, ${int2(r4.clicks)}, ${int2(r4.inline_link_clicks)}, ${money(r4.spend)}, ${r4.account_currency ?? null}, now())
+        VALUES (${r6.date_start}, ${r6.ad_id}, ${r6.ad_name ?? ""}, ${r6.adset_name ?? null}, ${r6.campaign_id ?? null}, ${r6.campaign_name ?? null},
+                ${int2(r6.impressions)}, ${int2(r6.reach)}, ${int2(r6.clicks)}, ${int2(r6.inline_link_clicks)}, ${money(r6.spend)}, ${r6.account_currency ?? null}, now())
         ON CONFLICT (day, ad_id) DO UPDATE SET
           ad_name = EXCLUDED.ad_name, adset_name = EXCLUDED.adset_name, campaign_id = EXCLUDED.campaign_id,
           campaign_name = EXCLUDED.campaign_name, impressions = EXCLUDED.impressions, reach = EXCLUDED.reach,
@@ -216302,7 +216374,7 @@ async function runMetaSync(days = 30) {
           currency = EXCLUDED.currency, synced_at = now()`);
       result.upserted += 1;
     } catch (err) {
-      result.errors.push(`${r4.date_start} ${r4.ad_id}: ${err instanceof Error ? err.message : String(err)}`);
+      result.errors.push(`${r6.date_start} ${r6.ad_id}: ${err instanceof Error ? err.message : String(err)}`);
     }
   }
   logger2.info({ fetched: result.fetched, upserted: result.upserted, errors: result.errors.length }, "Meta insights sync finished");
@@ -216377,20 +216449,20 @@ async function getMetaSummary(days = 30) {
     GROUP BY ad_id ORDER BY sum(impressions) DESC LIMIT 100`);
   const templates = await db.select({ id: templatesTable.id, name: templatesTable.name, width: templatesTable.width, height: templatesTable.height }).from(templatesTable).where(notInArray(templatesTable.category, ["knowledge", "wip"]));
   const briefs = await db.select({ id: briefsTable.id, campaignName: briefsTable.campaignName }).from(briefsTable);
-  const ads = adsRes.rows.map((r4) => {
-    const adName = String(r4.ad_name ?? "");
-    const campaignName = r4.campaign_name == null ? null : String(r4.campaign_name);
-    const imp = Number(r4.impressions ?? 0);
-    const lc = Number(r4.link_clicks ?? 0);
-    const sp = Number(r4.spend ?? 0);
+  const ads = adsRes.rows.map((r6) => {
+    const adName = String(r6.ad_name ?? "");
+    const campaignName = r6.campaign_name == null ? null : String(r6.campaign_name);
+    const imp = Number(r6.impressions ?? 0);
+    const lc = Number(r6.link_clicks ?? 0);
+    const sp = Number(r6.spend ?? 0);
     const m = matchAd(adName, campaignName, templates, briefs);
     return {
-      adId: String(r4.ad_id),
+      adId: String(r6.ad_id),
       adName,
       campaignName,
-      adsetName: r4.adset_name == null ? null : String(r4.adset_name),
+      adsetName: r6.adset_name == null ? null : String(r6.adset_name),
       impressions: imp,
-      reach: Number(r4.reach ?? 0),
+      reach: Number(r6.reach ?? 0),
       linkClicks: lc,
       spend: sp,
       ctr: imp > 0 ? lc / imp : 0,
@@ -216416,11 +216488,11 @@ async function getMetaSummary(days = 30) {
       cpm: impressions > 0 ? spend / impressions * 1e3 : 0,
       cpc: linkClicks > 0 ? spend / linkClicks : 0
     },
-    timeseries: seriesRes.rows.map((r4) => ({
-      day: String(r4.day),
-      impressions: Number(r4.impressions ?? 0),
-      linkClicks: Number(r4.link_clicks ?? 0),
-      spend: Number(r4.spend ?? 0)
+    timeseries: seriesRes.rows.map((r6) => ({
+      day: String(r6.day),
+      impressions: Number(r6.impressions ?? 0),
+      linkClicks: Number(r6.link_clicks ?? 0),
+      spend: Number(r6.spend ?? 0)
     })),
     ads
   };
@@ -226435,12 +226507,12 @@ ${snippet}`;
 async function fetchLogoDataUri(logoUrl, origin) {
   if (!logoUrl) return void 0;
   try {
-    const sharp17 = (await import("sharp")).default;
+    const sharp18 = (await import("sharp")).default;
     const abs = /^https?:\/\//i.test(logoUrl) ? logoUrl : `${origin}${logoUrl}`;
     const res = await fetch(abs);
     if (!res.ok) return void 0;
     const buf = Buffer.from(await res.arrayBuffer());
-    const png = await sharp17(buf).resize(240, 240, { fit: "cover" }).png().toBuffer();
+    const png = await sharp18(buf).resize(240, 240, { fit: "cover" }).png().toBuffer();
     return `data:image/png;base64,${png.toString("base64")}`;
   } catch {
     return void 0;
@@ -226598,7 +226670,7 @@ Writing rules:
 - Use New Zealand English spelling (organise, programme, colour).
 - Headlines: no full stop at the end, sentence case unless the brand guidelines say otherwise.
 - Speak directly to the reader (you/your/we/us); plain words over formal ones.
-${getBrandRules(params.brandName).copyRules(params.templateSize).map((r4) => `- ${r4}`).join("\n")}
+${getBrandRules(params.brandName).copyRules(params.templateSize).map((r6) => `- ${r6}`).join("\n")}
 
 Return ONLY a JSON object with these exact fields:
 - headline: punchy headline (max 8 words for banner, max 12 words otherwise)
@@ -226801,8 +226873,8 @@ ${animationRequirement}
 - Include a styled CTA button (id="cta").
 - Do NOT add clickTag wiring or <a> tags around the ad \u2014 click handling is injected downstream.
 - Professional, production-ready design matching the brand palette.
-${getBrandRules(params.brandName).bannerRules(params.animated ? "animated_social" : "html_banner").map((r4) => `- ${r4}`).join("\n")}
-${getBrandRules(params.brandName).layoutRules(width, height).map((r4) => `- ${r4}`).join("\n")}
+${getBrandRules(params.brandName).bannerRules(params.animated ? "animated_social" : "html_banner").map((r6) => `- ${r6}`).join("\n")}
+${getBrandRules(params.brandName).layoutRules(width, height).map((r6) => `- ${r6}`).join("\n")}
 Output ONLY the raw HTML, no markdown code fences.`;
   const response = await openai.chat.completions.create({
     model: "gpt-4o",
@@ -227326,16 +227398,16 @@ function hexToRgb(hex) {
     b: parseInt(h.slice(4, 6), 16)
   };
 }
-function rgbToHex({ r: r4, g, b }) {
+function rgbToHex({ r: r6, g, b }) {
   const to = (n) => Math.max(0, Math.min(255, Math.round(n))).toString(16).padStart(2, "0");
-  return `#${to(r4)}${to(g)}${to(b)}`;
+  return `#${to(r6)}${to(g)}${to(b)}`;
 }
-function rgbToLab({ r: r4, g, b }) {
+function rgbToLab({ r: r6, g, b }) {
   const lin = (c) => {
     const s2 = c / 255;
     return s2 <= 0.04045 ? s2 / 12.92 : Math.pow((s2 + 0.055) / 1.055, 2.4);
   };
-  const R = lin(r4), G = lin(g), B = lin(b);
+  const R = lin(r6), G = lin(g), B = lin(b);
   const X = R * 0.4124 + G * 0.3576 + B * 0.1805;
   const Y = R * 0.2126 + G * 0.7152 + B * 0.0722;
   const Z = R * 0.0193 + G * 0.1192 + B * 0.9505;
@@ -227382,8 +227454,8 @@ function extractHtmlColors(html) {
     if (c) out.push(c);
   }
   while ((m = rgbRe.exec(html)) !== null) {
-    const r4 = Number(m[1]), g = Number(m[2]), b = Number(m[3]);
-    if (r4 <= 255 && g <= 255 && b <= 255) out.push({ r: r4, g, b });
+    const r6 = Number(m[1]), g = Number(m[2]), b = Number(m[3]);
+    if (r6 <= 255 && g <= 255 && b <= 255) out.push({ r: r6, g, b });
   }
   return out;
 }
@@ -227472,15 +227544,15 @@ async function extractDominantColors(buffer, max = 5) {
     const counts = /* @__PURE__ */ new Map();
     const step = info.channels;
     for (let i = 0; i + 2 < data.length; i += step) {
-      const r4 = Math.round(data[i] / 24) * 24;
+      const r6 = Math.round(data[i] / 24) * 24;
       const g = Math.round(data[i + 1] / 24) * 24;
       const b = Math.round(data[i + 2] / 24) * 24;
-      const key = `${r4},${g},${b}`;
+      const key = `${r6},${g},${b}`;
       counts.set(key, (counts.get(key) ?? 0) + 1);
     }
     return [...counts.entries()].sort((a, b) => b[1] - a[1]).slice(0, max).map(([k]) => {
-      const [r4, g, b] = k.split(",").map(Number);
-      return rgbToHex({ r: r4, g, b });
+      const [r6, g, b] = k.split(",").map(Number);
+      return rgbToHex({ r: r6, g, b });
     });
   } catch {
     return [];
@@ -227559,6 +227631,293 @@ function serializeIssues(issues) {
 // src/routes/feedback.ts
 var import_express7 = __toESM(require_express2(), 1);
 
+// src/lib/styleSpecs/getReadyBurst2.ts
+var PART_RULE_SLOTS = ["headline", "subheadline", "cutout", "band", "message", "cta", "lockup", "logo", "photo"];
+var GET_READY_BURST_2 = {
+  id: "get-ready-burst-2",
+  name: "AEM Get Ready \u2014 Burst 2 (photo + panel)",
+  match: ["get ready", "26-pro-0461", "aem get ready", "storms", "quakes", "tsunami"],
+  colours: {
+    panelOOH: "#005b9f",
+    // InDesign panel rect
+    panelDisplay: "#0060ac",
+    // GWD panel graphic (sampled)
+    scrim: "#0c253b",
+    // gradient scrim over the photo, top 50% (tall) / 77% (wide) of the photo zone
+    message: "#ffeb3d",
+    // "Make a plan today." — Kowhai-adjacent campaign yellow
+    ctaDisplay: "#fdf10e",
+    // LEARN MORE button fill
+    ctaLabelDisplay: "#0060ac",
+    pillOOH: "#ffffff",
+    pillLabelOOH: "#111827",
+    copy: "#ffffff"
+  },
+  type: {
+    headline: "DS-Digital (digital clock face), white, upper case with colons between letter pairs \u2014 ST:OR:MS, QU:AK:ES, TSU:NA:MI \u2014 or a HH:MM:SS countdown in Phase 2. The lettering is the campaign device, not an error.",
+    kicker: "National 2 Bold, white, upper case, one line above the headline (Phases 1\u20132 only).",
+    subheadline: "National 2 Bold, white, upper case, one line under the headline (Phase 3 and OOH).",
+    message: "National 2 Bold, campaign yellow, sentence case with full stop.",
+    ctaOOH: "Search pill: white pill, label National 2 Bold in ink #111827, magnifier icon at the right.",
+    ctaDisplay: "LEARN MORE: yellow pill, label National 2 Bold upper case in panel blue."
+  },
+  hierarchy: ["headline", "kicker/subheadline", "message", "cta", "lockup"],
+  zones: {
+    portrait: { axis: "stacked", photoFrac: 0.569, displayPhotoFrac: 0.568, bandFrac: 0.059, bandAt: "seam", tolerance: 0.03 },
+    tower: { axis: "stacked", photoFrac: 0.52, bandFrac: 0.045, bandAt: "seam", tolerance: 0.05 },
+    square: { axis: "stacked", photoFrac: 0.6, displayPhotoFrac: 0.55, bandFrac: 0.05, bandAt: "seam", tolerance: 0.05 },
+    landscape: { axis: "side", photoFrac: 0.55, bandFrac: 0.15, bandAt: "panelTop", tolerance: 0.05 },
+    wide: { axis: "side", photoFrac: 0.5, displayPhotoFrac: 0.69, bandFrac: 0.169, bandAt: "panelTop", tolerance: 0.05 },
+    strip: { axis: "row", photoFrac: 0.3, bandFrac: 0, bandAt: "none", tolerance: 0.05 }
+  },
+  display: {
+    // 300×600 final / working files: photo zone 0–341, panel zone 341–600.
+    stacked: { headlineH: 0.193, headlineCy: 0.422, subW: 0.986, subH: 0.517, subGap: 0.069, cutoutW: 0.8, cutoutCx: 0.41, cutoutBleed: 0.45, message: { cy: 0.36, w: 0.73 }, cta: { cy: 0.55 }, lockup: { cy: 0.82, w: 0.7 }, bandH: 0.147 },
+    // 970×250 working file: photo zone 0–670, panel zone 670–970.
+    side: { headlineH: 0.396, headlineCy: 0.266, subW: 0.874, subH: 0.404, subGap: 0.07, cutoutW: 0.467, cutoutCx: 0.419, cutoutBleed: 0.6, message: { cy: 0.378, w: 0.7 }, cta: { cy: 0.562 }, lockup: { cy: 0.838, w: 0.7 }, bandH: 0.152 }
+  },
+  parts: {
+    photo: {
+      role: "photo",
+      zone: "photo",
+      size: { ofZoneW: 1, ofZoneH: 1 },
+      anchor: {},
+      rule: "Cover-crops its zone, 6\u201375% oversize, panned so the subject (wave crest, road crack, flooded car) sits in the lower half under the copy. Never letterboxed, never stretched."
+    },
+    scrim: {
+      role: "scrim",
+      zone: "photo",
+      size: { ofZoneW: 1, ofZoneH: 0.5 },
+      anchor: { y: 0 },
+      rule: "Navy gradient from the top of the photo zone down 50% (tall) or 77% (wide), so white copy reads over any sky."
+    },
+    headline: {
+      role: "headline",
+      zone: "photo",
+      size: { ofShort: 0.247, ofZoneW: 0.88 },
+      anchor: { y: 0.45, align: "center" },
+      floorPx: 24,
+      display: { stacked: 0.19, side: 0.38 },
+      rule: "OOH: 95px on a 384 short side (25% of short), 110px on 256 (43% of short) \u2014 the word fills 88% of the photo zone width on one line, block centre at 45% of the photo zone height (tall) or 36% (wide). Display: the glyph run is 19% of the short side tall (57px on 300\xD7600, 96px on 970\xD7250) and sits at 19\u201325% of the canvas height (tall) / 7% (wide, glyph top)."
+    },
+    kicker: {
+      role: "kicker",
+      zone: "photo",
+      size: { ofHeadline: 0.3 },
+      anchor: { align: "center" },
+      rule: "Phases 1\u20132 only. One line directly above the headline, 30% of the headline size."
+    },
+    subheadline: {
+      role: "subheadline",
+      zone: "photo",
+      size: { ofHeadline: 0.295 },
+      anchor: { align: "center" },
+      floorPx: 10,
+      rule: "28px under a 95px headline, 32px under 110px \u2014 29\u201330% of the headline size \u2014 directly beneath it, centred, 83% of the zone width max."
+    },
+    cutout: {
+      role: "cutout",
+      zone: "photo",
+      size: { ofZoneW: 0.8 },
+      anchor: { y: 1 },
+      droppedWhen: "strips; canvases under 250px on the short side",
+      rule: "Storms only: the car cut-out sits on the photo at the bottom of the zone, 80% of the zone width (tall) or 32% (wide), below the copy \u2014 never behind it."
+    },
+    band: {
+      role: "band",
+      zone: "seam",
+      size: { ofZoneW: 1 },
+      anchor: {},
+      droppedWhen: "strips",
+      rule: "Kotahitanga tohu strip on the seam (tall) or along the top of the panel (wide): 5.9% of height on 384\xD7592, 16.9% on 960\xD7256. Yellow leaf and chevron motifs, never under the logo."
+    },
+    message: {
+      role: "message",
+      zone: "panel",
+      size: { ofShort: 0.068, ofHeadline: 0.27 },
+      anchor: { y: 0.34, align: "center" },
+      floorPx: 13,
+      rule: '"Make a plan today." in campaign yellow: 26px on 384 (6.8% of short), 29px on 256 (11%); first item in the panel stack, centred, top third of the panel.'
+    },
+    cta: {
+      role: "cta",
+      zone: "panel",
+      size: { ofShort: 0.075, ofZoneW: 0.62 },
+      anchor: { y: 0.47, align: "center" },
+      floorPx: 28,
+      fixedPx: { w: 181, h: 43 },
+      display: { stacked: 0.143, side: 0.172 },
+      rule: "OOH search pill: 28.9px tall on 384 (7.5% of short), 32px on 256 (12.5%), 62% of the panel width (tall) / 56% (wide), centred under the message. Display LEARN MORE button: a fixed 181\xD743px asset on both 300\xD7600 and 970\xD7250 \u2014 placed, never scaled with the canvas; 60% of the panel width."
+    },
+    lockup: {
+      role: "lockup",
+      zone: "panel",
+      size: { ofShort: 0.122, ofZoneW: 0.5 },
+      anchor: { y: 0.93, align: "center" },
+      droppedWhen: "strips (logo tile instead)",
+      rule: "AEM + Council lockup 46.7px tall on 384 (12.2% of short), 47.4px on 256 (18.5%); 50% of the panel width (tall) / 40% (wide); last in the stack, centred, bottom margin \u2248 1/3 tile."
+    },
+    panel: {
+      role: "panel",
+      zone: "panel",
+      size: { ofZoneW: 1, ofZoneH: 1 },
+      anchor: {},
+      rule: "Solid campaign blue behind the whole panel zone. Display working files carry it as one graphic (band + message + lockup baked); it fills the zone width edge to edge and is never cropped."
+    },
+    logo: {
+      role: "logo",
+      zone: "canvas",
+      size: { ofShort: 1 / 6 },
+      anchor: { x: 1, y: 1 },
+      droppedWhen: "never on strips; the lockup carries the mark elsewhere",
+      rule: "Strips only: p\u014Dhutukawa tile, short \xF7 6, flush bottom-right (brand rule). Every other shape uses the AEM + Council lockup instead."
+    }
+  },
+  variants: [
+    { phase: "Phase 1 \u2014 pre daylight-saving weekend (V1\u2013V3)", kicker: "IT'S TIME TO TALK", headline: "ST:OR:MS | QU:AK:ES | TSU:NA:MI", message: "Make a plan this daylight saving weekend.", cta: { display: "LEARN MORE", ooh: "Auckland emergency" } },
+    { phase: "Phase 2 \u2014 daylight-saving weekend countdown (V4\u2013V7: 48H, 36H, 24H, 12H)", kicker: "TIME'S RUNNING OUT TO MAKE A PLAN", headline: "HH:MM:SS countdown in the clock face", message: "Make a plan this daylight saving weekend.", cta: { display: "LEARN MORE", ooh: "Auckland emergency" } },
+    { phase: "Phase 3 \u2014 post daylight-saving weekend (V8\u2013V10) and all OOH", headline: "ST:OR:MS | QU:AK:ES | TSU:NA:MI", subheadline: "CAN STRIKE SUDDENLY", message: "Make a plan today.", cta: { display: "LEARN MORE", ooh: "Auckland emergency" } }
+  ],
+  never: [
+    "Re-set or respell the clock-face headline; the colons are the device.",
+    "Copy over the photo without the scrim.",
+    "Pill scaled with the canvas: display pill is a fixed 181\xD743 asset, OOH pill sits at its measured share of the short side.",
+    "Band under the lockup or the logo tile.",
+    "Panel graphic cropped, or floating inside a darker frame.",
+    "Cut-out car behind the headline.",
+    "Photo letterboxed on a colour field.",
+    "Any element that is not in the delivered layers: no new shapes, patterns or copy."
+  ],
+  sizes: [
+    { name: "Display Half Page", w: 300, h: 600 },
+    { name: "Display Billboard", w: 970, h: 250 },
+    { name: "Mrec", w: 300, h: 250 },
+    { name: "Mobile", w: 320, h: 480 },
+    { name: "Council Screen Landscape", w: 1920, h: 1080 },
+    { name: "Meta Stories", w: 1440, h: 2560 },
+    { name: "JCDecaux", w: 2688, h: 672 },
+    { name: "JCDecaux", w: 1824, h: 432 },
+    { name: "JCDecaux", w: 384, h: 592 },
+    { name: "JCDecaux", w: 960, h: 256 },
+    { name: "JCDecaux", w: 768, h: 256 },
+    { name: "JCDecaux", w: 1440, h: 480 },
+    { name: "JCDecaux", w: 1184, h: 400 },
+    { name: "Hivestack", w: 2160, h: 3840 },
+    { name: "Hivestack", w: 384, h: 576 },
+    { name: "Britomart Towers", w: 432, h: 768 },
+    { name: "Newmarket Atrium", w: 1280, h: 448 },
+    { name: "Fanshawe Blades", w: 704, h: 1408 },
+    { name: "The Oteha", w: 384, h: 768 },
+    { name: "Shopalive", w: 1080, h: 1920 }
+  ],
+  references: [
+    "InDesign masters: 26-PRO-0461 \u2026 384px W x 592px H and 960px W x 256px H (standard and SLIM) \u2014 Storms, Quakes, Tsunami.",
+    "GWD working files: WORKING FILES/{QUAKES,STORMS,TSUNAMI}/{300x600px,970x250px}.",
+    "DV360 finals: Phase 1 V1\u2013V3, Phase 2 V4\u2013V7, Phase 3 V8\u2013V10 at 300\xD7600 and 970\xD7250 (HTML5 + statics)."
+  ]
+};
+var STYLE_SCHEMAS = [GET_READY_BURST_2];
+function styleSchemaFor(name) {
+  const n = (name ?? "").toLowerCase();
+  if (!n) return null;
+  return STYLE_SCHEMAS.find((s2) => s2.match.some((m) => n.includes(m))) ?? null;
+}
+function describeStyleSchema(s2) {
+  const zones = Object.keys(s2.zones).map((k) => `  ${k}: ${s2.zones[k].axis}, photo ${Math.round(s2.zones[k].photoFrac * 100)}%, band ${Math.round(s2.zones[k].bandFrac * 100)}% ${s2.zones[k].bandAt}`).join("\n");
+  const parts = Object.values(s2.parts).map((p) => `  ${p.role}: ${p.rule}`).join("\n");
+  return [
+    `STYLE SPEC \u2014 ${s2.name}`,
+    `Reading order (most important first): ${s2.hierarchy.join(" \u2192 ")}.`,
+    `Type: ${Object.entries(s2.type).map(([k, v]) => `${k} \u2014 ${v}`).join(" ")}`,
+    `Colours: ${Object.entries(s2.colours).map(([k, v]) => `${k} ${v}`).join(", ")}.`,
+    "Zones by shape:",
+    zones,
+    "Parts:",
+    parts,
+    `Shipped copy: ${s2.variants.map((v) => `[${v.phase}] ${v.kicker ? v.kicker + " / " : ""}${v.headline}${v.subheadline ? " / " + v.subheadline : ""} / ${v.message} / CTA ${v.cta.display} (display) or ${v.cta.ooh} (OOH)`).join(" | ")}`,
+    `Never: ${s2.never.join(" ")}`
+  ].join("\n");
+}
+
+// src/lib/liquid.ts
+var CONSTRAINT_KEYS = ["pinTop", "pinBottom", "pinLeft", "pinRight", "flexW", "flexH"];
+function sanitizeConstraints(raw2) {
+  if (typeof raw2 !== "object" || raw2 === null) return void 0;
+  const out = {};
+  for (const k of CONSTRAINT_KEYS) {
+    const v = raw2[k];
+    if (v === true) out[k] = true;
+  }
+  return Object.keys(out).length ? out : void 0;
+}
+function edgeTolerance(len) {
+  return Math.max(2, len * 0.012);
+}
+function inferConstraints(el, zone) {
+  const tx = edgeTolerance(zone.w), ty = edgeTolerance(zone.h);
+  const left = el.x <= zone.x + tx;
+  const right = el.x + el.w >= zone.x + zone.w - tx;
+  const top = el.y <= zone.y + ty;
+  const bottom = el.y + el.h >= zone.y + zone.h - ty;
+  const spansW = el.w >= zone.w * 0.96;
+  const spansH = el.h >= zone.h * 0.96;
+  return {
+    ...left || spansW ? { pinLeft: true } : {},
+    ...right || spansW ? { pinRight: true } : {},
+    ...top || spansH ? { pinTop: true } : {},
+    ...bottom || spansH ? { pinBottom: true } : {},
+    ...spansW ? { flexW: true } : {},
+    ...spansH ? { flexH: true } : {}
+  };
+}
+function effectiveConstraints(explicit, el, zone) {
+  return explicit && Object.keys(explicit).length ? explicit : inferConstraints(el, zone);
+}
+function resolveAxis(pos, size, zoneSrcPos, zoneSrcLen, zoneDstPos, zoneDstLen, scale, pinStart, pinEnd, flexible) {
+  const startOff = (pos - zoneSrcPos) * scale;
+  const endOff = (zoneSrcPos + zoneSrcLen - (pos + size)) * scale;
+  const scaled = Math.max(1, size * scale);
+  if (pinStart && pinEnd) {
+    const s2 = Math.max(1, zoneDstLen - startOff - endOff);
+    return { pos: zoneDstPos + startOff, size: s2 };
+  }
+  if (pinStart) return { pos: zoneDstPos + startOff, size: flexible ? Math.max(1, Math.min(scaled, zoneDstLen - startOff)) : scaled };
+  if (pinEnd) return { pos: zoneDstPos + zoneDstLen - endOff - scaled, size: scaled };
+  const centreFrac = (pos + size / 2 - zoneSrcPos) / Math.max(1, zoneSrcLen);
+  return { pos: zoneDstPos + centreFrac * zoneDstLen - scaled / 2, size: scaled };
+}
+function resolveLiquid(el, c, zoneSrc, zoneDst, scale) {
+  const h = resolveAxis(el.x, el.w, zoneSrc.x, zoneSrc.w, zoneDst.x, zoneDst.w, scale, !!c.pinLeft, !!c.pinRight, !!c.flexW);
+  const v = resolveAxis(el.y, el.h, zoneSrc.y, zoneSrc.h, zoneDst.y, zoneDst.h, scale, !!c.pinTop, !!c.pinBottom, !!c.flexH);
+  return { x: Math.round(h.pos), y: Math.round(v.pos), w: Math.max(1, Math.round(h.size)), h: Math.max(1, Math.round(v.size)) };
+}
+function constraintsFromIdml(horizontal, vertical) {
+  const toks = (v) => typeof v === "string" ? v.trim().split(/\s+/) : [];
+  const hz = toks(horizontal), vt = toks(vertical);
+  if (hz.length !== 3 && vt.length !== 3) return void 0;
+  const fixed = (t) => t === "FixedDimension";
+  const flex = (t) => t === "FlexibleDimension";
+  const out = {};
+  if (hz.length === 3) {
+    if (fixed(hz[0])) out.pinLeft = true;
+    if (fixed(hz[2])) out.pinRight = true;
+    if (flex(hz[1])) out.flexW = true;
+  }
+  if (vt.length === 3) {
+    if (fixed(vt[0])) out.pinTop = true;
+    if (fixed(vt[2])) out.pinBottom = true;
+    if (flex(vt[1])) out.flexH = true;
+  }
+  const isDefault = !out.pinLeft && !out.pinRight && !out.pinTop && !out.pinBottom && !out.flexW && !out.flexH;
+  return isDefault ? void 0 : out;
+}
+function describeConstraints(c) {
+  const pins = [c.pinTop && "top", c.pinBottom && "bottom", c.pinLeft && "left", c.pinRight && "right"].filter(Boolean);
+  const flex = [c.flexW && "width", c.flexH && "height"].filter(Boolean);
+  if (!pins.length && !flex.length) return "proportional";
+  return `${pins.length ? `pinned ${pins.join(" + ")}` : "unpinned"}${flex.length ? `, flexible ${flex.join(" + ")}` : ""}`;
+}
+
 // src/lib/freeform.ts
 var SLOT_ROLES = [
   "photo",
@@ -227567,6 +227926,7 @@ var SLOT_ROLES = [
   "panel",
   "band",
   "headline",
+  "kicker",
   "subheadline",
   "message",
   "cta",
@@ -227626,38 +227986,148 @@ function isFreeformConfig(v) {
 }
 function adaptFreeformConfig(master, srcW, srcH, dstW, dstH) {
   const scale = Math.min(dstW / srcW, dstH / srcH);
+  const tolX = Math.max(2, srcW * 0.012);
+  const tolY = Math.max(2, srcH * 0.012);
+  const R = Math.round;
+  const touchesL = (el) => el.x <= tolX;
+  const touchesR = (el) => el.x + el.w >= srcW - tolX;
+  const touchesT = (el) => el.y <= tolY;
+  const touchesB = (el) => el.y + el.h >= srcH - tolY;
+  const fullW = (el) => el.w >= srcW * 0.97 && touchesL(el) && touchesR(el);
+  const fullH = (el) => el.h >= srcH * 0.97 && touchesT(el) && touchesB(el);
+  const fullBleed = (el) => el.w >= srcW * 0.9 && el.h >= srcH * 0.9;
+  const placed2 = /* @__PURE__ */ new Map();
+  const zones = master.elements.filter((el) => !fullBleed(el) && (fullW(el) || fullH(el)));
+  const strips = zones.filter((el) => fullW(el) && !fullH(el)).sort((a, b) => a.y - b.y);
+  const columns = zones.filter((el) => fullH(el) && !fullW(el)).sort((a, b) => a.x - b.x);
+  for (const el of strips) {
+    const h = Math.max(1, R(el.h * scale));
+    let y = null;
+    if (touchesT(el)) y = 0;
+    else {
+      for (const prev of strips) {
+        if (prev === el) continue;
+        const pb = placed2.get(prev.id);
+        if (pb && Math.abs(prev.y + prev.h - el.y) <= tolY) {
+          y = pb.y + pb.h;
+          break;
+        }
+      }
+    }
+    if (y === null) y = R(el.y / srcH * dstH);
+    const fill = touchesB(el) ? Math.max(1, dstH - y) : h;
+    placed2.set(el.id, { x: 0, y, w: dstW, h: fill });
+  }
+  for (const el of columns) {
+    const w = Math.max(1, R(el.w * scale));
+    let x = null;
+    if (touchesL(el)) x = 0;
+    else {
+      for (const prev of columns) {
+        if (prev === el) continue;
+        const pb = placed2.get(prev.id);
+        if (pb && Math.abs(prev.x + prev.w - el.x) <= tolX) {
+          x = pb.x + pb.w;
+          break;
+        }
+      }
+    }
+    if (x === null) x = R(el.x / srcW * dstW);
+    const fill = touchesR(el) ? Math.max(1, dstW - x) : w;
+    placed2.set(el.id, { x, y: 0, w: fill, h: dstH });
+  }
   const adaptAxis = (pos, size, srcLen, dstLen, newSize) => {
     const centre = pos + size / 2;
-    if (centre < srcLen / 3) {
-      return Math.round(pos * scale);
-    }
-    if (centre > 2 * srcLen / 3) {
-      return Math.round(dstLen - (srcLen - pos - size) * scale - newSize);
-    }
-    return Math.round(centre / srcLen * dstLen - newSize / 2);
+    if (centre < srcLen / 3) return R(pos * scale);
+    if (centre > 2 * srcLen / 3) return R(dstLen - (srcLen - pos - size) * scale - newSize);
+    return R(centre / srcLen * dstLen - newSize / 2);
   };
+  const zoneOf = (box) => {
+    const cx = box.x + box.w / 2, cy = box.y + box.h / 2;
+    let best = null;
+    for (const z of zones) {
+      if (cx >= z.x && cx <= z.x + z.w && cy >= z.y && cy <= z.y + z.h) {
+        if (!best || z.w * z.h < best.w * best.h) best = z;
+      }
+    }
+    return best;
+  };
+  const loose = master.elements.filter((el) => !fullBleed(el) && !placed2.has(el.id));
+  const parent = /* @__PURE__ */ new Map();
+  const find = (id) => {
+    const p = parent.get(id);
+    if (!p || p === id) return id;
+    const root = find(p);
+    parent.set(id, root);
+    return root;
+  };
+  const union4 = (a, b) => {
+    const ra = find(a), rb = find(b);
+    if (ra !== rb) parent.set(ra, rb);
+  };
+  for (const el of loose) parent.set(el.id, el.id);
+  const meets = (a, b) => a.x < b.x + b.w + 1 && a.x + a.w + 1 > b.x && a.y < b.y + b.h + 1 && a.y + a.h + 1 > b.y;
+  for (let i = 0; i < loose.length; i++) for (let j = i + 1; j < loose.length; j++) if (meets(loose[i], loose[j])) union4(loose[i].id, loose[j].id);
+  const clusters = /* @__PURE__ */ new Map();
+  for (const el of loose) {
+    const rt = find(el.id);
+    clusters.set(rt, [...clusters.get(rt) ?? [], el]);
+  }
+  const newBox = /* @__PURE__ */ new Map();
+  for (const members of clusters.values()) {
+    const bx0 = Math.min(...members.map((m) => m.x)), by0 = Math.min(...members.map((m) => m.y));
+    const bx1 = Math.max(...members.map((m) => m.x + m.w)), by1 = Math.max(...members.map((m) => m.y + m.h));
+    const B = { x: bx0, y: by0, w: bx1 - bx0, h: by1 - by0 };
+    const zone = zoneOf(B);
+    const zNew = zone ? placed2.get(zone.id) : void 0;
+    const zoneSrc = zone ?? { x: 0, y: 0, w: srcW, h: srcH };
+    const zoneDst = zone && zNew ? zNew : { x: 0, y: 0, w: dstW, h: dstH };
+    const explicit = members.map((m) => m.constraints).find((c2) => c2 && Object.keys(c2).length);
+    const c = effectiveConstraints(explicit, B, zoneSrc);
+    const placedBox = resolveLiquid(B, c, zoneSrc, zoneDst, scale);
+    let x = placedBox.x;
+    let y = placedBox.y;
+    const w = placedBox.w;
+    const h = placedBox.h;
+    if (!c.pinLeft && !c.pinRight && B.x >= zoneSrc.x && B.x + B.w <= zoneSrc.x + zoneSrc.w) x = Math.min(Math.max(x, zoneDst.x), Math.max(zoneDst.x, zoneDst.x + zoneDst.w - w));
+    if (!c.pinTop && !c.pinBottom && B.y >= zoneSrc.y && B.y + B.h <= zoneSrc.y + zoneSrc.h) y = Math.min(Math.max(y, zoneDst.y), Math.max(zoneDst.y, zoneDst.y + zoneDst.h - h));
+    const kx = members.length === 1 ? w / Math.max(1, B.w * scale) : 1;
+    const ky = members.length === 1 ? h / Math.max(1, B.h * scale) : 1;
+    for (const m of members) {
+      newBox.set(m.id, { x: x + R((m.x - B.x) * scale * kx), y: y + R((m.y - B.y) * scale * ky), w: Math.max(1, R(m.w * scale * kx)), h: Math.max(1, R(m.h * scale * ky)) });
+    }
+  }
+  for (const members of clusters.values()) {
+    const pill = members.find((m) => m.slot === "cta" && m.type === "rect");
+    const label3 = members.find((m) => m.slot === "ctaLabel" && m.type === "text");
+    if (!pill || !label3) continue;
+    const pb = newBox.get(pill.id), lb = newBox.get(label3.id);
+    if (!pb || !lb) continue;
+    const pad = Math.max(2, lb.x - pb.x);
+    const icon = members.find((m) => m.slot === "ctaIcon");
+    const ib = icon ? newBox.get(icon.id) : void 0;
+    const right = ib ? ib.x - Math.max(2, R(pad / 2)) : pb.x + pb.w - pad;
+    newBox.set(label3.id, { ...lb, w: Math.max(1, right - lb.x) });
+  }
   const elements = master.elements.map((el) => {
-    if (el.w >= srcW * 0.9 && el.h >= srcH * 0.9) {
+    if (fullBleed(el)) {
       return { ...el, x: 0, y: 0, w: dstW, h: dstH };
     }
-    const w = Math.max(1, Math.round(el.w * scale));
-    const h = Math.max(1, Math.round(el.h * scale));
-    let x = adaptAxis(el.x, el.w, srcW, dstW, w);
-    let y = adaptAxis(el.y, el.h, srcH, dstH, h);
-    if (el.x >= 0 && el.x + el.w <= srcW) x = Math.min(Math.max(x, 0), Math.max(0, dstW - w));
-    if (el.y >= 0 && el.y + el.h <= srcH) y = Math.min(Math.max(y, 0), Math.max(0, dstH - h));
+    const zb = placed2.get(el.id);
+    if (zb) return { ...el, x: zb.x, y: zb.y, w: zb.w, h: zb.h };
+    const nb = newBox.get(el.id) ?? { x: R(el.x * scale), y: R(el.y * scale), w: Math.max(1, R(el.w * scale)), h: Math.max(1, R(el.h * scale)) };
     if (el.type === "text") {
       return {
         ...el,
-        x,
-        y,
-        w,
-        h,
-        fontSize: Math.max(6, Math.round(el.fontSize * scale)),
+        x: nb.x,
+        y: nb.y,
+        w: nb.w + Math.max(2, R(nb.w * 0.03)),
+        h: nb.h,
+        fontSize: Math.max(6, R(el.fontSize * scale)),
         ...el.letterSpacing !== void 0 ? { letterSpacing: el.letterSpacing * scale } : {}
       };
     }
-    return { ...el, x, y, w, h };
+    return { ...el, x: nb.x, y: nb.y, w: nb.w, h: nb.h };
   });
   return { kind: "freeform", elements };
 }
@@ -227671,16 +228141,16 @@ function sanitizeMotion(raw2) {
   const frames = [];
   for (const f of m.frames.slice(0, MAX_MOTION_FRAMES)) {
     if (typeof f !== "object" || f === null) continue;
-    const r4 = f;
-    const t = num(r4.t);
+    const r6 = f;
+    const t = num(r6.t);
     if (!(t >= 0 && t <= 1)) continue;
     frames.push({
       t: Math.round(t * 1e4) / 1e4,
-      dx: Math.max(-2e4, Math.min(2e4, num(r4.dx))),
-      dy: Math.max(-2e4, Math.min(2e4, num(r4.dy))),
-      sx: Math.max(0, Math.min(50, num(r4.sx, 1))),
-      sy: Math.max(0, Math.min(50, num(r4.sy, 1))),
-      o: Math.max(0, Math.min(1, num(r4.o, 1)))
+      dx: Math.max(-2e4, Math.min(2e4, num(r6.dx))),
+      dy: Math.max(-2e4, Math.min(2e4, num(r6.dy))),
+      sx: Math.max(0, Math.min(50, num(r6.sx, 1))),
+      sy: Math.max(0, Math.min(50, num(r6.sy, 1))),
+      o: Math.max(0, Math.min(1, num(r6.o, 1)))
     });
   }
   if (frames.length < 2) return void 0;
@@ -227701,7 +228171,12 @@ function normalizeFreeformConfig(raw2) {
       h: Math.max(0, num(el.h)),
       ...sanitizeLayerName(el.layerName) ? { layerName: sanitizeLayerName(el.layerName) } : {},
       ...el.locked === true ? { locked: true } : {},
-      ...SLOT_ROLES.includes(el.slot) && el.slot !== "other" ? { slot: el.slot } : {}
+      ...SLOT_ROLES.includes(el.slot) && el.slot !== "other" ? { slot: el.slot } : {},
+      ...typeof el.layoutBlock === "string" && /^[\w:.-]{1,80}$/.test(el.layoutBlock) ? { layoutBlock: el.layoutBlock } : {},
+      ...el.anchorX === "left" || el.anchorX === "center" || el.anchorX === "right" || el.anchorX === "stretch" ? { anchorX: el.anchorX } : {},
+      ...el.anchorY === "top" || el.anchorY === "center" || el.anchorY === "bottom" || el.anchorY === "stretch" ? { anchorY: el.anchorY } : {},
+      ...el.scaleMode === "uniform" || el.scaleMode === "fill" || el.scaleMode === "fixed" ? { scaleMode: el.scaleMode } : {},
+      ...sanitizeConstraints(el.constraints) ? { constraints: sanitizeConstraints(el.constraints) } : {}
     };
     if (el.type === "text") {
       const role = TEXT_ROLES.includes(el.role) ? el.role : "other";
@@ -227770,6 +228245,16 @@ function normalizeFreeformConfig(raw2) {
         ...el.keepWhole === true ? { keepWhole: true } : {},
         ...el.bakedCopy === true ? { bakedCopy: true } : {},
         ...el.panelPart === true ? { panelPart: true } : {},
+        ...el.panelMasked === true ? { panelMasked: true } : {},
+        ...(() => {
+          const sh = el.shape;
+          if (!sh || sh.kind !== "anther" && sh.kind !== "shape") return {};
+          const n = (v) => typeof v === "number" && Number.isFinite(v) ? v : null;
+          const cx = n(sh.cx), cy = n(sh.cy), rr = n(sh.r);
+          if (cx === null || cy === null || rr === null || rr <= 0) return {};
+          const sx = n(sh.stemX), sy = n(sh.stemY), asp = n(sh.aspect);
+          return { shape: { kind: sh.kind, cx, cy, r: rr, ...sx !== null && sy !== null ? { stemX: sx, stemY: sy } : {}, ...asp !== null && asp > 0 ? { aspect: asp } : {} } };
+        })(),
         ...kvText && kvText.length > 0 ? { kvText } : {},
         ...motion ? { motion } : {},
         ...groupMotion ? { groupMotion } : {},
@@ -227833,7 +228318,14 @@ function normalizeFreeformConfig(raw2) {
     contrast: typeof rawPr.contrast === "number" && Number.isFinite(rawPr.contrast) ? Math.round(rawPr.contrast * 100) / 100 : null,
     ...Array.isArray(rawPr.contrastDetail) ? { contrastDetail: rawPr.contrastDetail.filter((d) => !!d && typeof d === "object" && typeof d.id === "string" && typeof d.ratio === "number").slice(0, 8).map((d) => ({ id: String(d.id).slice(0, 80), label: String(d.label ?? d.id).slice(0, 40), ratio: d.ratio, floor: d.floor === 4.5 ? 4.5 : 3 })) } : {}
   } : null;
-  const rejected = Array.isArray(raw2.rejected) ? raw2.rejected.filter((r4) => typeof r4 === "string" && r4.trim().length > 0).map((r4) => r4.slice(0, 300)).slice(0, 20) : [];
+  const rawDropped = raw2.droppedParts;
+  const droppedParts = Array.isArray(rawDropped) ? rawDropped.filter((d) => !!d && typeof d === "object" && typeof d.slot === "string").slice(0, 20).map((d) => ({ slot: d.slot.slice(0, 40), reason: typeof d.reason === "string" ? d.reason.slice(0, 200) : "", byRule: d.byRule === true })) : [];
+  const needsReview = raw2.needsReview === true;
+  const rejected = Array.isArray(raw2.rejected) ? raw2.rejected.filter((r6) => typeof r6 === "string" && r6.trim().length > 0).map((r6) => r6.slice(0, 300)).slice(0, 20) : [];
+  const sourceMode = raw2.sourceMode === "indesign-bridge" ? "indesign-bridge" : void 0;
+  const familyRaw = raw2.masterFamily;
+  const masterFamily = familyRaw === "portrait" || familyRaw === "landscape" || familyRaw === "slim-portrait" || familyRaw === "slim-landscape" ? familyRaw : void 0;
+  const authoritativeGeometry = sourceMode === "indesign-bridge" && raw2.authoritativeGeometry === true;
   return {
     kind: "freeform",
     elements,
@@ -227844,7 +228336,12 @@ function normalizeFreeformConfig(raw2) {
     ...adaptMethod ? { adaptMethod } : {},
     ...adaptNotes.length > 0 ? { adaptNotes } : {},
     ...rejected.length > 0 ? { rejected } : {},
-    ...principles ? { principles } : {}
+    ...droppedParts.length > 0 ? { droppedParts } : {},
+    ...needsReview ? { needsReview } : {},
+    ...principles ? { principles } : {},
+    ...sourceMode ? { sourceMode } : {},
+    ...masterFamily ? { masterFamily } : {},
+    ...authoritativeGeometry ? { authoritativeGeometry: true } : {}
   };
 }
 
@@ -227894,8 +228391,8 @@ function ensureFeedbackTable() {
       FROM templates t
       WHERE f.subject_type = 'template' AND f.subject_id = t.id AND f.subject_width IS NULL`);
     const rows = await db.execute(sql`SELECT id, subject_width, subject_height FROM feedback WHERE format_class IS NULL AND subject_width IS NOT NULL`);
-    for (const r4 of rows.rows) {
-      await db.execute(sql`UPDATE feedback SET format_class = ${classifyAspect(r4.subject_width, r4.subject_height)} WHERE id = ${r4.id}`);
+    for (const r6 of rows.rows) {
+      await db.execute(sql`UPDATE feedback SET format_class = ${classifyAspect(r6.subject_width, r6.subject_height)} WHERE id = ${r6.id}`);
     }
   })().catch((err) => {
     ensured2 = null;
@@ -227924,34 +228421,43 @@ async function snapshotTemplate(id) {
 }
 var cache2 = /* @__PURE__ */ new Map();
 var CACHE_MS = 6e4;
-async function feedbackForFormat(formatClass) {
-  const hit = cache2.get(formatClass);
+function campaignKeyOf(name) {
+  const n = (name ?? "").trim();
+  const named = styleSchemaFor(n);
+  if (named) return `schema:${named.id}`;
+  return `name:${n.split(" \u2014 ")[0].toLowerCase().replace(/\s+/g, " ").trim()}`;
+}
+async function feedbackForFormat(formatClass, scope) {
+  const scopeKey = scope ? campaignKeyOf(scope.masterName) : null;
+  const cacheKey = scope ? `${formatClass}|${scopeKey}|${scope.masterId}` : formatClass;
+  const hit = cache2.get(cacheKey);
   if (hit && Date.now() - hit.at < CACHE_MS) return hit.value;
   await ensureFeedbackTable();
   const rows = await db.execute(sql`
-    SELECT verdict, note, element_label, element_slot, fault, expected, subject_width, subject_height
+    SELECT verdict, note, element_label, element_slot, fault, expected, subject_width, subject_height, subject_name, source_template_id
     FROM feedback
     WHERE subject_type = 'template' AND format_class = ${formatClass}
       AND adapt_method IS NOT NULL AND adapt_method <> 'import'
     ORDER BY id DESC LIMIT 200`);
   const value = { formatClass, correct: 0, incorrect: 0, notes: [] };
-  for (const r4 of rows.rows) {
-    if (r4.verdict === "correct") value.correct++;
-    else if (r4.verdict === "incorrect") value.incorrect++;
-    if (r4.verdict === "incorrect" && (r4.note || r4.fault) && value.notes.length < 6) {
-      const size = r4.subject_width && r4.subject_height ? ` (${r4.subject_width}\xD7${r4.subject_height})` : "";
-      const part = r4.element_slot ? `[${r4.element_slot}] ` : r4.element_label ? `[${r4.element_label}] ` : "";
-      const structured = r4.fault ? `${String(r4.fault).replace(/_/g, " ")}${r4.expected ? ` \u2014 expected ${String(r4.expected).trim()}` : ""}` : "";
-      const free = r4.note ? String(r4.note).trim() : "";
+  for (const r6 of rows.rows) {
+    if (scope && Number(r6.source_template_id) !== scope.masterId && campaignKeyOf(r6.subject_name) !== scopeKey) continue;
+    if (r6.verdict === "correct") value.correct++;
+    else if (r6.verdict === "incorrect") value.incorrect++;
+    if (r6.verdict === "incorrect" && (r6.note || r6.fault) && value.notes.length < 6) {
+      const size = r6.subject_width && r6.subject_height ? ` (${r6.subject_width}\xD7${r6.subject_height})` : "";
+      const part = r6.element_slot ? `[${r6.element_slot}] ` : r6.element_label ? `[${r6.element_label}] ` : "";
+      const structured = r6.fault ? `${String(r6.fault).replace(/_/g, " ")}${r6.expected ? ` \u2014 expected ${String(r6.expected).trim()}` : ""}` : "";
+      const free = r6.note ? String(r6.note).trim() : "";
       value.notes.push(`${part}${[structured, free].filter(Boolean).join("; ")}${size}`);
     }
   }
-  cache2.set(formatClass, { at: Date.now(), value });
+  cache2.set(cacheKey, { at: Date.now(), value });
   return value;
 }
 function describeFormatFeedback(fb) {
   if (fb.correct + fb.incorrect === 0) return null;
-  const head2 = `Designer feedback on ${fb.formatClass} formats: ${fb.correct} right, ${fb.incorrect} wrong.`;
+  const head2 = `Designer feedback on this campaign's ${fb.formatClass} formats: ${fb.correct} right, ${fb.incorrect} wrong.`;
   return fb.notes.length > 0 ? `${head2} Wrong because: ${fb.notes.join("; ")}` : head2;
 }
 async function snapshotTemplateConfig(id) {
@@ -228028,14 +228534,14 @@ async function backfillRememberedRights(opts = {}) {
     JOIN templates t ON t.id = latest.subject_id AND t.category <> 'knowledge'
     WHERE latest.verdict = 'correct'`);
   const out = { candidates: 0, snapshotted: 0, remembered: 0 };
-  for (const r4 of rows.rows) {
+  for (const r6 of rows.rows) {
     out.candidates += 1;
-    const templateId = Number(r4.subject_id);
+    const templateId = Number(r6.subject_id);
     try {
-      if (r4.needs_snapshot) {
+      if (r6.needs_snapshot) {
         const cfg = await snapshotTemplateConfig(templateId);
         if (cfg) {
-          await db.execute(sql`UPDATE feedback SET subject_config = ${cfg} WHERE id = ${Number(r4.feedback_id)}`);
+          await db.execute(sql`UPDATE feedback SET subject_config = ${cfg} WHERE id = ${Number(r6.feedback_id)}`);
           out.snapshotted += 1;
         }
       }
@@ -228071,9 +228577,9 @@ function hexToRgb2(hex) {
     b: parseInt(h.slice(4, 6), 16)
   };
 }
-function rgbToHex2({ r: r4, g, b }) {
+function rgbToHex2({ r: r6, g, b }) {
   const to = (n) => Math.max(0, Math.min(255, Math.round(n))).toString(16).padStart(2, "0");
-  return `#${to(r4)}${to(g)}${to(b)}`;
+  return `#${to(r6)}${to(g)}${to(b)}`;
 }
 function cmykToRgb(c, m, y, k) {
   const unit = (v) => {
@@ -228081,17 +228587,17 @@ function cmykToRgb(c, m, y, k) {
     return Math.max(0, Math.min(1, n));
   };
   const [C2, M, Y, K] = [unit(c), unit(m), unit(y), unit(k)];
-  const r4 = 255 + C2 * (-4.387332384609988 * C2 + 54.48615194189176 * M + 18.82290502165302 * Y + 212.25662451639585 * K - 285.2331026137004) + M * (1.7149763477362134 * M - 5.6096736904047315 * Y - 17.873870861415444 * K - 5.497006427196366) + Y * (-2.5217340131683033 * Y - 21.248923337353073 * K + 17.5119270841813) + K * (-21.86122147463605 * K - 189.48180835922747);
+  const r6 = 255 + C2 * (-4.387332384609988 * C2 + 54.48615194189176 * M + 18.82290502165302 * Y + 212.25662451639585 * K - 285.2331026137004) + M * (1.7149763477362134 * M - 5.6096736904047315 * Y - 17.873870861415444 * K - 5.497006427196366) + Y * (-2.5217340131683033 * Y - 21.248923337353073 * K + 17.5119270841813) + K * (-21.86122147463605 * K - 189.48180835922747);
   const g = 255 + C2 * (8.841041422036149 * C2 + 60.118027045597366 * M + 6.871425592049007 * Y + 31.159100130055922 * K - 79.2970844816548) + M * (-15.310361306967817 * M + 17.575251261109482 * Y + 131.35250912493976 * K - 190.9453302588951) + Y * (4.444339102852739 * Y + 9.8632861493405 * K - 24.86741582555878) + K * (-20.737325471181034 * K - 187.80453709719578);
   const b = 255 + C2 * (0.8842522430003296 * C2 + 8.078677503112928 * M + 30.89978309703729 * Y - 0.23883238689178934 * K - 14.183576799673286) + M * (10.49593273432072 * M + 63.02378494754052 * Y + 50.606957656360734 * K - 112.23884253719248) + Y * (0.03296041114873217 * Y + 115.60384449646641 * K - 193.58209356861505) + K * (-22.33816807309886 * K - 180.12613974708367);
-  const clamp2 = (v) => Math.max(0, Math.min(255, v));
-  return { r: clamp2(r4), g: clamp2(g), b: clamp2(b) };
+  const clamp4 = (v) => Math.max(0, Math.min(255, v));
+  return { r: clamp4(r6), g: clamp4(g), b: clamp4(b) };
 }
 function cmykToHex(c, m, y, k) {
   return rgbToHex2(cmykToRgb(c, m, y, k));
 }
-function rgbToCmyk({ r: r4, g, b }) {
-  const R = Math.max(0, Math.min(255, r4)) / 255;
+function rgbToCmyk({ r: r6, g, b }) {
+  const R = Math.max(0, Math.min(255, r6)) / 255;
   const G = Math.max(0, Math.min(255, g)) / 255;
   const B = Math.max(0, Math.min(255, b)) / 255;
   const k = 1 - Math.max(R, G, B);
@@ -228104,12 +228610,12 @@ function rgbToCmyk({ r: r4, g, b }) {
     k: pct2(k)
   };
 }
-function rgbToLab2({ r: r4, g, b }) {
+function rgbToLab2({ r: r6, g, b }) {
   const lin = (c) => {
     const s2 = c / 255;
     return s2 <= 0.04045 ? s2 / 12.92 : Math.pow((s2 + 0.055) / 1.055, 2.4);
   };
-  const R = lin(r4), G = lin(g), B = lin(b);
+  const R = lin(r6), G = lin(g), B = lin(b);
   const X = R * 0.4124 + G * 0.3576 + B * 0.1805;
   const Y = R * 0.2126 + G * 0.7152 + B * 0.0722;
   const Z = R * 0.0193 + G * 0.1192 + B * 0.9505;
@@ -228174,11 +228680,11 @@ init_freeformFonts();
 var storage = new ObjectStorageService();
 function fontFromAssetName(name, objectPath, contentType) {
   const m = /^(.*?)\s*\((.+)\)\s*$/.exec(name.trim());
-  const family = (m ? m[1] : name.replace(/\.(ttf|otf|woff2?)$/i, "")).trim();
+  const family2 = (m ? m[1] : name.replace(/\.(ttf|otf|woff2?)$/i, "")).trim();
   const file2 = m ? m[2] : name;
-  if (!family) return null;
+  if (!family2) return null;
   return {
-    family,
+    family: family2,
     file: file2,
     objectPath,
     contentType,
@@ -228275,8 +228781,8 @@ function cssRgba(c, alphaMul = 1) {
 }
 var measureCanvas = createCanvas(8, 8);
 var measureCtx = measureCanvas.getContext("2d");
-function canvasFontString(family, weight, italic, sizePx) {
-  return `${italic ? "italic" : "normal"} ${weight} ${sizePx}px "${family}"`;
+function canvasFontString(family2, weight, italic, sizePx) {
+  return `${italic ? "italic" : "normal"} ${weight} ${sizePx}px "${family2}"`;
 }
 function resolveFamily(el, brandFontFamily) {
   if (el.fontFamily && hasFontFamily(el.fontFamily)) return el.fontFamily;
@@ -228312,13 +228818,13 @@ function wrapParagraph(paragraph, maxWidth, letterSpacing) {
   return lines;
 }
 function layoutText(el, fonts, brandFontFamily) {
-  const family = resolveFamily(el, brandFontFamily);
+  const family2 = resolveFamily(el, brandFontFamily);
   const weight = el.fontWeight === 700 ? 700 : 400;
   const italic = el.fontStyle === "italic";
   const fontSize = el.fontSize ?? 16;
   const letterSpacing = el.letterSpacing ?? 0;
   const lineHeightPx = (el.lineHeight ?? 1.2) * fontSize;
-  measureCtx.font = canvasFontString(family, weight, italic, fontSize);
+  measureCtx.font = canvasFontString(family2, weight, italic, fontSize);
   const m = fonts[weight].metrics;
   const ascentPx = m.ascent / m.unitsPerEm * fontSize;
   const descentPx = m.descent / m.unitsPerEm * fontSize;
@@ -228336,7 +228842,7 @@ function layoutText(el, fonts, brandFontFamily) {
   if (el.baselineFit === "cap" && lines.length === 1 && (el.h ?? 0) > 0) {
     lines[0].baseline = el.h;
   }
-  return { lines, family, weight, italic, fontSize, letterSpacing, lineHeightPx };
+  return { lines, family: family2, weight, italic, fontSize, letterSpacing, lineHeightPx };
 }
 function imageFit(el) {
   if (el.fit === "cover" || el.fit === "contain") return el.fit;
@@ -228366,8 +228872,8 @@ function gradientLine(box, angleDeg) {
     y1: cy + dirY * len / 2
   };
 }
-function clampRadius(box, r4) {
-  return Math.max(0, Math.min(r4 ?? 0, box.w / 2, box.h / 2));
+function clampRadius(box, r6) {
+  return Math.max(0, Math.min(r6 ?? 0, box.w / 2, box.h / 2));
 }
 function decodeDataUrl(src) {
   const m = /^data:([^;,]+)?(;base64)?,(.*)$/is.exec(src);
@@ -228392,18 +228898,18 @@ async function fetchImageBytes(src, loader, cache3) {
   }
   return p;
 }
-function roundRectPath(ctx2, box, r4) {
+function roundRectPath(ctx2, box, r6) {
   ctx2.beginPath();
-  if (r4 > 0) ctx2.roundRect(box.x, box.y, box.w, box.h, r4);
+  if (r6 > 0) ctx2.roundRect(box.x, box.y, box.w, box.h, r6);
   else ctx2.rect(box.x, box.y, box.w, box.h);
 }
 function drawRectCanvas(ctx2, el) {
   const box = { x: el.x, y: el.y, w: el.w, h: el.h };
   if (box.w <= 0 || box.h <= 0) return;
-  const r4 = clampRadius(box, el.radius);
+  const r6 = clampRadius(box, el.radius);
   ctx2.save();
   ctx2.globalAlpha = el.opacity ?? 1;
-  roundRectPath(ctx2, box, r4);
+  roundRectPath(ctx2, box, r6);
   const grad = el.gradient;
   if (grad && grad.stops.length >= 2) {
     const line2 = gradientLine(box, grad.angle);
@@ -228439,6 +228945,12 @@ async function drawImageCanvas(ctx2, el, img) {
     bitmap = await canvasLoadImage(await sharp3(img.bytes).png().toBuffer());
   }
   const { dx, dy, dw, dh } = placeImage(box, img.width, img.height, el);
+  if (dw > 0 && dh > 0 && dw / Math.max(1, img.width) < 0.6) {
+    try {
+      bitmap = await canvasLoadImage(await sharp3(img.bytes).resize(Math.max(1, Math.round(dw)), Math.max(1, Math.round(dh)), { fit: "fill", kernel: "lanczos3" }).png().toBuffer());
+    } catch {
+    }
+  }
   ctx2.save();
   ctx2.globalAlpha = el.opacity ?? 1;
   roundRectPath(ctx2, box, clampRadius(box, el.radius));
@@ -228525,31 +229037,31 @@ function roundedRectOps(ctx2, box, rPx) {
   const tl = toPage(ctx2, box.x, box.y);
   const w = box.w * ctx2.k;
   const h = box.h * ctx2.k;
-  const r4 = rPx * ctx2.k;
+  const r6 = rPx * ctx2.k;
   const x0 = tl.x;
   const y1 = tl.y;
   const x1 = x0 + w;
   const y0 = y1 - h;
-  if (r4 <= 0) {
+  if (r6 <= 0) {
     return [(0, import_pdf_lib.moveTo)(x0, y0), (0, import_pdf_lib.lineTo)(x1, y0), (0, import_pdf_lib.lineTo)(x1, y1), (0, import_pdf_lib.lineTo)(x0, y1), (0, import_pdf_lib.closePath)()];
   }
-  const c = r4 * 0.5523;
+  const c = r6 * 0.5523;
   return [
-    (0, import_pdf_lib.moveTo)(x0 + r4, y0),
-    (0, import_pdf_lib.lineTo)(x1 - r4, y0),
-    (0, import_pdf_lib.appendBezierCurve)(x1 - r4 + c, y0, x1, y0 + r4 - c, x1, y0 + r4),
-    (0, import_pdf_lib.lineTo)(x1, y1 - r4),
-    (0, import_pdf_lib.appendBezierCurve)(x1, y1 - r4 + c, x1 - r4 + c, y1, x1 - r4, y1),
-    (0, import_pdf_lib.lineTo)(x0 + r4, y1),
-    (0, import_pdf_lib.appendBezierCurve)(x0 + r4 - c, y1, x0, y1 - r4 + c, x0, y1 - r4),
-    (0, import_pdf_lib.lineTo)(x0, y0 + r4),
-    (0, import_pdf_lib.appendBezierCurve)(x0, y0 + r4 - c, x0 + r4 - c, y0, x0 + r4, y0),
+    (0, import_pdf_lib.moveTo)(x0 + r6, y0),
+    (0, import_pdf_lib.lineTo)(x1 - r6, y0),
+    (0, import_pdf_lib.appendBezierCurve)(x1 - r6 + c, y0, x1, y0 + r6 - c, x1, y0 + r6),
+    (0, import_pdf_lib.lineTo)(x1, y1 - r6),
+    (0, import_pdf_lib.appendBezierCurve)(x1, y1 - r6 + c, x1 - r6 + c, y1, x1 - r6, y1),
+    (0, import_pdf_lib.lineTo)(x0 + r6, y1),
+    (0, import_pdf_lib.appendBezierCurve)(x0 + r6 - c, y1, x0, y1 - r6 + c, x0, y1 - r6),
+    (0, import_pdf_lib.lineTo)(x0, y0 + r6),
+    (0, import_pdf_lib.appendBezierCurve)(x0, y0 + r6 - c, x0 + r6 - c, y0, x0 + r6, y0),
     (0, import_pdf_lib.closePath)()
   ];
 }
-function roundedRectSvg(w, h, r4) {
-  if (r4 <= 0) return `M0 0 H${w} V${h} H0 Z`;
-  return `M${r4} 0 H${w - r4} A${r4} ${r4} 0 0 1 ${w} ${r4} V${h - r4} A${r4} ${r4} 0 0 1 ${w - r4} ${h} H${r4} A${r4} ${r4} 0 0 1 0 ${h - r4} V${r4} A${r4} ${r4} 0 0 1 ${r4} 0 Z`;
+function roundedRectSvg(w, h, r6) {
+  if (r6 <= 0) return `M0 0 H${w} V${h} H0 Z`;
+  return `M${r6} 0 H${w - r6} A${r6} ${r6} 0 0 1 ${w} ${r6} V${h - r6} A${r6} ${r6} 0 0 1 ${w - r6} ${h} H${r6} A${r6} ${r6} 0 0 1 0 ${h - r6} V${r6} A${r6} ${r6} 0 0 1 ${r6} 0 Z`;
 }
 function bleedExtendedBox(ctx2, el) {
   const box = { x: el.x, y: el.y, w: el.w, h: el.h };
@@ -228571,16 +229083,16 @@ function bleedExtendedBox(ctx2, el) {
 async function drawRectPdf(ctx2, el) {
   const box = bleedExtendedBox(ctx2, el);
   if (box.w <= 0 || box.h <= 0) return;
-  const r4 = clampRadius(box, el.radius);
+  const r6 = clampRadius(box, el.radius);
   const opacity = el.opacity ?? 1;
   const grad = el.gradient;
   if (grad && grad.stops.length >= 2) {
-    await drawGradientPdf(ctx2, el, box, r4);
+    await drawGradientPdf(ctx2, el, box, r6);
     return;
   }
   const fill = parseColor(el.fill, { r: 255, g: 255, b: 255, a: 1 });
   const tl = toPage(ctx2, box.x, box.y);
-  ctx2.page.drawSvgPath(roundedRectSvg(box.w * ctx2.k, box.h * ctx2.k, r4 * ctx2.k), {
+  ctx2.page.drawSvgPath(roundedRectSvg(box.w * ctx2.k, box.h * ctx2.k, r6 * ctx2.k), {
     x: tl.x,
     y: tl.y,
     color: pdfColor(fill, ctx2.cmyk),
@@ -228590,8 +229102,8 @@ async function drawRectPdf(ctx2, el) {
   if (el.borderWidth && el.borderWidth > 0) {
     const bw = Math.min(el.borderWidth, box.w / 2, box.h / 2);
     const bc = parseColor(el.borderColor ?? "#000000");
-    ctx2.page.pushOperators((0, import_pdf_lib.pushGraphicsState)(), ...roundedRectOps(ctx2, box, r4), (0, import_pdf_lib.clip)(), (0, import_pdf_lib.endPath)());
-    ctx2.page.drawSvgPath(roundedRectSvg(box.w * ctx2.k, box.h * ctx2.k, r4 * ctx2.k), {
+    ctx2.page.pushOperators((0, import_pdf_lib.pushGraphicsState)(), ...roundedRectOps(ctx2, box, r6), (0, import_pdf_lib.clip)(), (0, import_pdf_lib.endPath)());
+    ctx2.page.drawSvgPath(roundedRectSvg(box.w * ctx2.k, box.h * ctx2.k, r6 * ctx2.k), {
       x: tl.x,
       y: tl.y,
       borderColor: pdfColor(bc, ctx2.cmyk),
@@ -228601,7 +229113,7 @@ async function drawRectPdf(ctx2, el) {
     ctx2.page.pushOperators((0, import_pdf_lib.popGraphicsState)());
   }
 }
-async function drawGradientPdf(ctx2, el, box, r4) {
+async function drawGradientPdf(ctx2, el, box, r6) {
   const pxPerTemplatePx = Math.max(1, GRADIENT_RASTER_DPI / 72 * ctx2.k);
   const cw = Math.max(1, Math.min(8e3, Math.round(box.w * pxPerTemplatePx)));
   const ch = Math.max(1, Math.min(8e3, Math.round(box.h * pxPerTemplatePx)));
@@ -228609,7 +229121,7 @@ async function drawGradientPdf(ctx2, el, box, r4) {
   const c2d = canvas2.getContext("2d");
   c2d.scale(cw / box.w, ch / box.h);
   drawRectCanvas(c2d, { ...el, x: 0, y: 0, w: box.w, h: box.h, opacity: 1 });
-  void r4;
+  void r6;
   const img = await ctx2.doc.embedPng(await canvas2.encode("png"));
   const bl = toPage(ctx2, box.x, box.y + box.h);
   ctx2.page.drawImage(img, { x: bl.x, y: bl.y, width: box.w * ctx2.k, height: box.h * ctx2.k, opacity: el.opacity ?? 1 });
@@ -228923,6 +229435,23 @@ function pdfQuery(q) {
     ...dpi > 0 ? { dpi } : {}
   };
 }
+router5.post("/render-config", requireAuth, async (req, res) => {
+  const width = Number(req.body?.width), height = Number(req.body?.height);
+  const raw2 = req.body?.config;
+  if (!Number.isInteger(width) || !Number.isInteger(height) || width < 16 || height < 16 || width > 8e3 || height > 8e3 || !raw2 || raw2.kind !== "freeform") {
+    res.status(400).json({ error: "config (freeform), width and height are required" });
+    return;
+  }
+  try {
+    const png = await renderFreeformToPng(normalizeFreeformConfig(raw2), width, height, { scale: 1, loadImage: makeImageLoader(req) });
+    res.set("Content-Type", "image/png");
+    res.set("Cache-Control", "no-store");
+    res.send(png);
+  } catch (err) {
+    logger2.error({ err }, "render-config failed");
+    res.status(500).json({ error: "Failed to render PNG" });
+  }
+});
 router5.get("/templates/:id/export.png", requireAuth, async (req, res) => {
   const t = await loadTemplate(req, res);
   if (!t) return;
@@ -228971,25 +229500,25 @@ router5.get("/templates/:id/export.pdf", requireAuth, async (req, res) => {
   }
 });
 async function loadFamily(master, explicitIds) {
-  let family;
+  let family2;
   if (explicitIds && explicitIds.length > 0) {
     const ids = Array.from(/* @__PURE__ */ new Set([master.id, ...explicitIds]));
     const rows = await db.select().from(templatesTable);
-    family = rows.filter((r4) => ids.includes(r4.id));
+    family2 = rows.filter((r6) => ids.includes(r6.id));
   } else {
     const prefix = `Adapted from "${master.name}"`;
     const linked = await db.select().from(templatesTable).where(eq(templatesTable.sourceTemplateId, master.id));
     const adapted = await db.select().from(templatesTable).where(like(templatesTable.description, `${prefix.replace(/[%_\\]/g, (c) => `\\${c}`)}%`));
     const seen2 = /* @__PURE__ */ new Set([master.id]);
-    family = [master];
-    for (const r4 of [...linked, ...adapted]) {
-      if (seen2.has(r4.id) || !linked.includes(r4) && !(r4.description ?? "").startsWith(prefix)) continue;
-      seen2.add(r4.id);
-      family.push(r4);
+    family2 = [master];
+    for (const r6 of [...linked, ...adapted]) {
+      if (seen2.has(r6.id) || !linked.includes(r6) && !(r6.description ?? "").startsWith(prefix)) continue;
+      seen2.add(r6.id);
+      family2.push(r6);
     }
   }
-  family.sort((a, b) => a.id === master.id ? -1 : b.id === master.id ? 1 : a.width * a.height - b.width * b.height);
-  return family;
+  family2.sort((a, b) => a.id === master.id ? -1 : b.id === master.id ? 1 : a.width * a.height - b.width * b.height);
+  return family2;
 }
 function parseIdList(v) {
   const arr = Array.isArray(v) ? v : typeof v === "string" ? v.split(",") : null;
@@ -228999,8 +229528,8 @@ function parseIdList(v) {
 router5.get("/templates/:id/tracking-sheet.csv", requireAuth, async (req, res) => {
   const t = await loadTemplate(req, res);
   if (!t) return;
-  const family = await loadFamily(t.row, parseIdList(req.query.ids));
-  const rows = buildTrackingRows(t.row, family, {
+  const family2 = await loadFamily(t.row, parseIdList(req.query.ids));
+  const rows = buildTrackingRows(t.row, family2, {
     campaign: typeof req.query.campaign === "string" ? req.query.campaign.slice(0, 120) : null,
     clickUrl: typeof req.query.clickUrl === "string" && /^https?:\/\//i.test(req.query.clickUrl) ? req.query.clickUrl.slice(0, 500) : null,
     source: typeof req.query.source === "string" ? req.query.source.slice(0, 40) : null
@@ -229011,12 +229540,12 @@ router5.post("/templates/:id/export-family.zip", requireAuth, async (req, res) =
   const t = await loadTemplate(req, res);
   if (!t) return;
   const body = req.body ?? {};
-  const family = await loadFamily(t.row, parseIdList(body.ids));
-  const tracking = buildTrackingRows(t.row, family, {
+  const family2 = await loadFamily(t.row, parseIdList(body.ids));
+  const tracking = buildTrackingRows(t.row, family2, {
     campaign: typeof body.campaign === "string" ? body.campaign.slice(0, 120) : null,
     clickUrl: typeof body.clickUrl === "string" && /^https?:\/\//i.test(body.clickUrl) ? body.clickUrl.slice(0, 500) : null
   });
-  const fileNameFor = new Map(tracking.map((r4) => [r4.templateId, r4.fileName]));
+  const fileNameFor = new Map(tracking.map((r6) => [r6.templateId, r6.fileName]));
   const loadImage = makeImageLoader(req);
   const zip = new import_jszip.default();
   const manifest = [];
@@ -229031,7 +229560,7 @@ router5.post("/templates/:id/export-family.zip", requireAuth, async (req, res) =
     usedNames.add(candidate);
     return candidate;
   };
-  for (const row of family) {
+  for (const row of family2) {
     const entry = { id: row.id, name: row.name, width: row.width, height: row.height, files: [], warnings: [] };
     manifest.push(entry);
     const config2 = parseFreeform(row);
@@ -229072,6 +229601,727 @@ router5.post("/templates/:id/export-family.zip", requireAuth, async (req, res) =
   }
 });
 var exports_default = router5;
+
+// src/lib/slots.ts
+function area(b) {
+  return Math.max(0, b.w) * Math.max(0, b.h);
+}
+function centreIn(e, b) {
+  const cx = e.x + e.w / 2;
+  const cy = e.y + e.h / 2;
+  return cx >= b.x && cx <= b.x + b.w && cy >= b.y && cy <= b.y + b.h;
+}
+function overlapFrac(a, b) {
+  const ix = Math.max(0, Math.min(a.x + a.w, b.x + b.w) - Math.max(a.x, b.x));
+  const iy = Math.max(0, Math.min(a.y + a.h, b.y + b.h) - Math.max(a.y, b.y));
+  return ix * iy / Math.max(1, area(a));
+}
+function remainder(outer, hole) {
+  const candidates = [
+    { x: outer.x, y: outer.y, w: outer.w, h: Math.max(0, hole.y - outer.y) },
+    // above
+    { x: outer.x, y: hole.y + hole.h, w: outer.w, h: Math.max(0, outer.y + outer.h - (hole.y + hole.h)) },
+    // below
+    { x: outer.x, y: outer.y, w: Math.max(0, hole.x - outer.x), h: outer.h },
+    // left
+    { x: hole.x + hole.w, y: outer.y, w: Math.max(0, outer.x + outer.w - (hole.x + hole.w)), h: outer.h }
+    // right
+  ];
+  return candidates.sort((a, b) => area(b) - area(a))[0];
+}
+function inferSlots(config2, width, height) {
+  const W2 = width;
+  const H2 = height;
+  const canvasArea = W2 * H2;
+  const notes = [];
+  const els = config2.elements.map((e) => ({ ...e, slot: e.slot ?? "other" }));
+  const explicit = new Set(els.filter((e) => e.slot !== "other").map((e) => e.id));
+  const isExplicit = (e) => explicit.has(e.id);
+  const unassigned = (e) => !isExplicit(e) && e.slot === "other";
+  const images = els.filter((e) => e.type === "image");
+  const rects = els.filter((e) => e.type === "rect");
+  const texts = els.filter((e) => e.type === "text");
+  const bandShaped = (e) => e.h > 0 && e.w > 0 && (e.w / e.h >= 5 || e.h / e.w >= 5) && area(e) < canvasArea * 0.15;
+  let panel = rects.find((r6) => r6.slot === "panel") ?? rects.filter((r6) => unassigned(r6) && !r6.gradient && (r6.opacity ?? 1) >= 0.9).filter((r6) => area(r6) >= canvasArea * 0.2 && (r6.w >= W2 * 0.9 || r6.h >= H2 * 0.9)).sort((a, b) => area(b) - area(a))[0] ?? null;
+  if (panel) panel.slot = "panel";
+  let photo = images.find((i) => i.slot === "photo") ?? images.filter((i) => unassigned(i) && i.src && !bandShaped(i)).sort((a, b) => {
+    const pa = a.role === "product" ? 1 : 0;
+    const pb = b.role === "product" ? 1 : 0;
+    return pb - pa || area(b) - area(a);
+  })[0] ?? null;
+  if (photo && area(photo) < canvasArea * 0.15) photo = null;
+  if (photo) photo.slot = "photo";
+  const photoBox = photo ? { x: photo.x, y: photo.y, w: photo.w, h: photo.h } : null;
+  const scrim = rects.find((r6) => r6.slot === "scrim") ?? rects.filter((r6) => unassigned(r6) && (r6.gradient !== void 0 || (r6.opacity ?? 1) < 0.9)).filter((r6) => !photoBox || overlapFrac(r6, photoBox) > 0.3).sort((a, b) => area(b) - area(a))[0] ?? null;
+  if (scrim) scrim.slot = "scrim";
+  const band = images.find((i) => i.slot === "band") ?? images.filter((i) => unassigned(i) && i !== photo && bandShaped(i)).sort((a, b) => area(b) - area(a))[0] ?? null;
+  if (band) band.slot = "band";
+  let cta = els.find((e) => e.slot === "cta" && (e.type === "rect" || e.type === "image")) ?? null;
+  let ctaLabel = texts.find((t) => t.slot === "ctaLabel") ?? null;
+  let ctaIcon = images.find((i) => i.slot === "ctaIcon") ?? null;
+  if (!cta) {
+    const pill = rects.filter((r6) => unassigned(r6) && (r6.radius ?? 0) > 0 && r6.h < Math.min(W2, H2) * 0.3 && r6.w / Math.max(1, r6.h) >= 2.2).filter((r6) => texts.some((t) => unassigned(t) && centreIn(t, r6))).sort((a, b) => area(b) - area(a))[0];
+    if (pill) cta = pill;
+  }
+  if (!cta) {
+    const button = images.filter((i) => unassigned(i) && i !== photo && i !== band).filter((i) => i.w / Math.max(1, i.h) >= 3 && i.w / Math.max(1, i.h) <= 6 && i.h <= Math.min(W2, H2) * 0.25 && area(i) < canvasArea * 0.08).filter((i) => !photoBox || overlapFrac(i, photoBox) < 0.5).sort((a, b) => area(b) - area(a))[0];
+    if (button) cta = button;
+  }
+  if (cta) {
+    cta.slot = "cta";
+    if (!ctaLabel) {
+      const label3 = texts.filter((t) => unassigned(t) && centreIn(t, cta)).sort((a, b) => area(b) - area(a))[0];
+      if (label3) {
+        label3.slot = "ctaLabel";
+        ctaLabel = label3;
+      }
+    }
+    if (!ctaIcon) {
+      const icon = images.filter((i) => unassigned(i) && i !== cta && centreIn(i, cta) && area(i) < area(cta) * 0.5).sort((a, b) => area(b) - area(a))[0];
+      if (icon) {
+        icon.slot = "ctaIcon";
+        ctaIcon = icon;
+      }
+    }
+  }
+  const ctaKind = !cta ? "none" : cta.type === "rect" && (cta.radius ?? 0) >= cta.h * 0.35 ? "pill" : "button";
+  const outer = panel ? { x: panel.x, y: panel.y, w: panel.w, h: panel.h } : { x: 0, y: 0, w: W2, h: H2 };
+  const panelBox = photoBox && overlapFrac(photoBox, outer) > 0.5 ? remainder(outer, photoBox) : panel ? outer : null;
+  const logo = images.find((i) => i.slot === "logo") ?? images.find((i) => unassigned(i) && i.role === "logo") ?? null;
+  if (logo) logo.slot = "logo";
+  const lockup = images.find((i) => i.slot === "lockup") ?? images.filter((i) => unassigned(i) && i !== photo && i !== band && i !== cta && i !== ctaIcon).filter((i) => i.w / Math.max(1, i.h) >= 2 && i.w / Math.max(1, i.h) <= 8 && area(i) <= canvasArea * 0.1).filter((i) => panelBox ? centreIn(i, panelBox) : true).sort((a, b) => area(b) - area(a))[0] ?? null;
+  if (lockup) lockup.slot = "lockup";
+  const bySize = (a, b) => b.fontSize - a.fontSize;
+  const headline = texts.find((t) => t.slot === "headline") ?? texts.filter((t) => unassigned(t) && t.text.trim().length > 0).sort((a, b) => (a.role === "headline" ? 0 : 1) - (b.role === "headline" ? 0 : 1) || bySize(a, b))[0] ?? null;
+  if (headline) headline.slot = "headline";
+  const kicker = texts.find((t) => t.slot === "kicker") ?? (headline ? texts.filter((t) => unassigned(t) && t !== headline && t.text.trim().length > 0).filter((t) => t.fontSize <= headline.fontSize * 0.6).filter((t) => t.y + t.h <= headline.y + headline.fontSize * 0.3 && t.y + t.h >= headline.y - headline.fontSize * 1.5).filter((t) => t.x + t.w / 2 >= headline.x - headline.w * 0.1 && t.x + t.w / 2 <= headline.x + headline.w * 1.1).sort((a, b) => b.y - a.y)[0] : void 0) ?? null;
+  if (kicker) kicker.slot = "kicker";
+  const subheadline = texts.find((t) => t.slot === "subheadline") ?? texts.filter((t) => unassigned(t) && t !== headline && t !== kicker && t.text.trim().length > 0).filter((t) => photoBox ? centreIn(t, photoBox) : headline ? Math.abs(t.y - (headline.y + headline.h)) < headline.fontSize * 1.5 : false).sort(bySize)[0] ?? null;
+  if (subheadline) subheadline.slot = "subheadline";
+  const message = texts.find((t) => t.slot === "message") ?? texts.filter((t) => unassigned(t) && t !== headline && t !== kicker && t !== subheadline && t.text.trim().length > 0).filter((t) => panelBox ? centreIn(t, panelBox) : true).sort(bySize)[0] ?? null;
+  if (message) message.slot = "message";
+  const cutouts = images.filter(
+    (i) => i.slot === "cutout" || unassigned(i) && i !== photo && photoBox !== null && centreIn(i, photoBox) && area(i) >= area(photoBox) * 0.03 && area(i) <= area(photoBox) * 0.6
+  );
+  for (const c of cutouts) c.slot = "cutout";
+  let axis = "none";
+  if (photoBox) {
+    const fullW = photoBox.w >= W2 * 0.9;
+    const fullH = photoBox.h >= H2 * 0.9;
+    axis = fullW && fullH ? "overlay" : fullW ? "stacked" : fullH ? "side" : "none";
+  }
+  if (!photo) notes.push("No photograph found in the master.");
+  if (!headline) notes.push("No headline text found in the master.");
+  if (!panel) notes.push("No solid brand panel found in the master; the recomposer will add one in the panel colour.");
+  if (!cta) notes.push("No call-to-action found in the master.");
+  return {
+    width: W2,
+    height: H2,
+    elements: els,
+    photo: photo ?? null,
+    cutouts,
+    scrim: scrim ?? null,
+    panel: panel ?? null,
+    band: band ?? null,
+    headline: headline ?? null,
+    kicker: kicker ?? null,
+    subheadline: subheadline ?? null,
+    message: message ?? null,
+    cta,
+    ctaLabel,
+    ctaIcon,
+    lockup: lockup ?? null,
+    logo: logo ?? null,
+    axis,
+    photoBox,
+    panelBox,
+    panelFill: panel?.fill ?? null,
+    ctaKind,
+    notes
+  };
+}
+function isFlatArtwork(config2) {
+  const hasLiveText = config2.elements.some((e) => e.type === "text" && e.text.trim().length > 0);
+  if (hasLiveText) return false;
+  const hasLayeredSlots2 = config2.elements.some((e) => e.type === "image" && (e.slot === "headline" || e.slot === "cta"));
+  if (hasLayeredSlots2) return false;
+  const hasCapturedCopy = config2.elements.some((e) => e.type === "image" && Array.isArray(e.kvText) && e.kvText.length > 0);
+  return !hasCapturedCopy;
+}
+
+// src/lib/recipes.ts
+var ALL2 = ["photo", "headline", "cta", "lockup", "band", "message", "subheadline", "cutout"];
+var RECIPES = {
+  // 384×592 / 300×600: photo 57% top, band 5.4% at the seam, panel below.
+  portrait: {
+    axis: "stacked",
+    photoFrac: 0.57,
+    bandFrac: 0.054,
+    bandAt: "seam",
+    headlineWidthFrac: 0.88,
+    headlineMaxHeightFrac: 0.32,
+    headlineCentreFrac: 0.47,
+    headlineCentreFracBare: 0.56,
+    headlineWordPerLine: false,
+    subheadRatio: 0.3,
+    messageMaxRatio: 0.3,
+    ctaFloorPx: 43,
+    ctaHeightFrac: 0.075,
+    ctaMaxWidthFrac: 0.7,
+    lockupHeightFrac: 0.12,
+    lockupMaxWidthFrac: 0.6,
+    cutoutWidthFrac: 0.78,
+    photoOversize: 1.15,
+    marginFrac: 0.06,
+    keep: ALL2
+  },
+  // 120×600 / 160×600: same stack, headline one word per line, no room for
+  // the message or a cut-out, logo tile instead of the wide lockup.
+  tower: {
+    axis: "stacked",
+    photoFrac: 0.5,
+    bandFrac: 0.03,
+    bandAt: "seam",
+    headlineWidthFrac: 0.92,
+    headlineMaxHeightFrac: 0.7,
+    headlineCentreFrac: 0.5,
+    headlineCentreFracBare: 0.5,
+    headlineWordPerLine: true,
+    subheadRatio: 0.32,
+    messageMaxRatio: 0.3,
+    ctaFloorPx: 28,
+    ctaHeightFrac: 0.09,
+    ctaMaxWidthFrac: 0.9,
+    // The guidelines' 160×600 (p.16) carries a large message in the panel and
+    // a logo one grid square wide; ours left the panel bare with a 22px
+    // lockup. The message is kept, and the lockup runs to the column width.
+    lockupHeightFrac: 0.2,
+    lockupMaxWidthFrac: 0.85,
+    cutoutWidthFrac: 0.7,
+    photoOversize: 1.2,
+    marginFrac: 0.07,
+    keep: ["photo", "headline", "cta", "lockup", "band", "subheadline", "message"]
+  },
+  // 1080×1080 and near-squares: stack, generous photo, social squares carry
+  // no logo lockup (guidelines).
+  square: {
+    axis: "stacked",
+    photoFrac: 0.62,
+    bandFrac: 0.045,
+    bandAt: "seam",
+    headlineWidthFrac: 0.84,
+    headlineMaxHeightFrac: 0.3,
+    headlineCentreFrac: 0.45,
+    headlineCentreFracBare: 0.54,
+    headlineWordPerLine: false,
+    subheadRatio: 0.3,
+    messageMaxRatio: 0.3,
+    ctaFloorPx: 34,
+    ctaHeightFrac: 0.07,
+    ctaMaxWidthFrac: 0.6,
+    lockupHeightFrac: 0.11,
+    lockupMaxWidthFrac: 0.5,
+    cutoutWidthFrac: 0.7,
+    photoOversize: 1.12,
+    marginFrac: 0.06,
+    keep: ALL2
+  },
+  // 1920×1080 / 960×528: columns, photo a little wider than half.
+  landscape: {
+    axis: "side",
+    photoFrac: 0.58,
+    bandFrac: 0.12,
+    bandAt: "panelTop",
+    headlineWidthFrac: 0.82,
+    headlineMaxHeightFrac: 0.4,
+    headlineCentreFrac: 0.4,
+    headlineCentreFracBare: 0.48,
+    headlineWordPerLine: false,
+    subheadRatio: 0.3,
+    messageMaxRatio: 0.28,
+    ctaFloorPx: 43,
+    ctaHeightFrac: 0.09,
+    ctaMaxWidthFrac: 0.6,
+    lockupHeightFrac: 0.16,
+    lockupMaxWidthFrac: 0.5,
+    cutoutWidthFrac: 0.4,
+    photoOversize: 1.08,
+    marginFrac: 0.05,
+    keep: ALL2
+  },
+  // 960×256 / 970×250: photo left half, band along the top of the panel,
+  // message + pill + lockup stacked in the panel.
+  wide: {
+    axis: "side",
+    photoFrac: 0.5,
+    bandFrac: 0.155,
+    bandAt: "panelTop",
+    headlineWidthFrac: 0.8,
+    headlineMaxHeightFrac: 0.45,
+    headlineCentreFrac: 0.36,
+    headlineCentreFracBare: 0.49,
+    headlineWordPerLine: false,
+    subheadRatio: 0.29,
+    messageMaxRatio: 0.27,
+    // Shipped 960×256 OOH: pill 32px = 12.5% of the short axis. Designers
+    // marked a 44px pill on 768×256 as wrong (feedback 2026-09-06).
+    ctaFloorPx: 32,
+    ctaHeightFrac: 0.125,
+    ctaMaxWidthFrac: 0.6,
+    lockupHeightFrac: 0.185,
+    lockupMaxWidthFrac: 0.42,
+    cutoutWidthFrac: 0.36,
+    photoOversize: 1.06,
+    marginFrac: 0.05,
+    keep: ALL2
+  },
+  // 728×90 / 320×50: one row — photo, headline, CTA, full-height logo tile.
+  strip: {
+    axis: "row",
+    // Designers, 19 Sep: the hazard word sits ON the photo; the blue panel
+    // carries the message and the pill. The photo zone is wide enough for it.
+    photoFrac: 0.4,
+    bandFrac: 0,
+    bandAt: "none",
+    headlineWidthFrac: 1,
+    headlineMaxHeightFrac: 0.6,
+    headlineCentreFrac: 0.5,
+    headlineCentreFracBare: 0.5,
+    headlineWordPerLine: false,
+    subheadRatio: 0.3,
+    messageMaxRatio: 0.3,
+    ctaFloorPx: 26,
+    ctaHeightFrac: 0.36,
+    ctaMaxWidthFrac: 0.45,
+    lockupHeightFrac: 1,
+    lockupMaxWidthFrac: 1,
+    cutoutWidthFrac: 0,
+    photoOversize: 1.1,
+    marginFrac: 0.12,
+    keep: ["photo", "headline", "cta", "lockup"]
+  }
+};
+function recipeFor(formatClass, budget) {
+  const base = RECIPES[formatClass];
+  if (budget === "micro") {
+    return { ...base, keep: base.keep.filter((s2) => s2 === "photo" || s2 === "headline" || s2 === "cta" || s2 === "lockup") };
+  }
+  if (budget === "small") {
+    return {
+      ...base,
+      // The 43px display floor is for standard canvases; on a short axis
+      // under 300px it swallows the panel (designers: "pill size is wrong"
+      // on 768×256 and 300×250). Cap the floor and the pill's width.
+      ctaFloorPx: Math.min(base.ctaFloorPx, formatClass === "square" ? 28 : 32),
+      ctaMaxWidthFrac: Math.min(base.ctaMaxWidthFrac, 0.62),
+      // Small squares (MREC) need a taller panel than a social tile does.
+      ...formatClass === "square" ? { photoFrac: 0.55 } : {},
+      // The sub-line stays in the running on towers: it is dropped further
+      // on only when it cannot be set legibly under the heading.
+      keep: base.keep.filter((s2) => s2 !== "cutout")
+    };
+  }
+  if (budget === "large") {
+    return { ...base, marginFrac: Math.max(base.marginFrac, 0.05) };
+  }
+  return base;
+}
+
+// src/lib/layoutProfile.ts
+function defaultRules(profile) {
+  return {
+    headline: { pin: "measured", size: "measured", aspect: "locked", dropWhenTight: false, minPx: 24, neverOverlap: ["lockup", "cta"] },
+    subheadline: { pin: "measured", size: "measured", aspect: "locked", dropWhenTight: true, minPx: 10, neverOverlap: ["lockup", "cta"] },
+    cutout: { pin: "on-copy", size: "measured", aspect: "locked", dropWhenTight: true, neverOverlap: [] },
+    band: { pin: "panel-edge", size: "fit-width", aspect: "locked", dropWhenTight: true, neverOverlap: ["lockup", "logo"] },
+    message: { pin: "measured", size: "measured", aspect: "locked", dropWhenTight: true, minPx: 11, neverOverlap: ["cta", "lockup"] },
+    cta: { pin: "measured", size: profile.cta.fixedPx ? "fixed" : "scale", aspect: "locked", dropWhenTight: false, minPx: 24, neverOverlap: ["lockup", "message"] },
+    lockup: { pin: "measured", size: "measured", aspect: "locked", dropWhenTight: false, minPx: 16, neverOverlap: ["band", "cta"] },
+    logo: { pin: "bottom", size: "measured", aspect: "locked", dropWhenTight: false, minPx: 24, neverOverlap: ["band", "cutout"] },
+    photo: { pin: "measured", size: "scale", aspect: "free", dropWhenTight: false, neverOverlap: [] }
+  };
+}
+function mergeRules(profile, edits) {
+  const base = { ...defaultRules(profile), ...profile.rules ?? {} };
+  if (typeof edits !== "object" || edits === null) return base;
+  const PIN = /* @__PURE__ */ new Set(["measured", "top", "centre", "bottom", "on-copy", "zone-bottom", "panel-edge", "none"]);
+  const SIZE = /* @__PURE__ */ new Set(["measured", "fixed", "fit-width", "scale"]);
+  for (const slot of PART_RULE_SLOTS) {
+    const e = edits[slot];
+    if (typeof e !== "object" || e === null) continue;
+    const r6 = e;
+    const cur = { ...base[slot] };
+    if (typeof r6.pin === "string" && PIN.has(r6.pin)) cur.pin = r6.pin;
+    if (typeof r6.size === "string" && SIZE.has(r6.size)) cur.size = r6.size;
+    if (r6.aspect === "locked" || r6.aspect === "free") cur.aspect = r6.aspect;
+    if (typeof r6.dropWhenTight === "boolean") cur.dropWhenTight = r6.dropWhenTight;
+    if (typeof r6.minPx === "number" && Number.isFinite(r6.minPx)) cur.minPx = Math.max(0, Math.min(2e3, Math.round(r6.minPx)));
+    if (Array.isArray(r6.neverOverlap)) cur.neverOverlap = r6.neverOverlap.filter((v) => typeof v === "string" && PART_RULE_SLOTS.includes(v));
+    base[slot] = cur;
+  }
+  return base;
+}
+var r3 = (v) => Math.round(v * 1e3) / 1e3;
+function byRole(config2, role) {
+  return config2.elements.find((e) => e.slot === role || e.type === "text" && e.role === role || e.type === "image" && e.role === role && role === "logo");
+}
+function allByRole(config2, role) {
+  return config2.elements.filter((e) => e.slot === role || e.type === "text" && e.role === role);
+}
+function geometryKeyed(config2, W2, H2) {
+  const semantic = inferSlots(config2, W2, H2);
+  const groups = /* @__PURE__ */ new Map();
+  for (const e of semantic.elements) {
+    const slot = e.slot && e.slot !== "other" ? e.slot : e.type === "image" ? `image:${e.role}` : e.type === "text" ? `text:${e.role}` : "rect:other";
+    groups.set(slot, [...groups.get(slot) ?? [], e]);
+  }
+  const out = {};
+  for (const [slot, elements] of groups) {
+    elements.sort((a, b) => a.y - b.y || a.x - b.x || b.w * b.h - a.w * a.h);
+    elements.forEach((e, index) => {
+      const toleranceX = Math.max(2, W2 * 0.012);
+      const toleranceY = Math.max(2, H2 * 0.012);
+      const edges = [];
+      if (e.x <= toleranceX) edges.push("left");
+      if (e.x + e.w >= W2 - toleranceX) edges.push("right");
+      if (e.y <= toleranceY) edges.push("top");
+      if (e.y + e.h >= H2 - toleranceY) edges.push("bottom");
+      out[`${slot}:${index}`] = {
+        x: r3(e.x / W2),
+        y: r3(e.y / H2),
+        w: r3(e.w / W2),
+        h: r3(e.h / H2),
+        aspect: r3(e.w / Math.max(1, e.h)),
+        edges,
+        ...e.type === "text" ? { fontSize: r3(e.fontSize / Math.min(W2, H2)) } : {}
+      };
+    });
+  }
+  return out;
+}
+function geometryMaster(config2, W2, H2, name, templateId, mode) {
+  return { templateId, name, width: W2, height: H2, aspect: W2 / H2, formatClass: classifyFormat(W2, H2, { name }), mode, elements: geometryKeyed(config2, W2, H2) };
+}
+function measureMaster(config2, W2, H2, name, templateId) {
+  const semantic = inferSlots(config2, W2, H2);
+  const measuredConfig = { ...config2, elements: semantic.elements };
+  const panel = byRole(measuredConfig, "panel");
+  const headlineParts = allByRole(measuredConfig, "headline");
+  if (headlineParts.length === 0) return null;
+  const panelAxis = panel ? panel.w >= W2 * 0.9 && panel.y > H2 * 0.2 ? "stacked" : panel.h >= H2 * 0.9 && panel.x > W2 * 0.2 ? "side" : null : null;
+  const axis = panelAxis ?? (W2 / H2 >= 1.12 ? "side" : "stacked");
+  const mode = panelAxis ? "panel" : "free";
+  const fallbackPhotoFrac = axis === "stacked" ? 0.58 : 0.56;
+  const split2 = panelAxis && panel ? axis === "stacked" ? panel.y : panel.x : axis === "stacked" ? H2 * fallbackPhotoFrac : W2 * fallbackPhotoFrac;
+  const photoZone = axis === "stacked" ? { x: 0, y: 0, w: W2, h: split2 } : { x: 0, y: 0, w: split2, h: H2 };
+  const panelZone = axis === "stacked" ? { x: 0, y: split2, w: W2, h: H2 - split2 } : { x: split2, y: 0, w: W2 - split2, h: H2 };
+  const short = Math.min(W2, H2);
+  const missing = [];
+  const hx0 = Math.min(...headlineParts.map((e) => e.x)), hy0 = Math.min(...headlineParts.map((e) => e.y));
+  const hl = { x: hx0, y: hy0, w: Math.max(...headlineParts.map((e) => e.x + e.w)) - hx0, h: Math.max(...headlineParts.map((e) => e.y + e.h)) - hy0 };
+  const sub = byRole(measuredConfig, "subheadline");
+  const cutout = allByRole(measuredConfig, "cutout").sort((a, b) => b.w * b.h - a.w * a.h)[0];
+  const band = byRole(measuredConfig, "band");
+  const message = byRole(measuredConfig, "message");
+  const cta = byRole(measuredConfig, "cta");
+  const lockup = byRole(measuredConfig, "lockup") ?? byRole(measuredConfig, "logo");
+  const scrim = byRole(measuredConfig, "scrim");
+  for (const [k, v] of [["sub-line", sub], ["cut-out", cutout], ["band", band], ["message", message], ["CTA", cta], ["lockup", lockup]]) if (!v) missing.push(k);
+  const copyBottom = sub ? Math.max(hl.y + hl.h, sub.y + sub.h) : hl.y + hl.h;
+  const lastLineH = sub ? sub.h : hl.h;
+  const m = {
+    photoFrac: r3(axis === "stacked" ? split2 / H2 : split2 / W2),
+    bandFrac: r3(band ? band.h / H2 : 0),
+    bandH: r3(band ? band.h / panelZone.h : 0),
+    headlineH: r3(hl.h / short),
+    headlineCy: r3((hl.y + hl.h / 2 - photoZone.y) / photoZone.h),
+    headlineW: r3(hl.w / photoZone.w),
+    subW: r3(sub ? sub.w / hl.w : 0.9),
+    subH: r3(sub ? sub.h / hl.h : 0.45),
+    subGap: r3(sub ? (sub.y - (hl.y + hl.h)) / hl.h : 0.07),
+    cutoutW: r3(cutout ? cutout.w / photoZone.w : 0),
+    cutoutCx: r3(cutout ? (cutout.x + cutout.w / 2 - photoZone.x) / photoZone.w : 0.5),
+    // A car that reaches the zone's bottom edge in the master is bottom-
+    // anchored: whatever of it falls below the zone (its water, its shadow)
+    // hides under the panel, so a rebuilt size may let it run past by up to
+    // 60% of its height. A car floating clear of the edge keeps to the zone.
+    cutoutBleed: r3(cutout ? cutout.y + cutout.h >= photoZone.y + photoZone.h - photoZone.h * 0.02 ? 0.6 : 0.06 : 0),
+    copyOverCutoutFrac: cutout ? r3((copyBottom - cutout.y) / Math.max(1, lastLineH)) : null,
+    message: { cy: r3(message ? (message.y + message.h / 2 - panelZone.y) / panelZone.h : 0.36), w: r3(message ? message.w / panelZone.w : 0.7) },
+    cta: { cy: r3(cta ? (cta.y + cta.h / 2 - panelZone.y) / panelZone.h : 0.55) },
+    lockup: { cy: r3(lockup ? (lockup.y + lockup.h / 2 - panelZone.y) / panelZone.h : 0.82), w: r3(lockup ? lockup.w / panelZone.w : 0.7) },
+    ctaPx: cta ? { w: Math.round(cta.w), h: Math.round(cta.h) } : null,
+    short,
+    hasScrim: !!scrim,
+    scrimH: scrim ? r3(scrim.h / photoZone.h) : null
+  };
+  return { templateId, name, width: W2, height: H2, axis, formatClass: classifyFormat(W2, H2, { name }), m, missing, geometry: geometryMaster(measuredConfig, W2, H2, name, templateId, mode), mode };
+}
+var STACKED_CLASSES = ["portrait", "tower", "square"];
+var SIDE_CLASSES = ["wide", "landscape"];
+function averageAxis(ms) {
+  const n = ms.length;
+  const avg = (f) => r3(ms.reduce((a, m) => a + f(m), 0) / n);
+  const cutouts = ms.filter((m) => m.cutoutW > 0);
+  const avgC = (f, fallback) => cutouts.length ? r3(cutouts.reduce((a, m) => a + f(m), 0) / cutouts.length) : fallback;
+  const overs = ms.map((m) => m.copyOverCutoutFrac).filter((v) => v != null);
+  return {
+    photoFrac: avg((m) => m.photoFrac),
+    bandFrac: avg((m) => m.bandFrac),
+    bandH: avg((m) => m.bandH),
+    headlineH: avg((m) => m.headlineH),
+    headlineCy: avg((m) => m.headlineCy),
+    headlineW: avg((m) => m.headlineW),
+    subW: avg((m) => m.subW),
+    subH: avg((m) => m.subH),
+    subGap: avg((m) => m.subGap),
+    cutoutW: avgC((m) => m.cutoutW, 0),
+    cutoutCx: avgC((m) => m.cutoutCx, 0.5),
+    cutoutBleed: avgC((m) => m.cutoutBleed, 0.06),
+    copyOverCutoutFrac: overs.length ? r3(overs.reduce((a, v) => a + v, 0) / overs.length) : null,
+    message: { cy: avg((m) => m.message.cy), w: avg((m) => m.message.w) },
+    cta: { cy: avg((m) => m.cta.cy) },
+    lockup: { cy: avg((m) => m.lockup.cy), w: avg((m) => m.lockup.w) },
+    ctaPx: ms[0].ctaPx,
+    short: Math.round(ms.reduce((a, m) => a + m.short, 0) / n),
+    hasScrim: ms.some((m) => m.hasScrim),
+    scrimH: ms.find((m) => m.scrimH != null)?.scrimH ?? null
+  };
+}
+function buildProfile(measurements, name) {
+  const notes = [];
+  const stacked = measurements.filter((x) => x.axis === "stacked").map((x) => x.m);
+  const side = measurements.filter((x) => x.axis === "side").map((x) => x.m);
+  const sAvg = stacked.length ? averageAxis(stacked) : null;
+  const dAvg = side.length ? averageAxis(side) : null;
+  const measuredClasses = new Set(measurements.map((x) => x.formatClass));
+  const zones = {};
+  for (const cls of STACKED_CLASSES) {
+    zones[cls] = { axis: "stacked", photoFrac: sAvg ? sAvg.photoFrac : RECIPES[cls].photoFrac, displayPhotoFrac: sAvg ? sAvg.photoFrac : void 0, bandFrac: sAvg ? sAvg.bandFrac : RECIPES[cls].bandFrac, bandAt: "seam", tolerance: measuredClasses.has(cls) ? 0.03 : 0.05, measured: measuredClasses.has(cls) };
+  }
+  for (const cls of SIDE_CLASSES) {
+    zones[cls] = { axis: "side", photoFrac: dAvg ? dAvg.photoFrac : RECIPES[cls].photoFrac, displayPhotoFrac: dAvg ? dAvg.photoFrac : void 0, bandFrac: dAvg ? dAvg.bandFrac : RECIPES[cls].bandFrac, bandAt: "panelTop", tolerance: measuredClasses.has(cls) ? 0.03 : 0.05, measured: measuredClasses.has(cls) };
+  }
+  zones.strip = { axis: "row", photoFrac: 0.3, bandFrac: 0, bandAt: "none", tolerance: 0.05, measured: measuredClasses.has("strip") };
+  const display = {};
+  if (sAvg) display.stacked = stripAxis(sAvg);
+  if (dAvg) display.side = stripAxis(dAvg);
+  const ctaSizes = measurements.map((x) => x.m.ctaPx).filter((c) => !!c);
+  const cta = {};
+  if (ctaSizes.length >= 1) {
+    const same = ctaSizes.every((c) => Math.abs(c.w - ctaSizes[0].w) <= 3 && Math.abs(c.h - ctaSizes[0].h) <= 3);
+    if (same) {
+      const shorts = measurements.filter((x) => x.m.ctaPx).map((x) => x.m.short);
+      cta.fixedPx = { w: Math.round(ctaSizes.reduce((a, c) => a + c.w, 0) / ctaSizes.length), h: Math.round(ctaSizes.reduce((a, c) => a + c.h, 0) / ctaSizes.length) };
+      cta.fixedShortRange = [Math.min(...shorts), Math.max(...shorts)];
+      notes.push(`Button is a fixed ${cta.fixedPx.w}\xD7${cta.fixedPx.h}px asset on canvases whose short side is ${cta.fixedShortRange[0]}\u2013${cta.fixedShortRange[1]}px; it scales elsewhere.`);
+    }
+  }
+  const overs = measurements.map((x) => x.m.copyOverCutoutFrac).filter((v) => v != null);
+  const copyOverCutoutFrac = overs.length ? r3(overs.reduce((a, v) => a + v, 0) / overs.length) : null;
+  const measuredAxes = [];
+  if (sAvg) measuredAxes.push("stacked");
+  if (dAvg) measuredAxes.push("side");
+  const measuredList = [...measuredClasses].join(", ");
+  const interpolated = Object.keys(zones).filter((c) => !zones[c].measured).join(", ");
+  notes.unshift(`Measured from ${measurements.length} example${measurements.length === 1 ? "" : "s"} (${measuredList}); interpolated: ${interpolated || "none"}.`);
+  if (measurements.some((x) => x.mode === "free")) notes.push("Free-form key visual geometry measured by semantic layer, no panel required. Images remain proportional and live text keeps editable boxes.");
+  if (!sAvg) notes.push("No stacked (tall) example: portrait, tower and square sizes use the family defaults until one is supplied.");
+  if (!dAvg) notes.push("No side (wide) example: wide and landscape sizes use the family defaults until one is supplied.");
+  for (const x of measurements) if (x.missing.length) notes.push(`${x.name}: no ${x.missing.join(", ")} layer recognised.`);
+  return { version: 2, name, sources: measurements.map((x) => ({ templateId: x.templateId, name: x.name, width: x.width, height: x.height, axis: x.axis, formatClass: x.formatClass })), zones, display, measuredAxes, cta, copyOverCutoutFrac, notes, geometryMasters: measurements.map((x) => x.geometry) };
+}
+function stripAxis(m) {
+  return { headlineH: m.headlineH, headlineCy: m.headlineCy, subW: m.subW, subH: m.subH, subGap: m.subGap, cutoutW: m.cutoutW, cutoutCx: m.cutoutCx, cutoutBleed: m.cutoutBleed, message: m.message, cta: m.cta, lockup: m.lockup, bandH: m.bandH };
+}
+function profileToStyleSchema(profile, id) {
+  const parts = {
+    headline: {
+      role: "headline",
+      zone: "photo",
+      size: { ofShort: profile.display.stacked?.headlineH ?? profile.display.side?.headlineH ?? 0.19 },
+      anchor: { y: profile.display.stacked?.headlineCy ?? 0.45, align: "center" },
+      floorPx: 24,
+      display: { stacked: profile.display.stacked?.headlineH ?? 0.19, side: profile.display.side?.headlineH ?? 0.38 },
+      rule: `Headline height ${Math.round((profile.display.stacked?.headlineH ?? 0.19) * 100)}% of the short side on stacked layouts, ${Math.round((profile.display.side?.headlineH ?? 0.38) * 100)}% on side layouts; block centre at ${Math.round((profile.display.stacked?.headlineCy ?? 0.45) * 100)}% / ${Math.round((profile.display.side?.headlineCy ?? 0.36) * 100)}% of the photo zone (measured).`
+    },
+    subheadline: { role: "subheadline", zone: "photo", size: { ofHeadline: profile.display.stacked?.subH ?? 0.45 }, anchor: { align: "center" }, rule: "Sub-line set at the measured share of the headline, directly under it." },
+    cutout: { role: "cutout", zone: "photo", size: { ofZoneW: profile.display.stacked?.cutoutW ?? 0.8 }, anchor: { y: 1 }, rule: `Cut-out at ${Math.round((profile.display.stacked?.cutoutW ?? 0.8) * 100)}% of the zone width (stacked) / ${Math.round((profile.display.side?.cutoutW ?? 0.47) * 100)}% (side), on the copy's last line as measured.` },
+    message: { role: "message", zone: "panel", size: { ofZoneW: profile.display.stacked?.message.w ?? 0.7 }, anchor: { y: profile.display.stacked?.message.cy ?? 0.36, align: "center" }, floorPx: 11, rule: "Message centred in the panel column at the measured height." },
+    cta: { role: "cta", zone: "panel", size: { ofZoneW: 0.6 }, anchor: { y: profile.display.stacked?.cta.cy ?? 0.55, align: "center" }, floorPx: 24, ...profile.cta.fixedPx ? { fixedPx: profile.cta.fixedPx, fixedShortRange: profile.cta.fixedShortRange } : {}, rule: profile.cta.fixedPx ? `Button is a fixed ${profile.cta.fixedPx.w}\xD7${profile.cta.fixedPx.h}px asset at the measured scale.` : "Button scales with the panel." },
+    lockup: { role: "lockup", zone: "panel", size: { ofZoneW: profile.display.stacked?.lockup.w ?? 0.7 }, anchor: { y: profile.display.stacked?.lockup.cy ?? 0.82, align: "center" }, rule: "Lockup last in the panel column at the measured height." },
+    band: { role: "band", zone: "seam", size: { ofZoneW: 1 }, anchor: {}, droppedWhen: "strips", rule: "Band on the panel's outer edge, full zone width." },
+    photo: { role: "photo", zone: "photo", size: { ofZoneW: 1, ofZoneH: 1 }, anchor: {}, rule: "Covers its zone; the master's framing is kept on same-axis builds." }
+  };
+  const zones = {};
+  const named = styleSchemaFor(profile.name);
+  for (const k of Object.keys(profile.zones)) {
+    const { measured: _m, ...z } = profile.zones[k];
+    const axisMeasured = z.axis === "row" || profile.measuredAxes.includes(z.axis);
+    const classEvidence = k !== "landscape" || profile.zones[k].measured;
+    zones[k] = axisMeasured && classEvidence ? z : named?.zones[k] ?? { ...z, photoFrac: RECIPES[k].photoFrac, displayPhotoFrac: void 0, bandFrac: RECIPES[k].bandFrac };
+  }
+  return {
+    id: `profile-${id}`,
+    name: profile.name,
+    match: [],
+    colours: {},
+    type: {},
+    hierarchy: ["headline", "subheadline", "message", "cta", "lockup"],
+    zones,
+    display: { stacked: profile.display.stacked ?? DEFAULT_STACKED, side: profile.display.side ?? DEFAULT_SIDE },
+    alwaysDisplay: true,
+    parts,
+    variants: [],
+    never: [],
+    sizes: [],
+    references: profile.sources.map((s2) => `${s2.name} (${s2.width}\xD7${s2.height})`),
+    ...profile.copyOverCutoutFrac != null ? { copyOverCutoutFrac: profile.copyOverCutoutFrac } : {},
+    partRules: mergeRules(profile, null)
+  };
+}
+async function updateProfileRules(id, edits) {
+  const p = await getProfile(id);
+  if (!p) return null;
+  const rules = mergeRules(p.profile, edits);
+  const profile = { ...p.profile, rules };
+  const [saved] = await db.update(layoutProfilesTable).set({ profile: JSON.stringify(profile) }).where(eq(layoutProfilesTable.id, id)).returning();
+  return parseRow(saved);
+}
+var DEFAULT_STACKED = { headlineH: 0.193, headlineCy: 0.422, subW: 0.986, subH: 0.517, subGap: 0.069, cutoutW: 0.8, cutoutCx: 0.41, cutoutBleed: 0.45, message: { cy: 0.36, w: 0.73 }, cta: { cy: 0.55 }, lockup: { cy: 0.82, w: 0.7 }, bandH: 0.147 };
+var DEFAULT_SIDE = { headlineH: 0.396, headlineCy: 0.266, subW: 0.874, subH: 0.404, subGap: 0.07, cutoutW: 0.467, cutoutCx: 0.419, cutoutBleed: 0.6, message: { cy: 0.378, w: 0.7 }, cta: { cy: 0.562 }, lockup: { cy: 0.838, w: 0.7 }, bandH: 0.152 };
+function parseRow(row) {
+  let profile;
+  try {
+    profile = JSON.parse(row.profile);
+  } catch {
+    profile = buildProfile([], row.name);
+  }
+  return { id: row.id, name: row.name, sourceKey: row.sourceKey, profile, updatedAt: row.updatedAt };
+}
+async function learnProfile(masterIds, name, createdBy) {
+  const ids = [...new Set(masterIds.filter((n) => Number.isInteger(n) && n > 0))].sort((a, b) => a - b);
+  if (ids.length === 0) return null;
+  const rows = await db.select().from(templatesTable).where(inArray(templatesTable.id, ids));
+  const measurements = [];
+  const skipped = [];
+  for (const row of rows) {
+    let parsed;
+    try {
+      parsed = JSON.parse(row.config || "{}");
+    } catch {
+      parsed = {};
+    }
+    const cfg = normalizeFreeformConfig(parsed);
+    const m = measureMaster(cfg, row.width, row.height, row.name, row.id);
+    if (m) measurements.push(m);
+    else skipped.push(`${row.name}: no headline recognised, not measured`);
+  }
+  if (measurements.length === 0) return null;
+  const profileName = (name ?? "").trim() || campaignNameFrom(measurements.map((m) => m.name));
+  const profile = buildProfile(measurements, profileName);
+  let sourceKey = measurements.map((m) => m.templateId).sort((a, b) => a - b).join(",");
+  let [existing] = await db.select().from(layoutProfilesTable).where(eq(layoutProfilesTable.sourceKey, sourceKey));
+  if (!existing) {
+    const sameName = (await db.select().from(layoutProfilesTable).where(sql`lower(${layoutProfilesTable.name}) = ${profileName.toLowerCase()}`).orderBy(desc(layoutProfilesTable.updatedAt)).limit(1))[0];
+    if (sameName) {
+      existing = sameName;
+      const prevIds = sameName.sourceKey.split(",").map((v) => Number(v)).filter((n) => Number.isInteger(n) && n > 0);
+      sourceKey = [.../* @__PURE__ */ new Set([...prevIds, ...ids])].sort((a, b) => a - b).join(",");
+    }
+  }
+  let saved;
+  if (existing) {
+    try {
+      const prev = JSON.parse(existing.profile);
+      if (prev.rules) profile.rules = prev.rules;
+    } catch {
+    }
+    [saved] = await db.update(layoutProfilesTable).set({ name: profileName, sourceKey, profile: JSON.stringify(profile), updatedAt: /* @__PURE__ */ new Date() }).where(eq(layoutProfilesTable.id, existing.id)).returning();
+  } else {
+    [saved] = await db.insert(layoutProfilesTable).values({ name: profileName, sourceKey, profile: JSON.stringify(profile), createdBy: createdBy ?? null }).returning();
+  }
+  return { stored: parseRow(saved), skipped };
+}
+function campaignNameFrom(names) {
+  if (names.length === 0) return "Campaign";
+  let prefix = names[0];
+  for (const n of names.slice(1)) {
+    let i = 0;
+    while (i < prefix.length && i < n.length && prefix[i].toLowerCase() === n[i].toLowerCase()) i++;
+    prefix = prefix.slice(0, i);
+  }
+  const tidy = prefix.replace(/[\s_\-—–:]+$/g, "").replace(/\s{2,}/g, " ").trim();
+  return tidy.length >= 4 ? tidy : names[0].split(/ — /)[0].trim() || "Campaign";
+}
+async function listProfiles() {
+  const rows = await db.select().from(layoutProfilesTable).orderBy(desc(layoutProfilesTable.updatedAt));
+  return rows.map(parseRow);
+}
+async function getProfile(id) {
+  const [row] = await db.select().from(layoutProfilesTable).where(eq(layoutProfilesTable.id, id));
+  return row ? parseRow(row) : null;
+}
+async function deleteProfile(id) {
+  const rows = await db.delete(layoutProfilesTable).where(eq(layoutProfilesTable.id, id)).returning({ id: layoutProfilesTable.id });
+  return rows.length > 0;
+}
+async function profileForMaster(masterId, sourceTemplateId) {
+  const ids = [masterId, ...sourceTemplateId ? [sourceTemplateId] : []];
+  const rows = await db.select().from(layoutProfilesTable).where(sql`string_to_array(${layoutProfilesTable.sourceKey}, ',')::int[] && ${sql.raw(`ARRAY[${ids.map((n) => Number(n)).join(",")}]::int[]`)}`).orderBy(desc(layoutProfilesTable.updatedAt)).limit(12);
+  const live = rows.map(parseRow).find((p) => !p.profile.archived);
+  return live ?? null;
+}
+async function setProfileArchived(id, archived) {
+  const current = await getProfile(id);
+  if (!current) return null;
+  const profile = { ...current.profile, archived: archived || void 0 };
+  const [saved] = await db.update(layoutProfilesTable).set({ profile: JSON.stringify(profile), updatedAt: /* @__PURE__ */ new Date() }).where(eq(layoutProfilesTable.id, id)).returning();
+  return saved ? parseRow(saved) : null;
+}
+function describeProfilePlainly(profile) {
+  const out = [];
+  const pct2 = (v) => `${Math.round(v * 1e3) / 10}%`;
+  const byAxis = (axis) => (profile.geometryMasters ?? []).filter((g) => (profile.sources.find((x) => x.templateId === g.templateId)?.axis ?? "stacked") === axis);
+  for (const axis of ["stacked", "side"]) {
+    const gms = byAxis(axis);
+    if (!gms.length) continue;
+    const cls = axis === "stacked" ? "portrait" : "wide";
+    const z = profile.zones[cls];
+    const where = axis === "stacked" ? "Tall layouts (photo over panel)" : "Wide layouts (photo beside panel)";
+    const g = gms[0];
+    const short = Math.min(g.width, g.height);
+    const hl = g.elements["headline:0"], cta = g.elements["cta:0"], label3 = g.elements["ctaLabel:0"], sub = g.elements["subheadline:0"], msg = g.elements["message:0"], lock = g.elements["lockup:0"];
+    const bits = [];
+    if (z) bits.push(`photo takes ${pct2(z.photoFrac)} of the ${axis === "stacked" ? "height" : "width"}`, `pattern band is ${pct2(z.bandFrac)} of the height`);
+    if (hl?.fontSize) bits.push(`heading type is ${pct2(hl.fontSize)} of the short side`);
+    if (hl?.fontSize && sub?.fontSize) bits.push(`sub-line is ${Math.round(sub.fontSize / hl.fontSize * 100)}% of the heading`);
+    if (hl?.fontSize && msg?.fontSize) bits.push(`message is ${Math.round(msg.fontSize / hl.fontSize * 100)}% of the heading`);
+    if (hl?.fontSize && cta) bits.push(`pill is ${Math.round(cta.h * g.height / (hl.fontSize * short) * 100)}% of the heading`);
+    if (cta && label3?.fontSize) bits.push(`pill label is ${Math.round(label3.fontSize * short / (cta.h * g.height) * 100)}% of the pill`);
+    if (lock) bits.push(`logo lockup is ${pct2(lock.h * g.height / short)} of the short side`);
+    out.push(`${where}, measured on ${gms.map((m) => `${m.width}\xD7${m.height}`).filter((v, i, a) => a.indexOf(v) === i).join(", ")}: ${bits.join("; ")}.`);
+  }
+  const distinctSizes = new Set(profile.sources.map((x) => `${x.width}x${x.height}`)).size;
+  if (profile.cta.fixedPx && distinctSizes > 1) out.push(`The button is a fixed ${profile.cta.fixedPx.w}\xD7${profile.cta.fixedPx.h}px asset at the measured scale.`);
+  const missing = ["stacked", "side"].filter((a) => !profile.measuredAxes.includes(a));
+  if (missing.length) out.push(`No ${missing.map((a) => a === "stacked" ? "tall" : "wide").join(" or ")} master measured yet \u2014 those sizes use the studio's standard numbers until one is added.`);
+  return out;
+}
+async function resolveStyleSchema(opts) {
+  if (opts.profileId) {
+    const p = await getProfile(opts.profileId);
+    if (p) return { schema: profileToStyleSchema(p.profile, p.id), source: "profile", profileId: p.id, label: `${p.name} (measured profile)`, profile: p.profile };
+  }
+  try {
+    const p = await profileForMaster(opts.masterId, opts.sourceTemplateId);
+    if (p) return { schema: profileToStyleSchema(p.profile, p.id), source: "profile", profileId: p.id, label: `${p.name} (measured profile)`, profile: p.profile };
+  } catch {
+  }
+  const builtin = styleSchemaFor(opts.masterName);
+  if (builtin) return { schema: builtin, source: "builtin", label: `${builtin.name} (built-in schema)` };
+  return { schema: null, source: "none", label: "family defaults" };
+}
 
 // src/routes/feedback.ts
 var router6 = (0, import_express7.Router)();
@@ -229121,6 +230371,10 @@ router6.post("/feedback", requireAuth, async (req, res) => {
   const faultV = typeof fault === "string" && FEEDBACK_FAULTS.includes(fault) ? fault : null;
   const expectedV = typeof expected === "string" && expected.trim() ? expected.trim().slice(0, 200) : null;
   const severityV = typeof severity === "string" && FEEDBACK_SEVERITIES.includes(severity) ? severity : null;
+  if (verdict === "incorrect" && !faultV && !cleanNote) {
+    res.status(400).json({ error: "Say what is wrong: pick a fault or write a note." });
+    return;
+  }
   await ensureTable();
   const snap = subjectType === "template" ? await snapshotTemplate(subjectId) : { subjectName: null, width: null, height: null, formatClass: null, adaptMethod: null, sourceTemplateId: null };
   const snapConfig = subjectType === "template" ? await snapshotTemplateConfig(subjectId) : null;
@@ -229142,7 +230396,65 @@ router6.post("/feedback", requireAuth, async (req, res) => {
       req.log.warn({ err, subjectId, verdict }, "feedback: remembering the verdict in Knowledge failed");
     }
   }
-  res.status(201).json({ ok: true, rememberedId });
+  let ruleUpdated = null;
+  if (subjectType === "template" && verdict === "incorrect" && slot && PART_RULE_SLOTS.includes(slot)) {
+    try {
+      const px = expectedV ? Number((/(\d{1,4})\s*px/i.exec(expectedV) ?? [])[1]) : NaN;
+      const change = faultV === "too_small" && Number.isFinite(px) && px > 0 ? { minPx: px } : faultV === "missing" || faultV === "cut_off" ? { dropWhenTight: false } : {};
+      if (Object.keys(change).length > 0) {
+        const p = await profileForMaster(snap.sourceTemplateId ?? subjectId, snap.sourceTemplateId ? subjectId : null);
+        if (p) {
+          await updateProfileRules(p.id, { [slot]: change });
+          ruleUpdated = { profileId: p.id, slot, change };
+          req.log.info({ profileId: p.id, slot, change }, "feedback: profile rule updated from a structured Wrong");
+        }
+      }
+    } catch (err) {
+      req.log.warn({ err, subjectId }, "feedback: could not move the verdict into the profile's rules");
+    }
+  }
+  let pinsUpdated = null;
+  if (subjectType === "template" && verdict === "incorrect" && slot && slot !== "whole" && slot !== "copy") {
+    try {
+      const text3 = `${expectedV ?? ""} ${cleanNote ?? ""}`.toLowerCase();
+      const c = {};
+      if (/full[- ]width|edge to edge|whole width|length of the (box|panel)/.test(text3)) {
+        c.pinLeft = true;
+        c.pinRight = true;
+        c.flexW = true;
+      }
+      if (/full[- ]height|whole height/.test(text3)) {
+        c.pinTop = true;
+        c.pinBottom = true;
+        c.flexH = true;
+      }
+      if (/top of the (box|panel|artwork|canvas)|to the top|bleed(s)? (off|to) the top/.test(text3)) c.pinTop = true;
+      if (/bottom of the (box|panel|artwork|canvas)|to the bottom|bleed(s)? (off|to) the bottom/.test(text3)) c.pinBottom = true;
+      if (/left edge|to the left|bleed(s)? (off|to) the left/.test(text3)) c.pinLeft = true;
+      if (/right edge|to the right|bleed(s)? (off|to) the right/.test(text3)) c.pinRight = true;
+      if (Object.keys(c).length > 0) {
+        const masterId = snap.sourceTemplateId ?? subjectId;
+        const [m] = await db.select().from(templatesTable).where(eq(templatesTable.id, masterId));
+        if (m) {
+          const raw2 = JSON.parse(m.config || "{}");
+          if (isFreeformConfig(raw2)) {
+            const cfg = normalizeFreeformConfig(raw2);
+            const sem = inferSlots(cfg, m.width, m.height);
+            const target = cfg.elements.find((e) => e.slot === slot) ?? sem.elements.find((e) => e.slot === slot);
+            if (target) {
+              const elements = cfg.elements.map((e) => e.id === target.id ? { ...e, constraints: { ...e.constraints ?? {}, ...c } } : e);
+              await db.update(templatesTable).set({ config: JSON.stringify({ ...raw2, elements }), updatedAt: /* @__PURE__ */ new Date() }).where(eq(templatesTable.id, m.id));
+              pinsUpdated = { masterId: m.id, elementId: target.id, constraints: c, words: describeConstraints(c) };
+              req.log.info({ masterId: m.id, slot, constraints: c }, "feedback: liquid pins set on the master from a verdict");
+            }
+          }
+        }
+      }
+    } catch (err) {
+      req.log.warn({ err, subjectId }, "feedback: could not set liquid pins from the verdict");
+    }
+  }
+  res.status(201).json({ ok: true, rememberedId, ...ruleUpdated ? { ruleUpdated } : {}, ...pinsUpdated ? { pinsUpdated } : {} });
   void backfillOnce(req);
 });
 router6.post("/feedback/remember-backfill", requireAdmin, async (req, res) => {
@@ -229163,25 +230475,25 @@ router6.get("/feedback", optionalAuth, async (req, res) => {
             FROM feedback ORDER BY id DESC LIMIT 500`
   );
   res.json({
-    items: rows.rows.map((r4) => ({
-      id: r4.id,
-      subjectType: r4.subject_type,
-      subjectId: r4.subject_id,
-      verdict: r4.verdict,
-      elementId: r4.element_id,
-      elementLabel: r4.element_label,
-      note: r4.note,
-      createdBy: r4.created_by,
-      createdAt: r4.created_at,
-      subjectName: r4.subject_name ?? null,
-      subjectWidth: r4.subject_width ?? null,
-      subjectHeight: r4.subject_height ?? null,
-      formatClass: r4.format_class ?? null,
-      adaptMethod: r4.adapt_method ?? null,
-      elementSlot: r4.element_slot ?? null,
-      fault: r4.fault ?? null,
-      expected: r4.expected ?? null,
-      severity: r4.severity ?? null
+    items: rows.rows.map((r6) => ({
+      id: r6.id,
+      subjectType: r6.subject_type,
+      subjectId: r6.subject_id,
+      verdict: r6.verdict,
+      elementId: r6.element_id,
+      elementLabel: r6.element_label,
+      note: r6.note,
+      createdBy: r6.created_by,
+      createdAt: r6.created_at,
+      subjectName: r6.subject_name ?? null,
+      subjectWidth: r6.subject_width ?? null,
+      subjectHeight: r6.subject_height ?? null,
+      formatClass: r6.format_class ?? null,
+      adaptMethod: r6.adapt_method ?? null,
+      elementSlot: r6.element_slot ?? null,
+      fault: r6.fault ?? null,
+      expected: r6.expected ?? null,
+      severity: r6.severity ?? null
     }))
   });
 });
@@ -229192,10 +230504,10 @@ async function recentIncorrectNotes(limit3 = 8) {
         WHERE verdict = 'incorrect' AND (note IS NOT NULL OR fault IS NOT NULL)
         ORDER BY id DESC LIMIT ${limit3}`
   );
-  return rows.rows.map((r4) => {
-    const part = r4.element_slot ?? r4.element_label;
-    const structured = r4.fault ? `${String(r4.fault).replace(/_/g, " ")}${r4.expected ? ` \u2014 expected ${r4.expected}` : ""}` : "";
-    const text3 = [structured, r4.note ? String(r4.note) : ""].filter(Boolean).join("; ");
+  return rows.rows.map((r6) => {
+    const part = r6.element_slot ?? r6.element_label;
+    const structured = r6.fault ? `${String(r6.fault).replace(/_/g, " ")}${r6.expected ? ` \u2014 expected ${r6.expected}` : ""}` : "";
+    const text3 = [structured, r6.note ? String(r6.note) : ""].filter(Boolean).join("; ");
     return part ? `[${part}] ${text3}` : text3;
   }).filter(Boolean);
 }
@@ -229216,13 +230528,13 @@ function normalizeVariantsInput(raw2) {
   const rows = [];
   for (const item of raw2.slice(0, MAX_VARIANT_ROWS)) {
     if (typeof item !== "object" || item === null) continue;
-    const r4 = item;
+    const r6 = item;
     const field = (v) => typeof v === "string" && v.trim() ? v.trim().slice(0, MAX_VARIANT_FIELD) : null;
     const row = {
-      label: field(r4.label),
-      headline: field(r4.headline),
-      bodyText: field(r4.bodyText),
-      callToAction: field(r4.callToAction)
+      label: field(r6.label),
+      headline: field(r6.headline),
+      bodyText: field(r6.bodyText),
+      callToAction: field(r6.callToAction)
     };
     if (row.label || row.headline || row.bodyText || row.callToAction) rows.push(row);
   }
@@ -230169,7 +231481,7 @@ router8.get("/assets", optionalAuth, async (req, res) => {
   const rejecter = alias(usersTable, "rejecter");
   const base = db.select().from(assetsTable).leftJoin(rejecter, eq(assetsTable.rejectedBy, rejecter.clerkId));
   const rows = briefId ? await base.where(eq(assetsTable.briefId, Number(briefId))).orderBy(assetsTable.id) : await base.orderBy(assetsTable.id);
-  res.json(await Promise.all(rows.map((r4) => formatAsset(r4.assets, r4.rejecter?.name ?? null))));
+  res.json(await Promise.all(rows.map((r6) => formatAsset(r6.assets, r6.rejecter?.name ?? null))));
 });
 router8.get("/assets/:id", optionalAuth, async (req, res) => {
   const id = Number(req.params.id);
@@ -230769,13 +232081,13 @@ router10.get("/stats/recent-activity", optionalAuth, async (req, res) => {
     generating: "generating",
     draft: "created"
   };
-  const result = recent.map((r4, i) => ({
+  const result = recent.map((r6, i) => ({
     id: i + 1,
-    type: statusTypeMap[r4.status] ?? r4.status,
-    briefId: r4.id,
-    briefName: r4.campaignName,
-    brandName: r4.brandName ?? "Unknown",
-    timestamp: r4.updatedAt.toISOString()
+    type: statusTypeMap[r6.status] ?? r6.status,
+    briefId: r6.id,
+    briefName: r6.campaignName,
+    brandName: r6.brandName ?? "Unknown",
+    timestamp: r6.updatedAt.toISOString()
   }));
   res.json(result);
 });
@@ -230805,18 +232117,18 @@ router10.get("/stats/performance", optionalAuth, async (_req, res) => {
     clicks,
     ctr,
     totalTags: tagCount?.count ?? 0,
-    topAssets: perAssetRows.map((r4) => ({
-      assetId: r4.assetId,
-      templateSize: r4.templateSize ?? "unknown",
-      campaignName: r4.campaignName ?? "Unknown",
-      impressions: r4.impressions,
-      clicks: r4.clicks,
-      ctr: r4.impressions > 0 ? r4.clicks / r4.impressions : 0
+    topAssets: perAssetRows.map((r6) => ({
+      assetId: r6.assetId,
+      templateSize: r6.templateSize ?? "unknown",
+      campaignName: r6.campaignName ?? "Unknown",
+      impressions: r6.impressions,
+      clicks: r6.clicks,
+      ctr: r6.impressions > 0 ? r6.clicks / r6.impressions : 0
     })),
-    timeseries: timeseriesRows.map((r4) => ({
-      day: r4.day,
-      impressions: r4.impressions,
-      clicks: r4.clicks
+    timeseries: timeseriesRows.map((r6) => ({
+      day: r6.day,
+      impressions: r6.impressions,
+      clicks: r6.clicks
     }))
   });
 });
@@ -230971,7 +232283,7 @@ var users_default = router12;
 var import_express14 = __toESM(require_express2(), 1);
 
 // src/lib/panelRecompose.ts
-function centreIn(e, b) {
+function centreIn2(e, b) {
   const cx = e.x + e.w / 2;
   const cy = e.y + e.h / 2;
   return cx >= b.x && cx <= b.x + b.w && cy >= b.y && cy <= b.y + b.h;
@@ -230991,7 +232303,7 @@ function recomposePanelLayout(cfg, srcW, srcH, dstW, dstH) {
   if (!stackedMaster && !sideMaster) return null;
   const band = els.filter((e) => e.type === "image" && e !== photo && e.h > 0 && e.w / e.h >= 6).sort((a, b) => b.w - a.w)[0] ?? null;
   const photoBox = { x: photo.x, y: photo.y, w: photo.w, h: photo.h };
-  const overlay = els.filter((e) => e !== photo && e !== bg && e !== band && centreIn(e, photoBox));
+  const overlay = els.filter((e) => e !== photo && e !== bg && e !== band && centreIn2(e, photoBox));
   const panelEls = els.filter((e) => e !== photo && e !== bg && e !== band && !overlay.includes(e));
   if (panelEls.length === 0) return null;
   const stackedOut = dstW / dstH < 1.1;
@@ -231105,150 +232417,6 @@ function guidelineLogoPlacement(w, h) {
   return { tile };
 }
 
-// src/lib/slots.ts
-function area(b) {
-  return Math.max(0, b.w) * Math.max(0, b.h);
-}
-function centreIn2(e, b) {
-  const cx = e.x + e.w / 2;
-  const cy = e.y + e.h / 2;
-  return cx >= b.x && cx <= b.x + b.w && cy >= b.y && cy <= b.y + b.h;
-}
-function overlapFrac(a, b) {
-  const ix = Math.max(0, Math.min(a.x + a.w, b.x + b.w) - Math.max(a.x, b.x));
-  const iy = Math.max(0, Math.min(a.y + a.h, b.y + b.h) - Math.max(a.y, b.y));
-  return ix * iy / Math.max(1, area(a));
-}
-function remainder(outer, hole) {
-  const candidates = [
-    { x: outer.x, y: outer.y, w: outer.w, h: Math.max(0, hole.y - outer.y) },
-    // above
-    { x: outer.x, y: hole.y + hole.h, w: outer.w, h: Math.max(0, outer.y + outer.h - (hole.y + hole.h)) },
-    // below
-    { x: outer.x, y: outer.y, w: Math.max(0, hole.x - outer.x), h: outer.h },
-    // left
-    { x: hole.x + hole.w, y: outer.y, w: Math.max(0, outer.x + outer.w - (hole.x + hole.w)), h: outer.h }
-    // right
-  ];
-  return candidates.sort((a, b) => area(b) - area(a))[0];
-}
-function inferSlots(config2, width, height) {
-  const W2 = width;
-  const H2 = height;
-  const canvasArea = W2 * H2;
-  const notes = [];
-  const els = config2.elements.map((e) => ({ ...e, slot: e.slot ?? "other" }));
-  const explicit = new Set(els.filter((e) => e.slot !== "other").map((e) => e.id));
-  const isExplicit = (e) => explicit.has(e.id);
-  const unassigned = (e) => !isExplicit(e) && e.slot === "other";
-  const images = els.filter((e) => e.type === "image");
-  const rects = els.filter((e) => e.type === "rect");
-  const texts = els.filter((e) => e.type === "text");
-  const bandShaped = (e) => e.h > 0 && e.w > 0 && (e.w / e.h >= 5 || e.h / e.w >= 5) && area(e) < canvasArea * 0.15;
-  let panel = rects.find((r4) => r4.slot === "panel") ?? rects.filter((r4) => unassigned(r4) && !r4.gradient && (r4.opacity ?? 1) >= 0.9).filter((r4) => area(r4) >= canvasArea * 0.2 && (r4.w >= W2 * 0.9 || r4.h >= H2 * 0.9)).sort((a, b) => area(b) - area(a))[0] ?? null;
-  if (panel) panel.slot = "panel";
-  let photo = images.find((i) => i.slot === "photo") ?? images.filter((i) => unassigned(i) && i.src && !bandShaped(i)).sort((a, b) => {
-    const pa = a.role === "product" ? 1 : 0;
-    const pb = b.role === "product" ? 1 : 0;
-    return pb - pa || area(b) - area(a);
-  })[0] ?? null;
-  if (photo && area(photo) < canvasArea * 0.15) photo = null;
-  if (photo) photo.slot = "photo";
-  const photoBox = photo ? { x: photo.x, y: photo.y, w: photo.w, h: photo.h } : null;
-  const scrim = rects.find((r4) => r4.slot === "scrim") ?? rects.filter((r4) => unassigned(r4) && (r4.gradient !== void 0 || (r4.opacity ?? 1) < 0.9)).filter((r4) => !photoBox || overlapFrac(r4, photoBox) > 0.3).sort((a, b) => area(b) - area(a))[0] ?? null;
-  if (scrim) scrim.slot = "scrim";
-  const band = images.find((i) => i.slot === "band") ?? images.filter((i) => unassigned(i) && i !== photo && bandShaped(i)).sort((a, b) => area(b) - area(a))[0] ?? null;
-  if (band) band.slot = "band";
-  let cta = els.find((e) => e.slot === "cta" && (e.type === "rect" || e.type === "image")) ?? null;
-  let ctaLabel = texts.find((t) => t.slot === "ctaLabel") ?? null;
-  let ctaIcon = images.find((i) => i.slot === "ctaIcon") ?? null;
-  if (!cta) {
-    const pill = rects.filter((r4) => unassigned(r4) && (r4.radius ?? 0) > 0 && r4.h < Math.min(W2, H2) * 0.3 && r4.w / Math.max(1, r4.h) >= 2.2).filter((r4) => texts.some((t) => unassigned(t) && centreIn2(t, r4))).sort((a, b) => area(b) - area(a))[0];
-    if (pill) cta = pill;
-  }
-  if (!cta) {
-    const button = images.filter((i) => unassigned(i) && i !== photo && i !== band).filter((i) => i.w / Math.max(1, i.h) >= 3 && i.w / Math.max(1, i.h) <= 6 && i.h <= Math.min(W2, H2) * 0.25 && area(i) < canvasArea * 0.08).filter((i) => !photoBox || overlapFrac(i, photoBox) < 0.5).sort((a, b) => area(b) - area(a))[0];
-    if (button) cta = button;
-  }
-  if (cta) {
-    cta.slot = "cta";
-    if (!ctaLabel) {
-      const label3 = texts.filter((t) => unassigned(t) && centreIn2(t, cta)).sort((a, b) => area(b) - area(a))[0];
-      if (label3) {
-        label3.slot = "ctaLabel";
-        ctaLabel = label3;
-      }
-    }
-    if (!ctaIcon) {
-      const icon = images.filter((i) => unassigned(i) && i !== cta && centreIn2(i, cta) && area(i) < area(cta) * 0.5).sort((a, b) => area(b) - area(a))[0];
-      if (icon) {
-        icon.slot = "ctaIcon";
-        ctaIcon = icon;
-      }
-    }
-  }
-  const ctaKind = !cta ? "none" : cta.type === "rect" && (cta.radius ?? 0) >= cta.h * 0.35 ? "pill" : "button";
-  const outer = panel ? { x: panel.x, y: panel.y, w: panel.w, h: panel.h } : { x: 0, y: 0, w: W2, h: H2 };
-  const panelBox = photoBox && overlapFrac(photoBox, outer) > 0.5 ? remainder(outer, photoBox) : panel ? outer : null;
-  const logo = images.find((i) => i.slot === "logo") ?? images.find((i) => unassigned(i) && i.role === "logo") ?? null;
-  if (logo) logo.slot = "logo";
-  const lockup = images.find((i) => i.slot === "lockup") ?? images.filter((i) => unassigned(i) && i !== photo && i !== band && i !== cta && i !== ctaIcon).filter((i) => i.w / Math.max(1, i.h) >= 2 && i.w / Math.max(1, i.h) <= 8 && area(i) <= canvasArea * 0.1).filter((i) => panelBox ? centreIn2(i, panelBox) : true).sort((a, b) => area(b) - area(a))[0] ?? null;
-  if (lockup) lockup.slot = "lockup";
-  const bySize = (a, b) => b.fontSize - a.fontSize;
-  const headline = texts.find((t) => t.slot === "headline") ?? texts.filter((t) => unassigned(t) && t.text.trim().length > 0).sort((a, b) => (a.role === "headline" ? 0 : 1) - (b.role === "headline" ? 0 : 1) || bySize(a, b))[0] ?? null;
-  if (headline) headline.slot = "headline";
-  const subheadline = texts.find((t) => t.slot === "subheadline") ?? texts.filter((t) => unassigned(t) && t !== headline && t.text.trim().length > 0).filter((t) => photoBox ? centreIn2(t, photoBox) : headline ? Math.abs(t.y - (headline.y + headline.h)) < headline.fontSize * 1.5 : false).sort(bySize)[0] ?? null;
-  if (subheadline) subheadline.slot = "subheadline";
-  const message = texts.find((t) => t.slot === "message") ?? texts.filter((t) => unassigned(t) && t !== headline && t !== subheadline && t.text.trim().length > 0).filter((t) => panelBox ? centreIn2(t, panelBox) : true).sort(bySize)[0] ?? null;
-  if (message) message.slot = "message";
-  const cutouts = images.filter(
-    (i) => i.slot === "cutout" || unassigned(i) && i !== photo && photoBox !== null && centreIn2(i, photoBox) && area(i) >= area(photoBox) * 0.03 && area(i) <= area(photoBox) * 0.6
-  );
-  for (const c of cutouts) c.slot = "cutout";
-  let axis = "none";
-  if (photoBox) {
-    const fullW = photoBox.w >= W2 * 0.9;
-    const fullH = photoBox.h >= H2 * 0.9;
-    axis = fullW && fullH ? "overlay" : fullW ? "stacked" : fullH ? "side" : "none";
-  }
-  if (!photo) notes.push("No photograph found in the master.");
-  if (!headline) notes.push("No headline text found in the master.");
-  if (!panel) notes.push("No solid brand panel found in the master; the recomposer will add one in the panel colour.");
-  if (!cta) notes.push("No call-to-action found in the master.");
-  return {
-    width: W2,
-    height: H2,
-    elements: els,
-    photo: photo ?? null,
-    cutouts,
-    scrim: scrim ?? null,
-    panel: panel ?? null,
-    band: band ?? null,
-    headline: headline ?? null,
-    subheadline: subheadline ?? null,
-    message: message ?? null,
-    cta,
-    ctaLabel,
-    ctaIcon,
-    lockup: lockup ?? null,
-    logo: logo ?? null,
-    axis,
-    photoBox,
-    panelBox,
-    panelFill: panel?.fill ?? null,
-    ctaKind,
-    notes
-  };
-}
-function isFlatArtwork(config2) {
-  const hasLiveText = config2.elements.some((e) => e.type === "text" && e.text.trim().length > 0);
-  if (hasLiveText) return false;
-  const hasLayeredSlots2 = config2.elements.some((e) => e.type === "image" && (e.slot === "headline" || e.slot === "cta"));
-  if (hasLayeredSlots2) return false;
-  const hasCapturedCopy = config2.elements.some((e) => e.type === "image" && Array.isArray(e.kvText) && e.kvText.length > 0);
-  return !hasCapturedCopy;
-}
-
 // src/lib/textMeasure.ts
 init_freeformFonts();
 import { createCanvas as createCanvas2 } from "@napi-rs/canvas";
@@ -231264,31 +232432,42 @@ async function prepareMeasurement() {
     fontsReady = false;
   }
 }
-function resolveFamily2(family) {
-  if (family && hasFontFamily(family)) return family;
+function resolveFamily2(family2) {
+  if (family2 && hasFontFamily(family2)) return family2;
   return NATIONAL2_FAMILY;
 }
-function setFont(spec, sizePx) {
-  const fam = resolveFamily2(spec.family);
-  ctx.font = `${spec.italic ? "italic" : "normal"} ${spec.weight ?? 400} ${sizePx}px "${fam}"`;
+function fontResolution(spec3) {
+  const used = resolveFamily2(spec3.family);
+  const substituted = !!spec3.family && spec3.family !== used;
+  const estimated = !fontsReady && !hasFontFamily(used);
+  return { requested: spec3.family, used, substituted, estimated };
 }
-function measureLine(text3, spec, sizePx) {
+var warnedEstimate = false;
+function setFont(spec3, sizePx) {
+  const fam = resolveFamily2(spec3.family);
+  ctx.font = `${spec3.italic ? "italic" : "normal"} ${spec3.weight ?? 400} ${sizePx}px "${fam}"`;
+}
+function measureLine(text3, spec3, sizePx) {
   if (text3.length === 0) return 0;
-  const ls = (spec.letterSpacing ?? 0) * Array.from(text3).length;
-  if (!fontsReady && !hasFontFamily(resolveFamily2(spec.family))) {
+  const ls = (spec3.letterSpacingEm != null ? spec3.letterSpacingEm * sizePx : spec3.letterSpacing ?? 0) * Array.from(text3).length;
+  if (!fontsReady && !hasFontFamily(resolveFamily2(spec3.family))) {
+    if (!warnedEstimate) {
+      warnedEstimate = true;
+      console.warn("[textMeasure] no font registered: copy widths are a 0.55em estimate and layouts will not match the export. Set FREEFORM_FONT_DIR or ship the fonts with the server.");
+    }
     return text3.length * sizePx * 0.55 + ls;
   }
-  setFont(spec, sizePx);
+  setFont(spec3, sizePx);
   return ctx.measureText(text3).width + ls;
 }
-function wrapParagraph2(paragraph, maxWidth, spec, sizePx) {
+function wrapParagraph2(paragraph, maxWidth, spec3, sizePx) {
   const words = paragraph.split(/\s+/).filter(Boolean);
   if (words.length === 0) return [""];
   const lines = [];
   let current = "";
   for (const word of words) {
     const candidate = current ? `${current} ${word}` : word;
-    if (!current || measureLine(candidate, spec, sizePx) <= maxWidth + 0.01) {
+    if (!current || measureLine(candidate, spec3, sizePx) <= maxWidth + 0.01) {
       current = candidate;
     } else {
       lines.push(current);
@@ -231298,15 +232477,15 @@ function wrapParagraph2(paragraph, maxWidth, spec, sizePx) {
   lines.push(current);
   return lines;
 }
-function capHeightPx(spec, sizePx) {
-  const fam = resolveFamily2(spec.family);
-  ctx.font = `${spec.italic ? "italic" : "normal"} ${spec.weight ?? 400} ${sizePx}px "${fam}"`;
+function capHeightPx(spec3, sizePx) {
+  const fam = resolveFamily2(spec3.family);
+  ctx.font = `${spec3.italic ? "italic" : "normal"} ${spec3.weight ?? 400} ${sizePx}px "${fam}"`;
   const m = ctx.measureText("H");
   const asc2 = m.actualBoundingBoxAscent;
   return Number.isFinite(asc2) && asc2 > 0 ? asc2 : sizePx * 0.7;
 }
-function wrapText(text3, maxWidth, spec, sizePx) {
-  return text3.replace(/\r\n?/g, "\n").split("\n").flatMap((p) => wrapParagraph2(p, maxWidth, spec, sizePx));
+function wrapText(text3, maxWidth, spec3, sizePx) {
+  return text3.replace(/\r\n?/g, "\n").split("\n").flatMap((p) => wrapParagraph2(p, maxWidth, spec3, sizePx));
 }
 function fitText(text3, box, opts) {
   const lh = opts.lineHeight ?? 1.15;
@@ -231325,9 +232504,9 @@ function fitText(text3, box, opts) {
   if (best.ok) {
     while (lo < hi) {
       const mid = Math.ceil((lo + hi) / 2);
-      const r4 = evaluate(mid);
-      if (r4.ok) {
-        best = r4;
+      const r6 = evaluate(mid);
+      if (r6.ok) {
+        best = r6;
         lo = mid;
       } else {
         hi = mid - 1;
@@ -231337,9 +232516,140 @@ function fitText(text3, box, opts) {
   return { fontSize: best.size, lines: best.lines, width: best.width, height: best.height, fits: best.ok };
 }
 
+// src/lib/ctaPlan.ts
+var clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
+var r = (v) => Math.round(v);
+function masterLabelRatio(master) {
+  if (!master || !master.labelFontSize || master.ctaH <= 0) return 0.5;
+  return clamp(master.labelFontSize / master.ctaH, 0.3, 0.72);
+}
+function pillHeightFromHeadline(input) {
+  const comfort = input.comfortLabelPx ?? 18;
+  const floor = Math.max(input.minH, Math.min(input.recipeFloorPx ?? Infinity, comfort / Math.max(0.2, input.labelRatio)));
+  const known = !!input.masterHeadlinePx && input.masterHeadlinePx > 0 && !!input.headlinePx && input.headlinePx > 0 && input.masterPillH > 0;
+  const k = known ? clamp(input.masterPillH / input.masterHeadlinePx, 0.12, 0.9) : null;
+  const want = k !== null ? k * input.headlinePx : input.fallbackH;
+  const h = clamp(Math.max(want, floor), input.minH, input.maxH);
+  return { h, k, atFloor: want < floor };
+}
+var ICON_SHARE = 0.74;
+var iconInsetFor = (h) => (h - h * ICON_SHARE) / 2;
+function masterPadRatio(master) {
+  if (!master || !master.labelText || !master.labelFontSize || master.ctaH <= 0) return 0.45;
+  if (master.labelInset != null && master.labelInset > 0) return clamp(master.labelInset / master.ctaH, 0.25, 1.2);
+  const spec3 = master.labelSpec ?? { weight: 700 };
+  const labelW = measureLine(master.labelText.replace(/\s+/g, " ").trim(), spec3, master.labelFontSize);
+  const iconW = master.hasIcon ? master.ctaH * 0.72 + master.ctaH * 0.25 : 0;
+  const pad = (master.ctaW - labelW - iconW) / 2;
+  if (!Number.isFinite(pad) || pad <= 0) return 0.45;
+  return clamp(pad / master.ctaH, 0.3, 1.2);
+}
+function masterIconGapRatio(master) {
+  if (!master || !master.hasIcon || !master.labelText || !master.labelFontSize || master.ctaH <= 0 || master.labelInset == null) return 0.25;
+  const spec3 = master.labelSpec ?? { weight: 700 };
+  const labelW = measureLine(master.labelText.replace(/\s+/g, " ").trim(), spec3, master.labelFontSize);
+  const gap = master.ctaW - master.labelInset - labelW - master.ctaH * ICON_SHARE - iconInsetFor(master.ctaH);
+  if (!Number.isFinite(gap)) return 0.25;
+  return clamp(gap / master.ctaH, 0.15, 1);
+}
+function planCta(input) {
+  const label3 = input.label.replace(/\s+/g, " ").trim();
+  const minLabel = input.minLabelPx ?? 9;
+  const labelRatio = masterLabelRatio(input.master);
+  let padRatio = masterPadRatio(input.master);
+  let gapRatio = masterIconGapRatio(input.master);
+  const notes = [];
+  const res = fontResolution(input.spec);
+  if (res.substituted) notes.push(`Check: the pill label was measured in ${res.used} because "${res.requested}" is not registered on this server \u2014 confirm its width on export.`);
+  let icon = !!input.icon;
+  let h = clamp(input.targetH, input.minH, input.maxH);
+  let fontSize = h * labelRatio;
+  if (fontSize < minLabel) {
+    fontSize = minLabel;
+    h = clamp(fontSize / labelRatio, input.minH, input.maxH);
+  }
+  const geometry2 = () => {
+    const padX = r(h * padRatio);
+    const iconSize = icon ? r(h * ICON_SHARE) : 0;
+    const iconGap = icon ? r(h * gapRatio) : 0;
+    const iconInset = icon ? Math.max(1, r(iconInsetFor(h))) : 0;
+    const labelW = Math.ceil(measureLine(label3, input.spec, fontSize) + fontSize * 0.2) + 2;
+    const w = icon ? r(padX + labelW + iconGap + iconSize + iconInset) : r(labelW + padX * 2);
+    return { padX, iconSize, iconGap, iconInset, labelW, w };
+  };
+  let g = geometry2();
+  let lines = [label3];
+  let fits = true;
+  const want = fontSize;
+  if (g.w > input.maxW) {
+    const solve = () => {
+      for (let fs5 = want; fs5 >= minLabel - 0.01; fs5 -= 0.25) {
+        fontSize = fs5;
+        h = clamp(fs5 / labelRatio, input.minH, input.maxH);
+        g = geometry2();
+        if (g.w <= input.maxW) return true;
+      }
+      return false;
+    };
+    const comfortable = Math.max(minLabel, Math.min(want, 11));
+    let ok = solve() && fontSize >= want * 0.85;
+    if (!ok) {
+      padRatio = Math.min(padRatio, 0.3);
+      gapRatio = Math.min(gapRatio, 0.15);
+      ok = solve() && fontSize >= comfortable;
+    }
+    if (!ok) {
+      fontSize = Math.max(minLabel, Math.min(want, fontSize));
+      h = clamp(fontSize / labelRatio, input.minH, input.maxH);
+      g = geometry2();
+    }
+  }
+  if (g.w > input.maxW && icon) {
+    icon = false;
+    for (let fs5 = want; fs5 >= minLabel - 0.01; fs5 -= 0.25) {
+      fontSize = fs5;
+      h = clamp(fs5 / labelRatio, input.minH, input.maxH);
+      g = geometry2();
+      if (g.w <= input.maxW) break;
+    }
+    notes.push("Pill icon dropped: no room beside the label at this size.");
+  }
+  if (g.w > input.maxW && input.allowTwoLines) {
+    const inner = Math.max(10, input.maxW - g.padX * 2);
+    const wrapped = wrapText(label3, inner, input.spec, fontSize);
+    if (wrapped.length >= 2 && wrapped.length <= 3 && wrapped.every((l) => measureLine(l, input.spec, fontSize) <= inner + 0.01)) {
+      lines = wrapped;
+      const widest = Math.max(...wrapped.map((l) => measureLine(l, input.spec, fontSize)));
+      const padY = Math.max(2, (h - fontSize) / 2);
+      h = r(fontSize * 1.15 * wrapped.length + padY * 2);
+      g = { ...g, labelW: widest, w: r(widest + g.padX * 2) };
+      notes.push(`Pill label set on ${wrapped.length} lines to keep it legible at this width.`);
+    }
+  }
+  if (g.w > input.maxW) {
+    fits = false;
+    notes.push("Check: the pill label does not fit this zone even at the smallest legible size \u2014 shorten the copy for this format.");
+    g = { ...g, w: r(input.maxW) };
+  }
+  return {
+    h: r(h),
+    w: Math.max(1, g.w),
+    fontSize: r(fontSize),
+    padX: g.padX,
+    iconSize: g.iconSize,
+    iconGap: g.iconGap,
+    iconInset: g.iconInset,
+    lines,
+    fits,
+    labelRatio,
+    padRatio,
+    notes
+  };
+}
+
 // src/lib/kvAdapt.ts
 var objectStorageService7 = new ObjectStorageService();
-var MIN_HEADLINE_PX = 13;
+var MIN_HEADLINE_PX_DEFAULT = 13;
 var SCRIM_LUMINANCE_THRESHOLD = 140;
 var SCRIM_COLOR = "#11263d";
 var SCRIM_OPACITY = 0.55;
@@ -231368,20 +232678,20 @@ async function sampleEdgeColor(src, imgW, imgH) {
     { left: Math.max(0, imgW - band), top: 0, width: Math.min(band, imgW), height: imgH }
   ];
   try {
-    let r4 = 0;
+    let r6 = 0;
     let g = 0;
     let b = 0;
     let n = 0;
     for (const s2 of strips) {
       const stats = await sharp4(buffer).extract(s2).stats();
-      r4 += stats.channels[0].mean;
+      r6 += stats.channels[0].mean;
       g += stats.channels[1].mean;
       b += stats.channels[2].mean;
       n++;
     }
     if (n === 0) return null;
     const hex = (v) => Math.max(0, Math.min(255, Math.round(v / n))).toString(16).padStart(2, "0");
-    return `#${hex(r4)}${hex(g)}${hex(b)}`;
+    return `#${hex(r6)}${hex(g)}${hex(b)}`;
   } catch {
     return null;
   }
@@ -231400,15 +232710,15 @@ async function sampleRegionStats(src, imgW, imgH, art, box) {
   const ch = Math.max(1, Math.min(imgH - ct, height - (ct - top)));
   try {
     const stats = await sharp4(buffer).extract({ left: cl, top: ct, width: cw, height: ch }).stats();
-    const [r4, g, b] = stats.channels;
+    const [r6, g, b] = stats.channels;
     const lin = (v) => {
       const c = v / 255;
       return c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4);
     };
-    const rel = 0.2126 * lin(r4.mean) + 0.7152 * lin(g.mean) + 0.0722 * lin(b.mean);
+    const rel = 0.2126 * lin(r6.mean) + 0.7152 * lin(g.mean) + 0.0722 * lin(b.mean);
     return {
-      lum: 0.299 * r4.mean + 0.587 * g.mean + 0.114 * b.mean,
-      busy: (r4.stdev + g.stdev + b.stdev) / 3,
+      lum: 0.299 * r6.mean + 0.587 * g.mean + 0.114 * b.mean,
+      busy: (r6.stdev + g.stdev + b.stdev) / 3,
       // WCAG ratio of white type against this ground.
       whiteContrast: 1.05 / (rel + 0.05)
     };
@@ -231432,6 +232742,7 @@ async function composeKeyVisualAdaptation(master, srcW, srcH, dstW, dstH, brand)
   const bg = findKvBackground(master, srcW, srcH);
   if (!bg) return null;
   await prepareMeasurement();
+  const MIN_HEADLINE_PX = brand.rules?.floor("headline") ?? MIN_HEADLINE_PX_DEFAULT;
   const short = Math.min(dstW, dstH);
   const isStrip = dstH <= STRIP_MAX_HEIGHT;
   const isWide = dstW / dstH > 2.5;
@@ -231526,13 +232837,21 @@ async function composeKeyVisualAdaptation(master, srcW, srcH, dstW, dstH, brand)
   const sem = inferSlots(master, srcW, srcH);
   const ctaSrc = sem.cta && sem.ctaLabel ? sem.cta : null;
   const ctaPlan = ctaSrc && sem.ctaLabel ? (() => {
-    const label3 = sem.ctaLabel.text.replace(/\s+/g, " ").trim();
-    const h = Math.round(Math.max(24, Math.min(short * 0.16, ctaSrc.h / srcShort * short)));
-    const fs5 = Math.max(9, Math.round(h * 0.42));
-    const padX = Math.round(h * 0.6);
-    const w = Math.round(Math.min(dstW - margin * 2, label3.length * fs5 * 0.56 + padX * 2));
+    const labelEl = sem.ctaLabel;
+    const spec3 = { family: labelEl.fontFamily, weight: labelEl.fontWeight === 700 ? 700 : 400, ...labelEl.letterSpacing !== void 0 && labelEl.fontSize > 0 ? { letterSpacingEm: labelEl.letterSpacing / labelEl.fontSize } : {} };
+    const p = planCta({
+      label: labelEl.text,
+      spec: spec3,
+      master: { ctaH: ctaSrc.h, ctaW: ctaSrc.w, labelFontSize: labelEl.fontSize, labelText: labelEl.text, labelSpec: spec3, hasIcon: !!sem.ctaIcon },
+      targetH: ctaSrc.h / srcShort * short,
+      minH: brand.rules?.floor("cta") ?? 24,
+      maxH: Math.max(brand.rules?.floor("cta") ?? 24, short * 0.16),
+      maxW: dstW - margin * 2,
+      icon: false,
+      allowTwoLines: dstW < 200
+    });
     const pill = ctaSrc.type === "rect" && (ctaSrc.radius ?? 0) >= ctaSrc.h / 2 - 1;
-    return { label: label3, h, w, fs: fs5, padX, pill, fill: ctaSrc.type === "rect" ? ctaSrc.fill : "#ffffff", color: sem.ctaLabel.color ?? "#11263d", fontFamily: sem.ctaLabel.fontFamily, fontWeight: sem.ctaLabel.fontWeight ?? 700 };
+    return { label: p.lines.join("\n"), lines: p.lines.length, h: p.h, w: p.w, fs: p.fontSize, padX: p.padX, pill, fill: ctaSrc.type === "rect" ? ctaSrc.fill : "#ffffff", color: labelEl.color ?? "#11263d", fontFamily: labelEl.fontFamily, fontWeight: labelEl.fontWeight ?? 700 };
   })() : null;
   const subLine = !isStrip && sem.subheadline && sem.subheadline.text.trim() ? sem.subheadline : null;
   const masterScrim = headline ? master.elements.find(
@@ -231544,20 +232863,20 @@ async function composeKeyVisualAdaptation(master, srcW, srcH, dstW, dstH, brand)
   const headlineWidthFrac = headline ? Math.min(1, headline.w / srcW) : 0.86;
   const headlineCentred = headline ? headline.align ? headline.align === "center" : Math.abs((headline.x + headline.w / 2) / srcW - 0.5) < 0.08 : true;
   const longestLineChars = (text3) => Math.max(...text3.split("\n").map((l) => l.trim().length), 1);
-  const specOf = (family, weight) => ({ family, weight: weight === 700 ? 700 : 400 });
+  const specOf = (family2, weight) => ({ family: family2, weight: weight === 700 ? 700 : 400 });
   const hlSpec = specOf(headline?.fontFamily, headline?.fontWeight ?? 700);
-  const fitTextBox = (el, spec = hlSpec) => {
-    const lines = el.text.split("\n").flatMap((l) => wrapText(l, el.w, spec, el.fontSize));
+  const fitTextBox = (el, spec3 = hlSpec) => {
+    const lines = el.text.split("\n").flatMap((l) => wrapText(l, el.w, spec3, el.fontSize));
     if (lines.length === 0) return;
-    const widest = Math.max(...lines.map((l) => measureLine(l, spec, el.fontSize)), 0);
+    const widest = Math.max(...lines.map((l) => measureLine(l, spec3, el.fontSize)), 0);
     const fitted = Math.min(el.w, Math.ceil(widest) + Math.ceil(el.fontSize * 0.3));
     if (fitted >= el.w) return;
     if (el.align === "center") el.x += Math.round((el.w - fitted) / 2);
     else if (el.align === "right") el.x += el.w - fitted;
     el.w = fitted;
   };
-  const wrappedLines = (text3, fontSize, w, spec = hlSpec) => text3.split("\n").reduce((n, line2) => n + Math.max(1, wrapText(line2, Math.max(1, w), spec, fontSize).length), 0);
-  const boxHeight = (text3, fontSize, w, lineHeight, spec = hlSpec) => Math.round(wrappedLines(text3, fontSize, w, spec) * fontSize * lineHeight + fontSize * 0.25);
+  const wrappedLines = (text3, fontSize, w, spec3 = hlSpec) => text3.split("\n").reduce((n, line2) => n + Math.max(1, wrapText(line2, Math.max(1, w), spec3, fontSize).length), 0);
+  const boxHeight = (text3, fontSize, w, lineHeight, spec3 = hlSpec) => Math.round(wrappedLines(text3, fontSize, w, spec3) * fontSize * lineHeight + fontSize * 0.25);
   let straplineTopY = dstH;
   if (showStrapline) {
     const lines = brand.strapline.split("\n").filter(Boolean).slice(0, 2);
@@ -231610,7 +232929,9 @@ async function composeKeyVisualAdaptation(master, srcW, srcH, dstW, dstH, brand)
       const fitToWidth = w2 / Math.max(0.1, longest);
       const fitToHeight = hAvail / (lines * 1.3);
       const fitCap = Math.min(fitToWidth, fitToHeight);
-      return Math.round(Math.max(MIN_HEADLINE_PX, Math.min(fitCap, isStrip || isWide ? Math.max(designSize, fitCap * 0.8) : designSize)));
+      const shareSize = headline ? headline.h / srcH * dstH / (lines * 1.3) : designSize;
+      const target = Math.max(designSize, shareSize);
+      return Math.round(Math.max(MIN_HEADLINE_PX, Math.min(fitCap, isStrip || isWide ? Math.max(target, fitCap * 0.8) : target)));
     };
     const mk = (label3, zone, zx, zy, zw, zh, align) => {
       zx = Math.max(margin, zx);
@@ -231741,7 +233062,7 @@ async function composeKeyVisualAdaptation(master, srcW, srcH, dstW, dstH, brand)
         fontWeight: ctaPlan.fontWeight,
         color: ctaPlan.color,
         align: "center",
-        lineHeight: ctaPlan.h / ctaPlan.fs,
+        lineHeight: ctaPlan.lines > 1 ? 1.15 : ctaPlan.h / ctaPlan.fs,
         ...ctaPlan.fontFamily ? { fontFamily: ctaPlan.fontFamily } : {},
         locked: true
       });
@@ -231818,177 +233139,298 @@ async function composeKeyVisualAdaptation(master, srcW, srcH, dstW, dstH, brand)
 }
 
 // src/lib/recompose.ts
-import sharp5 from "sharp";
+import sharp6 from "sharp";
 
-// src/lib/recipes.ts
-var ALL2 = ["photo", "headline", "cta", "lockup", "band", "message", "subheadline", "cutout"];
-var RECIPES = {
-  // 384×592 / 300×600: photo 57% top, band 5.4% at the seam, panel below.
-  portrait: {
-    axis: "stacked",
-    photoFrac: 0.57,
-    bandFrac: 0.054,
-    bandAt: "seam",
-    headlineWidthFrac: 0.86,
-    headlineMaxHeightFrac: 0.32,
-    headlineCentreFrac: 0.47,
-    headlineCentreFracBare: 0.56,
-    headlineWordPerLine: false,
-    subheadRatio: 0.3,
-    messageMaxRatio: 0.3,
-    ctaFloorPx: 43,
-    ctaHeightFrac: 0.075,
-    ctaMaxWidthFrac: 0.7,
-    lockupHeightFrac: 0.12,
-    lockupMaxWidthFrac: 0.6,
-    cutoutWidthFrac: 0.78,
-    photoOversize: 1.15,
-    marginFrac: 0.06,
-    keep: ALL2
-  },
-  // 120×600 / 160×600: same stack, headline one word per line, no room for
-  // the message or a cut-out, logo tile instead of the wide lockup.
-  tower: {
-    axis: "stacked",
-    photoFrac: 0.5,
-    bandFrac: 0.03,
-    bandAt: "seam",
-    headlineWidthFrac: 0.92,
-    headlineMaxHeightFrac: 0.7,
-    headlineCentreFrac: 0.5,
-    headlineCentreFracBare: 0.5,
-    headlineWordPerLine: true,
-    subheadRatio: 0.32,
-    messageMaxRatio: 0.3,
-    ctaFloorPx: 28,
-    ctaHeightFrac: 0.09,
-    ctaMaxWidthFrac: 0.9,
-    lockupHeightFrac: 0.14,
-    lockupMaxWidthFrac: 0.85,
-    cutoutWidthFrac: 0.7,
-    photoOversize: 1.2,
-    marginFrac: 0.07,
-    keep: ["photo", "headline", "cta", "lockup", "band", "subheadline"]
-  },
-  // 1080×1080 and near-squares: stack, generous photo, social squares carry
-  // no logo lockup (guidelines).
-  square: {
-    axis: "stacked",
-    photoFrac: 0.62,
-    bandFrac: 0.045,
-    bandAt: "seam",
-    headlineWidthFrac: 0.84,
-    headlineMaxHeightFrac: 0.3,
-    headlineCentreFrac: 0.45,
-    headlineCentreFracBare: 0.54,
-    headlineWordPerLine: false,
-    subheadRatio: 0.3,
-    messageMaxRatio: 0.3,
-    ctaFloorPx: 34,
-    ctaHeightFrac: 0.07,
-    ctaMaxWidthFrac: 0.6,
-    lockupHeightFrac: 0.11,
-    lockupMaxWidthFrac: 0.5,
-    cutoutWidthFrac: 0.7,
-    photoOversize: 1.12,
-    marginFrac: 0.06,
-    keep: ALL2
-  },
-  // 1920×1080 / 960×528: columns, photo a little wider than half.
-  landscape: {
-    axis: "side",
-    photoFrac: 0.58,
-    bandFrac: 0.12,
-    bandAt: "panelTop",
-    headlineWidthFrac: 0.82,
-    headlineMaxHeightFrac: 0.4,
-    headlineCentreFrac: 0.4,
-    headlineCentreFracBare: 0.48,
-    headlineWordPerLine: false,
-    subheadRatio: 0.3,
-    messageMaxRatio: 0.28,
-    ctaFloorPx: 43,
-    ctaHeightFrac: 0.09,
-    ctaMaxWidthFrac: 0.6,
-    lockupHeightFrac: 0.16,
-    lockupMaxWidthFrac: 0.5,
-    cutoutWidthFrac: 0.4,
-    photoOversize: 1.08,
-    marginFrac: 0.05,
-    keep: ALL2
-  },
-  // 960×256 / 970×250: photo left half, band along the top of the panel,
-  // message + pill + lockup stacked in the panel.
-  wide: {
-    axis: "side",
-    photoFrac: 0.5,
-    bandFrac: 0.155,
-    bandAt: "panelTop",
-    headlineWidthFrac: 0.8,
-    headlineMaxHeightFrac: 0.45,
-    headlineCentreFrac: 0.36,
-    headlineCentreFracBare: 0.49,
-    headlineWordPerLine: false,
-    subheadRatio: 0.29,
-    messageMaxRatio: 0.27,
-    // Shipped 960×256 OOH: pill 32px = 12.5% of the short axis. Designers
-    // marked a 44px pill on 768×256 as wrong (feedback 2026-09-06).
-    ctaFloorPx: 32,
-    ctaHeightFrac: 0.125,
-    ctaMaxWidthFrac: 0.6,
-    lockupHeightFrac: 0.185,
-    lockupMaxWidthFrac: 0.5,
-    cutoutWidthFrac: 0.36,
-    photoOversize: 1.06,
-    marginFrac: 0.05,
-    keep: ALL2
-  },
-  // 728×90 / 320×50: one row — photo, headline, CTA, full-height logo tile.
-  strip: {
-    axis: "row",
-    photoFrac: 0.3,
-    bandFrac: 0,
-    bandAt: "none",
-    headlineWidthFrac: 1,
-    headlineMaxHeightFrac: 0.6,
-    headlineCentreFrac: 0.5,
-    headlineCentreFracBare: 0.5,
-    headlineWordPerLine: false,
-    subheadRatio: 0.3,
-    messageMaxRatio: 0.3,
-    ctaFloorPx: 26,
-    ctaHeightFrac: 0.36,
-    ctaMaxWidthFrac: 0.45,
-    lockupHeightFrac: 1,
-    lockupMaxWidthFrac: 1,
-    cutoutWidthFrac: 0,
-    photoOversize: 1.1,
-    marginFrac: 0.12,
-    keep: ["photo", "headline", "cta", "lockup"]
-  }
+// src/lib/anther.ts
+import sharp5 from "sharp";
+var ANTHER_RULE = {
+  id: "anther-never-cropped",
+  title: "The anther is never cropped",
+  lines: [
+    "The anther's circle sits wholly inside the artwork; nothing is laid over the picture in it (a badge may ride its rim).",
+    "It is as big as the margins allow (margin = half the p\u014Dhutukawa tile).",
+    "The stem runs off the artwork's edge \u2014 left, lower left at 45\xB0, or bottom centre \u2014 with its straight lines showing.",
+    "The stem is never covered by the p\u014Dhutukawa tile and never heads for the lower-right corner.",
+    "A size that cannot hold the whole anther is flagged for a designer, never built with it cropped."
+  ],
+  source: "AC Brand Guidelines June 2025, pp. 16, 28\u201331; designer ruling 20 Sep 2026"
 };
-function recipeFor(formatClass, budget) {
-  const base = RECIPES[formatClass];
-  if (budget === "micro") {
-    return { ...base, keep: base.keep.filter((s2) => s2 === "photo" || s2 === "headline" || s2 === "cta" || s2 === "lockup") };
-  }
-  if (budget === "small") {
+var r32 = (v) => Math.round(v * 1e3) / 1e3;
+async function analyseShape(bytes2) {
+  try {
+    const meta = await sharp5(bytes2, { failOn: "none" }).metadata();
+    if (!meta.hasAlpha || !meta.width || !meta.height) return null;
+    const W2 = 96, H2 = Math.max(8, Math.round(96 * meta.height / meta.width));
+    const { data } = await sharp5(bytes2, { failOn: "none" }).resize(W2, H2, { fit: "fill" }).ensureAlpha().raw().toBuffer({ resolveWithObject: true });
+    const solid = (x, y) => x >= 0 && y >= 0 && x < W2 && y < H2 && data[(y * W2 + x) * 4 + 3] >= 128;
+    let clear = 0;
+    for (let y = 0; y < H2; y++) for (let x = 0; x < W2; x++) if (!solid(x, y)) clear++;
+    const corners = [solid(1, 1), solid(W2 - 2, 1), solid(1, H2 - 2), solid(W2 - 2, H2 - 2)].filter((v) => !v).length;
+    if (clear / (W2 * H2) < 0.1 || corners < 2) return null;
+    const INF2 = 1e6;
+    const d = new Float32Array(W2 * H2);
+    for (let y = 0; y < H2; y++) for (let x = 0; x < W2; x++) d[y * W2 + x] = solid(x, y) ? INF2 : 0;
+    const at = (x, y) => x < 0 || y < 0 || x >= W2 || y >= H2 ? 0 : d[y * W2 + x];
+    for (let y = 0; y < H2; y++) for (let x = 0; x < W2; x++) {
+      if (d[y * W2 + x] === 0) continue;
+      d[y * W2 + x] = Math.min(d[y * W2 + x], at(x - 1, y) + 1, at(x, y - 1) + 1, at(x - 1, y - 1) + 1.414, at(x + 1, y - 1) + 1.414);
+    }
+    for (let y = H2 - 1; y >= 0; y--) for (let x = W2 - 1; x >= 0; x--) {
+      if (d[y * W2 + x] === 0) continue;
+      d[y * W2 + x] = Math.min(d[y * W2 + x], at(x + 1, y) + 1, at(x, y + 1) + 1, at(x + 1, y + 1) + 1.414, at(x - 1, y + 1) + 1.414);
+    }
+    let best = 0, bx = W2 / 2, by = H2 / 2;
+    for (let y = 0; y < H2; y++) for (let x = 0; x < W2; x++) if (d[y * W2 + x] > best) {
+      best = d[y * W2 + x];
+      bx = x;
+      by = y;
+    }
+    if (best < 4) return null;
+    let solidCount = 0, insideCircle = 0, circleCells = 0;
+    for (let y = 0; y < H2; y++) for (let x = 0; x < W2; x++) {
+      const inC = Math.hypot(x - bx, y - by) <= best;
+      if (inC) circleCells++;
+      if (solid(x, y)) {
+        solidCount++;
+        if (inC) insideCircle++;
+      }
+    }
+    if (insideCircle / Math.max(1, circleCells) < 0.95 || insideCircle / Math.max(1, solidCount) < 0.72) return null;
+    let far = 0, sx = bx, sy = by;
+    for (let y = 0; y < H2; y++) for (let x = 0; x < W2; x++) {
+      if (!solid(x, y)) continue;
+      const dist = Math.hypot(x - bx, y - by);
+      if (dist > far) {
+        far = dist;
+        sx = x;
+        sy = y;
+      }
+    }
+    const hasStem = far > best * 1.18;
     return {
-      ...base,
-      // The 43px display floor is for standard canvases; on a short axis
-      // under 300px it swallows the panel (designers: "pill size is wrong"
-      // on 768×256 and 300×250). Cap the floor and the pill's width.
-      ctaFloorPx: Math.min(base.ctaFloorPx, formatClass === "square" ? 28 : 32),
-      ctaMaxWidthFrac: Math.min(base.ctaMaxWidthFrac, 0.62),
-      // Small squares (MREC) need a taller panel than a social tile does.
-      ...formatClass === "square" ? { photoFrac: 0.55 } : {},
-      keep: base.keep.filter((s2) => s2 !== "cutout" && (formatClass !== "tower" || s2 !== "subheadline"))
+      kind: hasStem ? "anther" : "shape",
+      cx: r32((bx + 0.5) / W2),
+      cy: r32((by + 0.5) / H2),
+      r: r32(best / W2),
+      ...hasStem ? { stemX: r32((sx + 0.5) / W2), stemY: r32((sy + 0.5) / H2) } : {},
+      aspect: r32(meta.width / meta.height)
     };
+  } catch {
+    return null;
   }
-  if (budget === "large") {
-    return { ...base, marginFrac: Math.max(base.marginFrac, 0.05) };
+}
+async function keyOutGround(bytes2, groundHex) {
+  try {
+    const { data, info } = await sharp5(bytes2, { failOn: "none" }).ensureAlpha().raw().toBuffer({ resolveWithObject: true });
+    const W2 = info.width, H2 = info.height;
+    if (W2 < 16 || H2 < 16 || W2 * H2 > 4e7) return null;
+    const px = (x, y) => {
+      const i = (y * W2 + x) * 4;
+      return [data[i], data[i + 1], data[i + 2]];
+    };
+    const corners = [px(2, 2), px(W2 - 3, 2), px(2, H2 - 3), px(W2 - 3, H2 - 3)];
+    const diff = (a, b) => Math.max(Math.abs(a[0] - b[0]), Math.abs(a[1] - b[1]), Math.abs(a[2] - b[2]));
+    let bg = null, votes = 0;
+    for (const c of corners) {
+      const n = corners.filter((o) => diff(c, o) < 22).length;
+      if (n > votes) {
+        votes = n;
+        bg = c;
+      }
+    }
+    if (!bg || votes < 2) return null;
+    const hex = /^#?([0-9a-f]{6})$/i.exec(groundHex ?? "");
+    if (!hex) return null;
+    const g = [parseInt(hex[1].slice(0, 2), 16), parseInt(hex[1].slice(2, 4), 16), parseInt(hex[1].slice(4, 6), 16)];
+    if (diff(bg, g) > 18) return null;
+    const T = 34;
+    const isBg = (i) => Math.max(Math.abs(data[i] - bg[0]), Math.abs(data[i + 1] - bg[1]), Math.abs(data[i + 2] - bg[2])) < T;
+    const mark = new Uint8Array(W2 * H2);
+    const stack = [];
+    const seed = (x, y) => {
+      const k = y * W2 + x;
+      if (!mark[k] && isBg(k * 4)) {
+        mark[k] = 1;
+        stack.push(k);
+      }
+    };
+    for (let x = 0; x < W2; x++) {
+      seed(x, 0);
+      seed(x, H2 - 1);
+    }
+    for (let y = 0; y < H2; y++) {
+      seed(0, y);
+      seed(W2 - 1, y);
+    }
+    while (stack.length) {
+      const k = stack.pop();
+      const x = k % W2, y = (k - x) / W2;
+      if (x > 0) seed(x - 1, y);
+      if (x < W2 - 1) seed(x + 1, y);
+      if (y > 0) seed(x, y - 1);
+      if (y < H2 - 1) seed(x, y + 1);
+    }
+    const label3 = new Int32Array(W2 * H2);
+    let bestLabel = 0, bestSize = 0, next = 0;
+    for (let k0 = 0; k0 < W2 * H2; k0++) {
+      if (mark[k0] || label3[k0]) continue;
+      const id = ++next;
+      let size = 0;
+      label3[k0] = id;
+      stack.push(k0);
+      while (stack.length) {
+        const k = stack.pop();
+        size++;
+        const x = k % W2, y = (k - x) / W2;
+        const visit = (j) => {
+          if (!mark[j] && !label3[j]) {
+            label3[j] = id;
+            stack.push(j);
+          }
+        };
+        if (x > 0) visit(k - 1);
+        if (x < W2 - 1) visit(k + 1);
+        if (y > 0) visit(k - W2);
+        if (y < H2 - 1) visit(k + W2);
+      }
+      if (size > bestSize) {
+        bestSize = size;
+        bestLabel = id;
+      }
+    }
+    for (let k = 0; k < W2 * H2; k++) if (!mark[k] && label3[k] !== bestLabel) mark[k] = 1;
+    let cleared = 0;
+    for (let k = 0; k < W2 * H2; k++) if (mark[k]) {
+      data[k * 4 + 3] = 0;
+      cleared++;
+    }
+    if (cleared / (W2 * H2) < 0.1) return null;
+    for (let y = 1; y < H2 - 1; y++) for (let x = 1; x < W2 - 1; x++) {
+      const k = y * W2 + x;
+      if (mark[k] || !(mark[k - 1] || mark[k + 1] || mark[k - W2] || mark[k + W2])) continue;
+      const i = k * 4;
+      const d = Math.max(Math.abs(data[i] - bg[0]), Math.abs(data[i + 1] - bg[1]), Math.abs(data[i + 2] - bg[2]));
+      data[i + 3] = Math.round(255 * Math.min(1, Math.max(0.25, (d - 10) / 50)));
+    }
+    return await sharp5(data, { raw: { width: W2, height: H2, channels: 4 } }).png({ compressionLevel: 9 }).toBuffer();
+  } catch {
+    return null;
   }
-  return base;
+}
+function placeAnther(zone, canvas2, natural, shape, margin, marginY) {
+  const notes = [];
+  const m = Math.min(margin, Math.min(zone.w, zone.h) * 0.08);
+  const my = marginY == null ? m : Math.min(marginY, m);
+  const D2 = Math.max(16, Math.min(zone.w - m * 2, zone.h - my * 2));
+  const imgW = D2 / (2 * shape.r);
+  const imgH = imgW * (natural.h / Math.max(1, natural.w));
+  let cx = zone.x + zone.w / 2, cy = zone.y + zone.h / 2;
+  if (shape.kind === "anther" && shape.stemX != null && shape.stemY != null) {
+    const vx = (shape.stemX - shape.cx) * imgW, vy = (shape.stemY - shape.cy) * imgH;
+    const tip = () => ({ x: cx + vx, y: cy + vy });
+    const reaches = () => {
+      const t = tip();
+      return t.x <= 0 || t.y <= 0 || t.x >= canvas2.w || t.y >= canvas2.h;
+    };
+    if (!reaches()) {
+      const room = { left: cx - D2 / 2 - (zone.x + m), right: zone.x + zone.w - m - (cx + D2 / 2), up: cy - D2 / 2 - (zone.y + my), down: zone.y + zone.h - my - (cy + D2 / 2) };
+      const t = tip();
+      if (vx < 0 && Math.abs(vx) >= Math.abs(vy) * 0.5) cx -= Math.min(Math.max(0, room.left), t.x);
+      else if (vx > 0 && Math.abs(vx) >= Math.abs(vy) * 0.5) cx += Math.min(Math.max(0, room.right), canvas2.w - t.x);
+      if (!reaches()) {
+        const t2 = tip();
+        if (vy > 0) cy += Math.min(Math.max(0, room.down), canvas2.h - t2.y);
+        else if (vy < 0) cy -= Math.min(Math.max(0, room.up), t2.y);
+      }
+    }
+    if (!reaches()) notes.push("Check: the anther's stem ends inside the artwork at this size \u2014 it should run off an edge (brand guidelines p.28).");
+    if (vx > 0 && vy > 0) notes.push("Check: this anther's stem heads for the lower-right corner, where the p\u014Dhutukawa tile sits (brand guidelines p.28).");
+  }
+  if (shape.kind === "anther" && shape.stemX != null && shape.stemY != null) {
+    const left = cx - shape.cx * imgW, top = cy - shape.cy * imgH;
+    const cutLeft = shape.stemX < 0.04, cutRight = shape.stemX > 0.96;
+    const cutTop = !cutLeft && !cutRight && shape.stemY < 0.04, cutBottom = !cutLeft && !cutRight && shape.stemY > 0.96;
+    const before = { cx, cy };
+    if (cutLeft && left > -1) cx -= Math.min(left + 1, Math.max(0, cx - D2 / 2 - 1));
+    else if (cutRight && left + imgW < canvas2.w + 1) cx += Math.min(canvas2.w + 1 - (left + imgW), Math.max(0, canvas2.w - 1 - (cx + D2 / 2)));
+    else if (cutTop && top > -1) cy -= Math.min(top + 1, Math.max(0, cy - D2 / 2 - 1));
+    else if (cutBottom && top + imgH < canvas2.h + 1) cy += Math.min(canvas2.h + 1 - (top + imgH), Math.max(0, canvas2.h - 1 - (cy + D2 / 2)));
+    if (before.cx !== cx || before.cy !== cy) {
+      notes.push("Anther moved to the edge its stem runs off, so the handle meets the edge cleanly (as in the master).");
+      const i = notes.findIndex((n) => n.startsWith("Check: the anther's stem ends inside"));
+      if (i >= 0) notes.splice(i, 1);
+    }
+  }
+  const box = { x: Math.round(cx - shape.cx * imgW), y: Math.round(cy - shape.cy * imgH), w: Math.round(imgW), h: Math.round(imgH) };
+  return { box, circle: { cx, cy, r: D2 / 2 }, notes };
+}
+function circleOf(el, shape) {
+  return { cx: el.x + shape.cx * el.w, cy: el.y + shape.cy * el.h, r: shape.r * el.w };
+}
+function checkAnther(elements, canvasW, canvasH) {
+  const reasons = [];
+  elements.forEach((el, idx) => {
+    if (el.type !== "image" || !el.shape) return;
+    const c = circleOf(el, el.shape);
+    const tol = Math.max(1.5, c.r * 0.02);
+    if (c.cx - c.r < -tol || c.cy - c.r < -tol || c.cx + c.r > canvasW + tol || c.cy + c.r > canvasH + tol) {
+      reasons.push("The anther is cropped by the edge of the artwork. Brand schema: the anther is never cropped \u2014 this size needs a designer.");
+    }
+    const k = c.r * 0.55;
+    const inner = { x0: c.cx - k, y0: c.cy - k, x1: c.cx + k, y1: c.cy + k };
+    for (const over of elements.slice(idx + 1)) {
+      if (over.type === "text" || (over.opacity ?? 1) < 0.5) continue;
+      if (over.type === "image" && over.shape) continue;
+      const ix = Math.min(inner.x1, over.x + over.w) - Math.max(inner.x0, over.x), iy = Math.min(inner.y1, over.y + over.h) - Math.max(inner.y0, over.y);
+      if (ix > 0 && iy > 0 && ix * iy / ((inner.x1 - inner.x0) * (inner.y1 - inner.y0)) > 0.05) {
+        reasons.push(`The anther is covered by the ${over.slot ?? over.role ?? "layer"} above it. Brand schema: nothing is laid over the anther.`);
+        break;
+      }
+    }
+  });
+  return reasons;
+}
+
+// src/lib/partRulesLayer.ts
+var BASE_FLOORS = {
+  headline: 12,
+  subheadline: 10,
+  message: 13,
+  cta: 24,
+  lockup: 16,
+  logo: 24,
+  cutout: 0,
+  band: 0,
+  photo: 0
+};
+var LABEL_FLOOR_PX = 9;
+function slotForText(el) {
+  const s2 = el.slot ?? "";
+  if (PART_RULE_SLOTS.includes(s2)) return s2;
+  if (s2 === "ctaLabel") return "cta";
+  switch (el.role) {
+    case "headline":
+      return "headline";
+    case "subhead":
+      return "subheadline";
+    case "body":
+      return "message";
+    case "cta":
+      return "cta";
+    default:
+      return null;
+  }
+}
+function ruleLayerFor(schema) {
+  const rules = schema?.partRules ?? {};
+  return {
+    rules,
+    floor: (slot, fallback) => rules[slot]?.minPx ?? fallback ?? BASE_FLOORS[slot],
+    drop: (slot) => rules[slot]?.dropWhenTight,
+    pin: (slot) => rules[slot]?.pin,
+    size: (slot) => rules[slot]?.size,
+    source: schema ? `${schema.name} rules` : "studio floors"
+  };
 }
 
 // src/lib/recompose.ts
@@ -232004,7 +233446,7 @@ async function defaultImageSize(src) {
     const objectPath = src.replace(/^\/api\/storage/, "");
     const file2 = await storage2.getObjectEntityFile(objectPath);
     const response = await storage2.downloadObject(file2);
-    const meta = await sharp5(Buffer.from(await response.arrayBuffer())).metadata();
+    const meta = await sharp6(Buffer.from(await response.arrayBuffer())).metadata();
     if (meta.width && meta.height) out = { w: meta.width, h: meta.height };
   } catch {
     out = null;
@@ -232012,14 +233454,39 @@ async function defaultImageSize(src) {
   sizeCache.set(src, out);
   return out;
 }
-var clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
-var r = (v) => Math.round(v);
+var shapedCache = /* @__PURE__ */ new Map();
+async function defaultImageIsShaped(src) {
+  if (shapedCache.has(src)) return shapedCache.get(src) ?? false;
+  let shaped = false;
+  try {
+    const objectPath = src.replace(/^\/api\/storage/, "");
+    const file2 = await storage2.getObjectEntityFile(objectPath);
+    const response = await storage2.downloadObject(file2);
+    const img = sharp6(Buffer.from(await response.arrayBuffer()), { failOn: "none" });
+    const meta = await img.metadata();
+    if (meta.hasAlpha) {
+      const N = 48;
+      const { data } = await img.resize(N, N, { fit: "fill" }).ensureAlpha().raw().toBuffer({ resolveWithObject: true });
+      let clear = 0;
+      for (let i = 3; i < data.length; i += 4) if (data[i] < 40) clear++;
+      const a = (x, y) => data[(y * N + x) * 4 + 3];
+      const corners = [a(1, 1), a(N - 2, 1), a(1, N - 2), a(N - 2, N - 2)].filter((v) => v < 40).length;
+      shaped = clear / (N * N) >= 0.1 && corners >= 2;
+    }
+  } catch {
+    shaped = false;
+  }
+  shapedCache.set(src, shaped);
+  return shaped;
+}
+var clamp2 = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
+var r2 = (v) => Math.round(v);
 function coverPlace(zone, imgW, imgH, focus, oversize, target, box) {
   const s2 = Math.max(zone.w / imgW, zone.h / imgH) * oversize;
   const w = imgW * s2;
   const h = imgH * s2;
-  let x = clamp(zone.x + zone.w * target.x - focus.x * w, zone.x + zone.w - w, zone.x);
-  let y = clamp(zone.y + zone.h * target.y - focus.y * h, zone.y + zone.h - h, zone.y);
+  let x = clamp2(zone.x + zone.w * target.x - focus.x * w, zone.x + zone.w - w, zone.x);
+  let y = clamp2(zone.y + zone.h * target.y - focus.y * h, zone.y + zone.h - h, zone.y);
   if (box) {
     const bx0 = x + box.x * w, bx1 = bx0 + box.w * w, by0 = y + box.y * h, by1 = by0 + box.h * h;
     if (box.w * w <= zone.w) {
@@ -232030,17 +233497,66 @@ function coverPlace(zone, imgW, imgH, focus, oversize, target, box) {
       if (by0 < zone.y) y += zone.y - by0;
       else if (by1 > zone.y + zone.h) y -= by1 - (zone.y + zone.h);
     }
-    x = clamp(x, zone.x + zone.w - w, zone.x);
-    y = clamp(y, zone.y + zone.h - h, zone.y);
+    x = clamp2(x, zone.x + zone.w - w, zone.x);
+    y = clamp2(y, zone.y + zone.h - h, zone.y);
   }
-  return { x: r(x), y: r(y), w: r(w), h: r(h) };
+  return { x: r2(x), y: r2(y), w: r2(w), h: r2(h) };
+}
+function inferSubjectFocus(sem, photo, natural, srcW, srcH) {
+  const pb = sem.photoBox;
+  if (!pb || natural.w <= 0 || natural.h <= 0) return null;
+  let vx0 = Math.max(0, pb.x), vy0 = Math.max(0, pb.y), vx1 = Math.min(srcW, pb.x + pb.w), vy1 = Math.min(srcH, pb.y + pb.h);
+  const panel = sem.panelBox;
+  if (panel) {
+    if (panel.w >= srcW * 0.9 && panel.y > vy0 && panel.y < vy1) vy1 = panel.y;
+    else if (panel.h >= srcH * 0.9 && panel.x > vx0 && panel.x < vx1) vx1 = panel.x;
+  }
+  const zoneH = vy1 - vy0;
+  if (vx1 - vx0 < 8 || zoneH < 8) return null;
+  const copy = [];
+  for (const t of [sem.kicker, sem.headline, sem.subheadline]) if (t && t.y + t.h / 2 >= vy0 && t.y + t.h / 2 <= vy1) copy.push({ x: t.x, y: t.y, w: t.w, h: t.h });
+  if (!copy.length) return null;
+  const copyBottom = Math.max(...copy.map((t) => t.y + t.h));
+  if (vy1 - copyBottom < zoneH * 0.18) return null;
+  const mx = (vx0 + vx1) / 2;
+  const my = (copyBottom + vy1) / 2;
+  const sr = photo.srcRect;
+  let fx, fy;
+  if (sr) {
+    fx = sr.x + (mx - pb.x) / pb.w * sr.w;
+    fy = sr.y + (my - pb.y) / pb.h * sr.h;
+  } else {
+    const k = Math.max(pb.w / natural.w, pb.h / natural.h);
+    const dw = natural.w * k, dh = natural.h * k;
+    const ox = (pb.w - dw) * (photo.focusX ?? 0.5), oy = (pb.h - dh) * (photo.focusY ?? 0.5);
+    fx = (mx - pb.x - ox) / dw;
+    fy = (my - pb.y - oy) / dh;
+  }
+  if (!Number.isFinite(fx) || !Number.isFinite(fy)) return null;
+  return { x: clamp2(fx, 0, 1), y: clamp2(fy, 0, 1) };
+}
+function masterCopyCentre(sem, srcW, srcH) {
+  const pb = sem.photoBox;
+  if (!pb || !sem.headline) return null;
+  let vy0 = Math.max(0, pb.y), vy1 = Math.min(srcH, pb.y + pb.h);
+  const panel = sem.panelBox;
+  if (panel && panel.w >= srcW * 0.9 && panel.y > vy0 && panel.y < vy1) vy1 = panel.y;
+  if (sem.band && sem.band.w >= srcW * 0.9 && sem.band.y > vy0 && sem.band.y < vy1) vy1 = sem.band.y;
+  const zoneH = vy1 - vy0;
+  if (zoneH < 8) return null;
+  const parts = [sem.kicker, sem.headline, sem.subheadline].filter((t) => !!t).filter((t) => t.y + t.h / 2 >= vy0 && t.y + t.h / 2 <= vy1);
+  if (!parts.some((t) => t === sem.headline)) return null;
+  const top = Math.min(...parts.map((t) => t.y)), bottom = Math.max(...parts.map((t) => t.y + t.h));
+  const frac = ((top + bottom) / 2 - vy0) / zoneH;
+  return Number.isFinite(frac) ? frac : null;
 }
 function fontSpec(t, scale = 1) {
   return {
     family: t?.fontFamily,
     weight: t?.fontWeight === 700 ? 700 : 400,
     italic: t?.fontStyle === "italic",
-    letterSpacing: t?.letterSpacing !== void 0 ? t.letterSpacing * scale : void 0
+    // Tracking travels with the type size (see FontSpec.letterSpacingEm).
+    ...t?.letterSpacing !== void 0 && t.fontSize > 0 ? { letterSpacingEm: t.letterSpacing * scale / t.fontSize } : {}
   };
 }
 function textEl(id, slot, role, from, box, fontSize, text3, align, lineHeight, extra = {}) {
@@ -232051,10 +233567,10 @@ function textEl(id, slot, role, from, box, fontSize, text3, align, lineHeight, e
     slot,
     role,
     text: text3,
-    x: r(box.x),
-    y: r(box.y),
-    w: r(box.w),
-    h: r(box.h),
+    x: r2(box.x),
+    y: r2(box.y),
+    w: r2(box.w),
+    h: r2(box.h),
     fontSize,
     fontWeight: from.fontWeight,
     color: from.color,
@@ -232075,6 +233591,7 @@ function shouldRecompose(master, srcW, srcH, dstW, dstH) {
   return axis === "stacked" || axis === "side";
 }
 var SAME_SHAPE_TOLERANCE = 0.08;
+var shortMessageEarly = (t) => t.replace(/\s+/g, " ").trim().length <= 24;
 async function recomposeToFormat(master, srcW, srcH, dstW, dstH, opts) {
   const sem = inferSlots(master, srcW, srcH);
   if (!sem.headline) return null;
@@ -232083,71 +233600,177 @@ async function recomposeToFormat(master, srcW, srcH, dstW, dstH, opts) {
   const formatClass = opts.formatClass ?? classifyAspect(dstW, dstH);
   const budget = classifyBudget(dstW, dstH);
   const base = recipeFor(formatClass, budget);
-  const ov = opts.recipeOverrides ?? {};
-  const recipe = { ...base, ...ov, axis: base.axis === "row" ? "row" : ov.axis ?? base.axis, keep: base.keep };
+  const earlyShape = sem.photo?.shape ?? null;
+  const offCircle = (t) => {
+    if (!t || !earlyShape || !sem.photoBox) return false;
+    const c = circleOf(sem.photoBox, earlyShape);
+    return Math.hypot(t.x + t.w / 2 - c.cx, t.y + t.h / 2 - c.cy) > c.r;
+  };
+  const antherLayout = !!earlyShape && earlyShape.kind === "anther" && !!sem.headline && offCircle(sem.headline);
+  if (antherLayout && sem.subheadline && !sem.message && sem.headline && offCircle(sem.subheadline) && sem.subheadline.y > sem.headline.y + sem.headline.h * 2) {
+    sem.message = { ...sem.subheadline, slot: "message" };
+    sem.subheadline = null;
+  }
+  const patternEl = antherLayout ? (sem.band && sem.band.type === "image" ? sem.band : null) ?? (sem.logo && sem.lockup && sem.lockup.w / Math.max(1, sem.lockup.h) >= 3 ? sem.lockup : null) : null;
+  const ovAll = opts.recipeOverrides ?? {};
+  const sameAxis = !ovAll.axis || ovAll.axis === base.axis;
+  const AXIS_BOUND = /* @__PURE__ */ new Set(["axis", "photoFrac", "bandFrac", "headlineCentreFrac", "headlineCentreFracBare", "headlineWidthFrac", "headlineMaxHeightFrac"]);
+  const ov = sameAxis ? ovAll : Object.fromEntries(Object.entries(ovAll).filter(([k]) => !AXIS_BOUND.has(k)));
+  const normLabel = (t) => (t ?? "").replace(/\s+/g, " ").trim().toLowerCase();
+  const displayRaw = opts.displayCta && sem.cta && sem.ctaLabel && normLabel(sem.ctaLabel.text) !== normLabel(opts.displayCta.label) ? opts.displayCta : null;
+  const look = displayRaw?.look ?? null;
+  const displayCta = displayRaw && !displayRaw.lookOnly ? displayRaw : null;
+  const lookOv = look && base.axis !== "row" ? { ...look.photoFrac ? { photoFrac: look.photoFrac } : {}, ...look.bandOfShort ? { bandFrac: look.bandOfShort * Math.min(dstW, dstH) / dstH } : {} } : {};
+  const recipe = { ...base, ...opts.overridesFromApproved ? lookOv : {}, ...ov, ...opts.overridesFromApproved ? {} : lookOv, axis: base.axis === "row" ? "row" : antherLayout && formatClass === "square" ? "side" : ov.axis ?? base.axis, keep: base.keep };
   const keep = new Set(recipe.keep);
   const short = Math.min(dstW, dstH);
-  const margin = Math.max(4, r(short * recipe.marginFrac));
+  const margin = Math.max(4, r2(short * recipe.marginFrac));
   const social = isSocialSquare(dstW, dstH);
   const notes = [...sem.notes];
   let needsReview = sem.notes.length > 0;
+  const dropped = [];
+  const drop = (slot, reason, byRule) => {
+    dropped.push({ slot, reason, byRule });
+    notes.push(reason);
+  };
+  for (const [slot, has3] of [["subheadline", !!sem.subheadline], ["message", !!sem.message], ["kicker", !!sem.kicker], ["band", !!sem.band], ["cutout", sem.cutouts.length > 0]]) {
+    if (slot === "message" && recipe.axis === "row") continue;
+    if (has3 && !keep.has(slot)) drop(slot, `${slot === "cutout" ? "Cut-out" : slot === "subheadline" ? "Sub-line" : slot === "kicker" ? "Kicker line" : slot === "band" ? "Pattern band" : "Message"} left out: the ${formatClass} recipe does not carry it.`, true);
+  }
   const panelFill = sem.panelFill ?? OCEAN;
+  const rules = opts.rules;
+  const headlineMin = rules?.floor("headline") ?? HEADLINE_MIN_PX;
+  const sublineMin = rules?.floor("subheadline") ?? 10;
+  const messageMin = rules?.floor("message") ?? 13;
+  const lockupMin = rules?.floor("lockup") ?? 16;
   const hasPhoto = !!(sem.photo && sem.photo.src && keep.has("photo"));
-  const hasBand = !!(sem.band && sem.band.src && keep.has("band") && recipe.bandAt !== "none");
+  const hasBand = !antherLayout && !!(sem.band && sem.band.src && keep.has("band") && recipe.bandAt !== "none" && rules?.pin("band") !== "none");
+  const antherShape = hasPhoto ? sem.photo?.shape ?? null : null;
+  const photoShaped = !!antherShape || (hasPhoto && sem.photo?.src ? await (opts.imageIsShaped ?? defaultImageIsShaped)(sem.photo.src) : false);
+  const sitsOnPhoto = (t) => {
+    const pb = sem.photoBox;
+    if (!t || !pb) return false;
+    const cx = t.x + t.w / 2, cy = t.y + t.h / 2;
+    if (cx < pb.x || cx > pb.x + pb.w || cy < pb.y || cy > pb.y + pb.h) return false;
+    if (!photoShaped) return true;
+    if (antherShape) {
+      const c = circleOf(pb, antherShape);
+      return Math.hypot(cx - c.cx, cy - c.cy) <= c.r;
+    }
+    const nx = (cx - (pb.x + pb.w / 2)) / (pb.w / 2), ny = (cy - (pb.y + pb.h / 2)) / (pb.h / 2);
+    return nx * nx + ny * ny <= 0.49;
+  };
+  const headlineOffPhoto = hasPhoto && !!sem.headline && !sitsOnPhoto(sem.headline);
+  const copyOnGround = recipe.axis !== "row" && headlineOffPhoto;
+  const headerFromMaster = copyOnGround && recipe.axis === "stacked" && !!sem.photoBox && !!sem.headline && sem.headline.y + sem.headline.h <= sem.photoBox.y + sem.photoBox.h * 0.15 && Math.min(sem.headline.x + sem.headline.w, sem.photoBox.x + sem.photoBox.w) - Math.max(sem.headline.x, sem.photoBox.x) > sem.headline.w * 0.5;
+  const squareHeader = antherLayout && formatClass === "square";
+  const headerOnTop = headerFromMaster || antherLayout && recipe.axis === "stacked" || squareHeader;
+  const headerH = (() => {
+    if (!headerOnTop) return 0;
+    const fromMaster = headerFromMaster ? r2(dstH * clamp2(sem.photoBox.y / Math.max(1, srcH) + 0.02, 0.12, 0.24)) : 0;
+    if (!antherLayout || !sem.headline) return fromMaster || r2(dstH * 0.17);
+    const hl = sem.headline;
+    const padX = Math.max(margin, r2((guidelineLogoPlacement(dstW, dstH)?.tile.w ?? short / 6) / 2));
+    const room = dstH * (squareHeader ? 0.3 : formatClass === "tower" ? 0.16 : 0.2);
+    const fit = fitText(hl.text.replace(/\s+/g, " ").trim(), { w: (dstW - padX * 2) * 0.96, h: room }, { ...fontSpec(hl), minSize: headlineMin, maxSize: Math.max(headlineMin, room), lineHeight: 1.02, maxLines: 2 });
+    const needs = fit.height + padX * 1.35;
+    return r2(clamp2(needs, dstH * 0.1, dstH * (squareHeader ? 0.32 : 0.24)));
+  })();
+  const guideTile = guidelineLogoPlacement(dstW, dstH)?.tile ?? null;
+  const tileSide = antherLayout && recipe.axis !== "row" ? formatClass === "tower" ? r2(dstW / 2) : guideTile?.w ?? r2(short / 6) : 0;
+  const halfTile = Math.max(margin, r2((guideTile?.w ?? short / 6) / 2));
+  if (copyOnGround) notes.push(headerOnTop ? "Heading kept on the colour ground above the picture, as the master sets it." : "Heading kept on the colour ground with the copy, as the master sets it \u2014 not over the picture.");
   let photoZone;
   let bandZone = null;
   let panelZone;
   let tileZone = null;
-  if (recipe.axis === "stacked") {
-    const ph = r(dstH * recipe.photoFrac);
-    const bh = hasBand ? Math.max(4, r(dstH * recipe.bandFrac)) : 0;
-    photoZone = { x: 0, y: 0, w: dstW, h: ph };
+  if (antherLayout && recipe.axis === "stacked") {
+    const zoneH = Math.min(dstW, r2(dstH * 0.46), sem.message ? Math.max(r2(dstH * 0.3), dstH - headerH - tileSide - r2(dstH * 0.26)) : Infinity);
+    photoZone = { x: 0, y: headerH, w: dstW, h: zoneH };
+    const top = headerH + zoneH;
+    panelZone = { x: 0, y: top, w: dstW, h: Math.max(30, dstH - top - tileSide) };
+  } else if (antherLayout && recipe.axis === "side") {
+    const zoneW = formatClass === "square" ? r2(dstW * (short >= 600 ? 0.61 : 0.53)) : clamp2(r2(dstH * 1), r2(dstW * 0.3), r2(dstW * 0.5));
+    photoZone = { x: 0, y: headerH, w: zoneW, h: dstH - headerH };
+    panelZone = { x: zoneW, y: headerH, w: dstW - zoneW, h: Math.max(30, dstH - headerH - tileSide) };
+  } else if (recipe.axis === "stacked") {
+    const ph = antherShape ? headerH + Math.min(dstW, r2(dstH * 0.5)) : r2(dstH * (copyOnGround && !headerOnTop ? Math.min(recipe.photoFrac, 0.42) : recipe.photoFrac));
+    const bh = hasBand ? Math.max(4, r2(dstH * recipe.bandFrac)) : 0;
+    photoZone = { x: 0, y: headerH, w: dstW, h: ph - headerH };
     if (hasBand) bandZone = { x: 0, y: ph, w: dstW, h: bh };
     panelZone = { x: 0, y: ph + bh, w: dstW, h: dstH - ph - bh };
   } else if (recipe.axis === "side") {
-    const pw = r(dstW * recipe.photoFrac);
-    const bh = hasBand ? clamp(r(dstH * recipe.bandFrac), 4, r(dstH * 0.2)) : 0;
+    const pw = r2(dstW * (copyOnGround ? Math.min(recipe.photoFrac, 0.48) : recipe.photoFrac));
+    const bh = hasBand ? clamp2(r2(dstH * recipe.bandFrac), 4, r2(dstH * 0.2)) : 0;
     photoZone = { x: 0, y: 0, w: pw, h: dstH };
     if (hasBand) bandZone = { x: pw, y: 0, w: dstW - pw, h: bh };
     panelZone = { x: pw, y: bh, w: dstW - pw, h: dstH - bh };
   } else {
     const tile = opts.brand.logoUrl && !social ? dstH : 0;
-    const pw = hasPhoto ? clamp(Math.max(r(dstH * 1.3), r(dstW * recipe.photoFrac)), 0, r(dstW * 0.42)) : 0;
+    const pw = !hasPhoto ? 0 : antherShape ? Math.min(r2(dstH * 1.25), r2(dstW * 0.3)) : clamp2(Math.max(r2(dstH * 2.4), r2(dstW * recipe.photoFrac)), 0, r2(dstW * 0.5));
     photoZone = { x: 0, y: 0, w: pw, h: dstH };
     panelZone = { x: pw, y: 0, w: dstW - pw - tile, h: dstH };
     if (tile) tileZone = { x: dstW - tile, y: 0, w: tile, h: tile };
   }
   const elements = [];
   const options = [];
+  let antherEl = null;
+  let antherCircle = null;
   elements.push({ id: "rc_panel", type: "rect", slot: "panel", fill: panelFill, x: 0, y: 0, w: dstW, h: dstH, locked: true });
   if (hasPhoto && sem.photo) {
     const photo = sem.photo;
     const natural = await loadSize(photo.src) ?? { w: photo.w, h: photo.h };
-    const focus = photo.focusBox ? { x: photo.focusBox.x + photo.focusBox.w / 2, y: photo.focusBox.y + photo.focusBox.h / 2 } : { x: photo.focusX ?? 0.5, y: photo.focusY ?? 0.45 };
-    const target = recipe.axis === "stacked" ? { x: 0.5, y: 0.55 } : { x: 0.5, y: 0.5 };
+    const trusted = photo.focusSource === "vision" || photo.focusSource === "designer";
+    const inferred = !trusted && recipe.axis !== "row" ? inferSubjectFocus(sem, photo, natural, srcW, srcH) : null;
+    const focus = inferred ? inferred : photo.focusBox ? { x: photo.focusBox.x + photo.focusBox.w / 2, y: photo.focusBox.y + photo.focusBox.h / 2 } : { x: photo.focusX ?? 0.5, y: photo.focusY ?? 0.45 };
+    const target = inferred ? { x: 0.5, y: 0.82 } : recipe.axis === "stacked" ? { x: 0.5, y: 0.55 } : { x: 0.5, y: 0.5 };
+    if (inferred) notes.push("Photo crop keeps the part of the picture the master leaves clear under the copy.");
     const subjectBox = photo.focusSource === "vision" || photo.focusSource === "designer" ? photo.focusBox ?? null : null;
-    const placed2 = coverPlace(photoZone, natural.w, natural.h, focus, recipe.photoOversize, target, subjectBox);
+    const antherPlaced = antherShape ? placeAnther(photoZone, { w: dstW, h: dstH }, antherShape.aspect ? { w: antherShape.aspect * 1e3, h: 1e3 } : natural, antherShape, halfTile, recipe.axis === "stacked" || squareHeader ? r2(halfTile * 0.3) : void 0) : null;
+    if (antherPlaced) {
+      notes.push(`${ANTHER_RULE.title}: shown whole, as large as the margins allow${antherShape?.kind === "anther" ? ", its stem running off the artwork's edge" : ""}.`);
+      notes.push(...antherPlaced.notes);
+      if (recipe.axis === "stacked" && antherPlaced.circle.r * 2 < photoZone.w * 0.55) {
+        notes.push("Check: the anther is whole but leaves open ground beside it at this size \u2014 a designer may want to rebalance the layout.");
+        needsReview = true;
+      }
+    }
+    const placed2 = antherPlaced ? antherPlaced.box : photoShaped ? (() => {
+      const k = Math.min(photoZone.w / natural.w, photoZone.h / natural.h) * 0.96;
+      const w = r2(natural.w * k), h = r2(natural.h * k);
+      return { x: photoZone.x + r2((photoZone.w - w) / 2), y: photoZone.y + r2((photoZone.h - h) / 2), w, h };
+    })() : coverPlace(photoZone, natural.w, natural.h, focus, recipe.photoOversize, target, subjectBox);
     if (subjectBox && photo.subject) {
       const fits = subjectBox.w * placed2.w <= photoZone.w + 0.5 && subjectBox.h * placed2.h <= photoZone.h + 0.5;
       notes.push(fits ? `Photo window keeps ${photo.subject} whole.` : `Check: ${photo.subject} is larger than this photo window; the crop is centred on it.`);
     }
-    elements.push({
+    const photoEl = {
       ...photo,
       id: "rc_photo",
       slot: "photo",
       role: "product",
-      fit: "cover",
+      fit: photoShaped ? "contain" : "cover",
       ...placed2,
       locked: false
-    });
+    };
+    if (antherPlaced) {
+      antherEl = photoEl;
+      antherCircle = antherPlaced.circle;
+    } else elements.push(photoEl);
   } else if (sem.photo && !keep.has("photo")) {
-    notes.push("Photo dropped: this format has no room for it.");
+    drop("photo", "Photo dropped: this format has no room for it.", false);
   }
-  if (hasPhoto && sem.headline && keep.has("headline")) {
+  if (copyOnGround || headlineOffPhoto) {
+  } else if (hasPhoto && sem.headline && keep.has("headline") && look?.scrim === false && recipe.axis !== "row") {
+    notes.push("Online size: no scrim over the photograph, as on the campaign's shipped display banners.");
+  } else if (hasPhoto && sem.headline && keep.has("headline")) {
     const ms = sem.scrim;
-    const frac = ms && sem.photoBox ? clamp(ms.h / Math.max(1, sem.photoBox.h), 0.35, 1) : 0.75;
+    const masterAxis2 = sem.axis === "stacked" || sem.axis === "side" ? sem.axis : srcW / Math.max(1, srcH) >= 1.12 ? "side" : "stacked";
+    const crossAxis = recipe.axis !== "row" && masterAxis2 !== recipe.axis;
+    const classShare = recipe.axis === "side" ? 0.84 : 0.7;
+    const frac = crossAxis && ms ? classShare : ms && sem.photoBox ? clamp2(ms.h / Math.max(1, sem.photoBox.h), 0.35, 1) : 0.75;
     const topAligned = !ms || !sem.photoBox || ms.y <= sem.photoBox.y + sem.photoBox.h * 0.15;
-    const sh = r(photoZone.h * (recipe.axis === "row" ? 1 : frac));
+    const sh = r2(photoZone.h * (recipe.axis === "row" ? 1 : frac));
     const box = { x: photoZone.x, y: topAligned ? photoZone.y : photoZone.y + photoZone.h - sh, w: photoZone.w, h: sh };
     const gradient = ms?.gradient ?? {
       angle: topAligned ? 180 : 0,
@@ -232169,9 +233792,9 @@ async function recomposeToFormat(master, srcW, srcH, dstW, dstH, opts) {
   const cutout = sem.cutouts[0];
   if (cutout && hasPhoto && keep.has("cutout") && recipe.cutoutWidthFrac > 0) {
     const natural = await loadSize(cutout.src) ?? { w: cutout.w, h: cutout.h };
-    const w = r(photoZone.w * recipe.cutoutWidthFrac);
-    const h = r(w * natural.h / Math.max(1, natural.w));
-    const x = recipe.axis === "stacked" ? photoZone.x + r((photoZone.w - w) / 2) : photoZone.x + margin;
+    const w = r2(photoZone.w * recipe.cutoutWidthFrac);
+    const h = r2(w * natural.h / Math.max(1, natural.w));
+    const x = recipe.axis === "stacked" ? photoZone.x + r2((photoZone.w - w) / 2) : photoZone.x + margin;
     const y = photoZone.y + photoZone.h - h;
     elements.push({ ...cutout, id: "rc_cutout", slot: "cutout", role: "decoration", fit: "contain", x, y, w, h });
   }
@@ -232182,7 +233805,7 @@ async function recomposeToFormat(master, srcW, srcH, dstW, dstH, opts) {
   if (hasBand && bandZone && sem.band) {
     const natural = await loadSize(sem.band.src) ?? { w: sem.band.w, h: sem.band.h };
     const aspect = natural.w / Math.max(1, natural.h);
-    const tileW = Math.max(8, r(bandZone.h * aspect));
+    const tileW = Math.max(8, r2(bandZone.h * aspect));
     const n = Math.min(12, Math.ceil(bandZone.w / tileW));
     for (let i = 0; i < n; i++) {
       elements.push({
@@ -232199,60 +233822,235 @@ async function recomposeToFormat(master, srcW, srcH, dstW, dstH, opts) {
       });
     }
   } else if (sem.band && recipe.bandAt === "none") {
-    notes.push("Pattern band dropped: strips carry photo, headline, CTA and logo only.");
+    drop("band", "Pattern band dropped: strips carry photo, headline, CTA and logo only.", true);
   }
+  if (displayCta) notes.push(`Online size: the search pill becomes the "${displayCta.label}" button, sized as on the campaign's shipped display banners.`);
+  const CTA_MIN_PX = rules?.rules.cta?.minPx ?? (budget === "micro" ? 18 : 24);
+  const COMFORT_LABEL_PX = 18;
+  const ctaPlanned = (headlinePx) => {
+    if (!sem.cta || !keep.has("cta")) return null;
+    const cta = sem.cta;
+    const maxH = recipe.axis === "row" ? dstH * 0.64 : panelZone.h * 0.4;
+    if (displayCta && sem.ctaLabel) {
+      const ref = displayCta.reference;
+      const share = recipe.axis === "side" ? displayCta.heightOfShort.side : displayCta.heightOfShort.stacked;
+      const dLabelShare = masterLabelRatio({ ctaH: ref.h, ctaW: ref.w, labelFontSize: ref.labelPx });
+      const dPill = pillHeightFromHeadline({
+        masterPillH: ref.h,
+        masterHeadlinePx: null,
+        headlinePx: null,
+        fallbackH: recipe.axis === "row" ? short * recipe.ctaHeightFrac : short * share,
+        labelRatio: dLabelShare,
+        minH: CTA_MIN_PX,
+        maxH,
+        recipeFloorPx: recipe.ctaFloorPx,
+        comfortLabelPx: COMFORT_LABEL_PX
+      });
+      const dSpec = { ...fontSpec(sem.ctaLabel), weight: 700 };
+      return planCta({
+        label: displayCta.label,
+        spec: dSpec,
+        master: { ctaH: ref.h, ctaW: ref.w, labelFontSize: ref.labelPx, labelText: displayCta.label, labelSpec: dSpec, hasIcon: false },
+        targetH: dPill.h,
+        minH: CTA_MIN_PX,
+        maxH,
+        maxW: panelZone.w * (recipe.axis === "row" ? hasPhoto && !headlineOffPhoto ? 0.88 : 0.5 : 0.9),
+        minLabelPx: budget === "micro" ? Math.min(8, LABEL_FLOOR_PX) : LABEL_FLOOR_PX,
+        icon: false,
+        allowTwoLines: false
+      });
+    }
+    const labelShare = sem.ctaLabel ? masterLabelRatio({ ctaH: cta.h, ctaW: cta.w, labelFontSize: sem.ctaLabel.fontSize }) : 0.42;
+    const pill = pillHeightFromHeadline({
+      masterPillH: cta.h,
+      // An approved piece's own measured pill share leads when there is one.
+      masterHeadlinePx: recipe.axis === "row" || ovAll.ctaHeightFrac != null ? null : sem.headline?.fontSize,
+      headlinePx: recipe.axis === "row" || ovAll.ctaHeightFrac != null ? null : headlinePx,
+      fallbackH: short * recipe.ctaHeightFrac,
+      labelRatio: labelShare,
+      minH: CTA_MIN_PX,
+      maxH,
+      recipeFloorPx: recipe.ctaFloorPx,
+      comfortLabelPx: COMFORT_LABEL_PX
+    });
+    const pillGroundFloor = copyOnGround ? Math.min(cta.h / Math.max(1, Math.min(srcW, srcH)) * short * 0.6, (headlinePx ?? short * 0.12) * 0.6) : 0;
+    const targetH = Math.min(maxH, Math.max(pill.h, pillGroundFloor));
+    if (!sem.ctaLabel) {
+      const aspect = cta.w / Math.max(1, cta.h) || 4;
+      const h = r2(clamp2(targetH, CTA_MIN_PX, maxH));
+      const w = r2(Math.min(h * aspect, panelZone.w * recipe.ctaMaxWidthFrac));
+      return { h, w, fontSize: 0, padX: r2(h * 0.45), iconSize: 0, iconGap: 0, iconInset: 0, lines: [], fits: true, labelRatio: 0.5, padRatio: 0.45, notes: [] };
+    }
+    return planCta({
+      label: sem.ctaLabel.text,
+      spec: fontSpec(sem.ctaLabel),
+      master: { ctaH: cta.h, ctaW: cta.w, labelFontSize: sem.ctaLabel.fontSize, labelText: sem.ctaLabel.text, labelSpec: fontSpec(sem.ctaLabel), hasIcon: !!sem.ctaIcon, labelInset: sem.ctaLabel.x - cta.x },
+      targetH,
+      minH: CTA_MIN_PX,
+      maxH,
+      // A narrow column gives the pill the whole column inside the margins:
+      // the small-budget cap (62% + 15%) left a 160px tower 123px for a
+      // search pill, which cost it the icon and set the label at 10px.
+      maxW: recipe.axis === "row" ? panelZone.w * (hasPhoto ? 0.88 : 0.5) : formatClass === "tower" || dstW < 200 ? Math.max(panelZone.w * 0.8, panelZone.w - Math.min(margin * 2, 12)) : panelZone.w * Math.min(0.92, recipe.ctaMaxWidthFrac + 0.15),
+      minLabelPx: budget === "micro" ? Math.min(8, LABEL_FLOOR_PX) : LABEL_FLOOR_PX,
+      icon: !!sem.ctaIcon,
+      allowTwoLines: formatClass === "tower" || dstW < 200
+    });
+  };
+  if (sem.headline) {
+    const res = fontResolution(fontSpec(sem.headline));
+    if (res.substituted) notes.push(`Check: the headline was measured in ${res.used} because "${res.requested}" is not registered on this server \u2014 confirm its width on export.`);
+  }
+  if (patternEl && tileSide && patternEl.src) {
+    const aspect = patternEl.w / Math.max(1, patternEl.h);
+    const tower = formatClass === "tower";
+    const x0 = recipe.axis === "side" ? panelZone.x : 0;
+    const x1 = tower || social ? dstW : dstW - tileSide;
+    const bottom = tower ? dstH - tileSide : dstH;
+    let ph = tower ? r2(Math.min(tileSide * 0.5, (x1 - x0) / aspect)) : tileSide;
+    let pw = r2(ph * aspect);
+    if (pw > x1 - x0) {
+      pw = x1 - x0;
+      ph = r2(pw / aspect);
+    }
+    if (tower) panelZone = { ...panelZone, h: Math.max(30, panelZone.h - ph) };
+    elements.push({ ...patternEl, id: "rc_pattern", slot: "band", role: "decoration", fit: "contain", x: x1 - pw, y: bottom - ph, w: pw, h: ph, locked: true });
+  }
+  if (antherEl) elements.push(antherEl);
   const copyZone = recipe.axis === "row" ? panelZone : photoZone;
-  if (sem.headline && keep.has("headline")) {
+  const groundCopy = [];
+  let groundHeadlinePx = null;
+  if (copyOnGround && sem.headline && keep.has("headline")) {
+    const hl = sem.headline;
+    const text3 = hl.text.replace(/\s+/g, " ").trim();
+    const zone = headerOnTop ? { x: 0, y: 0, w: dstW, h: headerH } : panelZone;
+    const padX = antherLayout ? halfTile : margin;
+    const w = r2(zone.w - (headerOnTop ? padX : margin) * 2);
+    const maxH = headerOnTop ? zone.h - (antherLayout ? padX * 0.3 : margin * 1.2) : zone.h * 0.34;
+    const fit = fitText(text3, { w: w * 0.96, h: maxH }, { ...fontSpec(hl), minSize: headlineMin, maxSize: Math.max(headlineMin, maxH), lineHeight: 1.02, maxLines: headerOnTop ? 2 : 3 });
+    if (!fit.fits) {
+      notes.push("Heading shrank to the floor size and still overflows \u2014 shorten the copy.");
+      needsReview = true;
+    }
+    groundHeadlinePx = fit.fontSize;
+    const cap = fit.lines.length === 1;
+    const h = cap ? Math.max(1, r2(capHeightPx(fontSpec(hl), fit.fontSize))) : r2(fit.height);
+    const sub = sem.subheadline && keep.has("subheadline") ? sem.subheadline : null;
+    let subFit = null;
+    if (sub) {
+      const ratio2 = ovAll.subheadRatio ?? clamp2(sub.fontSize / Math.max(1, hl.fontSize), 0.15, 0.6);
+      const subMax = Math.max(sublineMin, r2(fit.fontSize * ratio2));
+      subFit = fitText(sub.text.replace(/\s+/g, " ").trim(), { w: w * 0.96, h: subMax * 2.4 }, { ...fontSpec(sub), minSize: sublineMin, maxSize: subMax, lineHeight: 1.1, maxLines: 2 });
+      if (!subFit.fits) {
+        subFit = null;
+        drop("subheadline", "Sub-headline dropped: no legible room under the heading.", rules?.drop("subheadline") === true);
+      }
+    }
+    const subH = subFit ? r2(subFit.height) : 0;
+    const gap = subFit ? r2(fit.fontSize * 0.14) : 0;
+    const buildCopy = (x, y) => {
+      const out = [textEl("rc_headline", "headline", "headline", hl, { x, y, w, h }, fit.fontSize, fit.lines.join("\n"), "center", 1.02, cap ? { baselineFit: "cap" } : {})];
+      if (subFit && sub) out.push(textEl("rc_subheadline", "subheadline", "subhead", sub, { x, y: y + h + gap, w, h: subH }, subFit.fontSize, subFit.lines.join("\n"), "center", 1.1));
+      return out;
+    };
+    if (headerOnTop && !photoShaped) elements.push({ id: "rc_header_ground", type: "rect", slot: "panel", fill: panelFill, x: 0, y: 0, w: dstW, h: headerH, locked: true });
+    if (headerOnTop) elements.push(...buildCopy(r2((dstW - w) / 2), r2((headerH - (h + gap + subH)) / 2) + r2(margin * 0.3)));
+    else groundCopy.push({ kind: "copy", w, h: h + gap + subH, build: buildCopy });
+    if (sem.kicker) drop("kicker", "Kicker line left out: the heading sits on the colour ground here.", true);
+  } else if (sem.headline && keep.has("headline")) {
     const hl = sem.headline;
     const rawText = hl.text.replace(/\s+/g, " ").trim();
     const words = rawText.split(" ").filter(Boolean);
     const text3 = recipe.headlineWordPerLine && words.length > 1 ? words.join("\n") : rawText;
     const zoneW = copyZone.w - margin * 2;
     if (recipe.axis === "row") {
-      const ctaW = sem.cta && keep.has("cta") ? r(Math.min(panelZone.w * recipe.ctaMaxWidthFrac, clamp(Math.max(recipe.ctaFloorPx, dstH * recipe.ctaHeightFrac), 20, dstH * 0.64) * (sem.cta.w / Math.max(1, sem.cta.h) || 4))) : 0;
-      const box = { x: panelZone.x + margin, y: panelZone.y, w: Math.max(20, panelZone.w - ctaW - margin * 3), h: dstH };
-      let fit = fitText(text3, { w: box.w, h: dstH * recipe.headlineMaxHeightFrac }, { ...fontSpec(hl), minSize: HEADLINE_MIN_PX, maxSize: dstH, lineHeight: 1, maxLines: 1 });
-      if (!fit.fits) fit = fitText(text3, { w: box.w, h: dstH * 0.86 }, { ...fontSpec(hl), minSize: HEADLINE_MIN_PX, maxSize: dstH, lineHeight: 1, maxLines: 2 });
-      const h = r(fit.height);
-      elements.push(textEl("rc_headline", "headline", "headline", hl, { x: box.x, y: r((dstH - h) / 2), w: box.w, h }, fit.fontSize, fit.lines.join("\n"), "left", 1));
+      const onPhoto = hasPhoto && photoZone.w > 40 && !headlineOffPhoto;
+      const ctaW = onPhoto ? 0 : ctaPlanned()?.w ?? 0;
+      const box = onPhoto ? { x: photoZone.x + margin, y: 0, w: Math.max(20, photoZone.w - margin * 2), h: dstH } : { x: panelZone.x + margin, y: panelZone.y, w: Math.max(20, panelZone.w - ctaW - margin * 3), h: dstH };
+      let fit = fitText(text3, { w: box.w, h: dstH * recipe.headlineMaxHeightFrac }, { ...fontSpec(hl), minSize: headlineMin, maxSize: dstH, lineHeight: 1, maxLines: 1 });
+      if (!fit.fits) fit = fitText(text3, { w: box.w, h: dstH * 0.86 }, { ...fontSpec(hl), minSize: headlineMin, maxSize: dstH, lineHeight: 1, maxLines: 2 });
+      const h = r2(fit.height);
+      elements.push(textEl("rc_headline", "headline", "headline", hl, { x: box.x, y: r2((dstH - h) / 2), w: box.w, h }, fit.fontSize, fit.lines.join("\n"), onPhoto ? "center" : "left", 1));
       if (!fit.fits) {
         notes.push("Headline does not fit the strip at the minimum size \u2014 shorten the copy.");
         needsReview = true;
       }
+      if (sem.kicker) drop("kicker", "Kicker line dropped: strips carry the headline only.", true);
     } else {
       const maxLines = recipe.headlineWordPerLine ? Math.max(1, words.length) : 2;
-      const box = { w: zoneW * recipe.headlineWidthFrac, h: copyZone.h * recipe.headlineMaxHeightFrac };
-      const fit = fitText(text3, box, { ...fontSpec(hl), minSize: HEADLINE_MIN_PX, maxSize: copyZone.h, lineHeight: 1.02, maxLines });
+      const zoneAspect = copyZone.w / Math.max(1, copyZone.h);
+      const shapeFrac = 0.32 + clamp2((zoneAspect - 1.14) / (1.9 - 1.14), 0, 1) * (0.45 - 0.32);
+      const maxHFrac = recipe.axis === "stacked" || recipe.axis === "side" ? Math.max(recipe.headlineMaxHeightFrac, shapeFrac) : recipe.headlineMaxHeightFrac;
+      const capShare = look?.headlineCapOfShort ? capHeightPx(fontSpec(hl), 100) / 100 : 0;
+      const lookH = capShare > 0 ? look.headlineCapOfShort * short / capShare * 1.04 : 0;
+      const masterHlShare = sem.headline ? sem.headline.w / Math.max(1, sem.photoBox?.w ?? srcW) : 0;
+      const squareFill = formatClass === "square" && recipe.axis === "stacked" && !antherLayout;
+      const box = squareFill ? { w: Math.min(zoneW, copyZone.w * clamp2(masterHlShare, recipe.headlineWidthFrac, 0.9)), h: Math.max(copyZone.h * 0.5, Math.min(lookH, copyZone.h * 0.7)) } : { w: Math.min(zoneW, copyZone.w * recipe.headlineWidthFrac), h: Math.max(copyZone.h * maxHFrac, Math.min(lookH, copyZone.h * 0.7)) };
+      const fit = fitText(text3, box, { ...fontSpec(hl), minSize: headlineMin, maxSize: copyZone.h, lineHeight: 1.02, maxLines });
+      const squareGrew = squareFill && fit.fontSize > fitText(text3, { w: Math.min(zoneW, copyZone.w * recipe.headlineWidthFrac), h: Math.max(copyZone.h * maxHFrac, Math.min(lookH, copyZone.h * 0.7)) }, { ...fontSpec(hl), minSize: headlineMin, maxSize: copyZone.h, lineHeight: 1.02, maxLines }).fontSize * 1.03;
       if (!fit.fits) {
         notes.push("Headline shrank to the floor size and still overflows \u2014 shorten the copy.");
         needsReview = true;
       }
-      const hlH = r(fit.height);
+      const hlCap = fit.lines.length === 1;
+      const hlH = hlCap ? Math.max(1, r2(capHeightPx(fontSpec(hl), fit.fontSize))) : r2(fit.height);
       let subFit = null;
       const sub = sem.subheadline;
       if (sub && keep.has("subheadline")) {
         const subText = sub.text.replace(/\s+/g, " ").trim();
-        const subMax = Math.max(9, r(fit.fontSize * recipe.subheadRatio));
-        subFit = fitText(subText, { w: zoneW * 0.9, h: subMax * 2.4 }, { ...fontSpec(sub), minSize: 9, maxSize: subMax, lineHeight: 1.1, maxLines: 2 });
-        if (!subFit.fits && budget !== "large") {
+        const subRatio = ovAll.subheadRatio ?? clamp2(sub.fontSize / Math.max(1, hl.fontSize), 0.15, 0.6);
+        const subMax = Math.max(sublineMin, r2(fit.fontSize * subRatio));
+        const subW = Math.min(zoneW, copyZone.w * 0.9);
+        const oneLine = fitText(subText, { w: subW, h: subMax * 1.3 }, { ...fontSpec(sub), minSize: Math.max(sublineMin, r2(subMax * 0.8)), maxSize: subMax, lineHeight: 1.1, maxLines: 1 });
+        subFit = oneLine.fits ? oneLine : fitText(subText, { w: zoneW * 0.9, h: subMax * 2.4 }, { ...fontSpec(sub), minSize: sublineMin, maxSize: subMax, lineHeight: 1.1, maxLines: 2 });
+        if (!subFit.fits && budget !== "large" && (rules?.drop("subheadline") ?? true)) {
           subFit = null;
-          notes.push("Sub-headline dropped: no legible room under the headline.");
+          drop("subheadline", "Sub-headline dropped: no legible room under the headline.", rules?.drop("subheadline") === true);
         }
       }
-      const gap = subFit ? r(fit.fontSize * 0.12) : 0;
-      const blockH = hlH + gap + (subFit ? r(subFit.height) : 0);
+      let kickFit = null;
+      const kick = sem.kicker;
+      if (kick) {
+        const ratio2 = clamp2(kick.fontSize / Math.max(1, hl.fontSize), 0.15, 0.6);
+        const kickMax = Math.max(sublineMin, r2(fit.fontSize * ratio2));
+        kickFit = fitText(kick.text.replace(/\s+/g, " ").trim(), { w: zoneW * 0.9, h: kickMax * 2.4 }, { ...fontSpec(kick), minSize: sublineMin, maxSize: kickMax, lineHeight: 1.1, maxLines: 2 });
+        if (!kickFit.fits) {
+          kickFit = null;
+          drop("kicker", "Kicker line dropped: no legible room above the headline.", true);
+        }
+      }
+      const kickGap = kickFit ? r2(fit.fontSize * 0.15) : 0;
+      const kickH = kickFit ? r2(kickFit.height) : 0;
+      const gap = subFit ? r2(fit.fontSize * 0.12) : 0;
+      const subCap = !!subFit && subFit.lines.length === 1;
+      const subH = subFit ? subCap ? Math.max(1, r2(capHeightPx(fontSpec(sub), subFit.fontSize))) : r2(subFit.height) : 0;
+      const blockH = kickH + kickGap + hlH + gap + subH;
       const hasCutout = elements.some((e) => e.id === "rc_cutout");
-      const centreFrac = hasCutout ? recipe.headlineCentreFrac : recipe.headlineCentreFracBare;
-      const centreY = copyZone.y + copyZone.h * centreFrac;
-      const y0 = r(clamp(centreY - blockH / 2, copyZone.y + margin, copyZone.y + copyZone.h - blockH - margin));
-      const hlBox = { x: copyZone.x + r((copyZone.w - box.w) / 2), y: y0, w: r(box.w), h: hlH };
-      elements.push(textEl("rc_headline", "headline", "headline", hl, hlBox, fit.fontSize, fit.lines.join("\n"), "center", 1.02));
+      const classCentre = hasCutout ? recipe.headlineCentreFrac : recipe.headlineCentreFracBare;
+      const srcClass = classifyAspect(srcW, srcH);
+      const srcRecipe = RECIPES[srcClass];
+      const srcCentre = sem.cutouts.length > 0 ? srcRecipe.headlineCentreFrac : srcRecipe.headlineCentreFracBare;
+      const masterCentre = hasPhoto && srcRecipe.axis !== "row" ? masterCopyCentre(sem, srcW, srcH) : null;
+      const approvedLeads = ovAll.headlineCentreFrac != null || ovAll.headlineCentreFracBare != null;
+      const centreFrac = masterCentre != null && !approvedLeads ? clamp2(masterCentre + (classCentre - srcCentre), 0.22, 0.78) : classCentre;
+      if (masterCentre != null && !approvedLeads && Math.abs(centreFrac - classCentre) >= 0.01) {
+        notes.push(`Heading placed as on the master: its copy sits ${Math.round(masterCentre * 100)}% down the photo there, ${Math.round(centreFrac * 100)}% here.`);
+      }
+      const centreY = copyZone.y + copyZone.h * (centreFrac - (squareGrew ? 0.04 : 0));
+      const y0 = r2(clamp2(centreY - blockH / 2, copyZone.y + margin, copyZone.y + copyZone.h - blockH - margin));
+      const hlY = y0 + kickH + kickGap;
+      const hlBox = { x: copyZone.x + r2((copyZone.w - box.w) / 2), y: hlY, w: r2(box.w), h: hlH };
+      if (kickFit && kick) {
+        const kw = r2(zoneW * 0.9);
+        elements.push(textEl("rc_kicker", "kicker", "subhead", kick, { x: copyZone.x + r2((copyZone.w - kw) / 2), y: y0, w: kw, h: kickH }, kickFit.fontSize, kickFit.lines.join("\n"), "center", 1.1));
+      }
+      elements.push(textEl("rc_headline", "headline", "headline", hl, hlBox, fit.fontSize, fit.lines.join("\n"), "center", 1.02, hlCap ? { baselineFit: "cap" } : {}));
       if (subFit) {
-        const sw = r(zoneW * 0.9);
-        elements.push(textEl("rc_subheadline", "subheadline", "subhead", sub, { x: copyZone.x + r((copyZone.w - sw) / 2), y: y0 + hlH + gap, w: sw, h: r(subFit.height) }, subFit.fontSize, subFit.lines.join("\n"), "center", 1.1));
+        const sw = r2(subFit.lines.length === 1 ? Math.min(zoneW, copyZone.w * 0.9) : zoneW * 0.9);
+        elements.push(textEl("rc_subheadline", "subheadline", "subhead", sub, { x: copyZone.x + r2((copyZone.w - sw) / 2), y: hlY + hlH + gap, w: sw, h: subH }, subFit.fontSize, subFit.lines.join("\n"), "center", 1.1, subCap ? { baselineFit: "cap" } : {}));
       }
       const alt = (label3, frac, score) => {
-        const y = r(clamp(copyZone.y + copyZone.h * frac - blockH / 2, copyZone.y + margin, copyZone.y + copyZone.h - blockH - margin));
+        const y = r2(clamp2(copyZone.y + copyZone.h * frac - blockH / 2, copyZone.y + margin, copyZone.y + copyZone.h - blockH - margin));
         options.push({ label: label3, x: hlBox.x, y, w: hlBox.w, h: hlH, fontSize: fit.fontSize, align: "center", color: hl.color, score });
       };
       alt("Recipe position", centreFrac, 100);
@@ -232260,138 +234058,226 @@ async function recomposeToFormat(master, srcW, srcH, dstW, dstH, opts) {
       alt("Headline lower", Math.min(0.85, centreFrac + 0.15), 70);
     }
   }
-  const items = [];
-  const headlineSize = elements.find((e) => e.id === "rc_headline")?.fontSize ?? r(short * 0.12);
+  const items = [...groundCopy];
+  const headlineSize = groundHeadlinePx ?? elements.find((e) => e.id === "rc_headline")?.fontSize ?? r2(short * 0.12);
   if (recipe.axis !== "row" && sem.message && keep.has("message")) {
     const msg = sem.message;
     const text3 = msg.text.replace(/\s+/g, " ").trim();
-    const maxSize = Math.max(10, r(headlineSize * recipe.messageMaxRatio));
-    const w = r(panelZone.w * 0.85);
-    const fit = fitText(text3, { w, h: maxSize * 2.5 }, { ...fontSpec(msg), minSize: 10, maxSize, lineHeight: 1.15, maxLines: 2 });
+    const msgRatio = ovAll.messageMaxRatio ?? (sem.headline ? clamp2(msg.fontSize / Math.max(1, sem.headline.fontSize), 0.12, 0.5) : recipe.messageMaxRatio);
+    const masterMsgShare = msg.fontSize / Math.max(1, Math.min(srcW, srcH));
+    const groundFloor = copyOnGround ? Math.min(r2(short * masterMsgShare * 0.6), r2(headlineSize * 0.5)) : 0;
+    const fillFloor = !sem.lockup && recipe.axis === "stacked" && !shortMessageEarly(msg.text) ? Math.min(r2(panelZone.w * 0.85 / Math.max(8, Math.ceil(msg.text.replace(/\s+/g, " ").trim().length / 2) * 0.5)), r2(headlineSize * 0.62)) : 0;
+    const squareCopy = antherLayout && formatClass === "square" ? r2(panelZone.w * 0.1) : 0;
+    const maxSize = Math.max(messageMin, r2(headlineSize * msgRatio), groundFloor, fillFloor, squareCopy, formatClass === "tower" ? r2(dstW * 0.1) : 0);
+    const w = r2(panelZone.w * (antherLayout ? 0.92 : 0.85));
+    const msgLines = formatClass === "tower" ? 3 : 2;
+    const shortMessage = text3.length <= 24;
+    const oneLine = formatClass === "tower" || !shortMessage ? null : fitText(text3, { w: w * 0.94, h: maxSize * 1.4 }, { ...fontSpec(msg), minSize: messageMin, maxSize, lineHeight: 1.15, maxLines: 1 });
+    const ownLines = msg.text.split(/\n+/).map((l) => l.replace(/\s+/g, " ").trim()).filter(Boolean);
+    const own = (() => {
+      if (!antherLayout) return null;
+      const units = ownLines.flatMap((l) => l.split(/(?<=[.,;:!?—–])\s+/)).map((u) => u.trim()).filter(Boolean);
+      if (units.length < 2 || units.length > 5) return null;
+      const limit3 = formatClass === "tower" ? 4 : 3;
+      const tryLines = (lines) => {
+        const f = fitText(lines.join("\n"), { w: w * 0.9, h: maxSize * 1.15 * (lines.length + 0.4) }, { ...fontSpec(msg), minSize: messageMin, maxSize, lineHeight: 1.15, maxLines: lines.length });
+        return f.fits && f.lines.length === lines.length ? f : null;
+      };
+      let best = null;
+      for (let mask = 0; mask < 1 << units.length - 1; mask++) {
+        const lines = [units[0]];
+        for (let i = 1; i < units.length; i++) {
+          if (mask & 1 << i - 1) lines.push(units[i]);
+          else lines[lines.length - 1] += " " + units[i];
+        }
+        if (lines.length < 2 || lines.length > limit3) continue;
+        const f = tryLines(lines);
+        if (f && (!best || f.fontSize > best.fontSize || f.fontSize === best.fontSize && f.lines.length < best.lines.length)) best = f;
+      }
+      const designers = ownLines.length > 1 ? tryLines(ownLines) : null;
+      return designers && (!best || designers.fontSize >= best.fontSize * 0.87) ? designers : best;
+    })();
+    const fit = own ? own : oneLine?.fits ? oneLine : fitText(text3, { w: w * 0.94, h: maxSize * (msgLines + 0.5) }, { ...fontSpec(msg), minSize: messageMin, maxSize, lineHeight: 1.15, maxLines: msgLines });
     if (fit.fits) {
-      const h = r(fit.height);
-      items.push({ kind: "message", w, h, build: (x, y) => [textEl("rc_message", "message", "body", msg, { x, y, w, h }, fit.fontSize, fit.lines.join("\n"), "center", 1.15)] });
+      const cap = fit.lines.length === 1;
+      const h = cap ? Math.max(1, r2(capHeightPx(fontSpec(msg), fit.fontSize))) : r2(fit.height);
+      const boxW = antherLayout ? Math.max(w, panelZone.w - 4) : w;
+      items.push({ kind: "message", w: boxW, h, build: (x, y) => [textEl("rc_message", "message", "body", msg, { x, y, w: boxW, h }, fit.fontSize, fit.lines.join("\n"), "center", 1.15, cap ? { baselineFit: "cap" } : {})] });
     } else {
-      notes.push("Message dropped: it would not fit the panel legibly.");
+      drop("message", "Message dropped: it would not fit the panel legibly.", rules?.drop("message") === true);
     }
   }
-  if (sem.cta && keep.has("cta")) {
+  const builtHeadline = elements.find((e) => e.id === "rc_headline");
+  const ctaPlan = ctaPlanned(groundHeadlinePx ?? builtHeadline?.fontSize);
+  if (sem.cta && ctaPlan) {
     const cta = sem.cta;
-    const aspect = cta.w / Math.max(1, cta.h) || 4;
-    const maxH = recipe.axis === "row" ? dstH * 0.64 : panelZone.h * 0.4;
-    const ctaH = r(clamp(Math.max(recipe.ctaFloorPx, short * recipe.ctaHeightFrac), 18, maxH));
-    let ctaW = r(Math.min(ctaH * aspect, panelZone.w * (recipe.axis === "row" ? recipe.ctaMaxWidthFrac : recipe.ctaMaxWidthFrac)));
-    let iconSize = sem.ctaIcon ? r(ctaH * 0.72) : 0;
-    const padX = r(ctaH * 0.45);
-    let labelFit = null;
-    if (sem.ctaLabel) {
-      const label3 = sem.ctaLabel.text.replace(/\s+/g, " ").trim();
-      const spec = { ...fontSpec(sem.ctaLabel), minSize: 8, maxSize: r(ctaH * 0.55), lineHeight: 1, maxLines: 1 };
-      const avail = () => ctaW - padX * 2 - (iconSize ? iconSize + r(ctaH * 0.25) : 0);
-      const maxW = panelZone.w * (recipe.axis === "row" ? 0.5 : 0.92);
-      labelFit = fitText(label3, { w: avail(), h: ctaH }, spec);
-      if (!labelFit.fits || labelFit.fontSize < ctaH * 0.4) {
-        const want = fitText(label3, { w: 1e4, h: ctaH }, spec).width + padX * 2 + (iconSize ? iconSize + r(ctaH * 0.25) : 0);
-        ctaW = r(Math.min(Math.max(ctaW, want), maxW));
-        labelFit = fitText(label3, { w: avail(), h: ctaH }, spec);
-      }
-      if (!labelFit.fits && iconSize) {
-        iconSize = 0;
-        labelFit = fitText(label3, { w: avail(), h: ctaH }, spec);
-        if (!labelFit.fits) {
-          notes.push("CTA label does not fit at the minimum size \u2014 shorten it for this format.");
-          needsReview = true;
-        }
-      }
-    }
+    const ctaW = ctaPlan.w;
+    const ctaH = ctaPlan.h;
+    const padX = ctaPlan.padX;
+    const iconSize = ctaPlan.iconSize;
+    for (const n of ctaPlan.notes) notes.push(n);
+    if (!ctaPlan.fits) needsReview = true;
     const build = (x, y) => {
       const out = [];
-      if (cta.type === "rect") {
-        out.push({ id: "rc_cta", type: "rect", slot: "cta", fill: cta.fill, x, y, w: ctaW, h: ctaH, radius: sem.ctaKind === "pill" ? ctaH / 2 : r((cta.radius ?? 0) * (ctaH / Math.max(1, cta.h))), locked: true });
+      if (displayCta) {
+        out.push({ id: "rc_cta", type: "rect", slot: "cta", fill: displayCta.fill, x, y, w: ctaW, h: ctaH, radius: ctaH / 2, locked: true });
+      } else if (cta.type === "rect") {
+        out.push({ id: "rc_cta", type: "rect", slot: "cta", fill: cta.fill, x, y, w: ctaW, h: ctaH, radius: sem.ctaKind === "pill" ? ctaH / 2 : r2((cta.radius ?? 0) * (ctaH / Math.max(1, cta.h))), locked: true });
       } else {
         out.push({ ...cta, id: "rc_cta", slot: "cta", role: "decoration", fit: "contain", x, y, w: ctaW, h: ctaH, locked: true });
       }
-      if (sem.ctaLabel && labelFit) {
-        const lw = ctaW - padX * 2 - (iconSize ? iconSize + r(ctaH * 0.25) : 0);
-        const capH = capHeightPx(fontSpec(sem.ctaLabel), labelFit.fontSize);
-        const lh = Math.max(1, r(capH));
-        out.push(
-          textEl("rc_cta_label", "ctaLabel", "cta", sem.ctaLabel, { x: x + padX, y: y + r((ctaH - lh) / 2), w: lw, h: lh }, labelFit.fontSize, labelFit.lines[0] ?? "", iconSize ? "left" : "center", 1.1, {
-            baselineFit: "cap"
-          })
-        );
+      const labelFrom = sem.ctaLabel ? displayCta ? { ...sem.ctaLabel, color: displayCta.labelColor, fontWeight: 700, letterSpacing: void 0 } : sem.ctaLabel : null;
+      if (sem.ctaLabel && labelFrom && ctaPlan.lines.length > 0) {
+        const lw = iconSize ? ctaW - padX - iconSize - ctaPlan.iconInset - 2 : ctaW - padX * 2;
+        if (ctaPlan.lines.length === 1) {
+          const capH = capHeightPx(fontSpec(labelFrom), ctaPlan.fontSize);
+          const lh = Math.max(1, r2(capH));
+          out.push(
+            textEl("rc_cta_label", "ctaLabel", "cta", labelFrom, { x: x + padX, y: y + r2((ctaH - lh) / 2), w: lw, h: lh }, ctaPlan.fontSize, ctaPlan.lines[0] ?? "", iconSize ? "left" : "center", 1.1, {
+              baselineFit: "cap"
+            })
+          );
+        } else {
+          const lh = r2(ctaPlan.fontSize * 1.15 * ctaPlan.lines.length);
+          out.push(textEl("rc_cta_label", "ctaLabel", "cta", labelFrom, { x: x + padX, y: y + r2((ctaH - lh) / 2), w: lw, h: lh }, ctaPlan.fontSize, ctaPlan.lines.join("\n"), "center", 1.15));
+        }
       }
-      if (sem.ctaIcon && iconSize) {
-        out.push({ ...sem.ctaIcon, id: "rc_cta_icon", slot: "ctaIcon", role: "decoration", fit: "contain", x: x + ctaW - padX - iconSize, y: y + r((ctaH - iconSize) / 2), w: iconSize, h: iconSize, locked: true });
+      if (sem.ctaIcon && iconSize && !displayCta) {
+        out.push({ ...sem.ctaIcon, id: "rc_cta_icon", slot: "ctaIcon", role: "decoration", fit: "contain", x: x + ctaW - ctaPlan.iconInset - iconSize, y: y + r2((ctaH - iconSize) / 2), w: iconSize, h: iconSize, locked: true });
       }
       return out;
     };
     items.push({ kind: "cta", w: ctaW, h: ctaH, build });
   }
-  if (recipe.axis !== "row" && sem.lockup && sem.lockup.src && keep.has("lockup") && !social) {
+  if (patternEl && sem.lockup === patternEl) {
+  } else if (recipe.axis !== "row" && sem.lockup && sem.lockup.src && keep.has("lockup") && !social) {
     const lk = sem.lockup;
     const natural = await loadSize(lk.src) ?? { w: lk.w, h: lk.h };
     const aspect = natural.w / Math.max(1, natural.h);
-    let h = r(short * recipe.lockupHeightFrac);
-    let w = r(h * aspect);
-    const maxW = r(panelZone.w * recipe.lockupMaxWidthFrac);
+    let h = r2(short * recipe.lockupHeightFrac);
+    let w = r2(h * aspect);
+    if (look?.lockupWidthOfPanel) {
+      w = r2(panelZone.w * look.lockupWidthOfPanel);
+      h = r2(w / aspect);
+      if (h > short * 0.22) {
+        h = r2(short * 0.22);
+        w = r2(h * aspect);
+      }
+    }
+    const maxW = look?.lockupWidthOfPanel ? Math.max(w, r2(panelZone.w * recipe.lockupMaxWidthFrac)) : r2(panelZone.w * recipe.lockupMaxWidthFrac);
     if (w > maxW) {
       w = maxW;
-      h = r(w / aspect);
+      h = r2(w / aspect);
+    }
+    if (h < lockupMin) {
+      h = lockupMin;
+      w = r2(h * aspect);
+      if (w > panelZone.w - margin * 2) {
+        w = panelZone.w - margin * 2;
+        h = r2(w / aspect);
+      }
     }
     items.push({ kind: "lockup", w, h, build: (x, y) => [{ ...lk, id: "rc_lockup", slot: "lockup", role: "decoration", fit: "contain", x, y, w, h, locked: true }] });
   } else if (sem.lockup && social) {
-    notes.push("Logo lockup omitted: social squares carry no logo (guidelines).");
+    drop("lockup", "Logo lockup omitted: social squares carry no logo (guidelines).", true);
+  }
+  if (social && sem.logo && !dropped.some((d) => d.slot === "lockup" || d.slot === "logo")) {
+    drop("logo", "Logo tile omitted: social squares carry no logo (guidelines).", true);
   }
   if (recipe.axis === "row") {
     const cta = items.find((i) => i.kind === "cta");
-    if (cta) elements.push(...cta.build(panelZone.x + panelZone.w - cta.w - margin, r((dstH - cta.h) / 2)));
+    let msgItem = null;
+    const stripCopyOnPhoto = hasPhoto && !headlineOffPhoto;
+    if (sem.message && stripCopyOnPhoto) {
+      const msg = sem.message;
+      const mText = msg.text.replace(/\s+/g, " ").trim();
+      const mw = r2(panelZone.w * 0.9);
+      const mMax = Math.max(messageMin, r2(dstH * 0.2));
+      const mFit = fitText(mText, { w: mw, h: mMax * 1.3 }, { ...fontSpec(msg), minSize: Math.min(messageMin, 11), maxSize: mMax, lineHeight: 1.1, maxLines: 1 });
+      const mh = r2(mFit.height);
+      const gapY = Math.max(3, r2(dstH * 0.06));
+      if (mFit.fits && mh + gapY + (cta?.h ?? 0) <= dstH - Math.max(6, margin)) {
+        msgItem = { w: mw, h: mh, build: (x, y) => [textEl("rc_message", "message", "body", msg, { x, y, w: mw, h: mh }, mFit.fontSize, mFit.lines.join("\n"), "center", 1.1)] };
+      } else {
+        drop("message", "Message left out: this strip is too short to carry it above the pill.", true);
+      }
+    } else if (sem.message) {
+      drop("message", "Message left out: the strip carries the headline and the pill only.", true);
+    }
+    if (msgItem) {
+      const gapY = Math.max(3, r2(dstH * 0.06));
+      const totalH = msgItem.h + (cta ? gapY + cta.h : 0);
+      let y = r2((dstH - totalH) / 2);
+      elements.push(...msgItem.build(panelZone.x + r2((panelZone.w - msgItem.w) / 2), y));
+      y += msgItem.h + gapY;
+      if (cta) elements.push(...cta.build(panelZone.x + r2((panelZone.w - cta.w) / 2), y));
+    } else if (cta) {
+      elements.push(...cta.build(stripCopyOnPhoto ? panelZone.x + r2((panelZone.w - cta.w) / 2) : panelZone.x + panelZone.w - cta.w - margin, r2((dstH - cta.h) / 2)));
+    }
     if (tileZone && opts.brand.logoUrl) {
       elements.push({ id: "rc_logo", type: "image", slot: "logo", role: "logo", src: opts.brand.logoUrl, fit: "contain", ...tileZone, locked: true });
     }
   } else {
-    const wantsTile = !items.some((i) => i.kind === "lockup") && !!opts.brand.logoUrl && !social && keep.has("lockup");
-    const tileReserve = wantsTile ? guidelineLogoPlacement(dstW, dstH)?.tile.w ?? 0 : 0;
-    const inner = panelZone.h - r(margin * 1.5);
-    let gap = clamp(r(panelZone.h * 0.07), 4, 48);
+    const wantsTileNow = () => !items.some((i) => i.kind === "lockup") && !!opts.brand.logoUrl && !social && keep.has("lockup");
+    const towerTile = formatClass === "tower" && wantsTileNow() ? r2(dstW / 2) : 0;
+    const tileReserve = towerTile || antherLayout ? 0 : wantsTileNow() ? guidelineLogoPlacement(dstW, dstH)?.tile.w ?? 0 : 0;
+    if (towerTile && !antherLayout) panelZone = { ...panelZone, h: Math.max(40, panelZone.h - towerTile) };
+    const inner = panelZone.h - r2(margin * 1.5);
+    const msgItem0 = items.find((i) => i.kind === "message");
+    let gap = clamp2(Math.max(r2(panelZone.h * 0.07), msgItem0 ? r2(msgItem0.h * 0.75) : 0), 4, 48);
     const total = () => items.reduce((s2, i) => s2 + i.h, 0) + gap * Math.max(0, items.length - 1);
-    if (total() > inner) {
+    if (total() > inner) gap = Math.max(4, r2(gap * 0.55));
+    if (antherLayout && total() > inner) gap = Math.max(4, r2(panelZone.h * 0.05));
+    if (total() > inner && (rules?.drop("message") ?? true)) {
       const idx = items.findIndex((i) => i.kind === "message");
       if (idx >= 0) {
         items.splice(idx, 1);
-        notes.push("Message dropped: the panel is too short for message, CTA and lockup.");
+        drop("message", "Message dropped: the panel is too short for message, CTA and lockup.", rules?.drop("message") === true);
       }
     }
-    if (total() > inner) gap = Math.max(2, r(gap / 2));
-    if (total() > inner) {
+    if (total() > inner) gap = Math.max(2, r2(gap / 2));
+    if (total() > inner && (rules ? rules.drop("lockup") !== false : true)) {
       const idx = items.findIndex((i) => i.kind === "lockup");
       if (idx >= 0) {
         items.splice(idx, 1);
-        notes.push("Lockup dropped: no room in the panel \u2014 the logo tile is used instead.");
+        drop("lockup", "Lockup dropped: no room in the panel \u2014 the logo tile is used instead.", rules?.drop("lockup") === true);
       }
     }
+    const wantsTile = wantsTileNow();
     const stackW = Math.max(1, panelZone.w - (tileReserve ? tileReserve + margin : 0));
+    const tileTop = tileReserve ? dstH - (guidelineLogoPlacement(dstW, dstH)?.tile.h ?? 0) : Infinity;
+    const xFor = (item, y) => {
+      const clearOfTile = y + item.h <= tileTop - 2;
+      const room = clearOfTile ? panelZone.w : stackW;
+      return panelZone.x + Math.max(2, r2((room - item.w) / 2));
+    };
     const lockupItem = items.find((i) => i.kind === "lockup");
     const spare = panelZone.h - total();
-    if (lockupItem && spare > total() * 0.6) {
+    if (lockupItem && spare >= gap) {
       const rest = items.filter((i) => i !== lockupItem);
       const restH = rest.reduce((s2, i) => s2 + i.h, 0) + gap * Math.max(0, rest.length - 1);
-      const lockupY = panelZone.y + panelZone.h - lockupItem.h - r(margin * 1.2);
-      let y = r(clamp(panelZone.y + (lockupY - panelZone.y) * 0.42 - restH / 2, panelZone.y + margin, lockupY - restH - gap));
+      const lockupY = panelZone.y + panelZone.h - lockupItem.h - Math.max(r2(margin * 0.8), r2(lockupItem.h * 0.4));
+      const groupFrac = recipe.axis === "side" ? 0.6 : 0.54;
+      let y = r2(clamp2(panelZone.y + (lockupY - panelZone.y) * groupFrac - restH / 2, panelZone.y + Math.max(4, r2(margin * 0.5)), lockupY - restH - gap));
       for (const item of rest) {
-        elements.push(...item.build(panelZone.x + r((stackW - item.w) / 2), y));
+        elements.push(...item.build(xFor(item, y), y));
         y += item.h + gap;
       }
-      elements.push(...lockupItem.build(panelZone.x + r((stackW - lockupItem.w) / 2), lockupY));
+      elements.push(...lockupItem.build(xFor(lockupItem, lockupY), lockupY));
     } else {
-      let y = panelZone.y + r((panelZone.h - total()) / 2);
+      let y = panelZone.y + r2((panelZone.h - total()) / 2);
+      if (antherLayout && recipe.axis === "side" && antherCircle) {
+        y = r2(clamp2(antherCircle.cy - total() / 2, panelZone.y + margin, panelZone.y + panelZone.h - total() - Math.max(2, r2(margin * 0.5))));
+      }
       for (const item of items) {
-        const x = panelZone.x + r((stackW - item.w) / 2);
+        const x = xFor(item, y);
         elements.push(...item.build(x, y));
         y += item.h + gap;
       }
     }
-    if (wantsTile) {
+    if (wantsTile && towerTile) {
+      elements.push({ id: "rc_logo", type: "image", slot: "logo", role: "logo", src: opts.brand.logoUrl, fit: "contain", x: r2((dstW - towerTile) / 2), y: dstH - towerTile, w: towerTile, h: towerTile, locked: true });
+    } else if (wantsTile) {
       const placement = guidelineLogoPlacement(dstW, dstH);
       if (placement) {
         elements.push({ id: "rc_logo", type: "image", slot: "logo", role: "logo", src: opts.brand.logoUrl, fit: "contain", ...placement.tile, locked: true });
@@ -232410,7 +234296,9 @@ async function recomposeToFormat(master, srcW, srcH, dstW, dstH, opts) {
       elements,
       ...options.length > 1 ? { layoutOptions: options } : {},
       adaptMethod: `recomposed:${formatClass}`,
-      adaptNotes: notes
+      adaptNotes: notes,
+      ...dropped.length ? { droppedParts: dropped } : {},
+      needsReview
     },
     formatClass,
     budget,
@@ -232504,24 +234392,60 @@ function checkMarkRules(config2, width, height) {
   }
   return issues;
 }
-function checkMandatory(master, adapted, width, height, partRules = {}) {
+function checkMandatory(master, adapted, width, height, partRules = {}, masterSize) {
   const reasons = [];
+  reasons.push(...checkAnther(adapted.elements, width, height));
   const short = Math.min(width, height);
   const isStrip = height <= 120 && width / height >= 2.5;
   const present = (cfg, slot) => cfg.elements.some((e) => (e.slot === slot || e.type === "text" && e.role === slot || e.type === "image" && e.role === slot) && (e.type !== "text" || e.text.trim().length > 0) && e.w > 0 && e.h > 0);
-  const hadLogo = present(master, "logo") || present(master, "lockup");
-  const hasLogo = present(adapted, "logo") || present(adapted, "lockup");
-  const droppedByRule = (slot) => partRules[slot]?.dropWhenTight === true && (adapted.adaptNotes ?? []).some((n) => /dropped by the profile's rules/i.test(n) && n.toLowerCase().includes(slot === "cta" ? "button" : slot));
-  if (present(master, "headline") && !present(adapted, "headline")) reasons.push("The headline is missing.");
-  if (present(master, "cta") && !present(adapted, "cta") && !droppedByRule("cta")) reasons.push("The call-to-action is missing.");
-  if (hadLogo && !hasLogo) reasons.push("The logo tile / lockup is missing.");
-  if (!isStrip && present(master, "message") && !present(adapted, "message") && !droppedByRule("message")) reasons.push("The message line is missing.");
+  const mw = masterSize?.w ?? Math.max(1, ...master.elements.map((e) => e.x + e.w));
+  const mh = masterSize?.h ?? Math.max(1, ...master.elements.map((e) => e.y + e.h));
+  const sem = inferSlots(master, mw, mh);
+  const droppedParts = adapted.droppedParts ?? [];
+  const DEFAULT_DROPPABLE = /* @__PURE__ */ new Set(["message", "subheadline", "kicker", "cutout", "band", "other"]);
+  const dropAllowed = (slot) => {
+    const entry = droppedParts.find((d) => d.slot === slot);
+    if (!entry) return false;
+    if (entry.byRule) return true;
+    const rule = partRules[slot]?.dropWhenTight;
+    return rule === void 0 ? DEFAULT_DROPPABLE.has(slot) : rule === true;
+  };
+  const NAMES = { headline: "headline", kicker: "kicker line", subheadline: "sub-line", message: "message line", cta: "call-to-action", band: "pattern band", cutout: "cut-out", photo: "photograph" };
+  const required2 = [
+    ["headline", !!sem.headline],
+    ["kicker", !!sem.kicker],
+    ["subheadline", !!sem.subheadline],
+    ["message", !!sem.message],
+    ["cta", !!sem.cta],
+    ["band", !!sem.band],
+    ["cutout", sem.cutouts.length > 0],
+    ["photo", !!sem.photo]
+  ];
+  const norm = (t) => (t ?? "").replace(/\s+/g, " ").trim().toLowerCase();
+  const adaptedCopy = adapted.elements.filter((e) => e.type === "text").map((e) => norm(e.text));
+  const carried = (el) => !!el && !!norm(el.text) && adaptedCopy.includes(norm(el.text));
+  const semOut = inferSlots(adapted, width, height);
+  const inOutput = (slot) => present(adapted, slot) || (slot === "cutout" ? semOut.cutouts.length > 0 : !!semOut[slot]);
+  for (const [slot, had] of required2) {
+    if (!had || inOutput(slot)) continue;
+    if (slot === "subheadline" && carried(sem.subheadline) || slot === "message" && carried(sem.message) || slot === "kicker" && carried(sem.kicker)) continue;
+    if (isStrip && ["message", "subheadline", "kicker", "band", "cutout"].includes(slot)) continue;
+    if (dropAllowed(slot)) continue;
+    const entry = droppedParts.find((d) => d.slot === slot);
+    reasons.push(entry ? `The ${NAMES[slot] ?? slot} was dropped (${entry.reason.replace(/\.$/, "")}) and no rule allows that.` : `The ${NAMES[slot] ?? slot} is missing.`);
+  }
+  const hadLogo = !!(sem.lockup || sem.logo) || present(master, "logo") || present(master, "lockup");
+  const hasLogo = present(adapted, "logo") || present(adapted, "lockup") || !!semOut.logo || !!semOut.lockup;
+  if (hadLogo && !hasLogo && !dropAllowed("lockup") && !dropAllowed("logo")) reasons.push("The logo tile / lockup is missing.");
   const logoMin = Math.max(24, Math.round(short / 8));
   for (const el of adapted.elements) {
     if (el.type !== "image") continue;
-    if (el.slot === "logo" || el.role === "logo") {
+    if (el.slot === "lockup") {
+      const lockupMin = isStrip ? 14 : Math.max(16, Math.round(short * 0.05));
+      if (el.h < lockupMin) reasons.push(`Lockup is ${Math.round(el.h)}px tall \u2014 under the ${lockupMin}px minimum for this canvas.`);
+    } else if (el.slot === "logo" || el.role === "logo") {
       if (Math.min(el.w, el.h) < logoMin) reasons.push(`Logo tile is ${Math.round(el.w)}\xD7${Math.round(el.h)}px \u2014 under the ${logoMin}px minimum for this canvas.`);
-    } else if (el.slot === "lockup") {
+    } else if (false) {
       const lockupMin = isStrip ? 14 : Math.max(16, Math.round(short * 0.05));
       if (el.h < lockupMin) reasons.push(`Lockup is ${Math.round(el.h)}px tall \u2014 under the ${lockupMin}px minimum for this canvas.`);
     }
@@ -232549,8 +234473,10 @@ function checkMandatory(master, adapted, width, height, partRules = {}) {
   let designedOverlap = 0;
   for (const c of masterCopy) for (const k of masterCutouts) designedOverlap = Math.max(designedOverlap, overlapFrac2(c, k));
   const cutoutTolerance = Math.max(0.15, designedOverlap + 0.1);
+  const ctaFamily = (e) => e.slot === "cta" || e.slot === "ctaLabel" || e.slot === "ctaIcon" || e.type === "text" && e.role === "cta";
   for (let i = 0; i < copyish.length; i++) {
     for (let j = i + 1; j < copyish.length; j++) {
+      if (ctaFamily(copyish[i]) && ctaFamily(copyish[j])) continue;
       const f = overlapFrac2(copyish[i], copyish[j]);
       if (f > 0.15) reasons.push(`"${label(copyish[i])}" and "${label(copyish[j])}" overlap by ${Math.round(f * 100)}%.`);
     }
@@ -232572,7 +234498,7 @@ function checkMandatory(master, adapted, width, height, partRules = {}) {
   for (const [slot, rule] of Object.entries(partRules)) {
     const els = bySlot2.get(slot) ?? [];
     for (const el of els) {
-      const dim = slot === "logo" ? Math.min(el.w, el.h) : el.h;
+      const dim = slot === "logo" ? Math.min(el.w, el.h) : el.type === "text" ? el.fontSize : el.h;
       if (rule.minPx && dim < rule.minPx) reasons.push(`"${label(el)}" is ${Math.round(dim)}px \u2014 under the ${rule.minPx}px minimum set in the profile's rules.`);
       for (const other of rule.neverOverlap ?? []) {
         for (const o of bySlot2.get(other) ?? []) {
@@ -232588,9 +234514,438 @@ function label(el) {
   if (el.type === "text" && el.text) return el.text.replace(/\s+/g, " ").slice(0, 28);
   return el.slot ?? el.id;
 }
+function contentCoverage(cfg, width, height) {
+  const content = cfg.elements.filter((e) => !(e.w >= width * 0.9 && e.h >= height * 0.9) && e.slot !== "photo" && !(e.type === "image" && e.role === "product") && e.w > 0 && e.h > 0);
+  if (content.length === 0) return { x: 1, y: 1, box: null };
+  const x0 = Math.max(0, Math.min(...content.map((e) => e.x))), y0 = Math.max(0, Math.min(...content.map((e) => e.y)));
+  const x1 = Math.min(width, Math.max(...content.map((e) => e.x + e.w))), y1 = Math.min(height, Math.max(...content.map((e) => e.y + e.h)));
+  return { x: Math.max(0, x1 - x0) / width, y: Math.max(0, y1 - y0) / height, box: { x: x0, y: y0, w: x1 - x0, h: y1 - y0 } };
+}
+
+// src/lib/pillRule.ts
+var spec = (t) => ({
+  family: t.fontFamily,
+  weight: t.fontWeight === 700 ? 700 : 400,
+  italic: t.fontStyle === "italic",
+  letterSpacing: t.letterSpacing
+});
+function findPill(config2, W2, H2) {
+  const bySlot2 = (s2) => config2.elements.find((e) => e.slot === s2);
+  let cta = bySlot2("cta"), label3 = bySlot2("ctaLabel"), icon = bySlot2("ctaIcon") ?? null, headline = bySlot2("headline");
+  if (!cta || !label3) {
+    const sem = inferSlots(config2, W2, H2);
+    const byId = (id) => id ? config2.elements.find((e) => e.id === id) : void 0;
+    cta = byId(sem.cta?.id);
+    label3 = byId(sem.ctaLabel?.id);
+    icon = byId(sem.ctaIcon?.id) ?? null;
+    headline = headline ?? byId(sem.headline?.id);
+  }
+  if (!cta || !label3 || label3.type !== "text" || cta.type !== "rect" && cta.type !== "image") return null;
+  const cx = label3.x + label3.w / 2, cy = label3.y + label3.h / 2;
+  if (cx < cta.x || cx > cta.x + cta.w || cy < cta.y - cta.h * 0.25 || cy > cta.y + cta.h * 1.25) return null;
+  return { cta, label: label3, icon, headline: headline && headline.type === "text" ? headline : null };
+}
+function applyPillRule(config2, W2, H2, master) {
+  const parts = findPill(config2, W2, H2);
+  if (!parts) return { config: config2, notes: [], moved: false };
+  const { cta, label: label3, icon } = parts;
+  const notes = [];
+  const patch = /* @__PURE__ */ new Map();
+  const lines = (label3.text ?? "").split("\n").filter((l) => l.trim().length > 0);
+  if (lines.length === 1) {
+    const s2 = spec(label3);
+    const textW = measureLine(lines[0].replace(/\s+/g, " ").trim(), s2, label3.fontSize);
+    if (textW <= label3.w + 0.5) {
+      const capH = Math.max(1, Math.round(capHeightPx(s2, label3.fontSize)));
+      const y = Math.round((cta.y + (cta.h - capH) / 2) * 2) / 2;
+      if (label3.baselineFit !== "cap" || Math.abs(label3.y - y) >= 0.5 || Math.abs(label3.h - capH) >= 0.5) {
+        patch.set(label3.id, { y, h: capH, baselineFit: "cap" });
+      }
+    } else {
+      const y = Math.round((cta.y + (cta.h - label3.h) / 2) * 2) / 2;
+      if (Math.abs(label3.y - y) >= 0.5) patch.set(label3.id, { y });
+    }
+  } else if (lines.length > 1) {
+    const blockH = Math.round(label3.fontSize * (label3.lineHeight ?? 1.2) * lines.length);
+    const y = Math.round((cta.y + (cta.h - blockH) / 2) * 2) / 2;
+    if (Math.abs(label3.y - y) >= 0.5 || Math.abs(label3.h - blockH) >= 0.5) patch.set(label3.id, { y, h: blockH });
+  }
+  if (icon) {
+    const y = Math.round((cta.y + (cta.h - icon.h) / 2) * 2) / 2;
+    if (Math.abs(icon.y - y) >= 0.5) patch.set(icon.id, { y });
+  }
+  if (master && parts.headline) {
+    const m = findPill(master.config, master.width, master.height);
+    const same = (m?.label.text ?? "").replace(/\s+/g, " ").trim().toLowerCase() === (label3.text ?? "").replace(/\s+/g, " ").trim().toLowerCase();
+    if (same && m?.headline && m.headline.fontSize > 0 && parts.headline.fontSize > 0) {
+      const kMaster = m.cta.h / m.headline.fontSize;
+      const kHere = cta.h / parts.headline.fontSize;
+      const labelShare = m.label.fontSize > 0 && m.cta.h > 0 ? Math.min(0.72, Math.max(0.3, m.label.fontSize / m.cta.h)) : 0.5;
+      const floor = Math.max(24, 18 / labelShare);
+      const atFloor = cta.h <= floor + 1.5;
+      if (!atFloor && (kHere > kMaster * 1.3 || kHere < kMaster * 0.75)) {
+        notes.push(`Check: the pill is ${Math.round(kHere * 100)}% of the heading's size here; in the original it is ${Math.round(kMaster * 100)}%.`);
+      }
+    }
+  }
+  if (patch.size === 0) return { config: config2, notes, moved: false };
+  return {
+    config: { ...config2, elements: config2.elements.map((e) => patch.has(e.id) ? { ...e, ...patch.get(e.id) } : e) },
+    notes,
+    moved: true
+  };
+}
+
+// src/lib/kvAnther.ts
+var r4 = (v) => Math.round(v);
+var clamp3 = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
+function findParts(cfg) {
+  const els = cfg.elements;
+  const images = els.filter((e) => e.type === "image");
+  const anther = images.find((e) => e.shape?.kind === "anther");
+  const bg = images.filter((e) => e !== anther && (e.slot === "photo" || e.role === "product") && !e.shape).sort((a, b) => b.w * b.h - a.w * a.h)[0];
+  const headline = els.find((e) => e.type === "text" && e.slot === "headline");
+  if (!anther || !bg || !headline) return null;
+  const block = (name) => els.find((e) => e.layoutBlock === name);
+  const group = (name) => {
+    const g = els.filter((e) => e.layoutBlock === name && e !== anther);
+    if (!g.length) return null;
+    const x = Math.min(...g.map((e) => e.x)), y = Math.min(...g.map((e) => e.y));
+    return { els: g, x, y, w: Math.max(...g.map((e) => e.x + e.w)) - x, h: Math.max(...g.map((e) => e.y + e.h)) - y };
+  };
+  return {
+    bg,
+    anther,
+    headline,
+    title: group("title"),
+    badge: group("badge"),
+    credit: group("credit"),
+    pattern: images.find((e) => e.slot === "band") ?? null,
+    logo: images.find((e) => e.slot === "lockup" || e.slot === "logo" || e.role === "logo") ?? null,
+    cta: els.filter((e) => e.slot === "cta" || e.slot === "ctaLabel" || e.slot === "ctaIcon"),
+    dates: els.find((e) => e.type === "text" && e.slot === "subheadline") ?? null,
+    strapline: els.find((e) => e.layoutBlock === "strapline" && e.type === "text") ?? null,
+    shade: els.find((e) => e.type === "rect" && !!e.gradient) ?? null
+  };
+}
+function isAntherKeyVisual(cfg, width, height) {
+  const p = findParts(cfg);
+  if (!p) return false;
+  return p.bg.w * p.bg.h >= width * height * 0.9;
+}
+var spec2 = (t) => ({
+  family: t.fontFamily,
+  weight: t.fontWeight === 700 ? 700 : 400,
+  italic: t.fontStyle === "italic",
+  ...t.letterSpacing !== void 0 && t.fontSize > 0 ? { letterSpacingEm: t.letterSpacing / t.fontSize } : {}
+});
+async function composeAntherKeyVisual(master, srcW, srcH, W2, H2) {
+  const p = findParts(master);
+  if (!p) return null;
+  await prepareMeasurement();
+  const notes = [];
+  const dropped = [];
+  const drop = (slot, reason) => {
+    dropped.push({ slot, reason, byRule: true });
+    notes.push(reason);
+  };
+  const semMaster = inferSlots(master, srcW, srcH);
+  const straplineSlot = p.strapline && semMaster.subheadline?.id === p.strapline.id ? "subheadline" : "message";
+  const ratio2 = W2 / H2, short = Math.min(W2, H2);
+  const kind = H2 <= 120 && ratio2 >= 2.5 ? "strip" : ratio2 >= 2.5 ? "banner" : ratio2 >= 1.15 ? "column" : ratio2 >= 0.9 ? "square" : "tall";
+  const m = Math.max(5, r4(short * 0.055));
+  const mi = Math.max(3, r4(m * 0.5));
+  const out = [];
+  const aspect = (e) => e.w / Math.max(1, e.h);
+  const put3 = (el, id, box, extra = {}) => ({ ...el, id, x: r4(box.x), y: r4(box.y), w: Math.max(1, r4(box.w)), h: Math.max(1, r4(box.h)), ...extra });
+  const within = (a, maxW, maxH) => {
+    let w = maxW, h = w / a;
+    if (h > maxH) {
+      h = maxH;
+      w = h * a;
+    }
+    return { w, h };
+  };
+  const putBlock = (b, id, box) => {
+    const k2 = box.w / Math.max(1, b.w);
+    return b.els.map((e, i) => put3(e, i === 0 ? id : `${id}_${i}`, { x: box.x + (e.x - b.x) * k2, y: box.y + (e.y - b.y) * k2, w: e.w * k2, h: e.h * k2 }, e.type === "text" ? { fontSize: Math.max(6, Math.round(e.fontSize * k2 * 10) / 10), letterSpacing: e.letterSpacing !== void 0 ? e.letterSpacing * k2 : void 0 } : {}));
+  };
+  const setCopy = (col, align, headPx, maxLines) => {
+    const hText = p.headline.text.split(/\n+/).map((l) => l.replace(/\s+/g, " ").trim()).filter(Boolean).join("\n");
+    maxLines = Math.max(maxLines, hText.split("\n").length);
+    let fit = fitText(hText, { w: col.w * 0.94, h: headPx * 1.1 * (maxLines + 0.3) }, { ...spec2(p.headline), minSize: 11, maxSize: Math.max(11, headPx), lineHeight: 1.05, maxLines });
+    if (!fit.fits) fit = fitText(hText.replace(/\n/g, " "), { w: col.w * 0.94, h: headPx * 1.1 * (maxLines + 1.3) }, { ...spec2(p.headline), minSize: 10, maxSize: Math.max(10, headPx), lineHeight: 1.05, maxLines: maxLines + 1 });
+    const hh = r4(fit.height);
+    let dFit = null;
+    if (p.dates) {
+      const dPx = Math.max(9, r4(fit.fontSize * clamp3(p.dates.fontSize / p.headline.fontSize, 0.45, 0.8)));
+      dFit = fitText(p.dates.text.replace(/\s+/g, " ").trim(), { w: col.w * 0.94, h: dPx * 1.4 }, { ...spec2(p.dates), minSize: 9, maxSize: dPx, lineHeight: 1.1, maxLines: 1 });
+      if (!dFit.fits) {
+        dFit = null;
+        drop("subheadline", "Dates left out: they cannot be set legibly on one line at this size.");
+      }
+    }
+    const gap = dFit ? r4(fit.fontSize * 0.18) : 0;
+    const dh = dFit ? r4(dFit.height) : 0;
+    const build = (y) => {
+      const els = [put3(p.headline, "kva_headline", { x: col.x, y, w: col.w, h: hh }, { fontSize: fit.fontSize, text: fit.lines.join("\n"), align, lineHeight: 1.05, letterSpacing: p.headline.letterSpacing !== void 0 ? p.headline.letterSpacing * fit.fontSize / p.headline.fontSize : void 0 })];
+      if (dFit && p.dates) els.push(put3(p.dates, "kva_dates", { x: col.x, y: y + hh + gap, w: col.w, h: dh }, { fontSize: dFit.fontSize, text: dFit.lines.join("\n"), align, lineHeight: 1.1, letterSpacing: p.dates.letterSpacing !== void 0 ? p.dates.letterSpacing * dFit.fontSize / p.dates.fontSize : void 0 }));
+      return els;
+    };
+    return { h: hh + gap + dh, build, fits: fit.fits, px: fit.fontSize };
+  };
+  const ctaBox = (() => {
+    if (!p.cta.length) return null;
+    const x0 = Math.min(...p.cta.map((e) => e.x)), y0 = Math.min(...p.cta.map((e) => e.y));
+    return { x: x0, y: y0, w: Math.max(...p.cta.map((e) => e.x + e.w)) - x0, h: Math.max(...p.cta.map((e) => e.y + e.h)) - y0 };
+  })();
+  const setPill = (box) => {
+    if (!ctaBox) return [];
+    const k2 = box.w / ctaBox.w;
+    return p.cta.map((e, i) => put3(e, i === 0 ? "kva_cta" : `kva_cta_${i}`, { x: box.x + (e.x - ctaBox.x) * k2, y: box.y + (e.y - ctaBox.y) * k2, w: e.w * k2, h: e.h * k2 }, e.type === "text" ? { fontSize: Math.max(8, r4(e.fontSize * k2)), letterSpacing: e.letterSpacing !== void 0 ? e.letterSpacing * k2 : void 0 } : {}));
+  };
+  const pillSize = (maxW, wantW) => {
+    if (!ctaBox) return { w: 0, h: 0 };
+    const a = aspect(ctaBox);
+    let w = clamp3(wantW, Math.min(maxW, 18 * a), maxW);
+    return { w, h: w / a };
+  };
+  let antherZone;
+  const later = [];
+  const under = [];
+  let shadeBoxes = [];
+  let showAnther = true;
+  let titleBottom = 0;
+  if (kind === "tall") {
+    const tower = W2 < 220;
+    if (p.title) {
+      const s2 = within(aspect(p.title), W2 - mi * 2, H2 * 0.2);
+      const b = { x: (W2 - s2.w) / 2, y: r4(H2 * 0.03), w: s2.w, h: s2.h };
+      later.push(...putBlock(p.title, "kva_title", b));
+      titleBottom = b.y + b.h;
+    }
+    let rowTop = H2 - r4(H2 * 0.02);
+    let logoBox = null;
+    if (p.logo) {
+      const s2 = within(aspect(p.logo), tower ? W2 * 0.72 : W2 * (W2 <= 400 ? 0.36 : 0.3), clamp3(H2 * (W2 <= 400 ? 0.075 : 0.062), 16, short * 0.3));
+      logoBox = { x: tower ? (W2 - s2.w) / 2 : W2 - mi - s2.w, y: H2 - r4(H2 * 0.02) - s2.h, w: s2.w, h: s2.h };
+      later.push(put3(p.logo, "kva_logo", logoBox, { slot: "lockup" }));
+      rowTop = logoBox.y;
+    }
+    if (p.strapline) {
+      if (tower || W2 < 260) drop(straplineSlot, "Strapline left out: no legible room beside the logo at this width.");
+      else {
+        const px = clamp3(r4(H2 * 0.0175), 9, 44);
+        const col = { x: m, y: 0, w: (logoBox ? logoBox.x : W2) - m * 2, h: 0 };
+        const f = fitText(p.strapline.text, { w: col.w, h: px * 2.6 }, { ...spec2(p.strapline), minSize: 9, maxSize: px, lineHeight: 1.12, maxLines: 2 });
+        if (f.fits) {
+          const h = r4(f.height);
+          later.push(put3(p.strapline, "kva_strapline", { x: m, y: H2 - r4(H2 * 0.024) - h, w: col.w, h }, { fontSize: f.fontSize, text: f.lines.join("\n"), lineHeight: 1.12, letterSpacing: p.strapline.letterSpacing !== void 0 ? p.strapline.letterSpacing * f.fontSize / p.strapline.fontSize : void 0 }));
+          rowTop = Math.min(rowTop, H2 - r4(H2 * 0.024) - h);
+        } else drop(straplineSlot, "Strapline left out: it cannot be set legibly at this size.");
+      }
+    }
+    const gap = Math.max(6, r4(H2 * 0.028));
+    const ps = pillSize(W2 - m * 2, tower ? W2 - m * 2 : W2 * (W2 <= 400 ? 0.56 : 0.46));
+    const copy = setCopy({ x: m, y: 0, w: W2 - m * 2, h: 0 }, "center", clamp3(r4(W2 * (W2 <= 400 ? 0.088 : 0.068)), tower ? 15 : 12, 400), tower ? 3 : 2);
+    let pillY = rowTop - gap - ps.h;
+    let copyY = pillY - r4(gap * 0.9) - copy.h;
+    const zoneTop = titleBottom + r4(gap * 0.4);
+    const spare = copyY - r4(gap * 0.5) - zoneTop - (W2 - mi * 2);
+    if (spare > H2 * 0.06) {
+      copyY -= r4(spare * 0.5);
+      pillY -= r4(spare * 0.36);
+      notes.push("The anther is as wide as this size allows; the spare height is shared between the gaps so the stack reads as one piece.");
+    }
+    later.push(...setPill({ x: (W2 - ps.w) / 2, y: pillY, w: ps.w, h: ps.h }));
+    later.push(...copy.build(copyY));
+    antherZone = { x: 0, y: zoneTop, w: W2, h: Math.max(40, copyY - r4(gap * 0.5) - zoneTop) };
+    if (p.pattern) {
+      const h = r4(H2 * 0.188), w = h * aspect(p.pattern);
+      under.push(put3(p.pattern, "kva_pattern", { x: W2 - w + 2, y: H2 - h, w, h }));
+    }
+    shadeBoxes = [{ box: { x: -2, y: -2, w: W2 + 4, h: r4(titleBottom + H2 * 0.07) }, angle: 180, from: 0.62, to: 0 }, { box: { x: -2, y: r4(copyY - H2 * 0.1), w: W2 + 4, h: H2 - r4(copyY - H2 * 0.1) + 2 }, angle: 0, from: 0.86, to: 0, mid: { at: clamp3((H2 - copyY) / Math.max(1, H2 - (copyY - H2 * 0.1)), 0.3, 0.9), alpha: W2 <= 400 ? 0.74 : 0.6 } }];
+    if (p.credit) {
+      if (H2 >= 500 && W2 >= 260) {
+        const s2 = within(aspect(p.credit), W2 * 0.02, H2 * 0.48);
+        later.push(...putBlock(p.credit, "kva_credit", { x: W2 - s2.w - 3, y: r4(H2 * 0.26), w: s2.w, h: s2.h }));
+      } else drop("other", "Picture credit left out: it cannot be read at this size \u2014 carry it in the media booking.");
+    }
+  } else if (kind === "square") {
+    let logoBox = null, rowTop = H2 - m;
+    if (p.logo) {
+      const s2 = within(aspect(p.logo), W2 * 0.3, clamp3(H2 * 0.1, 16, H2 * 0.16));
+      logoBox = { x: W2 - mi - s2.w, y: H2 - r4(H2 * 0.035) - s2.h, w: s2.w, h: s2.h };
+      later.push(put3(p.logo, "kva_logo", logoBox, { slot: "lockup" }));
+      rowTop = logoBox.y;
+    }
+    if (p.title) {
+      const s2 = within(aspect(p.title), W2 * 0.66, H2 * 0.27);
+      const b = { x: W2 - mi - s2.w, y: r4(H2 * 0.035), w: s2.w, h: s2.h };
+      later.push(...putBlock(p.title, "kva_title", b));
+      titleBottom = b.y + b.h;
+    }
+    const zTop = titleBottom - r4(H2 * 0.02);
+    const zw = r4(Math.min(W2 * 0.6, (H2 - zTop) * 1.02));
+    const cx = zw + r4(m * 0.1), cw = W2 - cx - m;
+    const ps = pillSize(cw, cw * 0.96);
+    const copy = setCopy({ x: cx, y: 0, w: cw, h: 0 }, "left", clamp3(r4(cw * 0.125), 12, 300), 2);
+    const gap = Math.max(5, r4(H2 * 0.032));
+    const blockH = copy.h + gap + ps.h;
+    const y0 = clamp3(titleBottom + (rowTop - titleBottom - blockH) * 0.46, titleBottom + gap, Math.max(titleBottom + gap, rowTop - gap - blockH));
+    later.push(...copy.build(y0), ...setPill({ x: cx, y: y0 + copy.h + gap, w: ps.w, h: ps.h }));
+    if (p.strapline) {
+      const px = clamp3(r4(H2 * 0.024), 9, 40), room = (logoBox ? logoBox.x : W2) - m * 2;
+      const f = fitText(p.strapline.text, { w: room * 0.5, h: px * 2.6 }, { ...spec2(p.strapline), minSize: 9, maxSize: px, lineHeight: 1.12, maxLines: 2 });
+      if (f.fits && H2 >= 400) {
+        const h = r4(f.height);
+        later.push(put3(p.strapline, "kva_strapline", { x: m, y: H2 - r4(H2 * 0.04) - h, w: room * 0.5, h }, { fontSize: f.fontSize, text: f.lines.join("\n"), lineHeight: 1.12, letterSpacing: p.strapline.letterSpacing !== void 0 ? p.strapline.letterSpacing * f.fontSize / p.strapline.fontSize : void 0 }));
+        rowTop = Math.min(rowTop, H2 - r4(H2 * 0.04) - h);
+      } else drop(straplineSlot, "Strapline left out: it cannot be set legibly at this size.");
+    }
+    antherZone = { x: 0, y: zTop, w: zw, h: rowTop - r4(gap * 0.3) - zTop };
+    if (p.pattern) {
+      const h = r4(H2 * 0.2), w = h * aspect(p.pattern);
+      under.push(put3(p.pattern, "kva_pattern", { x: W2 - w + 2, y: H2 - h, w, h }));
+    }
+    shadeBoxes = [{ box: { x: -2, y: -2, w: W2 + 4, h: r4(titleBottom + H2 * 0.08) }, angle: 180, from: 0.66, to: 0 }, { box: { x: r4(zw * 0.8), y: -2, w: W2 - r4(zw * 0.8) + 2, h: H2 + 4 }, angle: 90, from: 0, to: 0.8 }, { box: { x: -2, y: r4(H2 * 0.76), w: W2 + 4, h: H2 - r4(H2 * 0.76) + 2 }, angle: 0, from: 0.6, to: 0 }];
+    if (p.credit) drop("other", "Picture credit left out: this layout has no edge for it \u2014 carry it in the media booking.");
+  } else if (kind === "column") {
+    const zw = r4(Math.min(W2 * 0.52, H2 * 1.02));
+    const cx = zw + r4(m * 0.2), cw = W2 - cx - m;
+    let logoBox = null, rowTop = H2 - m;
+    if (p.logo) {
+      const s2 = within(aspect(p.logo), cw * 0.5, clamp3(H2 * 0.115, 16, H2 * 0.18));
+      logoBox = { x: W2 - mi - s2.w, y: H2 - r4(H2 * 0.035) - s2.h, w: s2.w, h: s2.h };
+      later.push(put3(p.logo, "kva_logo", logoBox, { slot: "lockup" }));
+      rowTop = logoBox.y;
+    }
+    if (p.strapline) {
+      const room = (logoBox ? logoBox.x : W2) - cx - m;
+      const px = clamp3(r4(H2 * 0.03), 9, 40);
+      const f = room > 110 ? fitText(p.strapline.text, { w: room, h: px * 2.6 }, { ...spec2(p.strapline), minSize: 9, maxSize: px, lineHeight: 1.12, maxLines: 2 }) : null;
+      if (f?.fits) {
+        const h = r4(f.height);
+        later.push(put3(p.strapline, "kva_strapline", { x: cx, y: H2 - r4(H2 * 0.04) - h, w: room, h }, { fontSize: f.fontSize, text: f.lines.join("\n"), lineHeight: 1.12, letterSpacing: p.strapline.letterSpacing !== void 0 ? p.strapline.letterSpacing * f.fontSize / p.strapline.fontSize : void 0 }));
+        rowTop = Math.min(rowTop, H2 - r4(H2 * 0.04) - h);
+      } else drop(straplineSlot, "Strapline left out: no legible room beside the logo in the copy column.");
+    }
+    if (p.title) {
+      const s2 = within(aspect(p.title), cw + mi, H2 * 0.32);
+      const b = { x: cx - mi, y: r4(H2 * 0.04), w: s2.w, h: s2.h };
+      later.push(...putBlock(p.title, "kva_title", b));
+      titleBottom = b.y + b.h;
+    }
+    const ps = pillSize(cw, cw * 0.74);
+    const copy = setCopy({ x: cx, y: 0, w: cw, h: 0 }, "left", clamp3(r4(Math.min(cw * 0.105, H2 * 0.08)), 12, 300), 2);
+    const gap = Math.max(5, r4(H2 * 0.035));
+    const blockH = copy.h + gap + ps.h;
+    const y0 = clamp3(titleBottom + (rowTop - titleBottom - blockH) / 2, titleBottom + r4(gap * 0.5), Math.max(titleBottom + r4(gap * 0.5), rowTop - gap - blockH));
+    later.push(...copy.build(y0), ...setPill({ x: cx, y: y0 + copy.h + gap, w: ps.w, h: ps.h }));
+    antherZone = { x: 0, y: 0, w: zw, h: H2 };
+    if (p.pattern) {
+      const h = r4(H2 * 0.22), w = h * aspect(p.pattern);
+      under.push(put3(p.pattern, "kva_pattern", { x: W2 - w + 2, y: H2 - h, w, h }));
+    }
+    shadeBoxes = [{ box: { x: r4(zw * 0.72), y: -2, w: W2 - r4(zw * 0.72) + 2, h: H2 + 4 }, angle: 90, from: 0, to: 0.82 }, { box: { x: -2, y: r4(H2 * 0.72), w: W2 + 4, h: H2 - r4(H2 * 0.72) + 2 }, angle: 0, from: 0.55, to: 0 }];
+    if (p.credit) drop("other", "Picture credit left out: this layout has no edge for it \u2014 carry it in the media booking.");
+  } else if (kind === "banner") {
+    const zw = r4(H2 * 1.02);
+    const x0 = zw + r4(m * 0.2), midW = r4((W2 - x0 - m) * 0.6), rx = x0 + midW + m, rw = W2 - rx - m;
+    if (p.title) {
+      const s2 = within(aspect(p.title), midW + mi, H2 * 0.46);
+      const b = { x: x0 - mi, y: r4(H2 * 0.05), w: s2.w, h: s2.h };
+      later.push(...putBlock(p.title, "kva_title", b));
+      titleBottom = b.y + b.h;
+    }
+    const copy = setCopy({ x: x0, y: 0, w: midW, h: 0 }, "left", clamp3(r4(H2 * 0.115), 11, 200), 2);
+    later.push(...copy.build(clamp3(titleBottom + r4(H2 * 0.03), 0, H2 - m - copy.h)));
+    const ps = pillSize(rw, rw * 0.92);
+    later.push(...setPill({ x: W2 - m - ps.w, y: r4(H2 * 0.2), w: ps.w, h: ps.h }));
+    if (p.logo) {
+      const s2 = within(aspect(p.logo), rw * 0.9, H2 * 0.3);
+      later.push(put3(p.logo, "kva_logo", { x: W2 - m - s2.w + r4(mi * 0.4), y: H2 - r4(H2 * 0.08) - s2.h, w: s2.w, h: s2.h }, { slot: "lockup" }));
+    }
+    if (p.strapline) drop(straplineSlot, "Strapline left out: a banner carries the title, the event, the pill and the logo.");
+    if (p.credit) drop("other", "Picture credit left out: it cannot be read at this size \u2014 carry it in the media booking.");
+    antherZone = { x: 0, y: 0, w: zw, h: H2 };
+    if (p.pattern) {
+      const h = r4(H2 * 0.34), w = h * aspect(p.pattern);
+      under.push(put3(p.pattern, "kva_pattern", { x: W2 - w + 2, y: H2 - h, w, h }));
+    }
+    shadeBoxes = [{ box: { x: r4(zw * 0.7), y: -2, w: W2 - r4(zw * 0.7) + 2, h: H2 + 4 }, angle: 90, from: 0, to: 0.84 }];
+  } else {
+    const micro = W2 < 400;
+    if (micro) {
+      showAnther = false;
+      drop("cutout", "Anther left out: on a strip this small it would be under 48px and crowd out the web address. The photograph stays, centred on the subject.");
+    }
+    const zw = r4(H2 * 1.12);
+    let x = micro ? m : zw + r4(m * 0.4), right = W2 - mi;
+    if (p.logo) {
+      const s2 = within(aspect(p.logo), W2 * (micro ? 0.23 : 0.2), H2 * 0.62);
+      right -= s2.w;
+      later.push(put3(p.logo, "kva_logo", { x: right, y: (H2 - s2.h) / 2, w: s2.w, h: s2.h }, { slot: "lockup" }));
+      right -= micro ? r4(m * 1.6) : m;
+    }
+    const ps = pillSize(W2 * (micro ? 0.42 : 0.3), H2 * 0.36 * (ctaBox ? aspect(ctaBox) : 6));
+    right -= ps.w;
+    later.push(...setPill({ x: right, y: (H2 - ps.h) / 2, w: ps.w, h: ps.h }));
+    right -= micro ? r4(m * 1.6) : m;
+    if (p.title) {
+      const s2 = within(aspect(p.title), micro ? right - x + mi : (right - x) * 0.5, H2 * (micro ? 0.8 : 0.74));
+      later.push(...putBlock(p.title, "kva_title", { x: x - mi, y: (H2 - s2.h) / 2, w: s2.w, h: s2.h }));
+      x += s2.w + r4(m * 0.3);
+    }
+    const room = right - x;
+    if (room >= 120) {
+      const copy = setCopy({ x, y: 0, w: room, h: 0 }, "left", clamp3(r4(H2 * 0.2), 10, 40), 2);
+      if (copy.fits && copy.h <= H2 - 6) later.push(...copy.build((H2 - copy.h) / 2));
+      else drop("headline", "Event copy left out: the strip carries the title, the pill and the logo.");
+    } else drop("headline", "Event copy left out: the strip carries the title, the pill and the logo.");
+    if (p.badge) drop("other", "Badge left out: it cannot be read on a strip.");
+    if (p.strapline) drop(straplineSlot, "Strapline left out: a strip carries the title, the pill and the logo.");
+    if (p.pattern) drop("band", "Pattern left out: strips carry no pattern.");
+    if (p.credit) drop("other", "Picture credit left out: it cannot be read at this size \u2014 carry it in the media booking.");
+    antherZone = { x: 0, y: 0, w: zw, h: H2 };
+    shadeBoxes = micro ? [{ box: { x: -2, y: -2, w: W2 + 4, h: H2 + 4 }, angle: 90, from: 0.72, to: 0.8 }] : [{ box: { x: r4(zw * 0.8), y: -2, w: W2 - r4(zw * 0.8) + 2, h: H2 + 4 }, angle: 90, from: 0.2, to: 0.78 }];
+  }
+  const placed2 = placeAnther(antherZone, { w: W2, h: H2 }, p.anther.shape.aspect ? { w: p.anther.shape.aspect * 1e3, h: 1e3 } : { w: p.anther.w, h: p.anther.h }, p.anther.shape, kind === "strip" ? 3 : mi, kind === "tall" ? r4(mi * 0.4) : void 0);
+  const antherEl = put3(p.anther, "kva_anther", placed2.box, { slot: "cutout", fit: "contain" });
+  if (showAnther) notes.push(`${ANTHER_RULE.title}: shown whole, as large as the margins allow, its stem running off the artwork's edge.`, ...placed2.notes);
+  const k = placed2.box.w / p.anther.w;
+  let bgBox = { x: placed2.box.x + (p.bg.x - p.anther.x) * k, y: placed2.box.y + (p.bg.y - p.anther.y) * k, w: p.bg.w * k, h: p.bg.h * k };
+  const covers = (b) => b.x <= 0.5 && b.y <= 0.5 && b.x + b.w >= W2 - 0.5 && b.y + b.h >= H2 - 0.5;
+  if (!covers(bgBox)) {
+    const c = placed2.circle, u = (c.cx - bgBox.x) / bgBox.w, v = (c.cy - bgBox.y) / bgBox.h;
+    const need = Math.max(W2 / bgBox.w, H2 / bgBox.h, c.cx / (u * bgBox.w), (W2 - c.cx) / ((1 - u) * bgBox.w), c.cy / (v * bgBox.h), (H2 - c.cy) / ((1 - v) * bgBox.h));
+    const s2 = Math.max(1, need) * 1.002;
+    bgBox = { x: c.cx - u * bgBox.w * s2, y: c.cy - v * bgBox.h * s2, w: bgBox.w * s2, h: bgBox.h * s2 };
+    notes.push("The photograph behind the anther is enlarged to fill this shape; the picture inside the anther is unchanged.");
+  }
+  out.push(put3(p.bg, "kva_photo", bgBox, { slot: "photo", fit: "cover", focusX: void 0, focusY: void 0, focusBox: void 0 }));
+  const shadeColour = p.shade?.fill ?? "#140d06";
+  shadeBoxes.forEach((sb, i) => out.push({ id: `kva_shade_${i}`, type: "rect", slot: "scrim", fill: shadeColour, x: r4(sb.box.x), y: r4(sb.box.y), w: r4(sb.box.w), h: r4(sb.box.h), locked: true, gradient: { angle: sb.angle, stops: [{ color: shadeColour, alpha: sb.from, at: 0 }, ...sb.mid ? [{ color: shadeColour, alpha: sb.mid.alpha, at: sb.mid.at }] : [], { color: shadeColour, alpha: sb.to, at: 1 }] } }));
+  out.push(...under, ...showAnther ? [antherEl] : []);
+  if (p.badge && kind !== "strip" && showAnther) {
+    const c = placed2.circle, d = c.r * 2 * 0.31;
+    if (d < 44) drop("other", "Badge left out: it cannot be read at this size.");
+    else {
+      const bx = clamp3(c.cx - c.r * 0.79 - d / 2, mi, W2 - mi - d), by = clamp3(c.cy - c.r * 0.89 - d / 2, titleBottom > 0 && kind === "tall" ? titleBottom - d * 0.12 : mi, H2 - mi - d);
+      out.push(...putBlock(p.badge, "kva_badge", { x: bx, y: by, w: d, h: d / aspect(p.badge) }));
+    }
+  }
+  out.push(...later);
+  notes.unshift(`Key visual composed as a ${kind === "tall" ? "tall stack" : kind === "square" ? "square (title across the top, anther left, copy right)" : kind === "column" ? "two-column layout (anther left, copy right)" : kind === "banner" ? "banner (anther \xB7 title and event \xB7 pill and logo)" : "strip (anther \xB7 title \xB7 event \xB7 pill \xB7 logo)"}.`);
+  return {
+    config: { kind: "freeform", elements: out, adaptMethod: "key-visual:anther", adaptNotes: notes, ...dropped.length ? { droppedParts: dropped, needsReview: true } : {} },
+    notes,
+    formatKind: kind
+  };
+}
 
 // src/lib/principles.ts
-import sharp6 from "sharp";
+import sharp7 from "sharp";
 var COPY_SLOTS = /* @__PURE__ */ new Set(["headline", "subheadline", "message"]);
 var ALIGN_SLOTS = /* @__PURE__ */ new Set(["headline", "subheadline", "message", "cta", "lockup"]);
 function label2(el) {
@@ -232627,8 +234982,8 @@ function scoreGeometry(master, srcW, srcH, adapted, w, h) {
       if (!sameAxisBuild && groupOf(slots[i]) !== groupOf(slots[j])) continue;
       if (h <= 120 && w / h >= 2.5 && (groupOf(slots[i]) !== "copy" || groupOf(slots[j]) !== "copy")) continue;
       pairs++;
-      const r4 = rel(a1, b1, tolA);
-      if (m.left && r4.left || m.centre && r4.centre || m.right && r4.right) kept++;
+      const r6 = rel(a1, b1, tolA);
+      if (m.left && r6.left || m.centre && r6.centre || m.right && r6.right) kept++;
       else {
         const off = m.left ? Math.abs(a1.x - b1.x) : m.centre ? Math.abs(a1.x + a1.w / 2 - (b1.x + b1.w / 2)) : Math.abs(a1.x + a1.w - (b1.x + b1.w));
         issues.push({ severity: off > short * 0.08 ? "error" : "warn", message: `Alignment: ${slots[i]} and ${slots[j]} shared a ${m.left ? "left edge" : m.centre ? "centre line" : "right edge"} in the master but are ${Math.round(off)}px apart here.`, elementId: a1.id });
@@ -232679,12 +235034,12 @@ function scoreGeometry(master, srcW, srcH, adapted, w, h) {
   }
   return { scores: { alignment: round(alignment), margins: round(margins), balance: round(balance) }, issues };
 }
-function relLum(r4, g, b) {
+function relLum(r6, g, b) {
   const c = (v) => {
     const s2 = v / 255;
     return s2 <= 0.03928 ? s2 / 12.92 : Math.pow((s2 + 0.055) / 1.055, 2.4);
   };
-  return 0.2126 * c(r4) + 0.7152 * c(g) + 0.0722 * c(b);
+  return 0.2126 * c(r6) + 0.7152 * c(g) + 0.0722 * c(b);
 }
 function ratio(l1, l2) {
   const [a, b] = l1 >= l2 ? [l1, l2] : [l2, l1];
@@ -232694,7 +235049,7 @@ function round(n) {
   return Math.round(n * 100) / 100;
 }
 async function raw(png) {
-  const { data, info } = await sharp6(png).ensureAlpha().raw().toBuffer({ resolveWithObject: true });
+  const { data, info } = await sharp7(png).ensureAlpha().raw().toBuffer({ resolveWithObject: true });
   return { data, width: info.width, height: info.height };
 }
 async function scoreContrast(config2, w, h, loadImage, brandFontFamily, baseline = /* @__PURE__ */ new Map()) {
@@ -232720,8 +235075,8 @@ async function scoreContrast(config2, w, h, loadImage, brandFontFamily, baseline
     const collect = (img, ground) => {
       const pts2 = [];
       for (let y = y0; y < y1; y++) for (let x = x0; x < x1; x++) {
-        const [r5, g, b] = px(img, x, y);
-        if (Math.abs(r5 - ground) + Math.abs(g - ground) + Math.abs(b - ground) > 60) pts2.push([x, y]);
+        const [r7, g, b] = px(img, x, y);
+        if (Math.abs(r7 - ground) + Math.abs(g - ground) + Math.abs(b - ground) > 60) pts2.push([x, y]);
       }
       return pts2;
     };
@@ -232736,11 +235091,11 @@ async function scoreContrast(config2, w, h, loadImage, brandFontFamily, baseline
       pts = collect(src, 0);
       if (pts.length < area3 * 5e-3) continue;
     }
-    const key = (r5, g, b) => r5 >> 4 << 8 | g >> 4 << 4 | b >> 4;
+    const key = (r7, g, b) => r7 >> 4 << 8 | g >> 4 << 4 | b >> 4;
     const hist = /* @__PURE__ */ new Map();
     for (const [x, y] of pts) {
-      const [r5, g, b] = px(src, x, y);
-      hist.set(key(r5, g, b), (hist.get(key(r5, g, b)) ?? 0) + 1);
+      const [r7, g, b] = px(src, x, y);
+      hist.set(key(r7, g, b), (hist.get(key(r7, g, b)) ?? 0) + 1);
     }
     let modeKey = -1, modeN = 0;
     for (const [k, n2] of hist) if (n2 > modeN) {
@@ -232751,9 +235106,9 @@ async function scoreContrast(config2, w, h, loadImage, brandFontFamily, baseline
     if (el.type !== "text" && modeN > area3 * 0.45) {
       let gr = 0, gg = 0, gb = 0, gn = 0;
       for (const [x, y] of pts) {
-        const [r5, g, b] = px(src, x, y);
-        if (key(r5, g, b) === modeKey) {
-          gr += r5;
+        const [r7, g, b] = px(src, x, y);
+        if (key(r7, g, b) === modeKey) {
+          gr += r7;
           gg += g;
           gb += b;
           gn++;
@@ -232761,15 +235116,15 @@ async function scoreContrast(config2, w, h, loadImage, brandFontFamily, baseline
       }
       const ground = [gr / gn, gg / gn, gb / gn];
       const glyphs = pts.filter(([x, y]) => {
-        const [r5, g, b] = px(src, x, y);
-        return Math.abs(r5 - ground[0]) + Math.abs(g - ground[1]) + Math.abs(b - ground[2]) > 90;
+        const [r7, g, b] = px(src, x, y);
+        return Math.abs(r7 - ground[0]) + Math.abs(g - ground[1]) + Math.abs(b - ground[2]) > 90;
       });
       if (glyphs.length < area3 * 5e-3) continue;
       const step = Math.max(1, Math.floor(glyphs.length / 4e3));
       for (let i = 0; i < glyphs.length; i += step) {
         const [x, y] = glyphs[i];
-        const [r5, g, b] = px(src, x, y);
-        lc += relLum(r5, g, b);
+        const [r7, g, b] = px(src, x, y);
+        lc += relLum(r7, g, b);
         n++;
       }
       lb = relLum(ground[0], ground[1], ground[2]) * n;
@@ -232785,24 +235140,24 @@ async function scoreContrast(config2, w, h, loadImage, brandFontFamily, baseline
       }
     }
     if (n === 0) continue;
-    const r4 = ratio(lc / n, lb / n);
+    const r6 = ratio(lc / n, lb / n);
     const t = el.type === "text" ? el : null;
     const hex = t && /^#?[0-9a-f]{6}$/i.test(t.color) ? t.color.replace("#", "") : null;
     if (hex && n > 0) lc = relLum(parseInt(hex.slice(0, 2), 16), parseInt(hex.slice(2, 4), 16), parseInt(hex.slice(4, 6), 16)) * n;
-    const r22 = hex ? ratio(lc / n, lb / n) : r4;
+    const r22 = hex ? ratio(lc / n, lb / n) : r6;
     const large = t ? t.fontSize >= 18 : Math.min(el.w, el.h) >= 18;
     const floor = large ? 3 : 4.5;
     detail.push({ id: el.id, label: label2(el), ratio: round(r22), floor });
     if (r22 < floor) {
-      const r5 = r22;
+      const r7 = r22;
       const designed = baseline.get(label2(el));
-      if (designed != null && r5 >= designed * 0.8) {
-        issues.push({ severity: "warn", message: `Contrast: ${label2(el)} reads at ${r5.toFixed(1)}:1 \u2014 under the ${floor}:1 floor, but the master reads the same (${designed.toFixed(1)}:1), so as designed.`, elementId: el.id });
+      if (designed != null && r7 >= designed * 0.8) {
+        issues.push({ severity: "warn", message: `Contrast: ${label2(el)} reads at ${r7.toFixed(1)}:1 \u2014 under the ${floor}:1 floor, but the master reads the same (${designed.toFixed(1)}:1), so as designed.`, elementId: el.id });
         continue;
       }
-      const msg = `Contrast: ${label2(el)} reads at ${r5.toFixed(1)}:1 against what is behind it (floor ${floor}:1${designed != null ? `; the master reads ${designed.toFixed(1)}:1` : ""}).`;
+      const msg = `Contrast: ${label2(el)} reads at ${r7.toFixed(1)}:1 against what is behind it (floor ${floor}:1${designed != null ? `; the master reads ${designed.toFixed(1)}:1` : ""}).`;
       if (el.slot === "headline" || el.slot === "message" || t && t.role === "headline") rejections.push(msg);
-      else issues.push({ severity: r5 < floor * 0.7 ? "error" : "warn", message: msg, elementId: el.id });
+      else issues.push({ severity: r7 < floor * 0.7 ? "error" : "warn", message: msg, elementId: el.id });
     }
   }
   detail.sort((a, b) => a.ratio - b.ratio);
@@ -232822,7 +235177,7 @@ async function contrastBaseline(key, master, w, h, loadImage, brandFontFamily) {
 // src/lib/subjectDetect.ts
 init_sdk();
 init_logger();
-import sharp7 from "sharp";
+import sharp8 from "sharp";
 var SUBJECT_MODEL = "claude-opus-5";
 var SCHEMA = {
   type: "object",
@@ -232843,9 +235198,9 @@ var SCHEMA = {
 var clamp01 = (v) => Math.max(0, Math.min(1, Number(v) || 0));
 async function detectSubject(bytes2) {
   if (!process.env.ANTHROPIC_API_KEY) return null;
-  const meta = await sharp7(bytes2).metadata();
+  const meta = await sharp8(bytes2).metadata();
   if (!meta.width || !meta.height) return null;
-  const jpeg = await sharp7(bytes2).resize(1200, 1200, { fit: "inside", withoutEnlargement: true }).jpeg({ quality: 82 }).toBuffer();
+  const jpeg = await sharp8(bytes2).resize(1200, 1200, { fit: "inside", withoutEnlargement: true }).jpeg({ quality: 82 }).toBuffer();
   const client = new Anthropic();
   const response = await client.beta.messages.create(
     {
@@ -232888,12 +235243,12 @@ async function detectSubject(bytes2) {
   const w = Math.max(0.02, Math.min(1 - x, clamp01(b.w))), h = Math.max(0.02, Math.min(1 - y, clamp01(b.h)));
   return {
     subject: String(parsed.subject ?? "").slice(0, 120),
-    box: { x: r3(x), y: r3(y), w: r3(w), h: r3(h) },
+    box: { x: r33(x), y: r33(y), w: r33(w), h: r33(h) },
     keepWhole: parsed.keepWhole === true,
     faces: Math.max(0, Math.min(50, Math.round(Number(parsed.faces) || 0)))
   };
 }
-var r3 = (n) => Math.round(n * 1e3) / 1e3;
+var r33 = (n) => Math.round(n * 1e3) / 1e3;
 function photosNeedingSubject(config2) {
   if (config2.elements.some((e) => e.slot === "cutout")) return [];
   return config2.elements.filter(
@@ -232917,8 +235272,8 @@ async function ensureSubjects(config2, loadImage) {
       elements[idx] = {
         ...photo,
         focusBox: found.box,
-        focusX: r3(found.box.x + found.box.w / 2),
-        focusY: r3(found.box.y + found.box.h / 2),
+        focusX: r33(found.box.x + found.box.w / 2),
+        focusY: r33(found.box.y + found.box.h / 2),
         focusSource: "vision",
         subject: found.subject,
         ...found.keepWhole ? { keepWhole: true } : {}
@@ -232945,11 +235300,11 @@ function panToKeepBox(slackX, slackY, window2, boxPx, fallback) {
   };
   const ax = axis(slackX, window2.w, boxPx.x, boxPx.w, fallback.x);
   const ay = axis(slackY, window2.h, boxPx.y, boxPx.h, fallback.y);
-  return { x: r3(ax.p), y: r3(ay.p), whole: ax.whole && ay.whole };
+  return { x: r33(ax.p), y: r33(ay.p), whole: ax.whole && ay.whole };
 }
 
 // src/lib/layeredArtwork.ts
-import sharp8 from "sharp";
+import sharp9 from "sharp";
 init_objectStorage();
 init_logger();
 var area2 = (b) => Math.max(0, b.w) * Math.max(0, b.h);
@@ -232958,7 +235313,7 @@ var overlap = (a, b) => {
   const iy = Math.max(0, Math.min(a.y + a.h, b.y + b.h) - Math.max(a.y, b.y));
   return ix * iy;
 };
-var r2 = Math.round;
+var r5 = Math.round;
 function isImageOnly(config2) {
   return config2.elements.length >= 3 && config2.elements.every((e) => e.type === "image");
 }
@@ -233028,6 +235383,14 @@ function inferImageSlots(config2, W2, H2) {
     const sub = images.filter(free).filter((i) => i.w / Math.max(1, i.h) >= 4 && i.h <= headlineBox.h * 0.6 && i.y >= headlineBox.y + headlineBox.h * 0.6 && i.y <= headlineBox.y + headlineBox.h * 2.2).filter((i) => i.x + i.w / 2 >= hx0 && i.x + i.w / 2 <= hx1 && !(panelBox && overlap(i, panelBox) > area2(i) * 0.5)).sort((a, b) => a.y - b.y)[0] ?? null;
     if (sub) set2(sub, "subheadline");
   }
+  if (headlineBox) {
+    const hx0 = headlineBox.x, hx1 = headlineBox.x + headlineBox.w;
+    const kick = images.filter(free).filter((i) => i.w / Math.max(1, i.h) >= 2.5 && i.h <= headlineBox.h * 0.9 && i.w <= headlineBox.w * 1.1 && i.y + i.h <= headlineBox.y + headlineBox.h * 0.15 && i.y + i.h >= headlineBox.y - headlineBox.h * 1.2).filter((i) => i.x + i.w / 2 >= hx0 && i.x + i.w / 2 <= hx1 && !(panelBox && overlap(i, panelBox) > area2(i) * 0.5)).sort((a, b) => b.y - a.y)[0] ?? null;
+    if (kick) {
+      set2(kick, "kicker");
+      notes.push("Kicker line recognised above the headline.");
+    }
+  }
   const cta = images.filter(free).filter((i) => {
     const a = i.w / Math.max(1, i.h);
     return a >= 2.2 && a <= 8 && i.h <= Math.min(W2, H2) * 0.2 && area2(i) < canvas2 * 0.1 && i.y + i.h / 2 >= H2 * 0.45;
@@ -233044,9 +235407,69 @@ function inferImageSlots(config2, W2, H2) {
   if (!headlineBox) notes.push("No headline layer recognised.");
   return { config: { ...config2, elements }, glyphRun, notes };
 }
+async function looksLikeScrim(bytes2) {
+  try {
+    const { data, info } = await sharp9(bytes2).resize(32, 32, { fit: "fill" }).ensureAlpha().raw().toBuffer({ resolveWithObject: true });
+    const n = info.width * info.height;
+    let alphaSum = 0, opaque = 0;
+    const lum = [];
+    for (let i = 0; i < n; i++) {
+      const a = data[i * 4 + 3] / 255;
+      alphaSum += a;
+      if (a > 0.9) {
+        opaque++;
+        lum.push((0.299 * data[i * 4] + 0.587 * data[i * 4 + 1] + 0.114 * data[i * 4 + 2]) / 255);
+      }
+    }
+    const meanAlpha = alphaSum / n;
+    const opaqueShare = opaque / n;
+    if (opaqueShare < 0.4 && meanAlpha < 0.75) return true;
+    if (lum.length > 0) {
+      const mean = lum.reduce((a, b) => a + b, 0) / lum.length;
+      const sd = Math.sqrt(lum.reduce((a, b) => a + (b - mean) ** 2, 0) / lum.length);
+      if (sd < 0.08) return true;
+    }
+    return false;
+  } catch {
+    return true;
+  }
+}
+async function verifyScrimSlot(config2, io) {
+  const notes = [];
+  let changed = false;
+  const elements = config2.elements.map((e) => ({ ...e }));
+  const hs = elements.filter((e) => e.type === "image" && e.slot === "headline");
+  if (hs.length) {
+    const hb = { x: Math.min(...hs.map((i) => i.x)), y: Math.min(...hs.map((i) => i.y)), w: Math.max(...hs.map((i) => i.x + i.w)) - Math.min(...hs.map((i) => i.x)), h: Math.max(...hs.map((i) => i.y + i.h)) - Math.min(...hs.map((i) => i.y)) };
+    for (const el of elements) {
+      if (el.type !== "image" || el.slot !== "cutout") continue;
+      const wide = el.w / Math.max(1, el.h) >= 2.5 && el.h <= hb.h * 0.9 && el.w <= hb.w * 1.1;
+      const above = el.y + el.h <= hb.y + hb.h * 0.15 && el.y + el.h >= hb.y - hb.h * 1.2;
+      const inColumn = el.x + el.w / 2 >= hb.x && el.x + el.w / 2 <= hb.x + hb.w;
+      if (wide && above && inColumn) {
+        el.slot = "kicker";
+        changed = true;
+        notes.push("A line above the headline was labelled as a cut-out; it is now the kicker.");
+      }
+    }
+  }
+  const scrims = elements.filter((e) => e.type === "image" && e.slot === "scrim" && !!e.src);
+  if (scrims.length === 0) return { config: changed ? { ...config2, elements } : config2, changed, notes };
+  for (const sc of scrims) {
+    const bytes2 = await io.loadImage(sc.src);
+    if (!bytes2) continue;
+    if (await looksLikeScrim(bytes2)) continue;
+    const el = elements.find((e) => e.id === sc.id);
+    if (!el) continue;
+    el.slot = "cutout";
+    changed = true;
+    notes.push("A picture layer over the photo was labelled as a scrim; it is now the cut-out.");
+  }
+  return { config: changed ? { ...config2, elements } : config2, changed, notes };
+}
 async function edgeColour(bytes2) {
   try {
-    const { data, info } = await sharp8(bytes2).resize(16, 16, { fit: "fill" }).removeAlpha().raw().toBuffer({ resolveWithObject: true });
+    const { data, info } = await sharp9(bytes2).resize(16, 16, { fit: "fill" }).removeAlpha().raw().toBuffer({ resolveWithObject: true });
     const px = [];
     for (let y = 0; y < info.height; y++) for (let x = 0; x < info.width; x++) {
       if (x === 0 || y === 0 || x === info.width - 1 || y === info.height - 1) {
@@ -233094,11 +235517,11 @@ async function mergeGlyphRun(config2, ids, io) {
     if (!g.src) continue;
     const bytes2 = await io.loadImage(g.src);
     if (!bytes2) continue;
-    const resized = await sharp8(bytes2).resize(Math.max(1, r2(g.w * scale)), Math.max(1, r2(g.h * scale)), { fit: "fill" }).png().toBuffer();
-    layers.push({ input: resized, left: r2((g.x - x0) * scale), top: r2((g.y - y0) * scale) });
+    const resized = await sharp9(bytes2).resize(Math.max(1, r5(g.w * scale)), Math.max(1, r5(g.h * scale)), { fit: "fill" }).png().toBuffer();
+    layers.push({ input: resized, left: r5((g.x - x0) * scale), top: r5((g.y - y0) * scale) });
   }
   if (!layers.length) return config2;
-  const merged = await sharp8({ create: { width: Math.max(1, (x1 - x0) * scale), height: Math.max(1, (y1 - y0) * scale), channels: 4, background: { r: 0, g: 0, b: 0, alpha: 0 } } }).composite(layers).png().toBuffer();
+  const merged = await sharp9({ create: { width: Math.max(1, (x1 - x0) * scale), height: Math.max(1, (y1 - y0) * scale), channels: 4, background: { r: 0, g: 0, b: 0, alpha: 0 } } }).composite(layers).png().toBuffer();
   const stored = await io.uploadBytes(merged, "image/png");
   const first = run[0];
   const runMotion = run.map((g) => g.groupMotion ?? g.motion).find(Boolean);
@@ -233128,6 +235551,13 @@ async function enrichLayeredArtwork(config2, W2, H2, io) {
   if (!isImageOnly(config2) || hasLayeredSlots(config2)) return { config: config2, changed: false, notes: [] };
   const inferred = inferImageSlots(config2, W2, H2);
   let next = inferred.config;
+  try {
+    const v = await verifyScrimSlot(next, io);
+    next = v.config;
+    inferred.notes.push(...v.notes);
+  } catch (err) {
+    logger2.warn({ err }, "layered artwork: scrim check failed; keeping the geometric guess");
+  }
   if (inferred.glyphRun.length >= 2) {
     try {
       next = await mergeGlyphRun(next, inferred.glyphRun, io);
@@ -233156,19 +235586,19 @@ async function splitPanelGraphic(config2, io) {
   if (!panel) return { config: config2, notes };
   const bytes2 = await io.loadImage(panel.src);
   if (!bytes2) return { config: config2, notes };
-  const meta = await sharp8(bytes2).metadata();
+  const meta = await sharp9(bytes2).metadata();
   if (!meta.width || !meta.height) return { config: config2, notes };
   const W2 = meta.width, H2 = meta.height;
-  const raw2 = await sharp8(bytes2).ensureAlpha().raw().toBuffer();
+  const raw2 = await sharp9(bytes2).ensureAlpha().raw().toBuffer();
   const px = (x, y) => {
     const i = (y * W2 + x) * 4;
     return [raw2[i], raw2[i + 1], raw2[i + 2], raw2[i + 3]];
   };
   const tally = /* @__PURE__ */ new Map();
   const bump = (x, y) => {
-    const [r4, g, b, a] = px(x, y);
+    const [r6, g, b, a] = px(x, y);
     if (a < 200) return;
-    const k = `${r4 >> 3},${g >> 3},${b >> 3}`;
+    const k = `${r6 >> 3},${g >> 3},${b >> 3}`;
     tally.set(k, (tally.get(k) ?? 0) + 1);
   };
   for (let x = 0; x < W2; x++) {
@@ -233182,20 +235612,41 @@ async function splitPanelGraphic(config2, io) {
   }
   const top = [...tally.entries()].sort((a, b) => b[1] - a[1])[0];
   if (!top) return { config: config2, notes };
-  const [gr, gg, gb] = top[0].split(",").map((v) => (Number(v) << 3) + 4);
-  const classify = (r4, g, b, a) => {
+  const [qr, qg, qb] = top[0].split(",").map(Number);
+  let sr = 0, sg = 0, sb = 0, sn = 0;
+  const acc = (x, y) => {
+    const [r6, g, b, a] = px(x, y);
+    if (a < 200) return;
+    if (r6 >> 3 === qr && g >> 3 === qg && b >> 3 === qb) {
+      sr += r6;
+      sg += g;
+      sb += b;
+      sn++;
+    }
+  };
+  for (let x = 0; x < W2; x++) {
+    acc(x, 0);
+    acc(x, H2 - 1);
+    acc(x, Math.floor(H2 / 2));
+  }
+  for (let y = 0; y < H2; y++) {
+    acc(0, y);
+    acc(W2 - 1, y);
+  }
+  const gr = sn ? Math.round(sr / sn) : (qr << 3) + 4, gg = sn ? Math.round(sg / sn) : (qg << 3) + 4, gb = sn ? Math.round(sb / sn) : (qb << 3) + 4;
+  const classify = (r6, g, b, a) => {
     if (a < 40) return "none";
-    if (Math.abs(r4 - gr) + Math.abs(g - gg) + Math.abs(b - gb) < 72) return "ground";
-    if (r4 > 185 && g > 165 && b < 140 && r4 - b > 80) return "yellow";
-    if (r4 > 210 && g > 210 && b > 210) return "white";
+    if (Math.abs(r6 - gr) + Math.abs(g - gg) + Math.abs(b - gb) < 72) return "ground";
+    if (r6 > 185 && g > 165 && b < 140 && r6 - b > 80) return "yellow";
+    if (r6 > 210 && g > 210 && b > 210) return "white";
     return "other";
   };
   const rows = [];
   for (let y = 0; y < H2; y++) {
     const st = { content: 0, yellow: 0, white: 0, other: 0, x0: W2, x1: -1 };
     for (let x = 0; x < W2; x++) {
-      const [r4, g, b, a] = px(x, y);
-      const c = classify(r4, g, b, a);
+      const [r6, g, b, a] = px(x, y);
+      const c = classify(r6, g, b, a);
       if (c === "ground" || c === "none") continue;
       st.content++;
       if (c === "yellow") st.yellow++;
@@ -233235,7 +235686,22 @@ async function splitPanelGraphic(config2, io) {
   const isMessage = (s2) => !isBand(s2) && s2.yellow >= s2.content * 0.55 && s2.y1 - s2.y0 >= 6;
   const isLockup = (s2) => !isBand(s2) && !isMessage(s2) && s2.white >= s2.content * 0.3 && s2.white + s2.other >= s2.content * 0.6 && s2.y0 > H2 * 0.35 && s2.y1 - s2.y0 >= 8;
   const band = segs.find(isBand) ?? null;
-  const message = segs.filter(isMessage).sort((a, b) => b.content - a.content)[0] ?? null;
+  const msgSegs = segs.filter(isMessage).sort((a, b) => a.y0 - b.y0);
+  const groups = [];
+  for (const seg of msgSegs) {
+    const last = groups[groups.length - 1];
+    const lineH = last ? Math.max(last.y1 - last.y0, seg.y1 - seg.y0) : 0;
+    if (last && seg.y0 - last.y1 <= Math.max(8, lineH * 1.5)) {
+      last.y1 = seg.y1;
+      last.x0 = Math.min(last.x0, seg.x0);
+      last.x1 = Math.max(last.x1, seg.x1);
+      last.content += seg.content;
+      last.yellow += seg.yellow;
+      last.white += seg.white;
+      last.other += seg.other;
+    } else groups.push({ ...seg });
+  }
+  const message = groups.sort((a, b) => b.content - a.content)[0] ?? null;
   const lockup = [...segs.filter(isLockup)].pop() ?? null;
   if (!message && !lockup) {
     notes.push("Panel graphic kept whole: no message or lockup could be told apart in it.");
@@ -233248,7 +235714,7 @@ async function splitPanelGraphic(config2, io) {
     const x0 = Math.max(0, seg.x0 - pad), y0 = Math.max(0, seg.y0 - pad);
     const x1 = Math.min(W2 - 1, seg.x1 + pad), y1 = Math.min(H2 - 1, seg.y1 + pad);
     const cw = x1 - x0 + 1, ch = y1 - y0 + 1;
-    const buf = await sharp8(bytes2).extract({ left: x0, top: y0, width: cw, height: ch }).png().toBuffer();
+    const buf = await sharp9(bytes2).extract({ left: x0, top: y0, width: cw, height: ch }).png().toBuffer();
     const stored = await io.uploadBytes(buf, "image/png");
     const w = cw * sx, h = ch * sy;
     const el = {
@@ -233258,23 +235724,48 @@ async function splitPanelGraphic(config2, io) {
       slot,
       src: `/api/storage${stored}`,
       fit: "contain",
-      x: r2(panel.x + x0 * sx),
-      y: r2(panel.y + y0 * sy),
-      w: r2(w),
-      h: r2(h),
+      x: r5(panel.x + x0 * sx),
+      y: r5(panel.y + y0 * sy),
+      w: r5(w),
+      h: r5(h),
       panelPart: true,
-      ...panel.motion ? { motion: { ...panel.motion, w0: r2(w), h0: r2(h) } } : {}
+      ...panel.motion ? { motion: { ...panel.motion, w0: r5(w), h0: r5(h) } } : {}
     };
     parts.push(el);
   };
   if (band) await cut(band, "band", "layer_band");
   if (message) await cut(message, "message", "layer_message");
   if (lockup) await cut(lockup, "lockup", "layer_lockup");
+  let panelEl = panel;
+  try {
+    const cutSegs = [band, message, lockup].filter((x) => !!x);
+    const overlays = cutSegs.map((seg) => {
+      const pad = 2;
+      const x0 = Math.max(0, seg.x0 - pad), y0 = Math.max(0, seg.y0 - pad);
+      const x1 = Math.min(W2 - 1, seg.x1 + pad), y1 = Math.min(H2 - 1, seg.y1 + pad);
+      return { input: { create: { width: x1 - x0 + 1, height: y1 - y0 + 1, channels: 4, background: { r: gr, g: gg, b: gb, alpha: 1 } } }, left: x0, top: y0 };
+    });
+    const masked = await sharp9(bytes2).composite(overlays).png().toBuffer();
+    const storedPanel = await io.uploadBytes(masked, "image/png");
+    panelEl = { ...panel, src: `/api/storage${storedPanel}`, panelMasked: true };
+  } catch (err) {
+    logger2.warn({ err }, "layered artwork: panel masking failed; keeping the unmasked panel");
+  }
   const idx = config2.elements.findIndex((e) => e.id === panel.id);
   const elements = [...config2.elements];
+  elements[idx] = panelEl;
   elements.splice(idx + 1, 0, ...parts);
   notes.push(`Panel graphic cut into ${parts.map((p) => p.slot).join(", ")} so the panel can be re-stacked at any size.`);
   return { config: { ...config2, elements }, notes };
+}
+async function resplitLegacyPanel(config2, io) {
+  const panel = config2.elements.find((e) => e.type === "image" && e.slot === "panel" && !!e.src);
+  if (!panel || panel.panelMasked || !hasPanelParts(config2)) return { config: config2, changed: false, notes: [] };
+  const stripped = { ...config2, elements: config2.elements.filter((e) => !(e.type === "image" && e.panelPart)) };
+  const split2 = await splitPanelGraphic(stripped, io);
+  const masked = split2.config.elements.some((e) => e.type === "image" && e.slot === "panel" && e.panelMasked);
+  if (!masked) return { config: config2, changed: false, notes: [] };
+  return { config: split2.config, changed: true, notes: ["Panel graphic re-cut with its parts painted out, so nothing is drawn twice.", ...split2.notes] };
 }
 var DEFAULT_DISPLAY = {
   stacked: { headlineH: 0.193, headlineCy: 0.422, subW: 0.986, subH: 0.517, subGap: 0.069, cutoutW: 0.8, cutoutCx: 0.41, cutoutBleed: 0.45, message: { cy: 0.36, w: 0.73 }, cta: { cy: 0.55 }, lockup: { cy: 0.82, w: 0.7 }, bandH: 0.147 },
@@ -233307,23 +235798,23 @@ function adaptLayered(master, srcW, srcH, dstW, dstH, opts = {}) {
   const cls = opts.formatClass ?? classifyAspect(dstW, dstH);
   const base = RECIPES[cls];
   const short = Math.min(dstW, dstH);
-  const spec = opts.spec ?? null;
-  const isDisplayCanvas = spec?.alwaysDisplay ? true : short <= 400;
-  const fixedRange = spec?.parts.cta?.fixedShortRange;
+  const spec3 = opts.spec ?? null;
+  const isDisplayCanvas = spec3?.alwaysDisplay ? true : short <= 400;
+  const fixedRange = spec3?.parts.cta?.fixedShortRange;
   const fixedInRange = !fixedRange || short >= fixedRange[0] * 0.75 && short <= fixedRange[1] * 1.35;
-  const zone = spec?.zones[cls];
+  const zone = spec3?.zones[cls];
   const zonePhotoFrac = zone ? isDisplayCanvas && zone.displayPhotoFrac != null ? zone.displayPhotoFrac : zone.photoFrac : base.photoFrac;
   const recipe = zone ? { ...base, axis: zone.axis === "row" ? "row" : zone.axis === "side" ? "side" : "stacked", photoFrac: zonePhotoFrac, bandFrac: zone.bandFrac, bandAt: zone.bandAt } : base;
-  const margin = r2(short / 18);
+  const margin = r5(short / 18);
   const isStrip = cls === "strip";
-  if (spec) notes.push(`Laid out to the ${spec.name} schema.`);
+  if (spec3) notes.push(`Laid out to the ${spec3.name} schema.`);
   let photoZone, panelZone;
   if (recipe.axis === "stacked") {
-    const ph = r2(dstH * recipe.photoFrac);
+    const ph = r5(dstH * recipe.photoFrac);
     photoZone = { x: 0, y: 0, w: dstW, h: ph };
     panelZone = { x: 0, y: ph, w: dstW, h: dstH - ph };
   } else {
-    const pw = r2(dstW * recipe.photoFrac);
+    const pw = r5(dstW * recipe.photoFrac);
     photoZone = { x: 0, y: 0, w: pw, h: dstH };
     panelZone = { x: pw, y: 0, w: dstW - pw, h: dstH };
   }
@@ -233359,6 +235850,11 @@ function adaptLayered(master, srcW, srcH, dstW, dstH, opts = {}) {
     }
   }
   const out = [];
+  const dropped = [];
+  const drop = (slot, reason, byRule) => {
+    dropped.push({ slot, reason, byRule });
+    notes.push(reason);
+  };
   const hx0 = Math.min(...headlineParts.map((i) => i.x)), hy0 = Math.min(...headlineParts.map((i) => i.y));
   const hBox = { x: hx0, y: hy0, w: Math.max(...headlineParts.map((i) => i.x + i.w)) - hx0, h: Math.max(...headlineParts.map((i) => i.y + i.h)) - hy0 };
   const sub = by("subheadline")[0];
@@ -233371,33 +235867,58 @@ function adaptLayered(master, srcW, srcH, dstW, dstH, opts = {}) {
   const rowLike = isStrip || recipe.axis === "row";
   const photo = by("photo")[0];
   const axisKey = recipe.axis === "stacked" ? "stacked" : "side";
-  const disp = spec?.display?.[axisKey] ?? DEFAULT_DISPLAY[axisKey];
+  const disp = spec3?.display?.[axisKey] ?? DEFAULT_DISPLAY[axisKey];
   const tall = photoZone.w / Math.max(1, photoZone.h) < 0.7;
-  const rules = spec?.partRules ?? {};
+  const rules = spec3?.partRules ?? {};
   const ruleOf = (slot) => rules[slot] ?? {};
   let s2, gx, gy;
   let subBox = null;
+  let kickerBox = null;
+  const kicker = by("kicker")[0];
   if (rowLike) {
-    const copyBand = { x: panelZone.x + margin, y: panelZone.y + margin, w: r2(isStrip ? Math.max(40, panelZone.w - margin * 2 - stripReserve) : panelZone.w * 0.55), h: panelZone.h - margin * 2 };
+    const copyBand = { x: panelZone.x + margin, y: panelZone.y + margin, w: r5(isStrip ? Math.max(40, panelZone.w - margin * 2 - stripReserve) : panelZone.w * 0.55), h: panelZone.h - margin * 2 };
     const target = fitInto(copyBand, groupW / Math.max(1, groupH), 2.2);
     s2 = target.w / Math.max(1, groupW);
     gx = copyBand.x;
-    gy = r2(copyBand.y + (copyBand.h - groupH * s2) / 2);
-    if (sub) subBox = { x: r2(gx + (sub.x - hBox.x) * s2), y: r2(gy + (sub.y - hBox.y) * s2), w: r2(sub.w * s2), h: r2(sub.h * s2) };
+    gy = r5(copyBand.y + (copyBand.h - groupH * s2) / 2);
+    if (sub) subBox = { x: r5(gx + (sub.x - hBox.x) * s2), y: r5(gy + (sub.y - hBox.y) * s2), w: r5(sub.w * s2), h: r5(sub.h * s2) };
+    if (kicker) {
+      const ky = gy + (kicker.y - hBox.y) * s2;
+      if (ky >= copyBand.y - 1) kickerBox = { x: r5(gx + (kicker.x - hBox.x) * s2), y: r5(ky), w: r5(kicker.w * s2), h: r5(kicker.h * s2) };
+      else drop("kicker", "Kicker line dropped: no room above the headline on this strip.", true);
+    }
   } else {
     const shareH = tall ? Math.min(disp.headlineH, 0.19) : disp.headlineH;
     s2 = short * shareH / Math.max(1, hBox.h);
     const maxW = photoZone.w * 0.94;
     if (hBox.w * s2 > maxW) s2 = maxW / Math.max(1, hBox.w);
+    if (cls === "square" && recipe.axis === "stacked") {
+      const mPanel = by("panel")[0];
+      const mPhotoW = photo ? Math.min(photo.w, srcW) : mPanel ? mPanel.w : srcW;
+      const share = Math.max(0.8, Math.min(0.94, hBox.w / Math.max(1, mPhotoW)));
+      const sWide = photoZone.w * share / Math.max(1, hBox.w);
+      const groupScaled = groupH * sWide;
+      if (groupScaled <= photoZone.h * 0.66) s2 = sWide;
+    }
     const hw = hBox.w * s2, hh = hBox.h * s2;
-    gx = r2(photoZone.x + (photoZone.w - hw) / 2);
+    gx = r5(photoZone.x + (photoZone.w - hw) / 2);
     const copyPin = ruleOf("headline").pin ?? "measured";
     const wantCy = copyPin === "top" ? (hh / 2 + margin / 2) / photoZone.h : copyPin === "centre" ? 0.5 : disp.headlineCy;
-    gy = r2(Math.max(photoZone.y + margin / 2, photoZone.y + photoZone.h * wantCy - hh / 2));
+    gy = r5(Math.max(photoZone.y + margin / 2, photoZone.y + photoZone.h * wantCy - hh / 2));
     if (copyPin !== "measured") notes.push(`Copy pinned to the ${copyPin} of the photo zone by the profile's rules.`);
+    if (kicker) {
+      const kw = kicker.w * s2, kh = kicker.h * s2, kgap = Math.max(2, (hBox.y - (kicker.y + kicker.h)) * s2);
+      let ky = gy - kgap - kh;
+      if (ky < photoZone.y + margin / 2) {
+        const shift = photoZone.y + margin / 2 - ky;
+        gy += shift;
+        ky += shift;
+      }
+      kickerBox = { x: r5(photoZone.x + (photoZone.w - kw) / 2), y: r5(ky), w: r5(kw), h: r5(kh) };
+    }
     if (sub) {
       const sw = Math.min(maxW, hw * disp.subW), sh = hh * disp.subH;
-      subBox = { x: r2(photoZone.x + (photoZone.w - sw) / 2), y: r2(gy + hh + hh * disp.subGap), w: r2(sw), h: r2(sh) };
+      subBox = { x: r5(photoZone.x + (photoZone.w - sw) / 2), y: r5(gy + hh + hh * disp.subGap), w: r5(sw), h: r5(sh) };
     }
   }
   const copyBottom = subBox ? subBox.y + subBox.h : gy + hBox.h * s2;
@@ -233405,7 +235926,7 @@ function adaptLayered(master, srcW, srcH, dstW, dstH, opts = {}) {
   let cutoutBox = null;
   const cutRule = ruleOf("cutout");
   if (cutout && photo && !rowLike && cutRule.pin === "none") {
-    notes.push("Cut-out left out by the profile's rules.");
+    drop("cutout", "Cut-out left out by the profile's rules.", true);
   } else if (cutout && photo && !rowLike) {
     const ov = copyOverCutoutFrac != null ? copyOverCutoutFrac * lastLineScaled : 0;
     const wantW = photoZone.w * (tall ? 0.94 : disp.cutoutW);
@@ -233425,27 +235946,31 @@ function adaptLayered(master, srcW, srcH, dstW, dstH, opts = {}) {
     if (top + h > photoZone.y + 12 && h >= 12) {
       let cx = photoZone.x + photoZone.w * (tall ? 0.5 : disp.cutoutCx);
       cx = Math.max(photoZone.x + w / 2, Math.min(photoZone.x + photoZone.w - w / 2, cx));
-      cutoutBox = { x: r2(cx - w / 2), y: r2(top), w: r2(w), h: r2(h) };
+      cutoutBox = { x: r5(cx - w / 2), y: r5(top), w: r5(w), h: r5(h) };
       if (copyOverCutoutFrac != null && copyOverCutoutFrac > 0.02) notes.push("Car cut-out overlaps the copy as in the master (copy reads behind the car).");
     } else {
-      notes.push("Cut-out dropped: no room for the car under the copy at this size.");
+      drop("cutout", "Cut-out dropped: no room for the car under the copy at this size.", cutRule.dropWhenTight === true);
     }
-  } else if (cutout) notes.push("Cut-out dropped: strips carry photo, headline, CTA and logo only.");
+  } else if (cutout) drop("cutout", "Cut-out dropped: strips carry photo, headline, CTA and logo only.", true);
   let photoPlaced = false;
   const masterPanel = by("panel")[0];
-  const masterAxis = masterPanel ? masterPanel.w >= srcW * 0.9 ? "stacked" : masterPanel.h >= srcH * 0.9 ? "side" : null : null;
-  if (photo && !rowLike && masterAxis === axisKey && masterPanel) {
-    const mz = masterAxis === "stacked" ? { x: 0, y: 0, w: srcW, h: masterPanel.y } : { x: 0, y: 0, w: masterPanel.x, h: srcH };
+  const masterAxis2 = masterPanel ? masterPanel.w >= srcW * 0.9 ? "stacked" : masterPanel.h >= srcH * 0.9 ? "side" : null : null;
+  if (photo && !rowLike && masterAxis2 === axisKey && masterPanel) {
+    const mz = masterAxis2 === "stacked" ? { x: 0, y: 0, w: srcW, h: masterPanel.y } : { x: 0, y: 0, w: masterPanel.x, h: srcH };
     const k = Math.max(photoZone.w / Math.max(1, mz.w), photoZone.h / Math.max(1, mz.h));
     const box = { x: photoZone.x + (photo.x - mz.x) * k, y: photoZone.y + (photo.y - mz.y) * k, w: photo.w * k, h: photo.h * k };
     const covers = box.x <= photoZone.x + 0.5 && box.y <= photoZone.y + 0.5 && box.x + box.w >= photoZone.x + photoZone.w - 0.5 && box.y + box.h >= photoZone.y + photoZone.h - 0.5;
     const carMapped = cutout ? { x: photoZone.x + (cutout.x - mz.x) * k, y: photoZone.y + (cutout.y - mz.y) * k, w: cutout.w * k, h: cutout.h * k } : null;
     const carWhole = !carMapped || carMapped.x >= photoZone.x - 1 && carMapped.x + carMapped.w <= photoZone.x + photoZone.w + 1 && carMapped.y >= photoZone.y - 1 && carMapped.y + carMapped.h * 0.55 <= photoZone.y + photoZone.h + 1;
     if (covers && carWhole) {
-      out.push({ ...photo, id: "ly_photo", fit: "fill", x: r2(box.x), y: r2(box.y), w: r2(box.w), h: r2(box.h) });
+      out.push({ ...photo, id: "ly_photo", fit: "fill", x: r5(box.x), y: r5(box.y), w: r5(box.w), h: r5(box.h) });
       photoPlaced = true;
       if (cutout && cutoutBox && carMapped) {
-        cutoutBox = { x: r2(carMapped.x), y: r2(carMapped.y), w: r2(carMapped.w), h: r2(carMapped.h) };
+        if (carMapped.y >= copyBottom - 2) cutoutBox = { x: r5(carMapped.x), y: r5(carMapped.y), w: r5(carMapped.w), h: r5(carMapped.h) };
+        else {
+          cutoutBox = null;
+          drop("cutout", "Cut-out layer left out: at this shape the copy sits over the subject, so the photograph's own subject is shown under the shade instead of a second copy in front of the type.", true);
+        }
       }
     }
   }
@@ -233460,40 +235985,22 @@ function adaptLayered(master, srcW, srcH, dstW, dstH, opts = {}) {
     }
     const sx = rw / Math.max(1, photo.w), sy = rh / Math.max(1, photo.h);
     const slackX = Math.max(0, rw - photoZone.w), slackY = Math.max(0, rh - photoZone.h);
-    const cx0 = (cutout.x - photo.x) * sx, cx1 = cx0 + cutout.w * sx;
-    const cy0 = (cutout.y - photo.y) * sy, cy1 = cy0 + cutout.h * sy;
+    const car = { x: (cutout.x - photo.x) * sx, y: (cutout.y - photo.y) * sy, w: cutout.w * sx, h: cutout.h * sy };
+    const kept = panToKeepBox(slackX, slackY, { w: photoZone.w, h: photoZone.h }, car, { x: panX, y: panY });
+    panX = kept.x;
+    panY = kept.y;
     const winX = panX * slackX, winY = panY * slackY;
-    const mapped = { x: photoZone.x + cx0 - winX, y: photoZone.y + cy0 - winY, w: cx1 - cx0, h: cy1 - cy0 };
-    const covered = overlap(mapped, cutoutBox) / Math.max(1, area2(mapped));
-    if (covered < 0.85) {
-      const cands = [];
-      const ovl = (px, py) => {
-        const ix = Math.max(0, Math.min(px + photoZone.w, cx1) - Math.max(px, cx0));
-        const iy = Math.max(0, Math.min(py + photoZone.h, cy1) - Math.max(py, cy0));
-        return ix * iy / Math.max(1, (cx1 - cx0) * (cy1 - cy0));
-      };
-      const push = (px, py) => {
-        px = Math.max(0, Math.min(slackX, px));
-        py = Math.max(0, Math.min(slackY, py));
-        cands.push({ px, py, o: ovl(px, py), d: Math.abs(px - winX) + Math.abs(py - winY) });
-      };
-      push(cx0 - photoZone.w - photoZone.w * 0.04, winY);
-      push(cx1 + photoZone.w * 0.04, winY);
-      push(winX, cy0 - photoZone.h - photoZone.h * 0.04);
-      push(winX, cy1 + photoZone.h * 0.04);
-      const ok = cands.filter((c) => c.o <= 0.12).sort((a, b) => a.d - b.d)[0];
-      if (ok) {
-        panX = slackX > 0 ? ok.px / slackX : panX;
-        panY = slackY > 0 ? ok.py / slackY : panY;
-        notes.push("Photo window moved just off its own car so the cut-out is the only car.");
-      } else {
-        const least = cands.sort((a, b) => a.o - b.o)[0];
-        if (least && least.o < ovl(winX, winY)) {
-          panX = slackX > 0 ? least.px / slackX : panX;
-          panY = slackY > 0 ? least.py / slackY : panY;
-        }
-        notes.push("Check: the photo's own car may show beside the cut-out at this size.");
-      }
+    const mapped = { x: photoZone.x + car.x - winX, y: photoZone.y + car.y - winY, w: car.w, h: car.h };
+    const wholeX = mapped.x >= photoZone.x - 1 && mapped.x + mapped.w <= photoZone.x + photoZone.w + 1;
+    const clearOfCopy = mapped.y >= copyBottom - 2;
+    out.push({ ...photo, id: "ly_photo", fit: "fill", x: r5(photoZone.x - winX), y: r5(photoZone.y - winY), w: r5(rw), h: r5(rh) });
+    photoPlaced = true;
+    if (wholeX && clearOfCopy) {
+      cutoutBox = { x: r5(mapped.x), y: r5(mapped.y), w: r5(mapped.w), h: r5(mapped.h) };
+      notes.push("The cut-out stays registered on the photograph (one picture): same scale, same place.");
+    } else {
+      cutoutBox = null;
+      drop("cutout", wholeX ? "Cut-out layer left out: at this shape the copy sits over the subject, so the photograph's own subject is shown under the shade instead of a second copy in front of the type." : "Cut-out layer left out: the subject is wider than this window, so the photograph is centred on it instead of showing a second, floating copy.", true);
     }
   }
   if (photo && !cutout && !photoPlaced && photo.focusBox) {
@@ -233511,13 +236018,14 @@ function adaptLayered(master, srcW, srcH, dstW, dstH, opts = {}) {
   }
   if (photo && !photoPlaced) out.push({ ...photo, id: "ly_photo", fit: "cover", focusX: Math.round(panX * 1e3) / 1e3, focusY: Math.round(panY * 1e3) / 1e3, x: photoZone.x, y: photoZone.y, w: photoZone.w, h: photoZone.h });
   const scrim = by("scrim")[0];
-  if (scrim && photo && !rowLike) out.push({ ...scrim, id: "ly_scrim", fit: "fill", x: photoZone.x, y: photoZone.y, w: photoZone.w, h: r2(Math.max(copyBottom + margin, photoZone.h * 0.35) - photoZone.y) });
+  if (scrim && photo && !rowLike) out.push({ ...scrim, id: "ly_scrim", fit: "fill", x: photoZone.x, y: photoZone.y, w: photoZone.w, h: r5(Math.max(copyBottom + margin, photoZone.h * 0.35) - photoZone.y) });
   const groundEl = opts.panelFill ? { id: "ly_panel_ground", type: "rect", slot: "panel", fill: opts.panelFill, x: panelZone.x, y: panelZone.y, w: panelZone.w, h: panelZone.h, locked: true } : null;
   if (groundEl && rowLike) out.push(groundEl);
   for (const [k, part] of headlineParts.entries()) {
-    out.push({ ...part, id: headlineParts.length === 1 ? "ly_headline" : `ly_headline_${k}`, fit: "contain", x: r2(gx + (part.x - hBox.x) * s2), y: r2(gy + (part.y - hBox.y) * s2), w: r2(part.w * s2), h: r2(part.h * s2) });
+    out.push({ ...part, id: headlineParts.length === 1 ? "ly_headline" : `ly_headline_${k}`, fit: "contain", x: r5(gx + (part.x - hBox.x) * s2), y: r5(gy + (part.y - hBox.y) * s2), w: r5(part.w * s2), h: r5(part.h * s2) });
   }
   if (sub && subBox) out.push({ ...sub, id: "ly_subheadline", fit: "contain", ...subBox });
+  if (kicker && kickerBox) out.push({ ...kicker, id: "ly_kicker", fit: "contain", ...kickerBox });
   if (cutout && cutoutBox) out.push({ ...cutout, id: "ly_cutout", fit: "contain", ...cutoutBox });
   if (groundEl && !rowLike) out.push(groundEl);
   const panelImg = by("panel")[0];
@@ -233526,7 +236034,7 @@ function adaptLayered(master, srcW, srcH, dstW, dstH, opts = {}) {
   const partBand = by("band").find((i) => i.panelPart) ?? null;
   const partMessage = by("message").find((i) => i.panelPart) ?? null;
   const partLockup = by("lockup").find((i) => i.panelPart) ?? null;
-  const fixedCta = spec?.parts.cta?.fixedPx ?? null;
+  const fixedCta = spec3?.parts.cta?.fixedPx ?? null;
   const ctaLooksFixed = !!(cta && fixedCta && fixedInRange && Math.abs(cta.h - fixedCta.h) <= 3 && Math.abs(cta.w - fixedCta.w) <= 6);
   if ((partMessage || partLockup) && !isStrip) {
     const ps = panelImg ? panelZone.w / Math.max(1, panelImg.w) : 1;
@@ -233537,12 +236045,31 @@ function adaptLayered(master, srcW, srcH, dstW, dstH, opts = {}) {
     if (partBand && recipe.bandAt !== "none" && bandAllowed) {
       let bw = panelZone.w, bh = bw * (partBand.h / Math.max(1, partBand.w));
       const capH = panelZone.h * (shallow ? 0.2 : 0.25);
+      let fit = "contain";
       if (bh > capH) {
         bh = capH;
-        bw = bh * (partBand.w / Math.max(1, partBand.h));
+        if (bandRule.size === "fit-width" || partBand.constraints?.flexW) {
+          fit = "cover";
+        } else {
+          bw = bh * (partBand.w / Math.max(1, partBand.h));
+        }
       }
-      out.push({ ...partBand, id: "ly_band", fit: "contain", x: r2(panelZone.x + (panelZone.w - bw) / 2), y: r2(panelZone.y), w: r2(bw), h: r2(bh) });
-      stackTop = panelZone.y + bh + margin / 2;
+      const by2 = bandRule.pin === "centre" ? panelZone.y + (panelZone.h - bh) / 2 : panelZone.y;
+      const panelSrcW = panelImg?.w ?? srcW;
+      if (partBand.w < panelSrcW * 0.85) {
+        let th = Math.min(partBand.h * (panelZone.w / Math.max(1, panelSrcW)), capH);
+        th = Math.max(th, Math.min(capH, shallow ? 14 : 18));
+        const tw = th * (partBand.w / Math.max(1, partBand.h));
+        const gapT = Math.max(1, r5(tw * 0.012));
+        const reachesEdge = panelZone.x + panelZone.w >= dstW - 1;
+        const n = reachesEdge ? Math.ceil(panelZone.w / (tw + gapT)) : Math.max(1, Math.floor((panelZone.w + gapT) / (tw + gapT)));
+        const startX = reachesEdge ? panelZone.x : panelZone.x + (panelZone.w - (n * tw + (n - 1) * gapT)) / 2;
+        for (let i = 0; i < Math.min(n, 12); i++) out.push({ ...partBand, id: i === 0 ? "ly_band" : `ly_band_${i}`, fit: "fill", x: r5(startX + i * (tw + gapT)), y: r5(by2), w: r5(tw), h: r5(th) });
+        bh = th;
+        notes.push("Pattern band repeated edge to edge: the master's band picture is a motif shorter than its panel.");
+      } else
+        out.push({ ...partBand, id: "ly_band", fit, x: r5(panelZone.x + (panelZone.w - bw) / 2), y: r5(by2), w: r5(bw), h: r5(bh) });
+      stackTop = bandRule.pin === "centre" ? panelZone.y + margin : panelZone.y + bh + margin / 2;
     }
     const stackBottom = panelZone.y + panelZone.h - (shallow ? margin / 2 : margin);
     const avail = Math.max(10, stackBottom - stackTop);
@@ -233554,13 +236081,13 @@ function adaptLayered(master, srcW, srcH, dstW, dstH, opts = {}) {
       const oohShare = recipe.axis === "stacked" ? 0.075 : 0.125;
       const wantFixed = ctaRule.size === "scale" ? false : ctaLooksFixed && isDisplayCanvas && (ctaRule.size === "fixed" || !shallow) && fixedCta.w <= panelInner.w * 0.9;
       const fitFixed = ctaLooksFixed && isDisplayCanvas && !wantFixed;
-      const ctaH = wantFixed ? fixedCta.h : fitFixed ? r2(panelInner.w * 0.85 * (fixedCta.h / fixedCta.w)) : ctaLooksFixed ? r2(short * oohShare) : Math.max(recipe.ctaFloorPx, r2(cta.h * ps));
-      const ctaW = wantFixed ? fixedCta.w : Math.min(panelInner.w * 0.85, r2(ctaH * (cta.w / Math.max(1, cta.h))));
+      const ctaH = wantFixed ? fixedCta.h : fitFixed ? r5(panelInner.w * 0.85 * (fixedCta.h / fixedCta.w)) : ctaLooksFixed ? r5(short * oohShare) : Math.max(recipe.ctaFloorPx, r5(cta.h * ps));
+      const ctaW = wantFixed ? fixedCta.w : Math.min(panelInner.w * 0.85, r5(ctaH * (cta.w / Math.max(1, cta.h))));
       const fitW = ctaRule.size === "fit-width" ? panelInner.w * 0.85 : ctaW;
       items.push({ el: cta, w: fitW, h: wantFixed ? ctaH : fitW * (cta.h / Math.max(1, cta.w)), minH: ctaRule.minPx ?? recipe.ctaFloorPx, fixed: wantFixed });
     }
-    if (partLockup) items.push({ el: partLockup, w: partLockup.w * ps, h: partLockup.h * ps, minH: lockRule.minPx ?? 14, fixed: false });
-    const capW = (it) => it.el === partMessage ? panelInner.w * 0.9 : it.el === partLockup ? panelInner.w * 0.7 : panelInner.w * 0.85;
+    if (partLockup) items.push({ el: partLockup, w: partLockup.w * ps, h: partLockup.h * ps, minH: lockRule.minPx ?? 16, fixed: false });
+    const capW = (it) => it.el === partMessage ? panelInner.w * 0.9 : it.el === partLockup ? panelInner.w * (panelInner.w < 200 ? 0.96 : 0.7) : panelInner.w * 0.85;
     for (const it of items) {
       if (it.w > capW(it)) {
         const k = capW(it) / it.w;
@@ -233568,7 +236095,35 @@ function adaptLayered(master, srcW, srcH, dstW, dstH, opts = {}) {
         it.h *= k;
       }
     }
+    const mi = items.findIndex((it) => it.el === partMessage);
+    if (mi >= 0 && items[mi].h < 9) {
+      items.splice(mi, 1);
+      drop("message", "Message left out: it is a picture of a single line of type and cannot be read at this width. Supply a two-line version for towers.", true);
+    }
+    {
+      const flex = items.filter((it) => !it.fixed);
+      const used = items.reduce((a, it) => a + it.h, 0) + Math.max(4, margin / 2) * (items.length - 1);
+      const room = Math.max(10, panelZone.y + panelZone.h - (shallow ? margin / 2 : margin) - stackTop);
+      if (!shallow && flex.length && used < room * 0.62) {
+        const k = Math.min(room * 0.72 / used, 1.8);
+        if (k > 1.04) {
+          for (const it of flex) {
+            const ki = Math.max(1, Math.min(k, capW(it) / it.w));
+            it.w *= ki;
+            it.h *= ki;
+          }
+          notes.push(`Panel copy enlarged up to ${Math.round((k - 1) * 100)}% to fill its zone (it was set for a wider panel).`);
+        }
+      }
+    }
     const total = () => items.reduce((a, it) => a + it.h, 0) + gapPx * (items.length - 1);
+    if (shallow && total() > avail) {
+      const i = items.findIndex((it) => it.el === partMessage);
+      if (i >= 0 && items.length > 1) {
+        items.splice(i, 1);
+        drop("message", "Message left out: this panel is too shallow for the message, the button and the logo \u2014 the button and the logo stay.", true);
+      }
+    }
     if (total() > avail) {
       const droppable = items.filter((it) => it.el === partMessage && msgRule.dropWhenTight || it.el === partLockup && lockRule.dropWhenTight);
       for (const d of droppable) {
@@ -233576,7 +236131,7 @@ function adaptLayered(master, srcW, srcH, dstW, dstH, opts = {}) {
         const idx = items.indexOf(d);
         if (idx >= 0) {
           items.splice(idx, 1);
-          notes.push(`${d.el === partMessage ? "Message" : "Lockup"} dropped by the profile's rules: no room in this panel.`);
+          drop(d.el === partMessage ? "message" : "lockup", `${d.el === partMessage ? "Message" : "Lockup"} dropped by the profile's rules: no room in this panel.`, true);
         }
       }
     }
@@ -233602,10 +236157,10 @@ function adaptLayered(master, srcW, srcH, dstW, dstH, opts = {}) {
     }
     const anchorOf = (it) => {
       if (isDisplayCanvas) return it.el === partMessage ? disp.message.cy : it.el === partLockup ? disp.lockup.cy : disp.cta.cy;
-      const part = it.el === partMessage ? spec?.parts.message : it.el === partLockup ? spec?.parts.lockup : spec?.parts.cta;
+      const part = it.el === partMessage ? spec3?.parts.message : it.el === partLockup ? spec3?.parts.lockup : spec3?.parts.cta;
       return part?.anchor.y ?? null;
     };
-    let anchored = (spec || isDisplayCanvas) && !shallow ? items.map((it) => {
+    let anchored = (spec3 || isDisplayCanvas) && !shallow ? items.map((it) => {
       const a = anchorOf(it);
       if (a == null) return NaN;
       const centre = panelZone.y + a * panelZone.h;
@@ -233613,17 +236168,24 @@ function adaptLayered(master, srcW, srcH, dstW, dstH, opts = {}) {
     }) : null;
     if (anchored && anchored.some((v) => Number.isNaN(v))) anchored = null;
     if (anchored) {
-      for (let i = 1; i < items.length; i++) if (anchored[i] < anchored[i - 1] + items[i - 1].h + gapPx) {
-        anchored = null;
-        break;
+      for (let i = 1; i < items.length; i++) {
+        const need = Math.max(gapPx, Math.min(items[i].h, items[i - 1].h) * 0.4);
+        if (anchored[i] < anchored[i - 1] + items[i - 1].h + need) {
+          anchored = null;
+          break;
+        }
       }
+      const last = items.length - 1;
+      if (anchored && last >= 0 && anchored[last] + items[last].h > stackBottom - gapPx * 0.5) anchored = null;
     }
-    let y = stackTop + Math.max(0, (avail - total()) / 2);
+    const sumH = items.reduce((a, it) => a + it.h, 0);
+    const even = Math.max(gapPx, Math.min((avail - sumH) / (items.length + 1), Math.max(...items.map((it) => it.h), 1) * 1.1));
+    let y = stackTop + Math.max(0, (avail - sumH - even * (items.length - 1)) / 2);
     for (const [i, it] of items.entries()) {
       const id = it.el === partMessage ? "ly_message" : it.el === partLockup ? "ly_lockup" : "ly_cta";
       const yy = anchored ? anchored[i] : y;
-      out.push({ ...it.el, id, fit: "contain", x: r2(panelZone.x + (panelZone.w - it.w) / 2), y: r2(yy), w: r2(it.w), h: r2(it.h) });
-      y += it.h + gapPx;
+      out.push({ ...it.el, id, fit: "contain", x: r5(panelZone.x + (panelZone.w - it.w) / 2), y: r5(yy), w: r5(it.w), h: r5(it.h) });
+      y += it.h + even;
     }
     if (panelImg) notes.push("Panel re-stacked from its parts (band, message, button, lockup) for this zone.");
   } else {
@@ -233641,49 +236203,49 @@ function adaptLayered(master, srcW, srcH, dstW, dstH, opts = {}) {
       }
       const pb = { x: panelZone.x + (panelZone.w - pw) / 2, y: 0, w: pw, h: ph };
       const y = panelZone.y + panelZone.h - pb.h;
-      out.push({ ...panelImg, id: "ly_panel", fit: "contain", x: r2(pb.x), y: r2(y), w: r2(pb.w), h: r2(pb.h) });
+      out.push({ ...panelImg, id: "ly_panel", fit: "contain", x: r5(pb.x), y: r5(y), w: r5(pb.w), h: r5(pb.h) });
       if (cta) {
         const ps = pb.w / Math.max(1, panelImg.w);
-        const fixed = spec?.parts.cta?.fixedPx;
+        const fixed = spec3?.parts.cta?.fixedPx;
         const looksFixed = !!fixed && fixedInRange && Math.abs(cta.h - fixed.h) <= 3 && Math.abs(cta.w - fixed.w) <= 6;
         const isDisplayCanvas2 = short <= 400;
         const oohShare = recipe.axis === "stacked" ? 0.075 : 0.125;
-        const ctaH = looksFixed && isDisplayCanvas2 ? fixed.h : looksFixed ? r2(short * oohShare) : Math.max(recipe.ctaFloorPx, r2(cta.h * ps));
-        const ctaW = looksFixed && isDisplayCanvas2 ? fixed.w : r2(ctaH * (cta.w / Math.max(1, cta.h)));
+        const ctaH = looksFixed && isDisplayCanvas2 ? fixed.h : looksFixed ? r5(short * oohShare) : Math.max(recipe.ctaFloorPx, r5(cta.h * ps));
+        const ctaW = looksFixed && isDisplayCanvas2 ? fixed.w : r5(ctaH * (cta.w / Math.max(1, cta.h)));
         const relX = (cta.x + cta.w / 2 - panelImg.x) / Math.max(1, panelImg.w);
         const relY = (cta.y + cta.h / 2 - panelImg.y) / Math.max(1, panelImg.h);
-        out.push({ ...cta, id: "ly_cta", fit: "contain", x: r2(pb.x + relX * pb.w - ctaW / 2), y: r2(y + relY * pb.h - ctaH / 2), w: ctaW, h: ctaH });
+        out.push({ ...cta, id: "ly_cta", fit: "contain", x: r5(pb.x + relX * pb.w - ctaW / 2), y: r5(y + relY * pb.h - ctaH / 2), w: ctaW, h: ctaH });
       }
     } else {
       if (panelImg && isStrip) notes.push("Panel graphic dropped for the strip; the CTA sits on the brand panel.");
       if (cta) {
-        const fixed = spec?.parts.cta?.fixedPx;
+        const fixed = spec3?.parts.cta?.fixedPx;
         const looksFixed = !!fixed && fixedInRange && Math.abs(cta.h - fixed.h) <= 3 && Math.abs(cta.w - fixed.w) <= 6;
         const isFixedAsset = looksFixed && isDisplayCanvas && fixed.h <= panelInner.h && fixed.w <= panelInner.w;
         const fitFixed = looksFixed && isDisplayCanvas && !isFixedAsset;
         const oohShare = recipe.axis === "stacked" ? 0.075 : 0.125;
-        const ctaH = isFixedAsset ? fixed.h : fitFixed ? r2(Math.min(panelInner.h * 0.6, panelInner.w * 0.85 * (fixed.h / fixed.w))) : looksFixed ? r2(Math.min(panelInner.h * 0.6, short * oohShare)) : Math.max(recipe.ctaFloorPx, r2(Math.min(panelInner.h * 0.6, short * recipe.ctaHeightFrac)));
-        const ctaW = isFixedAsset ? fixed.w : r2(Math.min(ctaH * (cta.w / Math.max(1, cta.h)), panelInner.w * recipe.ctaMaxWidthFrac));
+        const ctaH = isFixedAsset ? fixed.h : fitFixed ? r5(Math.min(panelInner.h * 0.6, panelInner.w * 0.85 * (fixed.h / fixed.w))) : looksFixed ? r5(Math.min(panelInner.h * 0.6, short * oohShare)) : Math.max(recipe.ctaFloorPx, r5(Math.min(panelInner.h * 0.6, short * recipe.ctaHeightFrac)));
+        const ctaW = isFixedAsset ? fixed.w : r5(Math.min(ctaH * (cta.w / Math.max(1, cta.h)), panelInner.w * recipe.ctaMaxWidthFrac));
         let rightEdge = panelInner.x + panelInner.w;
         if (isStrip && partLockup && stripLockupBox) {
-          out.push({ ...partLockup, id: "ly_lockup", fit: "contain", x: r2(rightEdge - stripLockupBox.w), y: r2(panelInner.y + (panelInner.h - stripLockupBox.h) / 2), w: r2(stripLockupBox.w), h: r2(stripLockupBox.h) });
+          out.push({ ...partLockup, id: "ly_lockup", fit: "contain", x: r5(rightEdge - stripLockupBox.w), y: r5(panelInner.y + (panelInner.h - stripLockupBox.h) / 2), w: r5(stripLockupBox.w), h: r5(stripLockupBox.h) });
           rightEdge -= stripLockupBox.w + stripGap;
         }
-        const cw = isStrip && stripCtaBox ? r2(stripCtaBox.w) : ctaW;
-        const ch = isStrip && stripCtaBox ? r2(stripCtaBox.h) : ctaH;
+        const cw = isStrip && stripCtaBox ? r5(stripCtaBox.w) : ctaW;
+        const ch = isStrip && stripCtaBox ? r5(stripCtaBox.h) : ctaH;
         const cx = isStrip || recipe.axis === "row" ? rightEdge - cw : panelInner.x + (panelInner.w - cw) / 2;
-        out.push({ ...cta, id: "ly_cta", fit: "contain", x: r2(cx), y: r2(panelInner.y + (panelInner.h - ch) / 2), w: cw, h: ch });
+        out.push({ ...cta, id: "ly_cta", fit: "contain", x: r5(cx), y: r5(panelInner.y + (panelInner.h - ch) / 2), w: cw, h: ch });
       } else if (isStrip && partLockup && stripLockupBox) {
-        out.push({ ...partLockup, id: "ly_lockup", fit: "contain", x: r2(panelInner.x + panelInner.w - stripLockupBox.w), y: r2(panelInner.y + (panelInner.h - stripLockupBox.h) / 2), w: r2(stripLockupBox.w), h: r2(stripLockupBox.h) });
+        out.push({ ...partLockup, id: "ly_lockup", fit: "contain", x: r5(panelInner.x + panelInner.w - stripLockupBox.w), y: r5(panelInner.y + (panelInner.h - stripLockupBox.h) / 2), w: r5(stripLockupBox.w), h: r5(stripLockupBox.h) });
       }
     }
   }
   const logo = by("logo")[0];
   if (logo && tile) out.push({ ...logo, id: "ly_logo", role: "logo", fit: "contain", locked: true, x: tile.tile.x, y: tile.tile.y, w: tile.tile.w, h: tile.tile.h });
-  const dropped = imgs.filter((i) => (!i.slot || i.slot === "other") && !i.panelPart).length;
-  if (dropped) notes.push(`${dropped} unrecognised decoration layer${dropped === 1 ? "" : "s"} not carried to this size.`);
+  const droppedDeco = imgs.filter((i) => (!i.slot || i.slot === "other") && !i.panelPart).length;
+  if (droppedDeco) drop("other", `${droppedDeco} unrecognised decoration layer${droppedDeco === 1 ? "" : "s"} not carried to this size.`, true);
   notes.push("Built from image layers: the headline and CTA are pictures, so Claude's check aligns them to the approved references rather than re-setting type.");
-  return { config: { ...master, elements: out, adaptMethod: "layered" }, notes };
+  return { config: { ...master, elements: out, adaptMethod: "layered", ...dropped.length ? { droppedParts: dropped } : {} }, notes };
 }
 
 // src/lib/gwdMotion.ts
@@ -233779,7 +236341,7 @@ function parseAnimationSpecs(html) {
   for (const m of html.matchAll(/\.([\w-]+)\s*\{([^}]*)\}/g)) {
     const body = m[2];
     if (!/(?<![-\w])animation(?:-name)?\s*:/.test(body)) continue;
-    const spec = { name: "", dur: 0, delay: 0, iter: 1, fill: "none", timing: "linear", frames: [] };
+    const spec3 = { name: "", dur: 0, delay: 0, iter: 1, fill: "none", timing: "linear", frames: [] };
     const shorthand = /(?<![-\w])animation\s*:\s*([^;]+)/.exec(body);
     if (shorthand) {
       const value = shorthand[1].replace(/\(\s*([^)]*?)\s*\)/g, (_s, inner) => `(${inner.replace(/\s+/g, "")})`);
@@ -233788,47 +236350,47 @@ function parseAnimationSpecs(html) {
       for (const tok of tokens) {
         const s2 = secs(tok);
         if (s2 != null) {
-          if (times === 0) spec.dur = s2;
-          else if (times === 1) spec.delay = s2;
+          if (times === 0) spec3.dur = s2;
+          else if (times === 1) spec3.delay = s2;
           times++;
           continue;
         }
         if (TIMING_WORDS.has(tok) || /^cubic-bezier\(/.test(tok) || /^steps\(/.test(tok)) {
-          spec.timing = tok;
+          spec3.timing = tok;
           continue;
         }
         if (FILLS.has(tok)) {
-          spec.fill = tok;
+          spec3.fill = tok;
           continue;
         }
         if (tok === "infinite") {
-          spec.iter = Infinity;
+          spec3.iter = Infinity;
           continue;
         }
         if (/^\d+(\.\d+)?$/.test(tok)) {
-          spec.iter = parseFloat(tok);
+          spec3.iter = parseFloat(tok);
           continue;
         }
-        if (keyframes.has(tok)) spec.name = tok;
+        if (keyframes.has(tok)) spec3.name = tok;
       }
     }
     const long = (prop) => /(?<![-\w])animation-PROP\s*:\s*([^;]+)/.source.replace("PROP", prop);
     const nameL = new RegExp(long("name")).exec(body);
-    if (nameL && keyframes.has(nameL[1].trim())) spec.name = nameL[1].trim();
+    if (nameL && keyframes.has(nameL[1].trim())) spec3.name = nameL[1].trim();
     const durL = new RegExp(long("duration")).exec(body);
-    if (durL && secs(durL[1].trim()) != null) spec.dur = secs(durL[1].trim());
+    if (durL && secs(durL[1].trim()) != null) spec3.dur = secs(durL[1].trim());
     const delayL = new RegExp(long("delay")).exec(body);
-    if (delayL && secs(delayL[1].trim()) != null) spec.delay = secs(delayL[1].trim());
+    if (delayL && secs(delayL[1].trim()) != null) spec3.delay = secs(delayL[1].trim());
     const iterL = new RegExp(long("iteration-count")).exec(body);
-    if (iterL) spec.iter = iterL[1].trim() === "infinite" ? Infinity : parseFloat(iterL[1]) || 1;
+    if (iterL) spec3.iter = iterL[1].trim() === "infinite" ? Infinity : parseFloat(iterL[1]) || 1;
     const fillL = new RegExp(long("fill-mode")).exec(body);
-    if (fillL && FILLS.has(fillL[1].trim())) spec.fill = fillL[1].trim();
+    if (fillL && FILLS.has(fillL[1].trim())) spec3.fill = fillL[1].trim();
     const timingL = new RegExp(long("timing-function")).exec(body);
-    if (timingL) spec.timing = timingL[1].trim().replace(/\s+/g, "");
-    if (!spec.name) continue;
-    spec.frames = keyframes.get(spec.name) ?? [];
-    if (spec.frames.length === 0) continue;
-    specs.set(m[1], spec);
+    if (timingL) spec3.timing = timingL[1].trim().replace(/\s+/g, "");
+    if (!spec3.name) continue;
+    spec3.frames = keyframes.get(spec3.name) ?? [];
+    if (spec3.frames.length === 0) continue;
+    specs.set(m[1], spec3);
   }
   return specs;
 }
@@ -234126,8 +236688,8 @@ function visibleStack(leaves) {
       const ix = Math.max(0, Math.min(a.x + a.w, b.x + b.w) - Math.max(a.x, b.x));
       const iy = Math.max(0, Math.min(a.y + a.h, b.y + b.h) - Math.max(a.y, b.y));
       const inter = ix * iy;
-      const union3 = a.w * a.h + b.w * b.h - inter;
-      if (union3 > 0 && inter / union3 > 0.75) return false;
+      const union4 = a.w * a.h + b.w * b.h - inter;
+      if (union4 > 0 && inter / union4 > 0.75) return false;
     }
     return true;
   });
@@ -234142,564 +236704,6 @@ function partsFor(box, leaves) {
     fh: rd(l.h / box.h),
     ...l.ownMotion ? { motion: { ...l.ownMotion, w0: Math.round(l.w), h0: Math.round(l.h) } } : {}
   }));
-}
-
-// src/lib/styleSpecs/getReadyBurst2.ts
-var PART_RULE_SLOTS = ["headline", "subheadline", "cutout", "band", "message", "cta", "lockup", "logo", "photo"];
-var GET_READY_BURST_2 = {
-  id: "get-ready-burst-2",
-  name: "AEM Get Ready \u2014 Burst 2 (photo + panel)",
-  match: ["get ready", "26-pro-0461", "aem get ready", "storms", "quakes", "tsunami"],
-  colours: {
-    panelOOH: "#005b9f",
-    // InDesign panel rect
-    panelDisplay: "#0060ac",
-    // GWD panel graphic (sampled)
-    scrim: "#0c253b",
-    // gradient scrim over the photo, top 50% (tall) / 77% (wide) of the photo zone
-    message: "#ffeb3d",
-    // "Make a plan today." — Kowhai-adjacent campaign yellow
-    ctaDisplay: "#fdf10e",
-    // LEARN MORE button fill
-    ctaLabelDisplay: "#0060ac",
-    pillOOH: "#ffffff",
-    pillLabelOOH: "#111827",
-    copy: "#ffffff"
-  },
-  type: {
-    headline: "DS-Digital (digital clock face), white, upper case with colons between letter pairs \u2014 ST:OR:MS, QU:AK:ES, TSU:NA:MI \u2014 or a HH:MM:SS countdown in Phase 2. The lettering is the campaign device, not an error.",
-    kicker: "National 2 Bold, white, upper case, one line above the headline (Phases 1\u20132 only).",
-    subheadline: "National 2 Bold, white, upper case, one line under the headline (Phase 3 and OOH).",
-    message: "National 2 Bold, campaign yellow, sentence case with full stop.",
-    ctaOOH: "Search pill: white pill, label National 2 Bold in ink #111827, magnifier icon at the right.",
-    ctaDisplay: "LEARN MORE: yellow pill, label National 2 Bold upper case in panel blue."
-  },
-  hierarchy: ["headline", "kicker/subheadline", "message", "cta", "lockup"],
-  zones: {
-    portrait: { axis: "stacked", photoFrac: 0.569, displayPhotoFrac: 0.568, bandFrac: 0.059, bandAt: "seam", tolerance: 0.03 },
-    tower: { axis: "stacked", photoFrac: 0.52, bandFrac: 0.045, bandAt: "seam", tolerance: 0.05 },
-    square: { axis: "stacked", photoFrac: 0.6, displayPhotoFrac: 0.55, bandFrac: 0.05, bandAt: "seam", tolerance: 0.05 },
-    landscape: { axis: "side", photoFrac: 0.55, bandFrac: 0.15, bandAt: "panelTop", tolerance: 0.05 },
-    wide: { axis: "side", photoFrac: 0.5, displayPhotoFrac: 0.69, bandFrac: 0.169, bandAt: "panelTop", tolerance: 0.05 },
-    strip: { axis: "row", photoFrac: 0.3, bandFrac: 0, bandAt: "none", tolerance: 0.05 }
-  },
-  display: {
-    // 300×600 final / working files: photo zone 0–341, panel zone 341–600.
-    stacked: { headlineH: 0.193, headlineCy: 0.422, subW: 0.986, subH: 0.517, subGap: 0.069, cutoutW: 0.8, cutoutCx: 0.41, cutoutBleed: 0.45, message: { cy: 0.36, w: 0.73 }, cta: { cy: 0.55 }, lockup: { cy: 0.82, w: 0.7 }, bandH: 0.147 },
-    // 970×250 working file: photo zone 0–670, panel zone 670–970.
-    side: { headlineH: 0.396, headlineCy: 0.266, subW: 0.874, subH: 0.404, subGap: 0.07, cutoutW: 0.467, cutoutCx: 0.419, cutoutBleed: 0.6, message: { cy: 0.378, w: 0.7 }, cta: { cy: 0.562 }, lockup: { cy: 0.838, w: 0.7 }, bandH: 0.152 }
-  },
-  parts: {
-    photo: {
-      role: "photo",
-      zone: "photo",
-      size: { ofZoneW: 1, ofZoneH: 1 },
-      anchor: {},
-      rule: "Cover-crops its zone, 6\u201375% oversize, panned so the subject (wave crest, road crack, flooded car) sits in the lower half under the copy. Never letterboxed, never stretched."
-    },
-    scrim: {
-      role: "scrim",
-      zone: "photo",
-      size: { ofZoneW: 1, ofZoneH: 0.5 },
-      anchor: { y: 0 },
-      rule: "Navy gradient from the top of the photo zone down 50% (tall) or 77% (wide), so white copy reads over any sky."
-    },
-    headline: {
-      role: "headline",
-      zone: "photo",
-      size: { ofShort: 0.247, ofZoneW: 0.88 },
-      anchor: { y: 0.45, align: "center" },
-      floorPx: 24,
-      display: { stacked: 0.19, side: 0.38 },
-      rule: "OOH: 95px on a 384 short side (25% of short), 110px on 256 (43% of short) \u2014 the word fills 88% of the photo zone width on one line, block centre at 45% of the photo zone height (tall) or 36% (wide). Display: the glyph run is 19% of the short side tall (57px on 300\xD7600, 96px on 970\xD7250) and sits at 19\u201325% of the canvas height (tall) / 7% (wide, glyph top)."
-    },
-    kicker: {
-      role: "kicker",
-      zone: "photo",
-      size: { ofHeadline: 0.3 },
-      anchor: { align: "center" },
-      rule: "Phases 1\u20132 only. One line directly above the headline, 30% of the headline size."
-    },
-    subheadline: {
-      role: "subheadline",
-      zone: "photo",
-      size: { ofHeadline: 0.295 },
-      anchor: { align: "center" },
-      floorPx: 10,
-      rule: "28px under a 95px headline, 32px under 110px \u2014 29\u201330% of the headline size \u2014 directly beneath it, centred, 83% of the zone width max."
-    },
-    cutout: {
-      role: "cutout",
-      zone: "photo",
-      size: { ofZoneW: 0.8 },
-      anchor: { y: 1 },
-      droppedWhen: "strips; canvases under 250px on the short side",
-      rule: "Storms only: the car cut-out sits on the photo at the bottom of the zone, 80% of the zone width (tall) or 32% (wide), below the copy \u2014 never behind it."
-    },
-    band: {
-      role: "band",
-      zone: "seam",
-      size: { ofZoneW: 1 },
-      anchor: {},
-      droppedWhen: "strips",
-      rule: "Kotahitanga tohu strip on the seam (tall) or along the top of the panel (wide): 5.9% of height on 384\xD7592, 16.9% on 960\xD7256. Yellow leaf and chevron motifs, never under the logo."
-    },
-    message: {
-      role: "message",
-      zone: "panel",
-      size: { ofShort: 0.068, ofHeadline: 0.27 },
-      anchor: { y: 0.34, align: "center" },
-      floorPx: 13,
-      rule: '"Make a plan today." in campaign yellow: 26px on 384 (6.8% of short), 29px on 256 (11%); first item in the panel stack, centred, top third of the panel.'
-    },
-    cta: {
-      role: "cta",
-      zone: "panel",
-      size: { ofShort: 0.075, ofZoneW: 0.62 },
-      anchor: { y: 0.47, align: "center" },
-      floorPx: 28,
-      fixedPx: { w: 181, h: 43 },
-      display: { stacked: 0.143, side: 0.172 },
-      rule: "OOH search pill: 28.9px tall on 384 (7.5% of short), 32px on 256 (12.5%), 62% of the panel width (tall) / 56% (wide), centred under the message. Display LEARN MORE button: a fixed 181\xD743px asset on both 300\xD7600 and 970\xD7250 \u2014 placed, never scaled with the canvas; 60% of the panel width."
-    },
-    lockup: {
-      role: "lockup",
-      zone: "panel",
-      size: { ofShort: 0.122, ofZoneW: 0.5 },
-      anchor: { y: 0.93, align: "center" },
-      droppedWhen: "strips (logo tile instead)",
-      rule: "AEM + Council lockup 46.7px tall on 384 (12.2% of short), 47.4px on 256 (18.5%); 50% of the panel width (tall) / 40% (wide); last in the stack, centred, bottom margin \u2248 1/3 tile."
-    },
-    panel: {
-      role: "panel",
-      zone: "panel",
-      size: { ofZoneW: 1, ofZoneH: 1 },
-      anchor: {},
-      rule: "Solid campaign blue behind the whole panel zone. Display working files carry it as one graphic (band + message + lockup baked); it fills the zone width edge to edge and is never cropped."
-    },
-    logo: {
-      role: "logo",
-      zone: "canvas",
-      size: { ofShort: 1 / 6 },
-      anchor: { x: 1, y: 1 },
-      droppedWhen: "never on strips; the lockup carries the mark elsewhere",
-      rule: "Strips only: p\u014Dhutukawa tile, short \xF7 6, flush bottom-right (brand rule). Every other shape uses the AEM + Council lockup instead."
-    }
-  },
-  variants: [
-    { phase: "Phase 1 \u2014 pre daylight-saving weekend (V1\u2013V3)", kicker: "IT'S TIME TO TALK", headline: "ST:OR:MS | QU:AK:ES | TSU:NA:MI", message: "Make a plan this daylight saving weekend.", cta: { display: "LEARN MORE", ooh: "Auckland emergency" } },
-    { phase: "Phase 2 \u2014 daylight-saving weekend countdown (V4\u2013V7: 48H, 36H, 24H, 12H)", kicker: "TIME'S RUNNING OUT TO MAKE A PLAN", headline: "HH:MM:SS countdown in the clock face", message: "Make a plan this daylight saving weekend.", cta: { display: "LEARN MORE", ooh: "Auckland emergency" } },
-    { phase: "Phase 3 \u2014 post daylight-saving weekend (V8\u2013V10) and all OOH", headline: "ST:OR:MS | QU:AK:ES | TSU:NA:MI", subheadline: "CAN STRIKE SUDDENLY", message: "Make a plan today.", cta: { display: "LEARN MORE", ooh: "Auckland emergency" } }
-  ],
-  never: [
-    "Re-set or respell the clock-face headline; the colons are the device.",
-    "Copy over the photo without the scrim.",
-    "Pill scaled with the canvas: display pill is a fixed 181\xD743 asset, OOH pill sits at its measured share of the short side.",
-    "Band under the lockup or the logo tile.",
-    "Panel graphic cropped, or floating inside a darker frame.",
-    "Cut-out car behind the headline.",
-    "Photo letterboxed on a colour field.",
-    "Any element that is not in the delivered layers: no new shapes, patterns or copy."
-  ],
-  sizes: [
-    { name: "Display Half Page", w: 300, h: 600 },
-    { name: "Display Billboard", w: 970, h: 250 },
-    { name: "Mrec", w: 300, h: 250 },
-    { name: "Mobile", w: 320, h: 480 },
-    { name: "Council Screen Landscape", w: 1920, h: 1080 },
-    { name: "Meta Stories", w: 1440, h: 2560 },
-    { name: "JCDecaux", w: 2688, h: 672 },
-    { name: "JCDecaux", w: 1824, h: 432 },
-    { name: "JCDecaux", w: 384, h: 592 },
-    { name: "JCDecaux", w: 960, h: 256 },
-    { name: "JCDecaux", w: 768, h: 256 },
-    { name: "JCDecaux", w: 1440, h: 480 },
-    { name: "JCDecaux", w: 1184, h: 400 },
-    { name: "Hivestack", w: 2160, h: 3840 },
-    { name: "Hivestack", w: 384, h: 576 },
-    { name: "Britomart Towers", w: 432, h: 768 },
-    { name: "Newmarket Atrium", w: 1280, h: 448 },
-    { name: "Fanshawe Blades", w: 704, h: 1408 },
-    { name: "The Oteha", w: 384, h: 768 },
-    { name: "Shopalive", w: 1080, h: 1920 }
-  ],
-  references: [
-    "InDesign masters: 26-PRO-0461 \u2026 384px W x 592px H and 960px W x 256px H (standard and SLIM) \u2014 Storms, Quakes, Tsunami.",
-    "GWD working files: WORKING FILES/{QUAKES,STORMS,TSUNAMI}/{300x600px,970x250px}.",
-    "DV360 finals: Phase 1 V1\u2013V3, Phase 2 V4\u2013V7, Phase 3 V8\u2013V10 at 300\xD7600 and 970\xD7250 (HTML5 + statics)."
-  ]
-};
-var STYLE_SCHEMAS = [GET_READY_BURST_2];
-function styleSchemaFor(name) {
-  const n = (name ?? "").toLowerCase();
-  if (!n) return null;
-  return STYLE_SCHEMAS.find((s2) => s2.match.some((m) => n.includes(m))) ?? null;
-}
-function describeStyleSchema(s2) {
-  const zones = Object.keys(s2.zones).map((k) => `  ${k}: ${s2.zones[k].axis}, photo ${Math.round(s2.zones[k].photoFrac * 100)}%, band ${Math.round(s2.zones[k].bandFrac * 100)}% ${s2.zones[k].bandAt}`).join("\n");
-  const parts = Object.values(s2.parts).map((p) => `  ${p.role}: ${p.rule}`).join("\n");
-  return [
-    `STYLE SPEC \u2014 ${s2.name}`,
-    `Reading order (most important first): ${s2.hierarchy.join(" \u2192 ")}.`,
-    `Type: ${Object.entries(s2.type).map(([k, v]) => `${k} \u2014 ${v}`).join(" ")}`,
-    `Colours: ${Object.entries(s2.colours).map(([k, v]) => `${k} ${v}`).join(", ")}.`,
-    "Zones by shape:",
-    zones,
-    "Parts:",
-    parts,
-    `Shipped copy: ${s2.variants.map((v) => `[${v.phase}] ${v.kicker ? v.kicker + " / " : ""}${v.headline}${v.subheadline ? " / " + v.subheadline : ""} / ${v.message} / CTA ${v.cta.display} (display) or ${v.cta.ooh} (OOH)`).join(" | ")}`,
-    `Never: ${s2.never.join(" ")}`
-  ].join("\n");
-}
-
-// src/lib/layoutProfile.ts
-function defaultRules(profile) {
-  return {
-    headline: { pin: "measured", size: "measured", aspect: "locked", dropWhenTight: false, minPx: 24, neverOverlap: ["lockup", "cta"] },
-    subheadline: { pin: "measured", size: "measured", aspect: "locked", dropWhenTight: true, minPx: 10, neverOverlap: ["lockup", "cta"] },
-    cutout: { pin: "on-copy", size: "measured", aspect: "locked", dropWhenTight: true, neverOverlap: [] },
-    band: { pin: "panel-edge", size: "fit-width", aspect: "locked", dropWhenTight: true, neverOverlap: ["lockup", "logo"] },
-    message: { pin: "measured", size: "measured", aspect: "locked", dropWhenTight: true, minPx: 11, neverOverlap: ["cta", "lockup"] },
-    cta: { pin: "measured", size: profile.cta.fixedPx ? "fixed" : "scale", aspect: "locked", dropWhenTight: false, minPx: 24, neverOverlap: ["lockup", "message"] },
-    lockup: { pin: "measured", size: "measured", aspect: "locked", dropWhenTight: false, minPx: 16, neverOverlap: ["band", "cta"] },
-    logo: { pin: "bottom", size: "measured", aspect: "locked", dropWhenTight: false, minPx: 24, neverOverlap: ["band", "cutout"] },
-    photo: { pin: "measured", size: "scale", aspect: "free", dropWhenTight: false, neverOverlap: [] }
-  };
-}
-function mergeRules(profile, edits) {
-  const base = { ...defaultRules(profile), ...profile.rules ?? {} };
-  if (typeof edits !== "object" || edits === null) return base;
-  const PIN = /* @__PURE__ */ new Set(["measured", "top", "centre", "bottom", "on-copy", "zone-bottom", "panel-edge", "none"]);
-  const SIZE = /* @__PURE__ */ new Set(["measured", "fixed", "fit-width", "scale"]);
-  for (const slot of PART_RULE_SLOTS) {
-    const e = edits[slot];
-    if (typeof e !== "object" || e === null) continue;
-    const r4 = e;
-    const cur = { ...base[slot] };
-    if (typeof r4.pin === "string" && PIN.has(r4.pin)) cur.pin = r4.pin;
-    if (typeof r4.size === "string" && SIZE.has(r4.size)) cur.size = r4.size;
-    if (r4.aspect === "locked" || r4.aspect === "free") cur.aspect = r4.aspect;
-    if (typeof r4.dropWhenTight === "boolean") cur.dropWhenTight = r4.dropWhenTight;
-    if (typeof r4.minPx === "number" && Number.isFinite(r4.minPx)) cur.minPx = Math.max(0, Math.min(2e3, Math.round(r4.minPx)));
-    if (Array.isArray(r4.neverOverlap)) cur.neverOverlap = r4.neverOverlap.filter((v) => typeof v === "string" && PART_RULE_SLOTS.includes(v));
-    base[slot] = cur;
-  }
-  return base;
-}
-var r32 = (v) => Math.round(v * 1e3) / 1e3;
-function byRole(config2, role) {
-  return config2.elements.find((e) => e.slot === role || e.type === "text" && e.role === role || e.type === "image" && e.role === role && role === "logo");
-}
-function allByRole(config2, role) {
-  return config2.elements.filter((e) => e.slot === role || e.type === "text" && e.role === role);
-}
-function geometryKeyed(config2, W2, H2) {
-  const semantic = inferSlots(config2, W2, H2);
-  const groups = /* @__PURE__ */ new Map();
-  for (const e of semantic.elements) {
-    const slot = e.slot && e.slot !== "other" ? e.slot : e.type === "image" ? `image:${e.role}` : e.type === "text" ? `text:${e.role}` : "rect:other";
-    groups.set(slot, [...groups.get(slot) ?? [], e]);
-  }
-  const out = {};
-  for (const [slot, elements] of groups) {
-    elements.sort((a, b) => a.y - b.y || a.x - b.x || b.w * b.h - a.w * a.h);
-    elements.forEach((e, index) => {
-      const toleranceX = Math.max(2, W2 * 0.012);
-      const toleranceY = Math.max(2, H2 * 0.012);
-      const edges = [];
-      if (e.x <= toleranceX) edges.push("left");
-      if (e.x + e.w >= W2 - toleranceX) edges.push("right");
-      if (e.y <= toleranceY) edges.push("top");
-      if (e.y + e.h >= H2 - toleranceY) edges.push("bottom");
-      out[`${slot}:${index}`] = {
-        x: r32(e.x / W2),
-        y: r32(e.y / H2),
-        w: r32(e.w / W2),
-        h: r32(e.h / H2),
-        aspect: r32(e.w / Math.max(1, e.h)),
-        edges,
-        ...e.type === "text" ? { fontSize: r32(e.fontSize / Math.min(W2, H2)) } : {}
-      };
-    });
-  }
-  return out;
-}
-function geometryMaster(config2, W2, H2, name, templateId, mode) {
-  return { templateId, name, width: W2, height: H2, aspect: W2 / H2, formatClass: classifyFormat(W2, H2, { name }), mode, elements: geometryKeyed(config2, W2, H2) };
-}
-function measureMaster(config2, W2, H2, name, templateId) {
-  const semantic = inferSlots(config2, W2, H2);
-  const measuredConfig = { ...config2, elements: semantic.elements };
-  const panel = byRole(measuredConfig, "panel");
-  const headlineParts = allByRole(measuredConfig, "headline");
-  if (headlineParts.length === 0) return null;
-  const panelAxis = panel ? panel.w >= W2 * 0.9 && panel.y > H2 * 0.2 ? "stacked" : panel.h >= H2 * 0.9 && panel.x > W2 * 0.2 ? "side" : null : null;
-  const axis = panelAxis ?? (W2 / H2 >= 1.12 ? "side" : "stacked");
-  const mode = panelAxis ? "panel" : "free";
-  const fallbackPhotoFrac = axis === "stacked" ? 0.58 : 0.56;
-  const split2 = panelAxis && panel ? axis === "stacked" ? panel.y : panel.x : axis === "stacked" ? H2 * fallbackPhotoFrac : W2 * fallbackPhotoFrac;
-  const photoZone = axis === "stacked" ? { x: 0, y: 0, w: W2, h: split2 } : { x: 0, y: 0, w: split2, h: H2 };
-  const panelZone = axis === "stacked" ? { x: 0, y: split2, w: W2, h: H2 - split2 } : { x: split2, y: 0, w: W2 - split2, h: H2 };
-  const short = Math.min(W2, H2);
-  const missing = [];
-  const hx0 = Math.min(...headlineParts.map((e) => e.x)), hy0 = Math.min(...headlineParts.map((e) => e.y));
-  const hl = { x: hx0, y: hy0, w: Math.max(...headlineParts.map((e) => e.x + e.w)) - hx0, h: Math.max(...headlineParts.map((e) => e.y + e.h)) - hy0 };
-  const sub = byRole(measuredConfig, "subheadline");
-  const cutout = allByRole(measuredConfig, "cutout").sort((a, b) => b.w * b.h - a.w * a.h)[0];
-  const band = byRole(measuredConfig, "band");
-  const message = byRole(measuredConfig, "message");
-  const cta = byRole(measuredConfig, "cta");
-  const lockup = byRole(measuredConfig, "lockup") ?? byRole(measuredConfig, "logo");
-  const scrim = byRole(measuredConfig, "scrim");
-  for (const [k, v] of [["sub-line", sub], ["cut-out", cutout], ["band", band], ["message", message], ["CTA", cta], ["lockup", lockup]]) if (!v) missing.push(k);
-  const copyBottom = sub ? Math.max(hl.y + hl.h, sub.y + sub.h) : hl.y + hl.h;
-  const lastLineH = sub ? sub.h : hl.h;
-  const m = {
-    photoFrac: r32(axis === "stacked" ? split2 / H2 : split2 / W2),
-    bandFrac: r32(band ? band.h / H2 : 0),
-    bandH: r32(band ? band.h / panelZone.h : 0),
-    headlineH: r32(hl.h / short),
-    headlineCy: r32((hl.y + hl.h / 2 - photoZone.y) / photoZone.h),
-    headlineW: r32(hl.w / photoZone.w),
-    subW: r32(sub ? sub.w / hl.w : 0.9),
-    subH: r32(sub ? sub.h / hl.h : 0.45),
-    subGap: r32(sub ? (sub.y - (hl.y + hl.h)) / hl.h : 0.07),
-    cutoutW: r32(cutout ? cutout.w / photoZone.w : 0),
-    cutoutCx: r32(cutout ? (cutout.x + cutout.w / 2 - photoZone.x) / photoZone.w : 0.5),
-    // A car that reaches the zone's bottom edge in the master is bottom-
-    // anchored: whatever of it falls below the zone (its water, its shadow)
-    // hides under the panel, so a rebuilt size may let it run past by up to
-    // 60% of its height. A car floating clear of the edge keeps to the zone.
-    cutoutBleed: r32(cutout ? cutout.y + cutout.h >= photoZone.y + photoZone.h - photoZone.h * 0.02 ? 0.6 : 0.06 : 0),
-    copyOverCutoutFrac: cutout ? r32((copyBottom - cutout.y) / Math.max(1, lastLineH)) : null,
-    message: { cy: r32(message ? (message.y + message.h / 2 - panelZone.y) / panelZone.h : 0.36), w: r32(message ? message.w / panelZone.w : 0.7) },
-    cta: { cy: r32(cta ? (cta.y + cta.h / 2 - panelZone.y) / panelZone.h : 0.55) },
-    lockup: { cy: r32(lockup ? (lockup.y + lockup.h / 2 - panelZone.y) / panelZone.h : 0.82), w: r32(lockup ? lockup.w / panelZone.w : 0.7) },
-    ctaPx: cta ? { w: Math.round(cta.w), h: Math.round(cta.h) } : null,
-    short,
-    hasScrim: !!scrim,
-    scrimH: scrim ? r32(scrim.h / photoZone.h) : null
-  };
-  return { templateId, name, width: W2, height: H2, axis, formatClass: classifyFormat(W2, H2, { name }), m, missing, geometry: geometryMaster(measuredConfig, W2, H2, name, templateId, mode), mode };
-}
-var STACKED_CLASSES = ["portrait", "tower", "square"];
-var SIDE_CLASSES = ["wide", "landscape"];
-function averageAxis(ms) {
-  const n = ms.length;
-  const avg = (f) => r32(ms.reduce((a, m) => a + f(m), 0) / n);
-  const cutouts = ms.filter((m) => m.cutoutW > 0);
-  const avgC = (f, fallback) => cutouts.length ? r32(cutouts.reduce((a, m) => a + f(m), 0) / cutouts.length) : fallback;
-  const overs = ms.map((m) => m.copyOverCutoutFrac).filter((v) => v != null);
-  return {
-    photoFrac: avg((m) => m.photoFrac),
-    bandFrac: avg((m) => m.bandFrac),
-    bandH: avg((m) => m.bandH),
-    headlineH: avg((m) => m.headlineH),
-    headlineCy: avg((m) => m.headlineCy),
-    headlineW: avg((m) => m.headlineW),
-    subW: avg((m) => m.subW),
-    subH: avg((m) => m.subH),
-    subGap: avg((m) => m.subGap),
-    cutoutW: avgC((m) => m.cutoutW, 0),
-    cutoutCx: avgC((m) => m.cutoutCx, 0.5),
-    cutoutBleed: avgC((m) => m.cutoutBleed, 0.06),
-    copyOverCutoutFrac: overs.length ? r32(overs.reduce((a, v) => a + v, 0) / overs.length) : null,
-    message: { cy: avg((m) => m.message.cy), w: avg((m) => m.message.w) },
-    cta: { cy: avg((m) => m.cta.cy) },
-    lockup: { cy: avg((m) => m.lockup.cy), w: avg((m) => m.lockup.w) },
-    ctaPx: ms[0].ctaPx,
-    short: Math.round(ms.reduce((a, m) => a + m.short, 0) / n),
-    hasScrim: ms.some((m) => m.hasScrim),
-    scrimH: ms.find((m) => m.scrimH != null)?.scrimH ?? null
-  };
-}
-function buildProfile(measurements, name) {
-  const notes = [];
-  const stacked = measurements.filter((x) => x.axis === "stacked").map((x) => x.m);
-  const side = measurements.filter((x) => x.axis === "side").map((x) => x.m);
-  const sAvg = stacked.length ? averageAxis(stacked) : null;
-  const dAvg = side.length ? averageAxis(side) : null;
-  const measuredClasses = new Set(measurements.map((x) => x.formatClass));
-  const zones = {};
-  for (const cls of STACKED_CLASSES) {
-    const src = sAvg ?? dAvg;
-    zones[cls] = { axis: "stacked", photoFrac: sAvg ? sAvg.photoFrac : cls === "square" ? 0.55 : 0.57, displayPhotoFrac: sAvg ? sAvg.photoFrac : void 0, bandFrac: src ? src.bandFrac : 0.05, bandAt: "seam", tolerance: measuredClasses.has(cls) ? 0.03 : 0.05, measured: measuredClasses.has(cls) };
-  }
-  for (const cls of SIDE_CLASSES) {
-    const src = dAvg ?? sAvg;
-    zones[cls] = { axis: "side", photoFrac: dAvg ? dAvg.photoFrac : cls === "landscape" ? 0.55 : 0.6, displayPhotoFrac: dAvg ? dAvg.photoFrac : void 0, bandFrac: src ? src.bandFrac : 0.15, bandAt: "panelTop", tolerance: measuredClasses.has(cls) ? 0.03 : 0.05, measured: measuredClasses.has(cls) };
-  }
-  zones.strip = { axis: "row", photoFrac: 0.3, bandFrac: 0, bandAt: "none", tolerance: 0.05, measured: measuredClasses.has("strip") };
-  const display = {};
-  if (sAvg) display.stacked = stripAxis(sAvg);
-  if (dAvg) display.side = stripAxis(dAvg);
-  const ctaSizes = measurements.map((x) => x.m.ctaPx).filter((c) => !!c);
-  const cta = {};
-  if (ctaSizes.length >= 1) {
-    const same = ctaSizes.every((c) => Math.abs(c.w - ctaSizes[0].w) <= 3 && Math.abs(c.h - ctaSizes[0].h) <= 3);
-    if (same) {
-      const shorts = measurements.filter((x) => x.m.ctaPx).map((x) => x.m.short);
-      cta.fixedPx = { w: Math.round(ctaSizes.reduce((a, c) => a + c.w, 0) / ctaSizes.length), h: Math.round(ctaSizes.reduce((a, c) => a + c.h, 0) / ctaSizes.length) };
-      cta.fixedShortRange = [Math.min(...shorts), Math.max(...shorts)];
-      notes.push(`Button is a fixed ${cta.fixedPx.w}\xD7${cta.fixedPx.h}px asset on canvases whose short side is ${cta.fixedShortRange[0]}\u2013${cta.fixedShortRange[1]}px; it scales elsewhere.`);
-    }
-  }
-  const overs = measurements.map((x) => x.m.copyOverCutoutFrac).filter((v) => v != null);
-  const copyOverCutoutFrac = overs.length ? r32(overs.reduce((a, v) => a + v, 0) / overs.length) : null;
-  const measuredAxes = [];
-  if (sAvg) measuredAxes.push("stacked");
-  if (dAvg) measuredAxes.push("side");
-  const measuredList = [...measuredClasses].join(", ");
-  const interpolated = Object.keys(zones).filter((c) => !zones[c].measured).join(", ");
-  notes.unshift(`Measured from ${measurements.length} example${measurements.length === 1 ? "" : "s"} (${measuredList}); interpolated: ${interpolated || "none"}.`);
-  if (measurements.some((x) => x.mode === "free")) notes.push("Free-form key visual geometry measured by semantic layer, no panel required. Images remain proportional and live text keeps editable boxes.");
-  if (!sAvg) notes.push("No stacked (tall) example: portrait, tower and square sizes use the family defaults until one is supplied.");
-  if (!dAvg) notes.push("No side (wide) example: wide and landscape sizes use the family defaults until one is supplied.");
-  for (const x of measurements) if (x.missing.length) notes.push(`${x.name}: no ${x.missing.join(", ")} layer recognised.`);
-  return { version: 2, name, sources: measurements.map((x) => ({ templateId: x.templateId, name: x.name, width: x.width, height: x.height, axis: x.axis, formatClass: x.formatClass })), zones, display, measuredAxes, cta, copyOverCutoutFrac, notes, geometryMasters: measurements.map((x) => x.geometry) };
-}
-function stripAxis(m) {
-  return { headlineH: m.headlineH, headlineCy: m.headlineCy, subW: m.subW, subH: m.subH, subGap: m.subGap, cutoutW: m.cutoutW, cutoutCx: m.cutoutCx, cutoutBleed: m.cutoutBleed, message: m.message, cta: m.cta, lockup: m.lockup, bandH: m.bandH };
-}
-function profileToStyleSchema(profile, id) {
-  const parts = {
-    headline: {
-      role: "headline",
-      zone: "photo",
-      size: { ofShort: profile.display.stacked?.headlineH ?? profile.display.side?.headlineH ?? 0.19 },
-      anchor: { y: profile.display.stacked?.headlineCy ?? 0.45, align: "center" },
-      floorPx: 24,
-      display: { stacked: profile.display.stacked?.headlineH ?? 0.19, side: profile.display.side?.headlineH ?? 0.38 },
-      rule: `Headline height ${Math.round((profile.display.stacked?.headlineH ?? 0.19) * 100)}% of the short side on stacked layouts, ${Math.round((profile.display.side?.headlineH ?? 0.38) * 100)}% on side layouts; block centre at ${Math.round((profile.display.stacked?.headlineCy ?? 0.45) * 100)}% / ${Math.round((profile.display.side?.headlineCy ?? 0.36) * 100)}% of the photo zone (measured).`
-    },
-    subheadline: { role: "subheadline", zone: "photo", size: { ofHeadline: profile.display.stacked?.subH ?? 0.45 }, anchor: { align: "center" }, rule: "Sub-line set at the measured share of the headline, directly under it." },
-    cutout: { role: "cutout", zone: "photo", size: { ofZoneW: profile.display.stacked?.cutoutW ?? 0.8 }, anchor: { y: 1 }, rule: `Cut-out at ${Math.round((profile.display.stacked?.cutoutW ?? 0.8) * 100)}% of the zone width (stacked) / ${Math.round((profile.display.side?.cutoutW ?? 0.47) * 100)}% (side), on the copy's last line as measured.` },
-    message: { role: "message", zone: "panel", size: { ofZoneW: profile.display.stacked?.message.w ?? 0.7 }, anchor: { y: profile.display.stacked?.message.cy ?? 0.36, align: "center" }, floorPx: 11, rule: "Message centred in the panel column at the measured height." },
-    cta: { role: "cta", zone: "panel", size: { ofZoneW: 0.6 }, anchor: { y: profile.display.stacked?.cta.cy ?? 0.55, align: "center" }, floorPx: 24, ...profile.cta.fixedPx ? { fixedPx: profile.cta.fixedPx, fixedShortRange: profile.cta.fixedShortRange } : {}, rule: profile.cta.fixedPx ? `Button is a fixed ${profile.cta.fixedPx.w}\xD7${profile.cta.fixedPx.h}px asset at the measured scale.` : "Button scales with the panel." },
-    lockup: { role: "lockup", zone: "panel", size: { ofZoneW: profile.display.stacked?.lockup.w ?? 0.7 }, anchor: { y: profile.display.stacked?.lockup.cy ?? 0.82, align: "center" }, rule: "Lockup last in the panel column at the measured height." },
-    band: { role: "band", zone: "seam", size: { ofZoneW: 1 }, anchor: {}, droppedWhen: "strips", rule: "Band on the panel's outer edge, full zone width." },
-    photo: { role: "photo", zone: "photo", size: { ofZoneW: 1, ofZoneH: 1 }, anchor: {}, rule: "Covers its zone; the master's framing is kept on same-axis builds." }
-  };
-  const zones = {};
-  for (const k of Object.keys(profile.zones)) {
-    const { measured: _m, ...z } = profile.zones[k];
-    zones[k] = z;
-  }
-  return {
-    id: `profile-${id}`,
-    name: profile.name,
-    match: [],
-    colours: {},
-    type: {},
-    hierarchy: ["headline", "subheadline", "message", "cta", "lockup"],
-    zones,
-    display: { stacked: profile.display.stacked ?? DEFAULT_STACKED, side: profile.display.side ?? DEFAULT_SIDE },
-    alwaysDisplay: true,
-    parts,
-    variants: [],
-    never: [],
-    sizes: [],
-    references: profile.sources.map((s2) => `${s2.name} (${s2.width}\xD7${s2.height})`),
-    ...profile.copyOverCutoutFrac != null ? { copyOverCutoutFrac: profile.copyOverCutoutFrac } : {},
-    partRules: mergeRules(profile, null)
-  };
-}
-async function updateProfileRules(id, edits) {
-  const p = await getProfile(id);
-  if (!p) return null;
-  const rules = mergeRules(p.profile, edits);
-  const profile = { ...p.profile, rules };
-  const [saved] = await db.update(layoutProfilesTable).set({ profile: JSON.stringify(profile), updatedAt: /* @__PURE__ */ new Date() }).where(eq(layoutProfilesTable.id, id)).returning();
-  return parseRow(saved);
-}
-var DEFAULT_STACKED = { headlineH: 0.193, headlineCy: 0.422, subW: 0.986, subH: 0.517, subGap: 0.069, cutoutW: 0.8, cutoutCx: 0.41, cutoutBleed: 0.45, message: { cy: 0.36, w: 0.73 }, cta: { cy: 0.55 }, lockup: { cy: 0.82, w: 0.7 }, bandH: 0.147 };
-var DEFAULT_SIDE = { headlineH: 0.396, headlineCy: 0.266, subW: 0.874, subH: 0.404, subGap: 0.07, cutoutW: 0.467, cutoutCx: 0.419, cutoutBleed: 0.6, message: { cy: 0.378, w: 0.7 }, cta: { cy: 0.562 }, lockup: { cy: 0.838, w: 0.7 }, bandH: 0.152 };
-function parseRow(row) {
-  let profile;
-  try {
-    profile = JSON.parse(row.profile);
-  } catch {
-    profile = buildProfile([], row.name);
-  }
-  return { id: row.id, name: row.name, sourceKey: row.sourceKey, profile, updatedAt: row.updatedAt };
-}
-async function learnProfile(masterIds, name, createdBy) {
-  const ids = [...new Set(masterIds.filter((n) => Number.isInteger(n) && n > 0))].sort((a, b) => a - b);
-  if (ids.length === 0) return null;
-  const rows = await db.select().from(templatesTable).where(inArray(templatesTable.id, ids));
-  const measurements = [];
-  const skipped = [];
-  for (const row of rows) {
-    let parsed;
-    try {
-      parsed = JSON.parse(row.config || "{}");
-    } catch {
-      parsed = {};
-    }
-    const cfg = normalizeFreeformConfig(parsed);
-    const m = measureMaster(cfg, row.width, row.height, row.name, row.id);
-    if (m) measurements.push(m);
-    else skipped.push(`${row.name}: no headline recognised, not measured`);
-  }
-  if (measurements.length === 0) return null;
-  const profileName = (name ?? "").trim() || campaignNameFrom(measurements.map((m) => m.name));
-  const profile = buildProfile(measurements, profileName);
-  const sourceKey = measurements.map((m) => m.templateId).sort((a, b) => a - b).join(",");
-  const [existing] = await db.select().from(layoutProfilesTable).where(eq(layoutProfilesTable.sourceKey, sourceKey));
-  let saved;
-  if (existing) {
-    try {
-      const prev = JSON.parse(existing.profile);
-      if (prev.rules) profile.rules = prev.rules;
-    } catch {
-    }
-    [saved] = await db.update(layoutProfilesTable).set({ name: profileName, profile: JSON.stringify(profile), updatedAt: /* @__PURE__ */ new Date() }).where(eq(layoutProfilesTable.id, existing.id)).returning();
-  } else {
-    [saved] = await db.insert(layoutProfilesTable).values({ name: profileName, sourceKey, profile: JSON.stringify(profile), createdBy: createdBy ?? null }).returning();
-  }
-  return { stored: parseRow(saved), skipped };
-}
-function campaignNameFrom(names) {
-  if (names.length === 0) return "Campaign";
-  let prefix = names[0];
-  for (const n of names.slice(1)) {
-    let i = 0;
-    while (i < prefix.length && i < n.length && prefix[i].toLowerCase() === n[i].toLowerCase()) i++;
-    prefix = prefix.slice(0, i);
-  }
-  const tidy = prefix.replace(/[\s_\-—–:]+$/g, "").replace(/\s{2,}/g, " ").trim();
-  return tidy.length >= 4 ? tidy : names[0].split(/ — /)[0].trim() || "Campaign";
-}
-async function listProfiles() {
-  const rows = await db.select().from(layoutProfilesTable).orderBy(desc(layoutProfilesTable.updatedAt));
-  return rows.map(parseRow);
-}
-async function getProfile(id) {
-  const [row] = await db.select().from(layoutProfilesTable).where(eq(layoutProfilesTable.id, id));
-  return row ? parseRow(row) : null;
-}
-async function deleteProfile(id) {
-  const rows = await db.delete(layoutProfilesTable).where(eq(layoutProfilesTable.id, id)).returning({ id: layoutProfilesTable.id });
-  return rows.length > 0;
-}
-async function profileForMaster(masterId, sourceTemplateId) {
-  const ids = [masterId, ...sourceTemplateId ? [sourceTemplateId] : []];
-  const rows = await db.select().from(layoutProfilesTable).where(sql`string_to_array(${layoutProfilesTable.sourceKey}, ',')::int[] && ${sql.raw(`ARRAY[${ids.map((n) => Number(n)).join(",")}]::int[]`)}`).orderBy(desc(layoutProfilesTable.updatedAt)).limit(1);
-  return rows[0] ? parseRow(rows[0]) : null;
-}
-async function resolveStyleSchema(opts) {
-  if (opts.profileId) {
-    const p = await getProfile(opts.profileId);
-    if (p) return { schema: profileToStyleSchema(p.profile, p.id), source: "profile", profileId: p.id, label: `${p.name} (measured profile)`, profile: p.profile };
-  }
-  try {
-    const p = await profileForMaster(opts.masterId, opts.sourceTemplateId);
-    if (p) return { schema: profileToStyleSchema(p.profile, p.id), source: "profile", profileId: p.id, label: `${p.name} (measured profile)`, profile: p.profile };
-  } catch {
-  }
-  const builtin = styleSchemaFor(opts.masterName);
-  if (builtin) return { schema: builtin, source: "builtin", label: `${builtin.name} (built-in schema)` };
-  return { schema: null, source: "none", label: "family defaults" };
 }
 
 // src/lib/geometryAdapt.ts
@@ -234719,7 +236723,7 @@ function keyElements(config2, width, height) {
 }
 var lerp = (a, b, t) => a + (b - a) * t;
 function interpolate(a, b, t) {
-  const edges = ["left", "right", "top", "bottom"].filter((edge) => a.edges.includes(edge) && b.edges.includes(edge));
+  const edges = ["left", "right", "top", "bottom"].filter((edge) => a.edges.includes(edge) || b.edges.includes(edge));
   return {
     x: lerp(a.x, b.x, t),
     y: lerp(a.y, b.y, t),
@@ -234747,15 +236751,30 @@ function targetBox(a, b, key, t) {
   if (x && y) return interpolate(x, y, t);
   return x ?? y ?? null;
 }
-function fitText2(el, proposed, width, height) {
-  const floor = el.slot === "headline" || el.role === "headline" ? 12 : 8;
+function fitText2(el, proposed, width, height, rules) {
+  const part = slotForText(el);
+  const floor = part === "cta" ? LABEL_FLOOR_PX : part ? rules?.floor(part) ?? (part === "headline" ? 12 : 8) : 8;
+  const spec3 = { family: el.fontFamily, weight: el.fontWeight, ...el.letterSpacing !== void 0 && el.fontSize > 0 ? { letterSpacingEm: el.letterSpacing / el.fontSize } : {} };
+  const lineHeight = el.lineHeight ?? 1.2;
+  const fitsAt = (size2) => {
+    const lines = wrapText(el.text, width, spec3, size2);
+    const widest = Math.max(0, ...lines.map((line2) => measureLine(line2, spec3, size2)));
+    const blockH = lines.length * size2 * lineHeight;
+    return widest <= width * 1.01 && blockH <= height * 1.02;
+  };
   let size = Math.max(floor, proposed);
-  for (let i = 0; i < 40; i++) {
-    const lines = wrapText(el.text, width, { family: el.fontFamily, weight: el.fontWeight, letterSpacing: el.letterSpacing }, size);
-    const widest = Math.max(0, ...lines.map((line2) => measureLine(line2, { family: el.fontFamily, weight: el.fontWeight, letterSpacing: el.letterSpacing }, size)));
-    const blockH = lines.length * size * (el.lineHeight ?? 1.2);
-    if (widest <= width * 1.01 && blockH <= height * 1.02) break;
-    size *= 0.96;
+  if (fitsAt(size)) {
+    const cap = Math.min(proposed * 1.5, height / lineHeight);
+    for (let i = 0; i < 40; i++) {
+      const next = size * 1.04;
+      if (next > cap || !fitsAt(next)) break;
+      size = next;
+    }
+  } else {
+    for (let i = 0; i < 40; i++) {
+      size *= 0.96;
+      if (size <= floor || fitsAt(size)) break;
+    }
   }
   return Math.max(floor, Math.round(size * 10) / 10);
 }
@@ -234775,7 +236794,7 @@ function placeImage2(el, measured, dstW, dstH) {
   if (measured.edges.includes("bottom")) y = box.y + box.h - h;
   return { ...el, x: Math.round(x), y: Math.round(y), w: Math.round(w), h: Math.round(h), fit: el.fit ?? "contain" };
 }
-function adaptGeometryProfile(master, srcW, srcH, dstW, dstH, profile) {
+function adaptGeometryProfile(master, srcW, srcH, dstW, dstH, profile, rules) {
   const masters = profile.geometryMasters ?? [];
   if (masters.length === 0 || !masters.some((m) => m.mode === "free")) return null;
   const keyed = keyElements(master, srcW, srcH);
@@ -234785,34 +236804,389 @@ function adaptGeometryProfile(master, srcW, srcH, dstW, dstH, profile) {
   const fallbackById = new Map(fallback.elements.map((e) => [e.id, e]));
   const short = Math.min(dstW, dstH);
   let matched = 0;
-  const elements = keyed.map(({ key, element }) => {
+  const droppedByRule = new Set(keyed.filter(({ element }) => {
+    const part = slotForText(element);
+    return part ? rules?.pin(part) === "none" : false;
+  }).map(({ element }) => element.id));
+  const liquidScale = Math.min(dstW / srcW, dstH / srcH);
+  const elements = keyed.filter(({ element }) => !droppedByRule.has(element.id)).map(({ key, element }) => {
+    if (element.constraints && Object.keys(element.constraints).length) {
+      const box = resolveLiquid(element, element.constraints, { x: 0, y: 0, w: srcW, h: srcH }, { x: 0, y: 0, w: dstW, h: dstH }, liquidScale);
+      matched++;
+      if (element.type === "text") return { ...element, ...box, fontSize: fitText2(element, element.fontSize * liquidScale, box.w, box.h, rules) };
+      return { ...element, ...box };
+    }
     const measured = targetBox(a, b, key, t);
     if (!measured) return fallbackById.get(element.id) ?? element;
     matched++;
     const x = Math.round(measured.x * dstW), y = Math.round(measured.y * dstH);
     const w = Math.max(1, Math.round(measured.w * dstW)), h = Math.max(1, Math.round(measured.h * dstH));
-    if (element.type === "image") return placeImage2(element, measured, dstW, dstH);
+    if (element.type === "image") {
+      const placed2 = placeImage2(element, measured, dstW, dstH);
+      const part = element.slot === "lockup" || element.slot === "logo" ? element.slot : null;
+      if (part && placed2.type === "image") {
+        const floor = rules?.floor(part) ?? (part === "logo" ? 24 : 16);
+        const dim = part === "logo" ? Math.min(placed2.w, placed2.h) : placed2.h;
+        if (dim < floor) {
+          const k = floor / Math.max(1, dim);
+          const nw = Math.min(dstW, Math.round(placed2.w * k)), nh = Math.round(placed2.h * (nw / Math.max(1, placed2.w)));
+          const nx = Math.min(Math.max(0, placed2.x - (nw - placed2.w) / 2), dstW - nw);
+          const ny = Math.min(Math.max(0, placed2.y - (nh - placed2.h) / 2), dstH - nh);
+          return { ...placed2, x: Math.round(nx), y: Math.round(ny), w: nw, h: nh };
+        }
+      }
+      return placed2;
+    }
+    const sx = measured.edges.includes("left") ? 0 : measured.edges.includes("right") ? dstW - w : x;
+    const sy = measured.edges.includes("top") ? 0 : measured.edges.includes("bottom") ? dstH - h : y;
+    const sw = measured.edges.includes("left") && measured.edges.includes("right") ? dstW : w;
+    const sh = measured.edges.includes("top") && measured.edges.includes("bottom") ? dstH : h;
     if (element.type === "text") {
       const proposed = (measured.fontSize ?? element.fontSize / Math.min(srcW, srcH)) * short;
-      return { ...element, x, y, w, h, fontSize: fitText2(element, proposed, w, h), ...element.letterSpacing !== void 0 ? { letterSpacing: element.letterSpacing * (short / Math.min(srcW, srcH)) } : {} };
+      return { ...element, x: sx, y: sy, w: sw, h: sh, fontSize: fitText2(element, proposed, sw, sh, rules), ...element.letterSpacing !== void 0 ? { letterSpacing: element.letterSpacing * (short / Math.min(srcW, srcH)) } : {} };
     }
-    return { ...element, x, y, w, h };
+    return { ...element, x: sx, y: sy, w: sw, h: sh };
   });
   if (matched < Math.min(3, keyed.length)) return null;
+  const groupMin = /* @__PURE__ */ new Map();
+  for (const el of elements) {
+    if (el.type !== "text" || el.slot === "headline" || el.role === "headline") continue;
+    const key = el.slot ?? el.role;
+    if (!key) continue;
+    groupMin.set(key, Math.min(groupMin.get(key) ?? Infinity, el.fontSize));
+  }
+  const groupCount = /* @__PURE__ */ new Map();
+  for (const el of elements) {
+    if (el.type === "text") {
+      const k = el.slot ?? el.role;
+      if (k) groupCount.set(k, (groupCount.get(k) ?? 0) + 1);
+    }
+  }
+  for (const el of elements) {
+    if (el.type !== "text") continue;
+    const key = el.slot ?? el.role;
+    if (!key || (groupCount.get(key) ?? 0) < 2) continue;
+    const m = groupMin.get(key);
+    if (m !== void 0 && Number.isFinite(m) && el.fontSize > m) el.fontSize = m;
+  }
   const relation = a.templateId === b.templateId ? `nearest ${a.width}\xD7${a.height} master` : `${a.width}\xD7${a.height} and ${b.width}\xD7${b.height} masters`;
   return {
     config: { ...master, elements, adaptMethod: "geometry-profile" },
     notes: [
       `Layer positions measured from the ${relation}.`,
       "Raster artwork was scaled proportionally, never stretched; live text was fitted inside its measured box.",
+      ...droppedByRule.size ? [`${droppedByRule.size} part${droppedByRule.size === 1 ? "" : "s"} left out by the profile's rules (pinned "none").`] : [],
       ...outside ? ["Target shape is outside the supplied portrait-to-landscape range, so the nearest master geometry was edge-anchored and flagged for review."] : []
     ]
   };
 }
 
+// src/lib/authoritativeAdapt.ts
+var round2 = (n) => Math.round(n * 100) / 100;
+var union3 = (items) => {
+  const x0 = Math.min(...items.map((e) => e.x));
+  const y0 = Math.min(...items.map((e) => e.y));
+  const x1 = Math.max(...items.map((e) => e.x + e.w));
+  const y1 = Math.max(...items.map((e) => e.y + e.h));
+  return { x: x0, y: y0, w: x1 - x0, h: y1 - y0 };
+};
+function familyForTarget(width, height) {
+  const ratio2 = width / height;
+  if (ratio2 <= 0.55) return "slim-portrait";
+  if (ratio2 < 1.25) return "portrait";
+  if (ratio2 >= 2.75) return "slim-landscape";
+  return "landscape";
+}
+var aspectDist = (aw, ah, bw, bh) => Math.abs(Math.log(aw / ah / (bw / bh)));
+function selectAuthoritativeSource(sources, width, height) {
+  if (!sources.length) return null;
+  const exact = sources.find((s2) => s2.width === width && s2.height === height);
+  if (exact) return exact;
+  const family2 = familyForTarget(width, height);
+  const familySources = sources.filter((s2) => s2.config.masterFamily === family2);
+  if ((family2 === "slim-portrait" || family2 === "slim-landscape") && familySources.length === 0) return null;
+  const candidates = familySources.length ? familySources : sources.filter((s2) => family2.includes("portrait") ? s2.width < s2.height : s2.width >= s2.height);
+  const pool2 = candidates.length ? candidates : sources;
+  return [...pool2].sort((a, b) => aspectDist(a.width, a.height, width, height) - aspectDist(b.width, b.height, width, height))[0];
+}
+function nearestAuthoritativeSource(sources, width, height) {
+  if (!sources.length) return null;
+  return [...sources].sort((a, b) => aspectDist(a.width, a.height, width, height) - aspectDist(b.width, b.height, width, height))[0];
+}
+function targetBetweenMasters(sources, width, height) {
+  if (sources.length < 2) return false;
+  const t = Math.log(width / height);
+  const logs = sources.map((s2) => Math.log(s2.width / s2.height));
+  return t > Math.min(...logs) + 0.02 && t < Math.max(...logs) - 0.02;
+}
+function constraintsFromAnchors(el) {
+  if (!el.anchorX && !el.anchorY && !el.scaleMode) return void 0;
+  const c = {};
+  if (el.anchorX === "left") c.pinLeft = true;
+  if (el.anchorX === "right") c.pinRight = true;
+  if (el.anchorX === "stretch") {
+    c.pinLeft = true;
+    c.pinRight = true;
+    c.flexW = true;
+  }
+  if (el.anchorY === "top") c.pinTop = true;
+  if (el.anchorY === "bottom") c.pinBottom = true;
+  if (el.anchorY === "stretch") {
+    c.pinTop = true;
+    c.pinBottom = true;
+    c.flexH = true;
+  }
+  if (el.scaleMode === "fill") {
+    c.flexW = true;
+    c.flexH = true;
+  }
+  return Object.keys(c).length ? c : void 0;
+}
+function adaptAuthoritativeConfig(master, srcW, srcH, dstW, dstH, opts = {}) {
+  if (srcW === dstW && srcH === dstH) return JSON.parse(JSON.stringify(master));
+  const groups = /* @__PURE__ */ new Map();
+  for (const el of master.elements) {
+    const key = el.layoutBlock || `item:${el.id}`;
+    groups.set(key, [...groups.get(key) ?? [], el]);
+  }
+  const byId = /* @__PURE__ */ new Map();
+  const notes = [];
+  let needsReview = false;
+  const fitScale = Math.min(dstW / srcW, dstH / srcH);
+  const canvasSrc = { x: 0, y: 0, w: srcW, h: srcH };
+  const canvasDst = { x: 0, y: 0, w: dstW, h: dstH };
+  const describe2 = [];
+  for (const [key, members] of groups) {
+    const source = union3(members);
+    const lead = members[0];
+    const isLogo = members.every((m) => m.slot === "logo" || m.slot === "lockup" || m.type === "image" && m.role === "logo");
+    const inferred = inferConstraints(source, canvasSrc);
+    const spans = {
+      ...inferred.flexW ? { pinLeft: true, pinRight: true, flexW: true } : {},
+      ...inferred.flexH ? { pinTop: true, pinBottom: true, flexH: true } : {}
+    };
+    let c = (lead.constraints && Object.keys(lead.constraints).length ? lead.constraints : void 0) ?? (constraintsFromAnchors(lead) ? { ...constraintsFromAnchors(lead), ...spans } : void 0) ?? inferred;
+    if (isLogo) c = { ...c, flexW: void 0, flexH: void 0, ...c.pinLeft && c.pinRight ? { pinLeft: void 0 } : {}, ...c.pinTop && c.pinBottom ? { pinTop: void 0 } : {} };
+    const scale = lead.scaleMode === "fixed" ? 1 : fitScale;
+    const box = resolveLiquid(source, c, canvasSrc, canvasDst, scale);
+    const kx = box.w / Math.max(1, source.w * scale);
+    const ky = box.h / Math.max(1, source.h * scale);
+    const stretched = Math.abs(kx - 1) > 0.02 || Math.abs(ky - 1) > 0.02;
+    describe2.push(`${key}: ${describeConstraints(c)}${stretched ? " (stretched)" : ""}`);
+    for (const el of members) {
+      const w = Math.max(1, round2(el.w * scale));
+      const h = Math.max(1, round2(el.h * scale));
+      const offX = (el.x - source.x) * scale, offY = (el.y - source.y) * scale;
+      if (el.type === "image" && members.length === 1 && stretched && !isLogo) {
+        byId.set(el.id, { ...el, x: box.x, y: box.y, w: box.w, h: box.h, fit: "cover" });
+        continue;
+      }
+      if (el.type === "rect" && stretched) {
+        const fx0 = source.w > 0 ? (el.x - source.x) / source.w : 0, fx1 = source.w > 0 ? (el.x + el.w - source.x) / source.w : 1;
+        const fy0 = source.h > 0 ? (el.y - source.y) / source.h : 0, fy1 = source.h > 0 ? (el.y + el.h - source.y) / source.h : 1;
+        byId.set(el.id, { ...el, x: round2(box.x + fx0 * box.w), y: round2(box.y + fy0 * box.h), w: Math.max(1, round2((fx1 - fx0) * box.w)), h: Math.max(1, round2((fy1 - fy0) * box.h)) });
+        continue;
+      }
+      if (el.type === "image" && stretched && !isLogo && (el.slot === "band" || el.slot === "photo" || el.slot === "panel")) {
+        const fx0 = source.w > 0 ? (el.x - source.x) / source.w : 0, fx1 = source.w > 0 ? (el.x + el.w - source.x) / source.w : 1;
+        const fy0 = source.h > 0 ? (el.y - source.y) / source.h : 0, fy1 = source.h > 0 ? (el.y + el.h - source.y) / source.h : 1;
+        const spansX = fx1 - fx0 >= 0.9, spansY = fy1 - fy0 >= 0.9;
+        const bw = spansX ? Math.max(1, round2((fx1 - fx0) * box.w)) : w;
+        const bh = spansY ? Math.max(1, round2((fy1 - fy0) * box.h)) : h;
+        const bx = spansX ? round2(box.x + fx0 * box.w) : fx0 <= 0.02 ? box.x : fx1 >= 0.98 ? box.x + box.w - bw : round2(box.x + (fx0 + fx1) / 2 * box.w - bw / 2);
+        const by = spansY ? round2(box.y + fy0 * box.h) : fy0 <= 0.02 ? box.y : fy1 >= 0.98 ? box.y + box.h - bh : round2(box.y + (fy0 + fy1) / 2 * box.h - bh / 2);
+        byId.set(el.id, { ...el, x: bx, y: by, w: bw, h: bh, fit: "cover" });
+        continue;
+      }
+      let x = box.x + offX, y = box.y + offY;
+      if (stretched) {
+        const fx = source.w > 0 ? (el.x + el.w / 2 - source.x) / source.w : 0.5;
+        const fy = source.h > 0 ? (el.y + el.h / 2 - source.y) / source.h : 0.5;
+        if (el.type === "text") x = el.align === "center" ? box.x + (box.w - w) / 2 : el.align === "right" ? box.x + box.w - w : box.x + offX;
+        else x = box.x + fx * box.w - w / 2;
+        y = box.y + fy * box.h - h / 2;
+      }
+      const next = {
+        ...el,
+        x: round2(x),
+        y: round2(y),
+        w,
+        h,
+        ...el.type === "text" ? { fontSize: Math.max(6, round2(el.fontSize * scale)), ...el.letterSpacing !== void 0 ? { letterSpacing: round2(el.letterSpacing * scale) } : {} } : {}
+      };
+      byId.set(el.id, next);
+    }
+  }
+  const elements = master.elements.map((e) => byId.get(e.id) ?? e);
+  for (const members of groups.values()) {
+    const pill = members.find((m) => m.slot === "cta" && m.type === "rect");
+    const label3 = members.find((m) => m.slot === "ctaLabel" && m.type === "text");
+    if (!pill || !label3) continue;
+    const pb = elements.find((e) => e.id === pill.id), lb = elements.find((e) => e.id === label3.id);
+    if (!pb || !lb) continue;
+    const pad = Math.max(2, lb.x - pb.x);
+    const icon = members.find((m) => m.slot === "ctaIcon");
+    const ib = icon ? elements.find((e) => e.id === icon.id) : void 0;
+    const right = ib ? ib.x - Math.max(2, Math.round(pad / 2)) : pb.x + pb.w - pad;
+    lb.w = Math.max(1, round2(right - lb.x));
+  }
+  const rules = opts.rules;
+  if (rules) {
+    for (const el of elements) {
+      if (el.type === "text") {
+        const part = el.slot === "headline" ? "headline" : el.slot === "subheadline" || el.slot === "kicker" ? "subheadline" : el.slot === "message" ? "message" : el.slot === "ctaLabel" ? "cta" : null;
+        const floor = part === "cta" ? 9 : part ? rules.floor(part) : 0;
+        if (floor && el.fontSize < floor) {
+          notes.push(`Check: "${el.text.replace(/\s+/g, " ").slice(0, 24)}" came out at ${Math.round(el.fontSize)}px \u2014 raised to the ${floor}px floor; confirm it still fits.`);
+          el.fontSize = floor;
+          el.h = Math.max(el.h, Math.round(floor * (el.lineHeight ?? 1.2)));
+          needsReview = true;
+        }
+      } else if (el.slot === "cta" && el.h < rules.floor("cta")) {
+        notes.push(`Check: the call-to-action is ${Math.round(el.h)}px tall \u2014 under the ${rules.floor("cta")}px floor at this size.`);
+        needsReview = true;
+      }
+    }
+  }
+  return {
+    ...master,
+    elements,
+    adaptMethod: "indesign-authoritative",
+    adaptNotes: [
+      `Built from the registered ${master.masterFamily ?? "InDesign"} master with its blocks' liquid-layout pins (${describe2.slice(0, 6).join("; ")}).`,
+      "Raster artwork was never stretched (a stretched block crops to its box); logos scaled uniformly; AI repositioning bypassed.",
+      ...notes
+    ],
+    ...needsReview ? { needsReview: true } : {}
+  };
+}
+function adaptAuthoritativeBetween(a, b, dstW, dstH, opts = {}) {
+  const la = Math.log(a.width / a.height), lb = Math.log(b.width / b.height), lt2 = Math.log(dstW / dstH);
+  const t = Math.max(0, Math.min(1, (lt2 - la) / Math.max(1e-6, lb - la)));
+  const near = t < 0.5 ? a : b;
+  const blocksOf = (cfg) => {
+    const m = /* @__PURE__ */ new Map();
+    for (const el of cfg.elements) {
+      const k = el.layoutBlock || el.slot || el.id;
+      m.set(k, [...m.get(k) ?? [], el]);
+    }
+    return m;
+  };
+  const ba = blocksOf(a.config), bb = blocksOf(b.config), bn = blocksOf(near.config);
+  const lerp2 = (x, y) => x + (y - x) * t;
+  const out = [];
+  const canvasDst = { x: 0, y: 0, w: dstW, h: dstH };
+  const describe2 = [];
+  for (const [key, nearMembers] of bn) {
+    const ma = ba.get(key), mb = bb.get(key);
+    const src = union3(nearMembers);
+    const srcCanvas = { x: 0, y: 0, w: near.width, h: near.height };
+    const lead = nearMembers[0];
+    const isLogo = nearMembers.every((m) => m.slot === "logo" || m.slot === "lockup" || m.type === "image" && m.role === "logo");
+    let box;
+    if (ma && mb) {
+      const ua = union3(ma), ub = union3(mb);
+      const fx = lerp2(ua.x / a.width, ub.x / b.width), fy = lerp2(ua.y / a.height, ub.y / b.height);
+      const fw = lerp2(ua.w / a.width, ub.w / b.width), fh = lerp2(ua.h / a.height, ub.h / b.height);
+      box = { x: fx * dstW, y: fy * dstH, w: Math.max(1, fw * dstW), h: Math.max(1, fh * dstH) };
+      const inferredA = inferConstraints(ua, { x: 0, y: 0, w: a.width, h: a.height });
+      const spansA = { ...inferredA.flexW ? { pinLeft: true, pinRight: true, flexW: true } : {}, ...inferredA.flexH ? { pinTop: true, pinBottom: true, flexH: true } : {} };
+      const leadA = ma[0];
+      const ca = (leadA.constraints && Object.keys(leadA.constraints).length ? leadA.constraints : void 0) ?? (constraintsFromAnchors(leadA) ? { ...constraintsFromAnchors(leadA), ...spansA } : void 0) ?? inferredA;
+      if (ca.pinLeft && ca.pinRight) {
+        box.x = 0;
+        box.w = dstW;
+      } else if (ca.pinLeft) box.x = lerp2(ua.x, ub.x) * (dstW / lerp2(a.width, b.width));
+      else if (ca.pinRight) box.x = dstW - box.w - lerp2(a.width - ua.x - ua.w, b.width - ub.x - ub.w) * (dstW / lerp2(a.width, b.width));
+      if (ca.pinTop && ca.pinBottom) {
+        box.y = 0;
+        box.h = dstH;
+      } else if (ca.pinTop) box.y = lerp2(ua.y, ub.y) * (dstH / lerp2(a.height, b.height));
+      else if (ca.pinBottom) box.y = dstH - box.h - lerp2(a.height - ua.y - ua.h, b.height - ub.y - ub.h) * (dstH / lerp2(a.height, b.height));
+      describe2.push(`${key}: blended`);
+    } else {
+      const c = lead.constraints ?? constraintsFromAnchors(lead) ?? inferConstraints(src, srcCanvas);
+      box = resolveLiquid(src, c, srcCanvas, canvasDst, Math.min(dstW / near.width, dstH / near.height));
+      describe2.push(`${key}: from the ${near === a ? "first" : "second"} master`);
+    }
+    const sx = box.w / Math.max(1, src.w), sy = box.h / Math.max(1, src.h);
+    const s2 = isLogo ? Math.min(sx, sy) : Math.min(sx, sy);
+    for (const el of nearMembers) {
+      const fx0 = src.w > 0 ? (el.x - src.x) / src.w : 0, fx1 = src.w > 0 ? (el.x + el.w - src.x) / src.w : 1;
+      const fy0 = src.h > 0 ? (el.y - src.y) / src.h : 0, fy1 = src.h > 0 ? (el.y + el.h - src.y) / src.h : 1;
+      if (el.type === "rect" || el.type === "image" && !isLogo && (el.slot === "band" || el.slot === "photo" || el.slot === "panel" || nearMembers.length === 1)) {
+        out.push({ ...el, x: round2(box.x + fx0 * box.w), y: round2(box.y + fy0 * box.h), w: Math.max(1, round2((fx1 - fx0) * box.w)), h: Math.max(1, round2((fy1 - fy0) * box.h)), ...el.type === "image" ? { fit: "cover" } : {} });
+        continue;
+      }
+      const w = Math.max(1, round2(el.w * s2)), h = Math.max(1, round2(el.h * s2));
+      const cx = box.x + (fx0 + fx1) / 2 * box.w, cy = box.y + (fy0 + fy1) / 2 * box.h;
+      const x = el.type === "text" ? el.align === "center" ? cx - w / 2 : el.align === "right" ? box.x + fx1 * box.w - w : box.x + fx0 * box.w : cx - w / 2;
+      out.push({ ...el, x: round2(x), y: round2(cy - h / 2), w, h, ...el.type === "text" ? { fontSize: Math.max(6, round2(el.fontSize * s2)), ...el.letterSpacing !== void 0 ? { letterSpacing: round2(el.letterSpacing * s2) } : {} } : {} });
+    }
+  }
+  const panelOut = out.find((e) => e.slot === "panel") ?? null;
+  const bandOut = out.find((e) => e.slot === "band") ?? null;
+  const panelNear = near.config.elements.find((e) => e.slot === "panel") ?? null;
+  if (panelOut && panelNear) {
+    const seamY = Math.min(panelOut.y, bandOut ? bandOut.y : Infinity);
+    const seamX = Math.min(panelOut.x, bandOut ? bandOut.x : Infinity);
+    const byBlock = /* @__PURE__ */ new Map();
+    for (const e of out) {
+      const k = e.layoutBlock ?? e.id;
+      byBlock.set(k, [...byBlock.get(k) ?? [], e]);
+    }
+    for (const [k, members] of byBlock) {
+      if (!members.some((e) => e.type === "text")) continue;
+      const nearMembers = near.config.elements.filter((e) => (e.layoutBlock ?? e.id) === k);
+      const nb = union3(nearMembers);
+      const wasAbove = nb.y + nb.h <= panelNear.y + 1 && panelNear.w >= near.width * 0.9;
+      const wasBeside = nb.x + nb.w <= panelNear.x + 1 && panelNear.h >= near.height * 0.9;
+      const ob = union3(members);
+      if (wasAbove && ob.y + ob.h > seamY - 4) {
+        const dy = ob.y + ob.h - (seamY - 4);
+        for (const e of members) e.y = round2(Math.max(0, e.y - dy));
+      }
+      if (wasBeside && ob.x + ob.w > seamX - 4) {
+        const dx = ob.x + ob.w - (seamX - 4);
+        for (const e of members) e.x = round2(Math.max(0, e.x - dx));
+      }
+    }
+  }
+  const copy = out.filter((e) => e.type === "text" && e.text.trim().length > 0).sort((p, q) => p.y - q.y);
+  for (let i = 1; i < copy.length; i++) {
+    for (let j = 0; j < i; j++) {
+      const a2 = copy[j], b2 = copy[i];
+      if ((a2.layoutBlock ?? a2.id) === (b2.layoutBlock ?? b2.id)) continue;
+      const ix = Math.max(0, Math.min(a2.x + a2.w, b2.x + b2.w) - Math.max(a2.x, b2.x));
+      const iy = Math.max(0, Math.min(a2.y + a2.h, b2.y + b2.h) - Math.max(a2.y, b2.y));
+      if (ix * iy > 0.1 * Math.min(a2.w * a2.h, b2.w * b2.h)) {
+        const shift = a2.y + a2.h - b2.y + Math.max(4, Math.round(b2.h * 0.25));
+        if (b2.y + shift + b2.h <= dstH) b2.y = round2(b2.y + shift);
+      }
+    }
+  }
+  const base = { ...near.config, elements: out };
+  const floored = adaptAuthoritativeConfig({ ...base, elements: out.map((e) => ({ ...e })) }, dstW, dstH, dstW, dstH, opts);
+  return {
+    ...floored,
+    adaptMethod: "indesign-interpolated",
+    adaptNotes: [
+      `Interpolated between the family's InDesign masters (${a.width}\xD7${a.height} and ${b.width}\xD7${b.height}, ${Math.round(t * 100)}% of the way): ${describe2.slice(0, 6).join("; ")}.`,
+      ...(floored.adaptNotes ?? []).filter((n) => n.startsWith("Check:"))
+    ]
+  };
+}
+function masterAxis(cfg, width, height) {
+  const zone = cfg.elements.find((e) => (e.slot === "panel" || e.slot === "band") && e.w > 0 && e.h > 0);
+  if (!zone) return null;
+  if (zone.w >= width * 0.9 && zone.h < height * 0.9) return "stacked";
+  if (zone.h >= height * 0.9 && zone.w < width * 0.9) return "side";
+  return null;
+}
+
 // src/lib/brandGuidelines/aucklandCouncilDistilled.ts
 var DISTILLED_GUIDELINES_SOURCE = "AC Brand Guidelines June 2025 (distilled)";
-var DISTILLED_GUIDELINES = '# Auckland Council Brand Guidelines \u2014 distilled reference\n\nSource: *AC Brand Guidelines June 2025* (64pp, `attached_assets/AC_Brand_Guidelines_June_2025_*.pdf`),\n*26-PRO-0516 Brand Guidelines contractors 2026*, and the live Frontify portal\n(https://aucklandcouncil.frontify.com/d/67jM5b5GuoL9). The operational subset lives in\n`brands.guidelines` (DB) and feeds every generation prompt; this file is the full reference.\n\n## Brand idea\n\n- **One purpose, one brand**: create an Auckland we can all be proud of. Every touchpoint uses the\n  p\u014Dhutukawa and kotahitanga patterns so work is attributed back to the council.\n- **Altogether Auckland** is the brand expression; kotahitanga (togetherness) is the core theme.\n- Strapline: **"T\u0101maki Turuki. Altogether Auckland."** \u2014 always lead with the te reo line.\n- P\u014Dhutukawa symbolism: blossom = people coming together (kotahitanga), leaves = guardianship of\n  the environment (kaitiakitanga), waves = the waters that flank T\u0101maki Makaurau. Chosen in 2010\n  when the eight councils amalgamated.\n\n## Voice & tone\n\n- Inclusive: dial up personal pronouns \u2014 you, your, our, we, us.\n- Talk like an Aucklander, not a bureaucrat: *let us know* (not "notify us"), *have your say*\n  (not "consult with us"), *aim/goal* (not "objective").\n- Headlines: no trailing full stop. Full stops on body copy only when there is other punctuation.\n- Supporting copy under a headline: max three lines.\n- Business-unit attribution goes in body copy where required: "Auckland Council Pools and\n  Leisure.", "Auckland Council Holiday Parks.", "Auckland Council Holiday Places.",\n  "Auckland Council Libraries."\n\n## P\u014Dhutukawa tile, grid, logos\n\n- **Master logo** = colour p\u014Dhutukawa in a **white square tile**. The mark is vertically aligned to\n  1/8 of the box (1/8 margin top and bottom), horizontally centred.\n- The tile is the **building block of the grid**: divide the artwork\'s shortest axis by an even\n  number of tiles \u2014 4, 6 or 8 for print ("A" sizes usually 6), **1, 2 or 4 for digital**. One\n  division = tile size. Page margin = **1/3 tile height**.\n- Placement: primarily **bottom-right** of campaign artwork.\n- Colour logo on white or \u226420% colour/image density backgrounds; single-colour (white) version on\n  secondary colours, limited circumstances only.\n- **Corporate logos** (traditional lockups with wordmark) are reserved for: third-party funding\n  acknowledgement, building control, food safety, council/waste vehicles, all signage, uniforms,\n  contractor branding, documents/stationery.\n- Events: "Auckland Council Events" logo when council is majority funder; "Proudly supported by\n  Auckland Council Events" when partially funded. Clear space unit u = p\u014Dhutukawa height / 5;\n  minimum logo height 10mm / 50px. Full-colour versions on white/light backgrounds only.\n- Auckland "A" destination logo: only when >50% of audience is outside Auckland; teal #00a6a7.\n\n## The anther (framing device)\n\n- A large circle on a straight stem: circle centred horizontally with clear space for headline\n  copy above; stem enters from **left, lower-left 45\xB0, or bottom centre \u2014 never 45\xB0 from the\n  lower-right**, and never covered by the p\u014Dhutukawa tile.\n- Size: extend to the margins, as big as reasonably possible, always showing straight stem lines.\n  Cropped anthers are subject to design review.\n- Stroke options: solid (same thickness as the logo\'s wave), gradient (double thickness), or none.\n- As a housing device: either copy inside the anther (image outside) or image inside (copy\n  outside). Backgrounds behind copy get a colour/opacity/multiply effect and must pass\n  accessibility contrast. Full-bleed photography variants: blur outside the anther (image inside in\n  focus) or the anther as a simple intersecting outline.\n- Not used inside carousel frames (makes imagery too small).\n\n## Kotahitanga patterns\n\n- Built from p\u014Dhutukawa elements + three tohu: **Te Ao T\u016Broa** (the enduring world),\n  **Whanaungatanga** (strengthening relationships), **Taonga Tuku Iho** (treasures handed on).\n- Used as subtle background texture: three-row wallpaper 30/20/10% opacity (bottom\u2192top), two-row\n  20/10%, single row 20\u201330%. **Never more than 30% opacity.** Behind mid-artwork images \u226430%.\n- Stamp treatment: 2\u20133 patterns snapped to the grid, usually next to the p\u014Dhutukawa tile.\n- Patterns may use any brand colour.\n\n## Typography\n\n- **National 2** family (Kris Sowersby, Klim Type Foundry).\n  - Headlines: **National 2 Condensed Bold, ALL CAPS**.\n  - Headline support / subheads / CTAs / URLs: **National 2 Bold**.\n  - Body copy: **National 2 Regular**.\n  - **Rocked** script accent: sparingly, events/invite/celebrate collateral only.\n- Strapline treatment: usually two lines ("T\u0101maki Turuki." / "Altogether Auckland."), height = 1/3\n  of the tile, aligned to margins; can run single-line or right-aligned beside the tile. Leading =\n  point size +15%. Te reo always first.\n- **Search-bar CTA**: pill with "Search" in National 2 Regular (tracking \u221210) + phrase in National\n  2 Bold (tracking +10), e.g. "Search dog registration". Can also carry a short URL.\n- **Hotspots**: short ALL-CAPS message set in a kotahitanga circle (e.g. "AK HAVE YOUR SAY");\n  crafted National 2 Condensed Bold product/programme marks (PEST FREE AUCKLAND, LIVE LIGHTLY) are\n  type treatments, **not logos**.\n\n## Colour palette\n\n| Group | Names & hexes |\n|---|---|\n| Core | Ocean `#11263d`, Anther Red `#de0a2b`, P\u014Dhutukawa Leaf `#5b9c33`, Shore `#0073bd`, K\u014Dwhai `#ffe104`, White `#ffffff` |\n| Vibrant | Ultra Violet `#3d2683`, Blush Response `#de006e`, Lemon Lime `#afca0b`, Shore Light `#00a7e5`, Tangerine Dream `#ef7d00` |\n| Dark base | Slate Grey `#3c3c3b`, Mocha `#691837`, Hunua Shadow `#1c473e`, Denim `#183a68`, Dark Chocolate `#4e2926`, Ocean 240 `#273652` (newsprint substitute for Ocean) |\n| Muted | Grey Lynn `#8e9ba4`, Amaranth `#e1a7bf`, Seagrass `#c4d28b`, Sky `#95d3e4`, Mascarpone `#f9e7c4` |\n\nBase every layout on Ocean + white/neutral grey; accents connect comms back to the logo.\n\n## Illustration style\n\n- Simple **flat vector**, snaps to the grid; built from logo elements \u2014 circles/ellipses from the\n  anther, leaf shapes, water curves. Rounded corners; arms as single heavy strokes with round caps.\n- **Three-plane scenes**: background, mid-ground (subject), foreground; a repeated object must be\n  \u226530% bigger in the foreground.\n- Established cast: faceless diverse people; native birds (t\u016B\u012B, p\u012Bwakawaka, kerer\u016B, korimako,\n  tauhou, riroriro, p\u016Bkeko, takah\u0113); animals incl. dogs, ducks, hens, cows, sheep, horses, pigs.\n\n## Photography & video\n\n- Documentary style, the real Auckland: togetherness through diversity, pride, community; prefer\n  more than one person in shot; rich/bright/vibrant colour; playgrounds, beaches, paths, community\n  centres; avoid CBD-centric imagery. Landscapes and drone/aerials welcome. Events: vibrant,\n  upbeat, optimistic.\n- Video: animated p\u014Dhutukawa end-frame with strapline; watermark top-left; name keys are .mogrt\n  Premiere templates; captions required; keep top-left free of hotspots and bottom-right clear\n  (YouTube subscribe).\n\n## Social media rules\n\n- The p\u014Dhutukawa is the profile picture on council channels, so **1080\xD71080 organic/paid social\n  tiles carry no logo**; Facebook cover 820\xD7360: no logo, no patterns.\n- Strapline is **not required** on social statics \u2014 "less is more"; on video it appears in the\n  blurred outro end-frame (4:5 Meta video: whiteout mono p\u014Dhutukawa + strapline PNG on final frame).\n- Meta content: first sentence carries the key message; keep creative single-minded (split multiple\n  messages into versions); ALL-CAPS/exclamation marks in primary copy hurt quality scores;\n  carousels 3\u20134 frames max, no anther in frames; CTA buttons/URLs unnecessary (links are overlaid).\n- Reels = awareness/entertainment (15\u201330s in-feed); Stories = drive a specific action (\u226410\u201315s or\n  add a tap prompt).\n\n## Standard formats seen in guidelines\n\nPrint/posters (A sizes), digital screens 1920\xD71080 & 1080\xD71920, digital ads 300\xD7250, 300\xD7600,\n160\xD7600, 728\xD790, video end-frames, social 1080\xD71350, 1200\xD7628, 1080\xD71080 (no logo), Pinterest\n1000\xD71500, Meta story 1440\xD72560 (safe zones), Facebook cover 820\xD7360.\n\n## Contractors (2026)\n\n- Co-branded clothing on all council jobs; simplified AC logo (no M\u0101ori strapline / "working\n  together with" text). Equal prominence with contractor logo. Placement order: wearer\'s left\n  chest (min 28mm) \u2192 right chest \u2192 under contractor logo \u2192 top of left sleeve. Front of safety\n  wear only, on solid colour. Full colour on white/light, white on dark, black on low-contrast/\n  hi-vis. Direct embroidery.\n';
+var DISTILLED_GUIDELINES = '# Auckland Council Brand Guidelines \u2014 distilled reference\n\nSource: *AC Brand Guidelines June 2025* (64pp, `attached_assets/AC_Brand_Guidelines_June_2025_*.pdf`),\n*26-PRO-0516 Brand Guidelines contractors 2026*, and the live Frontify portal\n(https://aucklandcouncil.frontify.com/d/67jM5b5GuoL9). The operational subset lives in\n`brands.guidelines` (DB) and feeds every generation prompt; this file is the full reference.\n\n## Brand idea\n\n- **One purpose, one brand**: create an Auckland we can all be proud of. Every touchpoint uses the\n  p\u014Dhutukawa and kotahitanga patterns so work is attributed back to the council.\n- **Altogether Auckland** is the brand expression; kotahitanga (togetherness) is the core theme.\n- Strapline: **"T\u0101maki Turuki. Altogether Auckland."** \u2014 always lead with the te reo line.\n- P\u014Dhutukawa symbolism: blossom = people coming together (kotahitanga), leaves = guardianship of\n  the environment (kaitiakitanga), waves = the waters that flank T\u0101maki Makaurau. Chosen in 2010\n  when the eight councils amalgamated.\n\n## Voice & tone\n\n- Inclusive: dial up personal pronouns \u2014 you, your, our, we, us.\n- Talk like an Aucklander, not a bureaucrat: *let us know* (not "notify us"), *have your say*\n  (not "consult with us"), *aim/goal* (not "objective").\n- Headlines: no trailing full stop. Full stops on body copy only when there is other punctuation.\n- Supporting copy under a headline: max three lines.\n- Business-unit attribution goes in body copy where required: "Auckland Council Pools and\n  Leisure.", "Auckland Council Holiday Parks.", "Auckland Council Holiday Places.",\n  "Auckland Council Libraries."\n\n## P\u014Dhutukawa tile, grid, logos\n\n- **Master logo** = colour p\u014Dhutukawa in a **white square tile**. The mark is vertically aligned to\n  1/8 of the box (1/8 margin top and bottom), horizontally centred.\n- The tile is the **building block of the grid**: divide the artwork\'s shortest axis by an even\n  number of tiles \u2014 4, 6 or 8 for print ("A" sizes usually 6), **1, 2 or 4 for digital**. One\n  division = tile size. Page margin = **1/3 tile height**.\n- Placement: primarily **bottom-right** of campaign artwork.\n- Colour logo on white or \u226420% colour/image density backgrounds; single-colour (white) version on\n  secondary colours, limited circumstances only.\n- **Corporate logos** (traditional lockups with wordmark) are reserved for: third-party funding\n  acknowledgement, building control, food safety, council/waste vehicles, all signage, uniforms,\n  contractor branding, documents/stationery.\n- Events: "Auckland Council Events" logo when council is majority funder; "Proudly supported by\n  Auckland Council Events" when partially funded. Clear space unit u = p\u014Dhutukawa height / 5;\n  minimum logo height 10mm / 50px. Full-colour versions on white/light backgrounds only.\n- Auckland "A" destination logo: only when >50% of audience is outside Auckland; teal #00a6a7.\n\n## The anther (framing device)\n\n- A large circle on a straight stem: circle centred horizontally with clear space for headline\n  copy above; stem enters from **left, lower-left 45\xB0, or bottom centre \u2014 never 45\xB0 from the\n  lower-right**, and never covered by the p\u014Dhutukawa tile.\n- Size: extend to the margins, as big as reasonably possible, always showing straight stem lines.\n  Cropped anthers are subject to design review.\n- Stroke options: solid (same thickness as the logo\'s wave), gradient (double thickness), or none.\n- As a housing device: either copy inside the anther (image outside) or image inside (copy\n  outside). Backgrounds behind copy get a colour/opacity/multiply effect and must pass\n  accessibility contrast. Full-bleed photography variants: blur outside the anther (image inside in\n  focus) or the anther as a simple intersecting outline.\n- Not used inside carousel frames (makes imagery too small).\n\n## Kotahitanga patterns\n\n- Built from p\u014Dhutukawa elements + three tohu: **Te Ao T\u016Broa** (the enduring world),\n  **Whanaungatanga** (strengthening relationships), **Taonga Tuku Iho** (treasures handed on).\n- Used as subtle background texture: three-row wallpaper 30/20/10% opacity (bottom\u2192top), two-row\n  20/10%, single row 20\u201330%. **Never more than 30% opacity.** Behind mid-artwork images \u226430%.\n- Stamp treatment: 2\u20133 patterns snapped to the grid, usually next to the p\u014Dhutukawa tile.\n- Patterns may use any brand colour.\n\n## Typography\n\n- **National 2** family (Kris Sowersby, Klim Type Foundry).\n  - Headlines: **National 2 Condensed Bold, ALL CAPS**.\n  - Headline support / subheads / CTAs / URLs: **National 2 Bold**.\n  - Body copy: **National 2 Regular**.\n  - **Rocked** script accent: sparingly, events/invite/celebrate collateral only.\n- Strapline treatment: usually two lines ("T\u0101maki Turuki." / "Altogether Auckland."), height = 1/3\n  of the tile, aligned to margins; can run single-line or right-aligned beside the tile. Leading =\n  point size +15%. Te reo always first.\n- **Search-bar CTA**: pill with "Search" in National 2 Regular (tracking \u221210) + phrase in National\n  2 Bold (tracking +10), e.g. "Search dog registration". Can also carry a short URL.\n- **Hotspots**: short ALL-CAPS message set in a kotahitanga circle (e.g. "AK HAVE YOUR SAY");\n  crafted National 2 Condensed Bold product/programme marks (PEST FREE AUCKLAND, LIVE LIGHTLY) are\n  type treatments, **not logos**.\n\n## Colour palette\n\n| Group | Names & hexes |\n|---|---|\n| Core | Ocean `#11263d`, Anther Red `#de0a2b`, P\u014Dhutukawa Leaf `#5b9c33`, Shore `#0073bd`, K\u014Dwhai `#ffe104`, White `#ffffff` |\n| Vibrant | Ultra Violet `#3d2683`, Blush Response `#de006e`, Lemon Lime `#afca0b`, Shore Light `#00a7e5`, Tangerine Dream `#ef7d00` |\n| Dark base | Slate Grey `#3c3c3b`, Mocha `#691837`, Hunua Shadow `#1c473e`, Denim `#183a68`, Dark Chocolate `#4e2926`, Ocean 240 `#273652` (newsprint substitute for Ocean) |\n| Muted | Grey Lynn `#8e9ba4`, Amaranth `#e1a7bf`, Seagrass `#c4d28b`, Sky `#95d3e4`, Mascarpone `#f9e7c4` |\n\nBase every layout on Ocean + white/neutral grey; accents connect comms back to the logo.\n\n## Illustration style\n\n- Simple **flat vector**, snaps to the grid; built from logo elements \u2014 circles/ellipses from the\n  anther, leaf shapes, water curves. Rounded corners; arms as single heavy strokes with round caps.\n- **Three-plane scenes**: background, mid-ground (subject), foreground; a repeated object must be\n  \u226530% bigger in the foreground.\n- Established cast: faceless diverse people; native birds (t\u016B\u012B, p\u012Bwakawaka, kerer\u016B, korimako,\n  tauhou, riroriro, p\u016Bkeko, takah\u0113); animals incl. dogs, ducks, hens, cows, sheep, horses, pigs.\n\n## Photography & video\n\n- Documentary style, the real Auckland: togetherness through diversity, pride, community; prefer\n  more than one person in shot; rich/bright/vibrant colour; playgrounds, beaches, paths, community\n  centres; avoid CBD-centric imagery. Landscapes and drone/aerials welcome. Events: vibrant,\n  upbeat, optimistic.\n- Video: animated p\u014Dhutukawa end-frame with strapline; watermark top-left; name keys are .mogrt\n  Premiere templates; captions required; keep top-left free of hotspots and bottom-right clear\n  (YouTube subscribe).\n\n## Social media rules\n\n- The p\u014Dhutukawa is the profile picture on council channels, so **1080\xD71080 organic/paid social\n  tiles carry no logo**; Facebook cover 820\xD7360: no logo, no patterns.\n- Strapline is **not required** on social statics \u2014 "less is more"; on video it appears in the\n  blurred outro end-frame (4:5 Meta video: whiteout mono p\u014Dhutukawa + strapline PNG on final frame).\n- Meta content: first sentence carries the key message; keep creative single-minded (split multiple\n  messages into versions); ALL-CAPS/exclamation marks in primary copy hurt quality scores;\n  carousels 3\u20134 frames max, no anther in frames; CTA buttons/URLs unnecessary (links are overlaid).\n- Reels = awareness/entertainment (15\u201330s in-feed); Stories = drive a specific action (\u226410\u201315s or\n  add a tap prompt).\n\n## Standard formats seen in guidelines\n\nPrint/posters (A sizes), digital screens 1920\xD71080 & 1080\xD71920, digital ads 300\xD7250, 300\xD7600,\n160\xD7600, 728\xD790, video end-frames, social 1080\xD71350, 1200\xD7628, 1080\xD71080 (no logo), Pinterest\n1000\xD71500, Meta story 1440\xD72560 (safe zones), Facebook cover 820\xD7360.\n\n## Contractors (2026)\n\n- Co-branded clothing on all council jobs; simplified AC logo (no M\u0101ori strapline / "working\n  together with" text). Equal prominence with contractor logo. Placement order: wearer\'s left\n  chest (min 28mm) \u2192 right chest \u2192 under contractor logo \u2192 top of left sleeve. Front of safety\n  wear only, on solid colour. Full colour on white/light, white on dark, black on low-contrast/\n  hi-vis. Direct embroidery.\n\n## Anther \u2014 schema rule: never cropped (designer ruling, 20 Sep 2026)\n\nThe anther (circle on a straight stem; pp. 16, 28\u201331) is never cropped in automated artwork. The anther\'s circle sits wholly inside the artwork and nothing is laid over it (no panel, pattern band, tile, button or copy). It is as big as the margins allow; the margin is half the p\u014Dhutukawa tile. The stem runs off the artwork\'s edge \u2014 from the left, the lower left at 45\xB0, or the bottom centre \u2014 with its straight lines showing; that is how the device is drawn, not a crop. The stem is never covered by the p\u014Dhutukawa tile and never heads for the lower-right corner. On narrow formats the margin may give way so the anther can hold its picture, but the curve where the stem meets the circle stays visible. The guidelines allow a cropped anther only subject to design review; a size that cannot hold the whole anther is flagged for a designer, never built with it cropped.\n';
 
 // src/lib/guidelines.ts
 init_logger();
@@ -234983,10 +237357,10 @@ async function guidelineStatus(brandId) {
   const bySource = /* @__PURE__ */ new Map();
   const byTopic = /* @__PURE__ */ new Map();
   let total = 0;
-  for (const r4 of rows) {
-    bySource.set(r4.source, (bySource.get(r4.source) ?? 0) + Number(r4.n));
-    byTopic.set(r4.topic, (byTopic.get(r4.topic) ?? 0) + Number(r4.n));
-    total += Number(r4.n);
+  for (const r6 of rows) {
+    bySource.set(r6.source, (bySource.get(r6.source) ?? 0) + Number(r6.n));
+    byTopic.set(r6.topic, (byTopic.get(r6.topic) ?? 0) + Number(r6.n));
+    total += Number(r6.n);
   }
   return {
     total,
@@ -235072,30 +237446,24 @@ async function guidelinesForConfig(brandId, config2, width, height, perTopic = 4
   }
   const out = [];
   for (const w of wanted) {
-    const mine = rows.filter((r4) => r4.topic === w.topic.id);
-    const score = (r4) => {
-      const hay = `${r4.heading} ${r4.body}`;
+    const mine = rows.filter((r6) => r6.topic === w.topic.id);
+    const score = (r6) => {
+      const hay = `${r6.heading} ${r6.body}`;
       const own = hitCount(w.topic, hay);
       const others = TOPICS.filter((t) => t.id !== w.topic.id && t.id !== "layout" && hitCount(t, hay) >= 2).length;
-      const headingBonus = w.topic.keywords.test(r4.heading) ? 6 : 0;
-      return SOURCE_RANK(r4.source) * -100 + headingBonus + own * 3 - others * 4;
+      const headingBonus = w.topic.keywords.test(r6.heading) ? 6 : 0;
+      return SOURCE_RANK(r6.source) * -100 + headingBonus + own * 3 - others * 4;
     };
     const picked = mine.sort((a, b) => score(b) - score(a) || a.ord - b.ord).slice(0, perTopic);
     if (picked.length === 0) continue;
-    out.push({ topic: w.topic.id, label: w.topic.label, elementIds: w.elementIds, passages: picked.map((r4) => ({ topic: w.topic.id, label: w.topic.label, heading: r4.heading, body: r4.body, source: r4.source })) });
+    out.push({ topic: w.topic.id, label: w.topic.label, elementIds: w.elementIds, passages: picked.map((r6) => ({ topic: w.topic.id, label: w.topic.label, heading: r6.heading, body: r6.body, source: r6.source })) });
   }
   return out;
-}
-function guidelineNotes(items) {
-  return items.filter((g) => g.elementIds.length > 0 && g.passages.length > 0).map((g) => {
-    const first = g.passages[0].body.split(/(?<=[.!?])\s/)[0].slice(0, 160);
-    return `Guideline (${g.label}): ${first}`;
-  });
 }
 
 // src/lib/gwdImport.ts
 init_objectStorage();
-import sharp9 from "sharp";
+import sharp10 from "sharp";
 var objectStorageService8 = new ObjectStorageService();
 var IMAGE_TYPES = {
   jpg: "image/jpeg",
@@ -235104,9 +237472,9 @@ var IMAGE_TYPES = {
   webp: "image/webp"
 };
 async function visibleBounds(bytes2) {
-  const meta = await sharp9(bytes2).metadata();
+  const meta = await sharp10(bytes2).metadata();
   if (!meta.hasAlpha || !meta.width || !meta.height) return null;
-  const raw2 = await sharp9(bytes2).ensureAlpha().raw().toBuffer();
+  const raw2 = await sharp10(bytes2).ensureAlpha().raw().toBuffer();
   const W2 = meta.width, H2 = meta.height;
   let minX = W2, minY = H2, maxX = -1, maxY = -1;
   for (let py = 0; py < H2; py++) {
@@ -235159,7 +237527,7 @@ async function reconstructGwdBanners(zip, baseName2) {
         const vb = await visibleBounds(bytes2);
         if (vb) {
           const dispX = w / vb.W, dispY = h / vb.H;
-          bytes2 = Buffer.from(await sharp9(bytes2).extract({ left: vb.minX, top: vb.minY, width: vb.bw, height: vb.bh }).png().toBuffer());
+          bytes2 = Buffer.from(await sharp10(bytes2).extract({ left: vb.minX, top: vb.minY, width: vb.bw, height: vb.bh }).png().toBuffer());
           x += vb.minX * dispX;
           y += vb.minY * dispY;
           w = vb.bw * dispX;
@@ -235196,8 +237564,8 @@ async function reconstructGwdBanners(zip, baseName2) {
           const ix = Math.max(0, Math.min(ea.x + ea.w, eb.x + eb.w) - Math.max(ea.x, eb.x));
           const iy = Math.max(0, Math.min(ea.y + ea.h, eb.y + eb.h) - Math.max(ea.y, eb.y));
           const inter = ix * iy;
-          const union3 = ea.w * ea.h + eb.w * eb.h - inter;
-          if (union3 > 0 && inter / union3 > 0.75) covered = true;
+          const union4 = ea.w * ea.h + eb.w * eb.h - inter;
+          if (union4 > 0 && inter / union4 > 0.75) covered = true;
         }
       }
       if (!covered) kept.push(elements[a]);
@@ -235267,7 +237635,7 @@ init_objectStorage();
 
 // src/lib/claudeReview.ts
 init_sdk();
-import sharp10 from "sharp";
+import sharp11 from "sharp";
 init_logger();
 var CLAUDE_REVIEW_MODEL = "claude-opus-5";
 var REVIEW_FAULTS = [
@@ -235358,7 +237726,7 @@ var REVIEW_SCHEMA = {
   }
 };
 async function toJpeg(png, maxEdge) {
-  const buf = await sharp10(png).resize(maxEdge, maxEdge, { fit: "inside", withoutEnlargement: true }).jpeg({ quality: 85 }).toBuffer();
+  const buf = await sharp11(png).resize(maxEdge, maxEdge, { fit: "inside", withoutEnlargement: true }).jpeg({ quality: 85 }).toBuffer();
   return { data: buf.toString("base64"), media_type: "image/jpeg" };
 }
 function describeElements(config2) {
@@ -235418,7 +237786,7 @@ async function reviewPiece(input) {
     "- confidence is 0 to 1.",
     "",
     "BRAND LAYOUT RULES FOR THIS CANVAS:",
-    ...rules.layoutRules(input.width, input.height).map((r4) => `- ${r4}`),
+    ...rules.layoutRules(input.width, input.height).map((r6) => `- ${r6}`),
     input.brand.fontFamily ? `- Brand font: ${input.brand.fontFamily}.` : "",
     "",
     input.elementGuidelines && input.elementGuidelines.length ? `BRAND GUIDELINES FOR THIS PIECE \u2014 read from the brand guidelines for everything on it. Colour, grid and margins, and accessibility apply to the whole piece; the rest apply to the elements named. EVERY element must be checked against the topics listed for it and reported in elementChecks (status ok or issue, with a short note citing the passage when it is broken). Cite the passage in any issue message:
@@ -235433,15 +237801,15 @@ CAMPAIGN STYLE SPEC \u2014 measured off the signed-off artwork; this is the stan
 ${input.styleSpec.slice(0, 6e3)}` : ""
   ].filter((l) => l !== void 0).join("\n");
   const content = [];
-  refs.forEach((r4, i) => {
-    const ex = input.exemplars.find((e) => e.id === r4.id);
+  refs.forEach((r6, i) => {
+    const ex = input.exemplars.find((e) => e.id === r6.id);
     content.push({
       type: "text",
-      text: `Approved reference ${i + 1} of ${refs.length} \u2014 marked Right by the designers: ${r4.label}` + (ex ? `
+      text: `Approved reference ${i + 1} of ${refs.length} \u2014 marked Right by the designers: ${r6.label}` + (ex ? `
 Its elements (fractions of its own canvas):
 ${describeReference(ex)}` : "")
     });
-    content.push({ type: "image", source: { type: "base64", media_type: r4.image.media_type, data: r4.image.data } });
+    content.push({ type: "image", source: { type: "base64", media_type: r6.image.media_type, data: r6.image.data } });
   });
   if (input.designerNote) {
     content.push({ type: "text", text: `A designer marked this piece Wrong and wrote: "${input.designerNote.slice(0, 500)}". Treat that as the first thing to fix.` });
@@ -235515,7 +237883,7 @@ ${input.measured.map((m) => `- [${m.severity}] ${m.message}${m.elementId ? ` (el
     model: CLAUDE_REVIEW_MODEL,
     reviewedAt: (/* @__PURE__ */ new Date()).toISOString(),
     ms: Date.now() - started,
-    exemplarIds: refs.map((r4) => r4.id),
+    exemplarIds: refs.map((r6) => r6.id),
     ...input.elementGuidelines && input.elementGuidelines.length ? { guidelinesApplied: input.elementGuidelines.map((g) => ({ topic: g.topic, label: g.label, elementIds: g.elementIds, sources: [...new Set(g.passages.map((p) => p.source))], passages: g.passages.length })) } : {},
     ...input.elementTopics && input.elementTopics.length ? {
       elementChecks: input.elementTopics.map((e) => {
@@ -235530,9 +237898,9 @@ ${input.measured.map((m) => `- [${m.severity}] ${m.message}${m.elementId ? ` (el
 }
 function cleanEdit(raw2) {
   if (!raw2 || typeof raw2 !== "object") return null;
-  const r4 = raw2;
-  if (typeof r4.elementId !== "string" || !r4.elementId) return null;
-  const setRaw = r4.set && typeof r4.set === "object" ? r4.set : {};
+  const r6 = raw2;
+  if (typeof r6.elementId !== "string" || !r6.elementId) return null;
+  const setRaw = r6.set && typeof r6.set === "object" ? r6.set : {};
   const set2 = {};
   const num2 = (k) => {
     const v = setRaw[k];
@@ -235545,14 +237913,14 @@ function cleanEdit(raw2) {
   if (setRaw.align === "left" || setRaw.align === "center" || setRaw.align === "right") set2.align = setRaw.align;
   if (setRaw.fontWeight === 400 || setRaw.fontWeight === 700) set2.fontWeight = setRaw.fontWeight;
   if (setRaw.fit === "cover" || setRaw.fit === "contain") set2.fit = setRaw.fit;
-  const del = r4.delete === true;
+  const del = r6.delete === true;
   if (!del && Object.keys(set2).length === 0) return null;
-  return { elementId: r4.elementId, delete: del, set: set2 };
+  return { elementId: r6.elementId, delete: del, set: set2 };
 }
 function applyEdits(config2, edits, width, height) {
   const elements = config2.elements.map((e) => ({ ...e }));
   const applied = [];
-  const clamp2 = (v, lo, hi) => Math.min(hi, Math.max(lo, v));
+  const clamp4 = (v, lo, hi) => Math.min(hi, Math.max(lo, v));
   for (const edit of edits) {
     const idx = elements.findIndex((e) => e.id === edit.elementId);
     if (idx < 0) continue;
@@ -235569,9 +237937,9 @@ function applyEdits(config2, edits, width, height) {
       continue;
     }
     const changes = {};
-    const setNum = (k, v, lo, hi, round2 = true) => {
+    const setNum = (k, v, lo, hi, round3 = true) => {
       if (v === void 0) return;
-      const nv = round2 ? Math.round(clamp2(v, lo, hi)) : clamp2(v, lo, hi);
+      const nv = round3 ? Math.round(clamp4(v, lo, hi)) : clamp4(v, lo, hi);
       if (el[k] !== nv) {
         changes[k] = { from: el[k], to: nv };
         el[k] = nv;
@@ -235631,6 +237999,31 @@ function applyEdits(config2, edits, width, height) {
     }
     setNum("opacity", s2.opacity, 0, 1, false);
     if (Object.keys(changes).length > 0) applied.push({ elementId: edit.elementId, label: label3, changes });
+  }
+  for (const a of applied) {
+    if (a.deleted || a.label !== "cta" || !(a.changes.w || a.changes.h)) continue;
+    const pill = elements.find((e) => e.id === a.elementId);
+    if (!pill || pill.type !== "rect") continue;
+    const fromW = Number(a.changes.w?.from ?? pill.w), fromH = Number(a.changes.h?.from ?? pill.h);
+    const fromX = Number(a.changes.x?.from ?? pill.x), fromY = Number(a.changes.y?.from ?? pill.y);
+    const labelEl = elements.find((e) => e.type === "text" && e.slot === "ctaLabel" && Number(e.x) + Number(e.w) / 2 >= fromX - 1 && Number(e.x) + Number(e.w) / 2 <= fromX + fromW + 1 && Number(e.y) + Number(e.h) / 2 >= fromY - 1 && Number(e.y) + Number(e.h) / 2 <= fromY + fromH + 1);
+    if (!labelEl || applied.some((x) => x.elementId === labelEl.id && x.changes.fontSize)) continue;
+    const k = Number(pill.h) / Math.max(1, fromH);
+    const ch = {};
+    const upd = (key, v, round3 = true) => {
+      const nv = round3 ? Math.round(v) : Math.round(v * 100) / 100;
+      if (labelEl[key] !== nv) {
+        ch[key] = { from: labelEl[key], to: nv };
+        labelEl[key] = nv;
+      }
+    };
+    const padX = Math.max(2, (fromW - Number(labelEl.w)) / 2) * (Number(pill.w) / Math.max(1, fromW));
+    upd("fontSize", Number(labelEl.fontSize) * k);
+    upd("h", Number(labelEl.h) * k);
+    upd("w", Number(pill.w) - padX * 2);
+    upd("x", Number(pill.x) + padX);
+    upd("y", Number(pill.y) + (Number(pill.h) - Number(labelEl.h)) / 2);
+    if (Object.keys(ch).length) applied.push({ elementId: labelEl.id, label: "ctaLabel", changes: ch });
   }
   const hl = applied.find((a) => !a.deleted && a.label === "headline" && (a.changes.x || a.changes.y || a.changes.w || a.changes.h));
   const hlEl = hl ? elements.find((e) => e.id === hl.elementId) : void 0;
@@ -235693,7 +238086,7 @@ function capPictureHeadline(config2, maxH) {
 }
 
 // src/lib/openaiArtworkReview.ts
-import sharp11 from "sharp";
+import sharp12 from "sharp";
 var OPENAI_REVIEW_MODEL = process.env.OPENAI_ARTWORK_REVIEW_MODEL?.trim() || "gpt-4o";
 function isOpenAIReviewConfigured() {
   return !!process.env.OPENAI_API_KEY?.trim();
@@ -235705,14 +238098,14 @@ var describe = (input) => input.config.elements.map((e) => {
 }).join("\n");
 async function jpegData(config2, input, maxEdge) {
   const png = await renderFreeformToPng(config2, input.width, input.height, { scale: 1, loadImage: input.loadImage });
-  const jpg = await sharp11(png).resize(maxEdge, maxEdge, { fit: "inside", withoutEnlargement: true }).jpeg({ quality: 84 }).toBuffer();
+  const jpg = await sharp12(png).resize(maxEdge, maxEdge, { fit: "inside", withoutEnlargement: true }).jpeg({ quality: 84 }).toBuffer();
   return `data:image/jpeg;base64,${jpg.toString("base64")}`;
 }
 function editOf(value) {
   if (!value || typeof value !== "object") return null;
-  const r4 = value;
-  if (typeof r4.elementId !== "string") return null;
-  const rawSet = r4.set && typeof r4.set === "object" ? r4.set : {};
+  const r6 = value;
+  if (typeof r6.elementId !== "string") return null;
+  const rawSet = r6.set && typeof r6.set === "object" ? r6.set : {};
   const set2 = {};
   for (const key of ["x", "y", "w", "h", "fontSize", "opacity", "lineHeight", "letterSpacing", "focusX", "focusY", "radius"]) {
     if (typeof rawSet[key] === "number" && Number.isFinite(rawSet[key])) set2[key] = rawSet[key];
@@ -235721,7 +238114,7 @@ function editOf(value) {
   if (rawSet.fit === "cover" || rawSet.fit === "contain") set2.fit = rawSet.fit;
   if (rawSet.fontWeight === 400 || rawSet.fontWeight === 700) set2.fontWeight = rawSet.fontWeight;
   for (const key of ["color", "fill"]) if (typeof rawSet[key] === "string") set2[key] = rawSet[key].slice(0, 32);
-  return { elementId: r4.elementId, delete: r4.delete === true, set: set2 };
+  return { elementId: r6.elementId, delete: r6.delete === true, set: set2 };
 }
 async function reviewPieceWithOpenAI(input) {
   const started = Date.now();
@@ -235863,10 +238256,7 @@ function measureRecipe(config2, width, height) {
   }
   if (sem.cta) {
     const hf = sem.cta.h / short;
-    if (inRange(hf, 0.03, 0.4)) {
-      out.ctaHeightFrac = hf;
-      out.ctaFloorPx = Math.round(sem.cta.h);
-    }
+    if (inRange(hf, 0.03, 0.4)) out.ctaHeightFrac = hf;
     if (sem.panelBox && sem.panelBox.w > 0) {
       const wf = sem.cta.w / sem.panelBox.w;
       if (inRange(wf, 0.15, 0.95)) out.ctaMaxWidthFrac = wf;
@@ -235881,22 +238271,28 @@ function measureRecipe(config2, width, height) {
     }
   }
   if (sem.headline && sem.photoBox) {
-    const centre = (sem.headline.y + sem.headline.h / 2 - sem.photoBox.y) / Math.max(1, sem.photoBox.h);
+    const pb = sem.photoBox;
+    const zx0 = Math.max(0, pb.x), zy0 = Math.max(0, pb.y);
+    let zx1 = Math.min(width, pb.x + pb.w), zy1 = Math.min(height, pb.y + pb.h);
+    if (sem.axis === "stacked") zy1 = Math.min(zy1, sem.band ? sem.band.y : zone ? zone.y : sem.panelBox ? sem.panelBox.y : zy1);
+    if (sem.axis === "side") zx1 = Math.min(zx1, sem.band ? sem.band.x : zone ? zone.x : sem.panelBox ? sem.panelBox.x : zx1);
+    const zoneW = Math.max(1, zx1 - zx0), zoneH = Math.max(1, zy1 - zy0);
+    const centre = (sem.headline.y + sem.headline.h / 2 - zy0) / zoneH;
     if (inRange(centre, 0.1, 0.9)) {
       out.headlineCentreFrac = centre;
       out.headlineCentreFracBare = centre;
     }
-    const hf = sem.headline.fontSize * 1.1 / Math.max(1, sem.photoBox.h);
+    const hf = sem.headline.fontSize * 1.1 / zoneH;
     if (inRange(hf, 0.08, 0.8)) out.headlineMaxHeightFrac = hf;
-    const wf = sem.headline.w / Math.max(1, sem.photoBox.w);
+    const wf = sem.headline.w / zoneW;
     if (inRange(wf, 0.4, 1)) out.headlineWidthFrac = wf;
     if (sem.subheadline) {
-      const r4 = sem.subheadline.fontSize / sem.headline.fontSize;
-      if (inRange(r4, 0.15, 0.6)) out.subheadRatio = r4;
+      const r6 = sem.subheadline.fontSize / sem.headline.fontSize;
+      if (inRange(r6, 0.15, 0.6)) out.subheadRatio = r6;
     }
     if (sem.message) {
-      const r4 = sem.message.fontSize / sem.headline.fontSize;
-      if (inRange(r4, 0.12, 0.6)) out.messageMaxRatio = r4;
+      const r6 = sem.message.fontSize / sem.headline.fontSize;
+      if (inRange(r6, 0.12, 0.6)) out.messageMaxRatio = r6;
     }
   }
   return out;
@@ -235906,11 +238302,13 @@ async function latestVerdicts(ids) {
   if (ids.length === 0) return m;
   await ensureFeedbackTable();
   const rows = await db.execute(sql`
-    SELECT DISTINCT ON (subject_id) subject_id, verdict FROM feedback
-    WHERE subject_type = 'template' AND subject_id IN (${sql.join(ids.map((i) => sql`${i}`), sql`, `)})
+    SELECT DISTINCT ON (subject_id) subject_id, verdict, subject_config, created_at FROM feedback
+    WHERE subject_type = 'template' AND element_id IS NULL
+      AND NOT (verdict = 'incorrect' AND severity = 'fix_next_time')
+      AND subject_id IN (${sql.join(ids.map((i) => sql`${i}`), sql`, `)})
     ORDER BY subject_id, id DESC`);
-  for (const r4 of rows.rows) {
-    if (r4.verdict === "correct" || r4.verdict === "incorrect") m.set(Number(r4.subject_id), r4.verdict);
+  for (const r6 of rows.rows) {
+    if (r6.verdict === "correct" || r6.verdict === "incorrect") m.set(Number(r6.subject_id), { verdict: r6.verdict, config: r6.subject_config ?? null, at: r6.created_at ? new Date(r6.created_at).toISOString() : null });
   }
   return m;
 }
@@ -235924,12 +238322,22 @@ function parse4(row) {
 }
 async function approvedExemplars(masterId) {
   const rows = await db.select().from(templatesTable).where(or(eq(templatesTable.id, masterId), eq(templatesTable.sourceTemplateId, masterId)));
-  const verdicts = await latestVerdicts(rows.map((r4) => r4.id));
+  const verdicts = await latestVerdicts(rows.map((r6) => r6.id));
   const out = [];
   const seen2 = /* @__PURE__ */ new Set();
   for (const row of rows) {
-    if (verdicts.get(row.id) !== "correct") continue;
-    const config2 = parse4(row);
+    const v = verdicts.get(row.id);
+    if (v?.verdict !== "correct") continue;
+    let config2 = null;
+    if (v.config) {
+      try {
+        const raw2 = JSON.parse(v.config);
+        config2 = isFreeformConfig(raw2) ? normalizeFreeformConfig(raw2) : null;
+      } catch {
+        config2 = null;
+      }
+    }
+    config2 ??= parse4(row);
     if (!config2) continue;
     seen2.add(row.id);
     out.push({
@@ -235940,12 +238348,12 @@ async function approvedExemplars(masterId) {
       formatClass: classifyAspect(row.width, row.height),
       config: config2,
       measured: measureRecipe(config2, row.width, row.height),
-      approvedAt: row.updatedAt ? new Date(row.updatedAt).toISOString() : null
+      approvedAt: v.at ?? (row.updatedAt ? new Date(row.updatedAt).toISOString() : null)
     });
   }
-  for (const r4 of await rememberedExemplarRows(masterId)) {
-    if (seen2.has(r4.id)) continue;
-    out.push(r4);
+  for (const r6 of await rememberedExemplarRows(masterId)) {
+    if (seen2.has(r6.id)) continue;
+    out.push(r6);
   }
   return out;
 }
@@ -235962,23 +238370,23 @@ async function rememberedExemplarRows(masterId) {
     WHERE verdict = 'correct' AND subject_config IS NOT NULL
       AND NOT EXISTS (SELECT 1 FROM templates t WHERE t.id = latest.subject_id)`);
   const out = [];
-  for (const r4 of rows.rows) {
+  for (const r6 of rows.rows) {
     try {
-      const raw2 = JSON.parse(String(r4.subject_config));
+      const raw2 = JSON.parse(String(r6.subject_config));
       if (!isFreeformConfig(raw2)) continue;
       const config2 = normalizeFreeformConfig(raw2);
-      const width = Number(r4.subject_width);
-      const height = Number(r4.subject_height);
+      const width = Number(r6.subject_width);
+      const height = Number(r6.subject_height);
       if (!width || !height) continue;
       out.push({
-        id: Number(r4.subject_id),
-        name: String(r4.subject_name ?? `remembered #${r4.subject_id}`),
+        id: Number(r6.subject_id),
+        name: String(r6.subject_name ?? `remembered #${r6.subject_id}`),
         width,
         height,
         formatClass: classifyAspect(width, height),
         config: config2,
         measured: measureRecipe(config2, width, height),
-        approvedAt: r4.created_at ? new Date(r4.created_at).toISOString() : null
+        approvedAt: r6.created_at ? new Date(r6.created_at).toISOString() : null
       });
     } catch {
     }
@@ -235986,9 +238394,10 @@ async function rememberedExemplarRows(masterId) {
   return out;
 }
 var EXEMPLAR_SCALE_TOLERANCE = 0.08;
-function chooseReference(exemplars, width, height, excludeId) {
+function chooseReference(exemplars, width, height, excludeId, excludeConfig) {
   const cls = classifyAspect(width, height);
-  const candidates = exemplars.filter((e) => e.id !== excludeId).map((e) => ({ e, distance: aspectDistance(width, height, e.width, e.height), sameClass: e.formatClass === cls })).sort((a, b) => Number(b.sameClass) - Number(a.sameClass) || a.distance - b.distance);
+  const selfKey = excludeConfig ? JSON.stringify(excludeConfig.elements) : null;
+  const candidates = exemplars.filter((e) => e.id !== excludeId && (!selfKey || JSON.stringify(e.config.elements) !== selfKey)).map((e) => ({ e, distance: aspectDistance(width, height, e.width, e.height), sameClass: e.formatClass === cls })).sort((a, b) => Number(b.sameClass) - Number(a.sameClass) || a.distance - b.distance);
   const pick2 = candidates[0];
   if (!pick2) return null;
   const scale = pick2.distance <= EXEMPLAR_SCALE_TOLERANCE;
@@ -236029,25 +238438,25 @@ async function studioExemplars(width, height, excludeIds = [], limit3 = 3, scope
     ORDER BY t.updated_at DESC, t.id DESC
     LIMIT 400`);
   const out = [];
-  for (const r4 of rows.rows) {
+  for (const r6 of rows.rows) {
     let config2 = null;
     try {
-      const raw2 = JSON.parse(String(r4.config || "{}"));
+      const raw2 = JSON.parse(String(r6.config || "{}"));
       config2 = isFreeformConfig(raw2) ? normalizeFreeformConfig(raw2) : null;
     } catch {
       config2 = null;
     }
     if (!config2) continue;
-    const w = Number(r4.width), h = Number(r4.height);
+    const w = Number(r6.width), h = Number(r6.height);
     out.push({
-      id: Number(r4.id),
-      name: String(r4.name),
+      id: Number(r6.id),
+      name: String(r6.name),
       width: w,
       height: h,
       formatClass: classifyAspect(w, h),
       config: config2,
       measured: measureRecipe(config2, w, h),
-      approvedAt: r4.updated_at ? new Date(r4.updated_at).toISOString() : null,
+      approvedAt: r6.updated_at ? new Date(r6.updated_at).toISOString() : null,
       distance: aspectDistance(width, height, w, h),
       sameClass: classifyAspect(w, h) === cls
     });
@@ -236084,9 +238493,9 @@ function bboxFromPoints(pts) {
 function clamp255(n) {
   return Math.max(0, Math.min(255, Math.round(n)));
 }
-function rgbToHex3(r4, g, b) {
+function rgbToHex3(r6, g, b) {
   const h = (n) => clamp255(n).toString(16).padStart(2, "0");
-  return `#${h(r4)}${h(g)}${h(b)}`;
+  return `#${h(r6)}${h(g)}${h(b)}`;
 }
 function colorFromArgs(op, args) {
   const nums = args.filter((v) => typeof v === "number");
@@ -236107,8 +238516,8 @@ function colorFromArgs(op, args) {
 function hexLuminance(hex) {
   const m = /^#([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})$/i.exec(hex);
   if (!m) return 0;
-  const [r4, g, b] = [m[1], m[2], m[3]].map((h) => parseInt(h, 16));
-  return 0.299 * r4 + 0.587 * g + 0.114 * b;
+  const [r6, g, b] = [m[1], m[2], m[3]].map((h) => parseInt(h, 16));
+  return 0.299 * r6 + 0.587 * g + 0.114 * b;
 }
 function majority(items) {
   if (items.length === 0) return void 0;
@@ -236298,39 +238707,39 @@ function extractTextBlocks(content, viewportTransform, pdfjs, textFills) {
   const flush = () => {
     if (!cur.length) return;
     cur.sort((a, b) => a.x - b.x);
-    const fontSize = Math.max(...cur.map((r4) => r4.fontSize));
+    const fontSize = Math.max(...cur.map((r6) => r6.fontSize));
     let text3 = "";
     let prevRight = -Infinity;
-    for (const r4 of cur) {
-      if (text3 && r4.x - prevRight > fontSize * 0.25 && !text3.endsWith(" ")) text3 += " ";
-      text3 += r4.str;
-      prevRight = r4.right;
+    for (const r6 of cur) {
+      if (text3 && r6.x - prevRight > fontSize * 0.25 && !text3.endsWith(" ")) text3 += " ";
+      text3 += r6.str;
+      prevRight = r6.right;
     }
     lines.push({
-      x: Math.min(...cur.map((r4) => r4.x)),
-      top: Math.min(...cur.map((r4) => r4.top)),
-      right: Math.max(...cur.map((r4) => r4.right)),
-      bottom: Math.max(...cur.map((r4) => r4.baseline)),
+      x: Math.min(...cur.map((r6) => r6.x)),
+      top: Math.min(...cur.map((r6) => r6.top)),
+      right: Math.max(...cur.map((r6) => r6.right)),
+      bottom: Math.max(...cur.map((r6) => r6.baseline)),
       fontSize,
-      bold: cur.some((r4) => r4.bold),
-      italic: cur.some((r4) => r4.italic),
-      fontFamily: majority(cur.map((r4) => r4.fontFamily).filter(Boolean)),
-      color: majority(cur.map((r4) => r4.color).filter(Boolean)),
+      bold: cur.some((r6) => r6.bold),
+      italic: cur.some((r6) => r6.italic),
+      fontFamily: majority(cur.map((r6) => r6.fontFamily).filter(Boolean)),
+      color: majority(cur.map((r6) => r6.color).filter(Boolean)),
       text: text3.trim()
     });
     cur = [];
   };
-  for (const r4 of raws) {
+  for (const r6 of raws) {
     if (!cur.length) {
-      cur.push(r4);
+      cur.push(r6);
       continue;
     }
     const ref = cur[cur.length - 1];
-    if (Math.abs(r4.baseline - ref.baseline) <= Math.max(ref.fontSize, r4.fontSize) * 0.5) {
-      cur.push(r4);
+    if (Math.abs(r6.baseline - ref.baseline) <= Math.max(ref.fontSize, r6.fontSize) * 0.5) {
+      cur.push(r6);
     } else {
       flush();
-      cur.push(r4);
+      cur.push(r6);
     }
   }
   flush();
@@ -236358,9 +238767,9 @@ function snapConfigToPalette(config2, paletteHexes) {
   let snapped = 0;
   for (const el of config2.elements) {
     if (el.type === "text") {
-      const r4 = snapper.snap(el.color);
-      if (r4.snapped) {
-        el.color = r4.hex;
+      const r6 = snapper.snap(el.color);
+      if (r6.snapped) {
+        el.color = r6.hex;
         snapped++;
       }
     } else if (el.type === "rect") {
@@ -236412,8 +238821,8 @@ async function renderKeyVisualTemplate(data, pageNum, paletteHexes) {
   const distinctSizes = Array.from(new Set(blocks.map((b) => Math.round(b.fontSize)))).sort((a, b) => b - a);
   const rank = (size) => distinctSizes.indexOf(Math.round(size));
   const roleOf = (b) => {
-    const r4 = rank(b.fontSize);
-    return r4 === 0 ? "headline" : r4 === 1 ? "subhead" : "body";
+    const r6 = rank(b.fontSize);
+    return r6 === 0 ? "headline" : r6 === 1 ? "subhead" : "body";
   };
   let focusY = 0.45;
   const headlineBlock = blocks.slice().sort((a, b) => b.fontSize - a.fontSize)[0];
@@ -236556,8 +238965,8 @@ async function dissectPdfToTemplate(objectPath, page, paletteHexes = [], mode = 
     const isInsideRect = (b) => {
       const cx = (b.x + b.right) / 2;
       const cy = (b.top + b.bottom) / 2;
-      for (const r4 of rects) {
-        if (cx >= r4.x && cx <= r4.x + r4.w && cy >= r4.y && cy <= r4.y + r4.h) return r4;
+      for (const r6 of rects) {
+        if (cx >= r6.x && cx <= r6.x + r6.w && cy >= r6.y && cy <= r6.y + r6.h) return r6;
       }
       return null;
     };
@@ -236570,8 +238979,8 @@ async function dissectPdfToTemplate(objectPath, page, paletteHexes = [], mode = 
         role = "cta";
         color = b.color ?? (hexLuminance(containing.fill) < 140 ? "#ffffff" : "#111827");
       } else {
-        const r4 = rank(b.fontSize);
-        role = r4 === 0 ? "headline" : r4 === 1 ? "subhead" : "body";
+        const r6 = rank(b.fontSize);
+        role = r6 === 0 ? "headline" : r6 === 1 ? "subhead" : "body";
         color = b.color ?? "#111827";
       }
       return {
@@ -236598,14 +239007,14 @@ async function dissectPdfToTemplate(objectPath, page, paletteHexes = [], mode = 
     if (textElements.length === 0 && imageElements.length === 0) {
       warnings.push("No editable text or images were found (the PDF may be a flat scanned image).");
     }
-    const rectElements = rects.map((r4, i) => ({
+    const rectElements = rects.map((r6, i) => ({
       id: `rect_${i}`,
       type: "rect",
-      fill: r4.fill,
-      x: r4.x,
-      y: r4.y,
-      w: r4.w,
-      h: r4.h
+      fill: r6.fill,
+      x: r6.x,
+      y: r6.y,
+      w: r6.w,
+      h: r6.h
     }));
     const config2 = normalizeFreeformConfig({
       kind: "freeform",
@@ -236624,7 +239033,7 @@ async function dissectPdfToTemplate(objectPath, page, paletteHexes = [], mode = 
 }
 
 // src/lib/imageDissect.ts
-import sharp13 from "sharp";
+import sharp14 from "sharp";
 init_objectStorage();
 var objectStorageService10 = new ObjectStorageService();
 var MAX_EDGE = 1024;
@@ -236682,13 +239091,13 @@ Rules:
 - Return ONLY the JSON, no commentary.`;
 async function dissectImageToTemplate(objectPath) {
   const bytes2 = await readObjectBytes(objectPath);
-  const meta = await sharp13(bytes2).metadata();
+  const meta = await sharp14(bytes2).metadata();
   let width = meta.width ?? 0;
   let height = meta.height ?? 0;
   if (meta.orientation && meta.orientation >= 5) {
     [width, height] = [height, width];
   }
-  const { data: resized, info } = await sharp13(bytes2).rotate().resize(MAX_EDGE, MAX_EDGE, { fit: "inside", withoutEnlargement: true }).jpeg({ quality: 80 }).toBuffer({ resolveWithObject: true });
+  const { data: resized, info } = await sharp14(bytes2).rotate().resize(MAX_EDGE, MAX_EDGE, { fit: "inside", withoutEnlargement: true }).jpeg({ quality: 80 }).toBuffer({ resolveWithObject: true });
   if (!width || !height) {
     width = info.width;
     height = info.height;
@@ -236808,7 +239217,7 @@ async function dissectImageToTemplate(objectPath) {
 // src/lib/exampleImport.ts
 var import_jszip3 = __toESM(require_lib13(), 1);
 init_objectStorage();
-import sharp15 from "sharp";
+import sharp16 from "sharp";
 
 // ../../node_modules/.pnpm/fast-xml-parser@5.11.0/node_modules/fast-xml-parser/src/util.js
 var nameStartChar = ":A-Za-z_\\u00C0-\\u00D6\\u00D8-\\u00F6\\u00F8-\\u02FF\\u0370-\\u037D\\u037F-\\u1FFF\\u200C-\\u200D\\u2070-\\u218F\\u2C00-\\u2FEF\\u3001-\\uD7FF\\uF900-\\uFDCF\\uFDF0-\\uFFFD";
@@ -237306,7 +239715,7 @@ var EntityDecoder = class {
     this._limit = options.limit || {};
     this._maxTotalExpansions = this._limit.maxTotalExpansions || 0;
     this._maxExpandedLength = this._limit.maxExpandedLength || 0;
-    this._postCheck = typeof options.postCheck === "function" ? options.postCheck : (r4) => r4;
+    this._postCheck = typeof options.postCheck === "function" ? options.postCheck : (r6) => r6;
     this._limitTiers = parseLimitTiers(this._limit.applyLimitsTo ?? LIMIT_TIER_EXTERNAL);
     this._numericAllowed = options.numericAllowed ?? true;
     this._baseMap = mergeEntityMaps(XML, options.namedEntities || null);
@@ -240880,6 +243289,10 @@ var XMLParser = class {
 
 // src/lib/idmlParse.ts
 var IDENTITY = [1, 0, 0, 1, 0, 0];
+function liquidOf(item) {
+  const c = constraintsFromIdml(item?.["@_HorizontalLayoutConstraints"], item?.["@_VerticalLayoutConstraints"]);
+  return c ? { constraints: c } : {};
+}
 function parseMatrix(raw2) {
   if (typeof raw2 !== "string") return IDENTITY;
   const parts = raw2.trim().split(/\s+/).map(Number);
@@ -241097,8 +243510,8 @@ function itemOpacity(item) {
 function isLogoGroup(group, colors) {
   const rects = asArray(group?.Rectangle);
   const polys = asArray(group?.Polygon);
-  const whiteTile = rects.find((r4) => {
-    const fill = typeof r4?.["@_FillColor"] === "string" ? colors.get(r4["@_FillColor"]) : void 0;
+  const whiteTile = rects.find((r6) => {
+    const fill = typeof r6?.["@_FillColor"] === "string" ? colors.get(r6["@_FillColor"]) : void 0;
     return fill && fill.toLowerCase() === "#ffffff";
   });
   const colouredPolys = polys.filter((p) => typeof p?.["@_FillColor"] === "string" && colors.get(p["@_FillColor"]));
@@ -241170,15 +243583,15 @@ function mergeRasterRegions(elements, pad = 8) {
       if (idx[m] !== keep) remove.add(idx[m]);
     }
     const layerName = box(members[0]).layerName;
-    const union3 = { x: x1, y: y1, w: Math.max(1, x2 - x1), h: Math.max(1, y2 - y1), ...layerName ? { layerName } : {} };
-    Object.assign(elements[keep], union3);
-    unionBoxes.push(union3);
+    const union4 = { x: x1, y: y1, w: Math.max(1, x2 - x1), h: Math.max(1, y2 - y1), ...layerName ? { layerName } : {} };
+    Object.assign(elements[keep], union4);
+    unionBoxes.push(union4);
   }
   elements.forEach((e, i) => {
     if (e.type !== "rect" || remove.has(i)) return;
-    const r4 = e;
+    const r6 = e;
     for (const u of unionBoxes) {
-      if (r4.layerName === u.layerName && r4.x >= u.x - 1 && r4.y >= u.y - 1 && r4.x + r4.w <= u.x + u.w + 1 && r4.y + r4.h <= u.y + u.h + 1) {
+      if (r6.layerName === u.layerName && r6.x >= u.x - 1 && r6.y >= u.y - 1 && r6.x + r6.w <= u.x + u.w + 1 && r6.y + r6.h <= u.y + u.h + 1) {
         remove.add(i);
         return;
       }
@@ -241232,9 +243645,20 @@ async function parseIdmlToLayouts(idml, linksByName, brandLogoUrl = null) {
       message: "message",
       cta: "cta",
       logo: "logo",
-      lockup: "lockup"
+      lockup: "lockup",
+      // Key-visual layers (docs/style-specs/key-visual-layouts.md §3).
+      background: "photo",
+      "key visual": "photo",
+      anther: "cutout",
+      dates: "subheadline",
+      date: "subheadline",
+      button: "cta",
+      search: "cta",
+      pattern: "band",
+      band: "band"
     };
-    return { layerName, ...key && slots[key] ? { slot: slots[key] } : {} };
+    const blocks = { title: "title", "title lockup": "title", badge: "badge", roundel: "badge", strapline: "strapline", tagline: "strapline", credit: "credit", "photo credit": "credit" };
+    return { layerName, ...key && slots[key] ? { slot: slots[key] } : {}, ...key && blocks[key] ? { layoutBlock: blocks[key] } : {} };
   };
   const spreadRefs = asArray(designMap?.Document?.["idPkg:Spread"]).map((s2) => s2?.["@_src"]).filter(Boolean);
   if (spreadRefs.length === 0) {
@@ -241303,6 +243727,7 @@ async function parseIdmlToLayouts(idml, linksByName, brandLogoUrl = null) {
         if (brandLogoUrl) {
           elements.push({
             ...sourceLayer,
+            ...liquidOf(item),
             id: `idml_logo_${idCounter2++}`,
             type: "image",
             role: "logo",
@@ -241330,6 +243755,7 @@ async function parseIdmlToLayouts(idml, linksByName, brandLogoUrl = null) {
         const letterSpacing = story.tracking ? Math.round(story.tracking / 1e3 * story.fontSize * 100) / 100 : 0;
         elements.push({
           ...sourceLayer,
+          ...liquidOf(item),
           ...capFit ? { baselineFit: "cap" } : {},
           id: `idml_txt_${idCounter2++}`,
           type: "text",
@@ -241354,6 +243780,7 @@ async function parseIdmlToLayouts(idml, linksByName, brandLogoUrl = null) {
       if (placed2.length > 0 && (kind === "Oval" || kind === "Polygon")) {
         elements.push({
           ...sourceLayer,
+          ...liquidOf(item),
           id: `idml_img_${idCounter2++}`,
           type: "rasterRegion",
           photoFallback: true,
@@ -241408,6 +243835,7 @@ async function parseIdmlToLayouts(idml, linksByName, brandLogoUrl = null) {
           }
           elements.push({
             ...sourceLayer,
+            ...liquidOf(item),
             id: `idml_img_${idCounter2++}`,
             type: "image",
             role: sourceLayerRole === "logo" ? "logo" : sourceLayerRole === "decoration" ? "decoration" : "product",
@@ -241428,6 +243856,7 @@ async function parseIdmlToLayouts(idml, linksByName, brandLogoUrl = null) {
           }
           elements.push({
             ...sourceLayer,
+            ...liquidOf(item),
             id: `idml_img_${idCounter2++}`,
             type: "rasterRegion",
             photoFallback: true,
@@ -241448,6 +243877,7 @@ async function parseIdmlToLayouts(idml, linksByName, brandLogoUrl = null) {
         if (fill || hasStroke) {
           elements.push({
             ...sourceLayer,
+            ...liquidOf(item),
             id: `idml_raster_${idCounter2++}`,
             type: "rasterRegion",
             x,
@@ -241491,10 +243921,10 @@ async function parseIdmlToLayouts(idml, linksByName, brandLogoUrl = null) {
         }
         const corners = ["TopLeft", "TopRight", "BottomLeft", "BottomRight"].map((c) => {
           const opt = item?.[`@_${c}CornerOption`];
-          const r4 = Number(item?.[`@_${c}CornerRadius`]);
-          return typeof opt === "string" && /rounded/i.test(opt) && Number.isFinite(r4) && r4 > 0 ? r4 : 0;
+          const r6 = Number(item?.[`@_${c}CornerRadius`]);
+          return typeof opt === "string" && /rounded/i.test(opt) && Number.isFinite(r6) && r6 > 0 ? r6 : 0;
         });
-        let radius = corners.every((r4) => r4 > 0) ? Math.min(...corners) : 0;
+        let radius = corners.every((r6) => r6 > 0) ? Math.min(...corners) : 0;
         if (radius === 0) {
           const uniOpt = item?.["@_CornerOption"];
           const uniR = Number(item?.["@_CornerRadius"]);
@@ -241502,6 +243932,7 @@ async function parseIdmlToLayouts(idml, linksByName, brandLogoUrl = null) {
         }
         elements.push({
           ...sourceLayer,
+          ...liquidOf(item),
           id: `idml_rect_${idCounter2++}`,
           type: "rect",
           fill,
@@ -241556,7 +243987,7 @@ async function parseIdmlToLayouts(idml, linksByName, brandLogoUrl = null) {
 // src/lib/indesignPackage.ts
 var import_jszip2 = __toESM(require_lib13(), 1);
 init_objectStorage();
-import sharp14 from "sharp";
+import sharp15 from "sharp";
 
 // src/lib/pdfStripText.ts
 var import_pdf_lib2 = __toESM(require_cjs2(), 1);
@@ -241780,11 +244211,11 @@ async function importInDesignPackage(objectPath, brandLogoUrl = null) {
           const bytes2 = Buffer.from(await entry.async("arraybuffer"));
           if (bytes2.length <= 20 * 1024 * 1024) {
             const { woffToSfnt: woffToSfnt2, readSfntFamilyName: readSfntFamilyName2 } = await Promise.resolve().then(() => (init_freeformFonts(), freeformFonts_exports));
-            const family = readSfntFamilyName2(woffToSfnt2(new Uint8Array(bytes2)));
+            const family2 = readSfntFamilyName2(woffToSfnt2(new Uint8Array(bytes2)));
             const contentType = e === ".otf" ? "font/otf" : "font/ttf";
             const storedPath = await objectStorageService11.uploadBytes(bytes2, contentType);
             result.imported.push({
-              name: family ? `${family} (${name})` : name,
+              name: family2 ? `${family2} (${name})` : name,
               objectPath: storedPath,
               contentType,
               kind: "font"
@@ -241820,12 +244251,25 @@ async function importInDesignPackage(objectPath, brandLogoUrl = null) {
         continue;
       }
       const bytes2 = Buffer.from(await entry.async("arraybuffer"));
+      if (bytes2.length === 0) {
+        result.skipped.push({ name, reason: "empty file (0 bytes) \u2014 its frame was reproduced from the document PDF instead; re-package with the real link for full quality" });
+        continue;
+      }
+      if (e in IMAGE_TYPES2 && e !== ".svg") {
+        try {
+          const meta = await sharp15(bytes2).metadata();
+          if (!meta.width || !meta.height) throw new Error("no dimensions");
+        } catch {
+          result.skipped.push({ name, reason: "could not be read as an image \u2014 its frame was reproduced from the document PDF instead" });
+          continue;
+        }
+      }
       if (e in IMAGE_TYPES2) {
         const storedPath = await objectStorageService11.uploadBytes(bytes2, IMAGE_TYPES2[e]);
         result.imported.push({ name, objectPath: storedPath, contentType: IMAGE_TYPES2[e], kind: "image" });
         linksByName.set(name, { objectPath: storedPath, kind: "image" });
       } else if (e === ".tif" || e === ".tiff") {
-        const png = await sharp14(bytes2).png().toBuffer();
+        const png = await sharp15(bytes2).png().toBuffer();
         const storedPath = await objectStorageService11.uploadBytes(png, "image/png");
         result.imported.push({
           name: name.replace(/\.tiff?$/i, ".png"),
@@ -241911,7 +244355,7 @@ async function importInDesignPackage(objectPath, brandLogoUrl = null) {
             const textFree = (cropPdf?.removed ?? 0) > 0 || (cropPdf?.outlinedRemoved ?? 0) > 0;
             const rendered = await renderPdfPageToPng2(Uint8Array.from(pdfBytes), layout.spreadIndex + 1);
             let renderedNoType = null;
-            if (regions.some((r4) => r4.photoFallback)) {
+            if (regions.some((r6) => r6.photoFallback)) {
               if (!textFree) {
                 try {
                   renderedNoType = await renderPdfPageToPng2(Uint8Array.from(pdfBytes), layout.spreadIndex + 1, { hideTextLayers: true });
@@ -241932,7 +244376,7 @@ async function importInDesignPackage(objectPath, brandLogoUrl = null) {
               const width = Math.min(source.width - left, Math.max(1, Math.round(Number(region.w) * scale)));
               const height = Math.min(source.height - top, Math.max(1, Math.round(Number(region.h) * scale)));
               if (width < 1 || height < 1) continue;
-              const crop = await sharp14(source.png).extract({ left, top, width, height }).png().toBuffer();
+              const crop = await sharp15(source.png).extract({ left, top, width, height }).png().toBuffer();
               const storedPath = await objectStorageService11.uploadBytes(crop, "image/png");
               region.type = "image";
               region.src = `/api/storage${storedPath}`;
@@ -241981,7 +244425,7 @@ async function importInDesignPackage(objectPath, brandLogoUrl = null) {
                 src = Buffer.from(await (await objectStorageService11.downloadObject(file3)).arrayBuffer());
                 srcBytesCache.set(objPath, src);
               }
-              const meta = await sharp14(src).metadata();
+              const meta = await sharp15(src).metadata();
               const iw = meta.width ?? 0;
               const ih = meta.height ?? 0;
               if (iw < 2 || ih < 2) continue;
@@ -241989,7 +244433,7 @@ async function importInDesignPackage(objectPath, brandLogoUrl = null) {
               const top = Math.min(ih - 1, Math.max(0, Math.round(rect.y * ih)));
               const width = Math.max(1, Math.min(iw - left, Math.round(rect.w * iw)));
               const height = Math.max(1, Math.min(ih - top, Math.round(rect.h * ih)));
-              const pipeline = sharp14(src).extract({ left, top, width, height });
+              const pipeline = sharp15(src).extract({ left, top, width, height });
               const jpeg = meta.format === "jpeg";
               const out = jpeg ? await pipeline.jpeg({ quality: 95 }).toBuffer() : await pipeline.png().toBuffer();
               croppedPath = await objectStorageService11.uploadBytes(out, jpeg ? "image/jpeg" : "image/png");
@@ -242035,6 +244479,159 @@ async function importInDesignPackage(objectPath, brandLogoUrl = null) {
 
 // src/lib/exampleImport.ts
 init_heroBox();
+
+// src/lib/acMasterPackage.ts
+init_objectStorage();
+var AC_MASTER_SCHEMA = "nz.govt.auckland.artwork-master/v1";
+var safeName = (v, fallback) => typeof v === "string" && v.trim() ? v.trim().slice(0, 120) : fallback;
+var finite = (v, fallback = 0) => Number.isFinite(Number(v)) ? Number(v) : fallback;
+var family = (v) => v === "portrait" || v === "landscape" || v === "slim-portrait" || v === "slim-landscape" ? v : void 0;
+var slotForRole = (role) => ({
+  background: "photo",
+  hero: "photo",
+  headline: "headline",
+  subheadline: "subheadline",
+  body: "message",
+  cta: "cta",
+  logo: "logo",
+  decoration: "band",
+  legal: "other",
+  // Key-visual roles: the anther is the shaped picture; title, badge,
+  // strapline and credit are found by their layoutBlock.
+  anther: "cutout",
+  scrim: "scrim",
+  title: "other",
+  badge: "other",
+  strapline: "other",
+  credit: "other"
+})[role] ?? "other";
+function findAcMasterManifest(zip) {
+  return Object.values(zip.files).find((entry) => !entry.dir && /(^|\/)ac-master\.json$/i.test(entry.name)) ?? null;
+}
+async function parseAcMasterPackage(zip, storage3 = new ObjectStorageService()) {
+  const entry = findAcMasterManifest(zip);
+  if (!entry) throw new Error("AC master manifest not found");
+  let manifest;
+  try {
+    manifest = JSON.parse(await entry.async("string"));
+  } catch {
+    throw new Error("The InDesign bridge manifest is not valid JSON.");
+  }
+  if (manifest.schema !== AC_MASTER_SCHEMA) throw new Error("Unsupported InDesign bridge package version.");
+  if (!Array.isArray(manifest.pages) || manifest.pages.length < 1 || manifest.pages.length > 16) throw new Error("The InDesign bridge package has no valid master pages.");
+  const imported = [];
+  const assetPaths = /* @__PURE__ */ new Set();
+  for (const page of manifest.pages) {
+    if (!Array.isArray(page.elements)) continue;
+    for (const raw2 of page.elements) if (typeof raw2.assetPath === "string" && raw2.assetPath) assetPaths.add(raw2.assetPath.replace(/^\/+/, ""));
+  }
+  const stored = /* @__PURE__ */ new Map();
+  for (const assetPath of assetPaths) {
+    const asset = zip.file(assetPath);
+    if (!asset) throw new Error(`The InDesign package is missing ${assetPath}.`);
+    const bytes2 = Buffer.from(await asset.async("arraybuffer"));
+    if (bytes2.length > 30 * 1024 * 1024) throw new Error(`${assetPath} is over the 30MB layer limit.`);
+    const ext2 = assetPath.split(".").pop()?.toLowerCase();
+    const contentType = ext2 === "jpg" || ext2 === "jpeg" ? "image/jpeg" : "image/png";
+    const objectPath = await storage3.uploadBytes(bytes2, contentType);
+    stored.set(assetPath, `/api/storage${objectPath}`);
+    imported.push({ name: assetPath.split("/").pop() ?? assetPath, objectPath, contentType, kind: "image" });
+  }
+  const campaign = safeName(manifest.campaign, "InDesign masters");
+  const warnings = [];
+  const layouts = [];
+  for (let pageIndex = 0; pageIndex < manifest.pages.length; pageIndex++) {
+    const page = manifest.pages[pageIndex];
+    const width = finite(page.width), height = finite(page.height);
+    if (!(width >= 16 && height >= 16 && width <= 12e3 && height <= 12e3) || !Array.isArray(page.elements)) {
+      warnings.push(`Master ${pageIndex + 1} was skipped because its page geometry was invalid.`);
+      continue;
+    }
+    const elements = [];
+    for (let i = 0; i < Math.min(page.elements.length, 200); i++) {
+      const raw2 = page.elements[i];
+      const role = typeof raw2.role === "string" ? raw2.role.toLowerCase() : "decoration";
+      const common = {
+        id: safeName(raw2.id, `bridge_${pageIndex}_${i}`).replace(/[^\w:.-]/g, "_").slice(0, 64),
+        x: finite(raw2.x),
+        y: finite(raw2.y),
+        w: Math.max(1, finite(raw2.w, 1)),
+        h: Math.max(1, finite(raw2.h, 1)),
+        layerName: safeName(raw2.layerName, `art:${role}`),
+        slot: typeof raw2.slot === "string" ? raw2.slot : slotForRole(role),
+        layoutBlock: safeName(raw2.block, role).replace(/[^\w:.-]/g, "_").slice(0, 80),
+        anchorX: raw2.anchorX,
+        anchorY: raw2.anchorY,
+        scaleMode: raw2.scaleMode,
+        // One vocabulary: the bridge's pins (v2 manifests carry them; v1
+        // anchors are mapped) become the same constraints the editor edits.
+        ...(() => {
+          const c = sanitizeConstraints(raw2.constraints) ?? constraintsFromAnchors({ anchorX: typeof raw2.anchorX === "string" ? raw2.anchorX : void 0, anchorY: typeof raw2.anchorY === "string" ? raw2.anchorY : void 0, scaleMode: typeof raw2.scaleMode === "string" ? raw2.scaleMode : void 0 });
+          return c ? { constraints: c } : {};
+        })(),
+        ...raw2.locked === true ? { locked: true } : {}
+      };
+      if (raw2.kind === "text") {
+        if (!String(raw2.text ?? "").trim()) continue;
+        elements.push({
+          ...common,
+          type: "text",
+          role: role === "headline" ? "headline" : role === "subheadline" ? "subhead" : role === "cta" ? "cta" : role === "body" || role === "legal" ? "body" : "other",
+          text: String(raw2.text ?? "").slice(0, 2e3),
+          fontSize: Math.max(1, finite(raw2.fontSize, 16)),
+          fontWeight: finite(raw2.fontWeight, 400) >= 600 || typeof raw2.fontFamily === "string" && /\t.*(bold|black|heavy|semibold)/i.test(raw2.fontFamily) ? 700 : 400,
+          // InDesign names a face "Family<TAB>Style" ("National 2 Condensed\tBold").
+          fontFamily: typeof raw2.fontFamily === "string" ? raw2.fontFamily.split("	")[0].trim() : void 0,
+          color: typeof raw2.color === "string" ? raw2.color : "#11263d",
+          align: raw2.align === "center" || raw2.align === "right" ? raw2.align : "left",
+          lineHeight: Math.max(0.5, finite(raw2.lineHeight, 1.2)),
+          letterSpacing: finite(raw2.letterSpacing, 0),
+          ...raw2.opacity !== void 0 ? { opacity: Math.max(0, Math.min(1, finite(raw2.opacity, 1))) } : {}
+        });
+      } else {
+        const assetPath = typeof raw2.assetPath === "string" ? raw2.assetPath.replace(/^\/+/, "") : "";
+        const src = stored.get(assetPath);
+        if (!src) continue;
+        if (role === "logo" && common.w / Math.max(1, common.h) > 1.5) common.slot = "lockup";
+        elements.push({
+          ...common,
+          type: "image",
+          role: role === "logo" ? "logo" : role === "hero" || role === "background" || role === "anther" ? "product" : "decoration",
+          src,
+          fit: raw2.fit === "cover" ? "cover" : "contain",
+          ...raw2.opacity !== void 0 ? { opacity: Math.max(0, Math.min(1, finite(raw2.opacity, 1))) } : {}
+        });
+      }
+    }
+    if (!elements.length) {
+      warnings.push(`Master ${pageIndex + 1} contained no usable tagged artwork.`);
+      continue;
+    }
+    const name = safeName(page.name, `${campaign} ${pageIndex + 1}`);
+    layouts.push({
+      name,
+      width: Math.round(width),
+      height: Math.round(height),
+      variant: family(page.masterFamily) ?? null,
+      config: normalizeFreeformConfig({
+        kind: "freeform",
+        elements,
+        sourceMode: "indesign-bridge",
+        authoritativeGeometry: true,
+        masterFamily: family(page.masterFamily),
+        adaptMethod: "indesign-master",
+        adaptNotes: ["Exact layer geometry and semantic blocks supplied by the Auckland Artwork InDesign bridge."]
+      })
+    });
+  }
+  if (!layouts.length) throw new Error("The InDesign bridge package had no usable master layouts.");
+  const fonts = [...new Set(layouts.flatMap((l) => l.config.elements.filter((e) => e.type === "text").map((e) => e.fontFamily).filter((f) => !!f)))];
+  if (fonts.length) warnings.push(`Fonts used: ${fonts.join(", ")}. Copy is measured with these faces only when they are in the Library; add them there if they are not.`);
+  warnings.unshift(`Authoritative InDesign package: ${layouts.length} master${layouts.length === 1 ? "" : "s"} imported. Generic recipe guessing is disabled for this family.`);
+  return { layouts, imported, warnings };
+}
+
+// src/lib/exampleImport.ts
 var objectStorageService12 = new ObjectStorageService();
 function exampleKindFor(fileName) {
   const n = fileName.toLowerCase();
@@ -242046,7 +244643,7 @@ function exampleKindFor(fileName) {
   return null;
 }
 async function faithfulImageLayout(bytes2, contentType, name) {
-  const meta = await sharp15(bytes2).metadata();
+  const meta = await sharp16(bytes2).metadata();
   const width = Math.max(16, meta.width ?? 0);
   const height = Math.max(16, meta.height ?? 0);
   const storedPath = await objectStorageService12.uploadBytes(bytes2, contentType);
@@ -242085,12 +244682,19 @@ async function importExample(objectPath, fileName, brandLogoUrl, paletteHexes = 
   if (!kind) throw new Error("Unsupported file type");
   const baseName2 = fileName.replace(/\.[^.]+$/, "").trim().slice(0, 80) || "Example";
   if (kind === "package") {
+    const bridgeFile = await objectStorageService12.getObjectEntityFile(objectPath);
+    const bridgeBytes = Buffer.from(await (await objectStorageService12.downloadObject(bridgeFile)).arrayBuffer());
+    const bridgeZip = await import_jszip3.default.loadAsync(bridgeBytes);
+    if (findAcMasterManifest(bridgeZip)) {
+      const bridge = await parseAcMasterPackage(bridgeZip);
+      return { kind, layouts: bridge.layouts, warnings: bridge.warnings, assets: bridge.imported, folder: `InDesign Bridge \u2014 ${baseName2}` };
+    }
     const res = await importInDesignPackage(objectPath, brandLogoUrl);
     if (res.idmlLayouts.length > 0) {
       return {
         kind,
         layouts: layoutsFromIdml(res.idmlLayouts, baseName2),
-        warnings: [...new Set(res.idmlLayouts.flatMap((l) => l.warnings))],
+        warnings: [.../* @__PURE__ */ new Set([...res.idmlLayouts.flatMap((l) => l.warnings), ...res.skipped.map((k) => `Link "${k.name}": ${k.reason}.`)])],
         assets: res.imported,
         folder: `Package \u2014 ${baseName2}`
       };
@@ -242101,7 +244705,7 @@ async function importExample(objectPath, fileName, brandLogoUrl, paletteHexes = 
         kind,
         layouts: [{ name: baseName2, width: dissected.width, height: dissected.height, config: dissected.config, variant: null }],
         warnings: [
-          "No IDML in the package \u2014 the document PDF was recreated instead, so text is part of the artwork.",
+          'No IDML in the package. The .indd file cannot be read outside InDesign, so your layers, live text and positions were NOT imported \u2014 the PDF was placed as one flat picture, and only same-shape sizes can be made from it. Fix: in InDesign choose File > Package and tick "Include IDML" (or File > Export > InDesign Markup (IDML) and add that file to the folder), zip the folder and import it again.',
           ...dissected.warnings
         ],
         assets: res.imported,
@@ -242130,11 +244734,11 @@ async function importExample(objectPath, fileName, brandLogoUrl, paletteHexes = 
       const ext2 = /\.(jpe?g|png|webp)$/i.exec(path11)?.[1]?.toLowerCase();
       if (!ext2) continue;
       const bytes3 = Buffer.from(await entry.async("uint8array"));
-      const meta = await sharp15(bytes3).metadata().catch(() => null);
+      const meta = await sharp16(bytes3).metadata().catch(() => null);
       if (!meta?.width || !meta.height) continue;
       if (Math.min(meta.width, meta.height) < 200 || meta.width * meta.height < 15e4) continue;
       if (meta.hasAlpha) {
-        const stats = await sharp15(bytes3).stats().catch(() => null);
+        const stats = await sharp16(bytes3).stats().catch(() => null);
         const alpha = stats?.channels?.[stats.channels.length - 1];
         if (alpha && alpha.mean < 100) continue;
       }
@@ -242227,7 +244831,7 @@ async function importExample(objectPath, fileName, brandLogoUrl, paletteHexes = 
     };
   }
   const isTiff = /\.tiff?$/i.test(fileName);
-  const finalBytes = isTiff ? await sharp15(bytes2).png().toBuffer() : bytes2;
+  const finalBytes = isTiff ? await sharp16(bytes2).png().toBuffer() : bytes2;
   const contentType = isTiff ? "image/png" : /\.png$/i.test(fileName) ? "image/png" : /\.webp$/i.test(fileName) ? "image/webp" : /\.gif$/i.test(fileName) ? "image/gif" : "image/jpeg";
   const layout = await faithfulImageLayout(finalBytes, contentType, baseName2);
   return {
@@ -242365,19 +244969,66 @@ async function layeredPanelFill(config2, req) {
   }
 }
 var pct = (n) => `${Math.round(n * 100)}%`;
-async function adaptOne(master, masterConfig, width, height, brandInfo, log, exemplars = [], excludeId, hints = {}, styleOverride, render) {
+async function adaptOne(master, masterConfig, width, height, brandInfo, log, exemplars = [], excludeId, hints = {}, styleOverride, render, family2) {
   let adapted = null;
   let method = "scaled";
+  let displayCta = null;
   const notes = [];
-  const spec = describeFormat(width, height, hints.name ?? null, hints.channel ?? null);
+  const spec3 = describeFormat(width, height, hints.name ?? null, hints.channel ?? null);
+  const bridgeRules = ruleLayerFor(styleOverride ? styleOverride.schema : styleSchemaFor(master.name));
+  const bridgeAntherKv = masterConfig.sourceMode === "indesign-bridge" && isAntherKeyVisual(masterConfig, master.width, master.height) && aspectDistance(master.width, master.height, width, height) > 0.02;
+  if (masterConfig.sourceMode === "indesign-bridge" && masterConfig.authoritativeGeometry && !bridgeAntherKv) {
+    const fam = (family2 ?? []).filter((s2) => s2.width > 0 && s2.height > 0 && s2.config.sourceMode === "indesign-bridge");
+    if (fam.length >= 2 && targetBetweenMasters(fam, width, height)) {
+      const lt2 = Math.log(width / height);
+      const below = fam.filter((s2) => Math.log(s2.width / s2.height) <= lt2).sort((p, q) => Math.log(q.width / q.height) - Math.log(p.width / p.height))[0];
+      const above = fam.filter((s2) => Math.log(s2.width / s2.height) >= lt2).sort((p, q) => Math.log(p.width / p.height) - Math.log(q.width / q.height))[0];
+      const sameAxis = below && above && masterAxis(below.config, below.width, below.height) !== null && masterAxis(below.config, below.width, below.height) === masterAxis(above.config, above.width, above.height);
+      if (below && above && below !== above && sameAxis) {
+        adapted = adaptAuthoritativeBetween(below, above, width, height, { rules: bridgeRules });
+        method = "indesign-interpolated";
+        notes.push(...adapted.adaptNotes ?? []);
+      }
+    }
+    if (!adapted) {
+      adapted = adaptAuthoritativeConfig(masterConfig, master.width, master.height, width, height, { rules: bridgeRules });
+      method = "indesign-authoritative";
+      notes.push(...adapted.adaptNotes ?? []);
+    }
+  }
   const reference = chooseReference(exemplars, width, height, excludeId);
-  if (reference?.scaleFromExemplar) {
+  const sizeRatio = reference ? Math.min(width, height) / Math.max(1, Math.min(reference.exemplar.width, reference.exemplar.height)) : 1;
+  const scaleOk = sizeRatio >= 0.5 && sizeRatio <= 2;
+  if (!adapted && reference?.scaleFromExemplar && !scaleOk) notes.push(`The approved "${reference.exemplar.name}" is the reference, but this size is ${sizeRatio < 1 ? "much smaller" : "much larger"}, so it was rebuilt to its proportions rather than scaled.`);
+  if (!adapted && reference?.scaleFromExemplar && scaleOk) {
     adapted = adaptFreeformConfig(reference.exemplar.config, reference.exemplar.width, reference.exemplar.height, width, height);
     method = "scaled:approved";
     notes.push(reference.note);
   }
-  if (!adapted && styleOverride?.profile) {
-    const geometric = adaptGeometryProfile(masterConfig, master.width, master.height, width, height, styleOverride.profile);
+  if (!adapted && aspectDistance(master.width, master.height, width, height) <= 0.02) {
+    adapted = adaptFreeformConfig(masterConfig, master.width, master.height, width, height);
+    method = "scaled";
+    notes.push(`Same shape as the master (${master.width}\xD7${master.height}): scaled exactly, nothing re-set or rebuilt.`);
+  }
+  const rules = ruleLayerFor(styleOverride ? styleOverride.schema : styleSchemaFor(master.name));
+  if (!adapted && isAntherKeyVisual(masterConfig, master.width, master.height)) {
+    try {
+      const kv = await composeAntherKeyVisual(masterConfig, master.width, master.height, width, height);
+      if (kv) {
+        adapted = kv.config;
+        method = "key-visual:anther";
+        notes.push(...kv.notes);
+      }
+    } catch (err) {
+      log?.warn({ err, templateId: master.id, width, height }, "anther key-visual composer failed; falling back");
+    }
+  }
+  const profSources = styleOverride?.profile?.sources ?? [];
+  const axisOfMaster = (m) => profSources.find((x) => x.templateId === m.templateId)?.axis ?? (m.width / Math.max(1, m.height) >= 1.12 ? "side" : "stacked");
+  const geoMasters = styleOverride?.profile?.geometryMasters ?? [];
+  const bracketed = ["stacked", "side"].some((axis) => targetBetweenMasters(geoMasters.filter((m) => axisOfMaster(m) === axis).map((m) => ({ width: m.width, height: m.height })), width, height));
+  if (!adapted && styleOverride?.profile && bracketed) {
+    const geometric = adaptGeometryProfile(masterConfig, master.width, master.height, width, height, styleOverride.profile, rules);
     if (geometric) {
       adapted = geometric.config;
       method = "geometry-profile";
@@ -242388,7 +245039,7 @@ async function adaptOne(master, masterConfig, width, height, brandInfo, log, exe
   const styleSpec = styleOverride ? styleOverride.schema : styleSchemaFor(master.name);
   if (styleOverride?.schema) notes.push(`Layout numbers from ${styleOverride.label}.`);
   if (!adapted && !hasTextHeadline && hasLayeredSlots(masterConfig)) {
-    const ly = adaptLayered(masterConfig, master.width, master.height, width, height, { panelFill: brandInfo.panelFill ?? null, logoUrl: brandInfo.logoUrl, spec: styleSpec, formatClass: spec.formatClass });
+    const ly = adaptLayered(masterConfig, master.width, master.height, width, height, { panelFill: brandInfo.panelFill ?? null, logoUrl: brandInfo.logoUrl, spec: styleSpec, formatClass: spec3.formatClass });
     if (ly) {
       adapted = ly.config;
       method = "layered";
@@ -242397,7 +245048,7 @@ async function adaptOne(master, masterConfig, width, height, brandInfo, log, exe
   }
   const photoLed = !adapted && !!findKvBackground(masterConfig, master.width, master.height) && !masterConfig.elements.some((e) => e.slot === "panel" || e.slot === "band");
   if (photoLed) {
-    const composed = await composeKeyVisualAdaptation(masterConfig, master.width, master.height, width, height, brandInfo);
+    const composed = await composeKeyVisualAdaptation(masterConfig, master.width, master.height, width, height, { ...brandInfo, rules });
     if (composed) {
       adapted = composed;
       method = "key-visual";
@@ -242406,10 +245057,14 @@ async function adaptOne(master, masterConfig, width, height, brandInfo, log, exe
   }
   if (!adapted && shouldRecompose(masterConfig, master.width, master.height, width, height)) {
     try {
-      const specZone = styleSpec?.zones[spec.formatClass];
+      const specZone = styleSpec?.zones[spec3.formatClass];
+      displayCta = displayCtaFor(master.name, width, height, hints.onlineButton === true);
       const rc = await recomposeToFormat(masterConfig, master.width, master.height, width, height, {
         brand: brandInfo,
-        formatClass: spec.formatClass,
+        formatClass: spec3.formatClass,
+        rules,
+        displayCta,
+        overridesFromApproved: !!reference,
         // An approved piece's measurements lead; else the campaign schema's zones; else the class recipe.
         ...reference ? { recipeOverrides: reference.exemplar.measured } : specZone ? { recipeOverrides: { photoFrac: specZone.photoFrac, bandFrac: specZone.bandFrac, bandAt: specZone.bandAt } } : {}
       });
@@ -242442,8 +245097,59 @@ async function adaptOne(master, masterConfig, width, height, brandInfo, log, exe
       method = "scaled";
     }
   }
+  const pillRule = async (cfg, m) => {
+    if (m.startsWith("indesign")) return cfg;
+    try {
+      await prepareMeasurement();
+      const ruled = applyPillRule(cfg, width, height, { config: masterConfig, width: master.width, height: master.height });
+      for (const n of ruled.notes) if (!notes.includes(n)) notes.push(n);
+      return ruled.config;
+    } catch (err) {
+      log?.warn({ err }, "pill rule failed; layout left as built");
+      return cfg;
+    }
+  };
+  adapted = await pillRule(adapted, method);
+  const partRulesForGate = styleSpec?.partRules ?? {};
+  const gate = (cfg) => checkMandatory(masterConfig, { ...cfg, adaptNotes: [...cfg.adaptNotes ?? [], ...notes] }, width, height, partRulesForGate, { w: master.width, h: master.height });
+  let rejected = gate(adapted);
+  if (rejected.length > 0 && method !== "scaled" && method !== "indesign-authoritative" && method !== "indesign-interpolated") {
+    const attempts = [];
+    if (!method.startsWith("recomposed") && shouldRecompose(masterConfig, master.width, master.height, width, height)) {
+      attempts.push({ label: `recomposed:${spec3.formatClass}`, run: async () => (await recomposeToFormat(masterConfig, master.width, master.height, width, height, { brand: brandInfo, formatClass: spec3.formatClass, rules, displayCta: displayCtaFor(master.name, width, height, hints.onlineButton === true) }))?.config ?? null });
+    }
+    attempts.push({ label: "scaled", run: async () => adaptFreeformConfig(masterConfig, master.width, master.height, width, height) });
+    for (const attempt of attempts) {
+      try {
+        const built = await attempt.run();
+        if (!built) continue;
+        const alt = await pillRule(built, attempt.label);
+        const altRejected = gate(alt);
+        if (altRejected.length < rejected.length) {
+          notes.push(`Rebuilt with the ${attempt.label.replace(":", " ")} engine: the ${method.replace(":", " ")} result was rejected (${rejected.join(" ")}).`);
+          adapted = alt;
+          method = attempt.label;
+          rejected = altRejected;
+          if (rejected.length === 0) break;
+        }
+      } catch (err) {
+        log?.warn({ err, engine: attempt.label }, "retry engine failed");
+      }
+    }
+  }
   const issues = checkLayout(adapted, width, height);
-  const rejected = checkMandatory(masterConfig, { ...adapted, adaptNotes: [...adapted.adaptNotes ?? [], ...notes] }, width, height, styleSpec?.partRules ?? {});
+  let coverageReview = false;
+  if (["indesign-authoritative", "indesign-interpolated", "geometry-profile", "scaled", "scaled:approved"].includes(method)) {
+    const cov = contentCoverage(adapted, width, height);
+    const minCov = Math.min(cov.x, cov.y);
+    if (minCov < 0.4) rejected.push(`The artwork covers only ${Math.round(cov.x * 100)}% of the width and ${Math.round(cov.y * 100)}% of the height of this canvas.`);
+    else if (minCov < 0.6) {
+      notes.push(`Check: the artwork covers ${Math.round(cov.x * 100)}% of the width and ${Math.round(cov.y * 100)}% of the height \u2014 the rest is ground.`);
+      coverageReview = true;
+    }
+  }
+  const needsReview = adapted.needsReview === true || (adapted.droppedParts ?? []).length > 0 || coverageReview;
+  if (needsReview && rejected.length === 0) notes.push("Review: a part was dropped or fitted at its floor \u2014 a designer should look before sign-off.");
   const geo = scoreGeometry(masterConfig, master.width, master.height, adapted, width, height);
   issues.push(...geo.issues);
   let principles = { ...geo.scores, contrast: null };
@@ -242460,8 +245166,8 @@ async function adaptOne(master, masterConfig, width, height, brandInfo, log, exe
   }
   notes.push(`Principles: alignment ${pct(principles.alignment)}, margins ${pct(principles.margins)}, balance ${pct(principles.balance)}${principles.contrast != null ? `, contrast ${principles.contrast.toFixed(1)}:1` : ""}.`);
   let feedbackLine = null;
-  try {
-    feedbackLine = describeFormatFeedback(await feedbackForFormat(spec.formatClass));
+  if (!(masterConfig.sourceMode === "indesign-bridge" && masterConfig.authoritativeGeometry)) try {
+    feedbackLine = describeFormatFeedback(await feedbackForFormat(spec3.formatClass, { masterId: master.id, masterName: master.name }));
   } catch {
     feedbackLine = null;
   }
@@ -242469,16 +245175,17 @@ async function adaptOne(master, masterConfig, width, height, brandInfo, log, exe
     ...adapted,
     adaptMethod: adapted.adaptMethod ?? method,
     adaptNotes: [
-      ...rejected.map((r4) => `Rejected: ${r4}`),
+      ...rejected.map((r6) => `Rejected: ${r6}`),
       ...adapted.adaptNotes ?? [],
       ...notes,
       ...issues.map((i) => `${i.severity === "error" ? "Check" : "Note"}: ${i.message}`),
       ...feedbackLine ? [feedbackLine] : []
     ],
     ...rejected.length > 0 ? { rejected } : {},
+    ...needsReview ? { needsReview: true } : {},
     principles
   });
-  return { config: config2, method, spec, reference, rejected };
+  return { config: config2, method, spec: spec3, reference, rejected };
 }
 router13.post("/templates/:id/detect-subject", requireAdmin, async (req, res) => {
   const id = Number(req.params.id);
@@ -242518,6 +245225,97 @@ router13.post("/templates/:id/detect-subject", requireAdmin, async (req, res) =>
   }
   res.json({ templateId: id, detected: results });
 });
+var HTML_BANNER_SIZES = /* @__PURE__ */ new Set(["300x250", "336x280", "300x600", "300x1050", "160x600", "120x600", "970x250", "970x90", "728x90", "760x120", "468x60", "320x50", "300x50", "320x100", "320x480"]);
+function displayCtaFor(masterName, width, height, onlineButton = false) {
+  if (!HTML_BANNER_SIZES.has(`${width}x${height}`)) return null;
+  const named = styleSchemaFor(masterName);
+  const label3 = named?.variants.length ? named.variants[named.variants.length - 1].cta.display : null;
+  const fill = named?.colours.ctaDisplay, labelColor = named?.colours.ctaLabelDisplay;
+  const part = named?.parts.cta;
+  if (!named || !label3 || !fill || !labelColor || !part?.fixedPx || !part.display) return null;
+  const cls = classifyAspect(width, height);
+  const zone = named.zones[cls];
+  const measured = !!zone?.displayPhotoFrac && (cls === "portrait" || cls === "wide");
+  const axisRule = zone?.axis === "side" ? named.display?.side : named.display?.stacked;
+  const hlDisplay = named.parts.headline?.display;
+  const look = { scrim: false };
+  if (measured && axisRule) {
+    look.photoFrac = zone.displayPhotoFrac;
+    look.bandOfShort = axisRule.bandH;
+    look.lockupWidthOfPanel = axisRule.lockup?.w;
+    if (hlDisplay) look.headlineCapOfShort = zone.axis === "side" ? hlDisplay.side : hlDisplay.stacked;
+  }
+  return { label: label3, fill, labelColor, heightOfShort: part.display, reference: { w: part.fixedPx.w, h: part.fixedPx.h, labelPx: Math.round(part.fixedPx.h * 0.42) }, look, lookOnly: !onlineButton };
+}
+var partAspectCache = /* @__PURE__ */ new Map();
+async function withBandMotif(config2, loadImage) {
+  let changed = false;
+  const elements = await Promise.all(config2.elements.map(async (el) => {
+    if (el.type !== "image" || !el.src || !el.panelPart || (el.fit ?? "contain") !== "contain") return el;
+    try {
+      if (!partAspectCache.has(el.src)) {
+        const bytes2 = await loadImage(el.src);
+        let aspect = null;
+        if (bytes2) {
+          const sharp18 = (await import("sharp")).default;
+          const m = await sharp18(bytes2).metadata();
+          if (m.width && m.height) aspect = m.width / m.height;
+        }
+        partAspectCache.set(el.src, aspect);
+      }
+      const a = partAspectCache.get(el.src);
+      if (!a) return el;
+      const boxA = el.w / Math.max(1, el.h);
+      if (Math.abs(boxA / a - 1) < 0.05) return el;
+      changed = true;
+      if (boxA > a) {
+        const w = el.h * a;
+        return { ...el, x: el.x + (el.w - w) / 2, w };
+      }
+      const h = el.w / a;
+      return { ...el, y: el.y + (el.h - h) / 2, h };
+    } catch {
+      return el;
+    }
+  }));
+  return changed ? { ...config2, elements } : config2;
+}
+var shapeCache = /* @__PURE__ */ new Map();
+async function withShapes(config2, loadImage) {
+  let changed = false;
+  const groundRect = config2.elements.filter((e) => e.type === "rect" && !e.gradient && (e.opacity ?? 1) >= 1).sort((a, b) => b.w * b.h - a.w * a.h)[0];
+  const groundHex = groundRect?.fill ?? null;
+  const elements = await Promise.all(config2.elements.map(async (el) => {
+    if (el.type !== "image" || el.shape || !el.src || el.role !== "product" || el.w * el.h < 2500) return el;
+    try {
+      if (!shapeCache.has(el.src)) {
+        let found = null;
+        const bytes2 = await loadImage(el.src);
+        if (bytes2) {
+          const direct = await analyseShape(bytes2);
+          if (direct) found = { shape: direct, src: el.src };
+          else {
+            const keyed = await keyOutGround(bytes2, groundHex);
+            const shape = keyed ? await analyseShape(keyed) : null;
+            if (keyed && shape && shape.kind === "anther") {
+              const stored = await new ObjectStorageService().uploadBytes(keyed, "image/png");
+              found = { shape, src: `/api/storage${stored}` };
+            }
+          }
+        }
+        shapeCache.set(el.src, found);
+      }
+      const hit = shapeCache.get(el.src);
+      if (hit) {
+        changed = true;
+        return { ...el, src: hit.src, shape: hit.shape };
+      }
+    } catch {
+    }
+    return el;
+  }));
+  return changed ? { ...config2, elements } : config2;
+}
 router13.post("/templates/:id/adapt", requireAdmin, async (req, res) => {
   const id = Number(req.params.id);
   const [master] = await db.select().from(templatesTable).where(eq(templatesTable.id, id));
@@ -242536,9 +245334,10 @@ router13.post("/templates/:id/adapt", requireAdmin, async (req, res) => {
     return;
   }
   let masterConfig = normalizeFreeformConfig(parsed);
+  const authoritativeMaster = masterConfig.sourceMode === "indesign-bridge" && masterConfig.authoritativeGeometry === true;
   const exactCloneConfig = JSON.parse(JSON.stringify(parsed));
   const rawTargets = Array.isArray(req.body?.targets) ? req.body.targets.slice(0, 60) : [];
-  try {
+  if (!authoritativeMaster) try {
     const withMotion = await backfillKeyVisualMotion(masterConfig);
     if (withMotion) {
       masterConfig = normalizeFreeformConfig({ ...parsed, elements: withMotion.elements });
@@ -242549,7 +245348,7 @@ router13.post("/templates/:id/adapt", requireAdmin, async (req, res) => {
   } catch (err) {
     req.log?.warn?.({ err, templateId: master.id }, "key-visual motion backfill failed; continuing");
   }
-  if (hasLayeredSlots(masterConfig) && !hasPanelParts(masterConfig) && masterConfig.elements.some((e) => e.type === "image" && e.slot === "panel")) {
+  if (!authoritativeMaster && hasLayeredSlots(masterConfig) && !hasPanelParts(masterConfig) && masterConfig.elements.some((e) => e.type === "image" && e.slot === "panel")) {
     try {
       const storage3 = new ObjectStorageService();
       const split2 = await splitPanelGraphic(masterConfig, { loadImage: makeImageLoader(req), uploadBytes: (bytes2, ct) => storage3.uploadBytes(bytes2, ct) });
@@ -242563,7 +245362,7 @@ router13.post("/templates/:id/adapt", requireAdmin, async (req, res) => {
       req.log?.warn?.({ err, templateId: master.id }, "panel split failed; continuing");
     }
   }
-  if (isImageOnly(masterConfig) && !hasLayeredSlots(masterConfig)) {
+  if (!authoritativeMaster && isImageOnly(masterConfig) && !hasLayeredSlots(masterConfig)) {
     try {
       const storage3 = new ObjectStorageService();
       const enriched = await enrichLayeredArtwork(masterConfig, master.width, master.height, {
@@ -242579,8 +245378,33 @@ router13.post("/templates/:id/adapt", requireAdmin, async (req, res) => {
       req.log?.warn?.({ err, templateId: master.id }, "layered artwork recognition failed; continuing");
     }
   }
+  if (!authoritativeMaster && hasPanelParts(masterConfig) && masterConfig.elements.some((e) => e.type === "image" && e.slot === "panel" && !e.panelMasked)) {
+    try {
+      const storage3 = new ObjectStorageService();
+      const v = await resplitLegacyPanel(masterConfig, { loadImage: makeImageLoader(req), uploadBytes: (bytes2, ct) => storage3.uploadBytes(bytes2, ct) });
+      if (v.changed) {
+        masterConfig = normalizeFreeformConfig({ ...parsed, elements: v.config.elements });
+        await db.update(templatesTable).set({ config: JSON.stringify({ ...parsed, elements: v.config.elements }), updatedAt: /* @__PURE__ */ new Date() }).where(eq(templatesTable.id, master.id));
+        req.log?.info?.({ templateId: master.id, notes: v.notes }, "layered artwork: panel re-cut and masked");
+      }
+    } catch (err) {
+      req.log?.warn?.({ err, templateId: master.id }, "panel re-cut failed; continuing");
+    }
+  }
+  if (!authoritativeMaster && hasLayeredSlots(masterConfig) && masterConfig.elements.some((e) => e.type === "image" && (e.slot === "scrim" || e.slot === "cutout"))) {
+    try {
+      const v = await verifyScrimSlot(masterConfig, { loadImage: makeImageLoader(req) });
+      if (v.changed) {
+        masterConfig = normalizeFreeformConfig({ ...parsed, elements: v.config.elements });
+        await db.update(templatesTable).set({ config: JSON.stringify({ ...parsed, elements: v.config.elements }), updatedAt: /* @__PURE__ */ new Date() }).where(eq(templatesTable.id, master.id));
+        req.log?.info?.({ templateId: master.id, notes: v.notes }, "layered artwork: scrim relabelled as cut-out");
+      }
+    } catch (err) {
+      req.log?.warn?.({ err, templateId: master.id }, "scrim check failed; continuing");
+    }
+  }
   const subjectNotes = [];
-  try {
+  if (!authoritativeMaster) try {
     const found = await ensureSubjects(masterConfig, makeImageLoader(req));
     if (found) {
       masterConfig = normalizeFreeformConfig({ ...parsed, elements: found.config.elements });
@@ -242597,6 +245421,7 @@ router13.post("/templates/:id/adapt", requireAdmin, async (req, res) => {
   brandInfo.panelFill = await layeredPanelFill(masterConfig, req) ?? brandInfo.panelFill;
   await ensureBrandFontsRegistered();
   const exemplars = await approvedExemplars(master.id);
+  masterConfig = await withBandMotif(await withShapes(masterConfig, makeImageLoader(req)), makeImageLoader(req));
   if (isFlatArtwork(masterConfig)) {
     const blocked = rawTargets.filter((t) => typeof t === "object" && t !== null).map((t) => ({ width: Number(t.width), height: Number(t.height) })).filter((t) => Number.isFinite(t.width) && Number.isFinite(t.height)).filter((t) => aspectDistance(master.width, master.height, t.width, t.height) > FLAT_SCALE_TOLERANCE);
     if (blocked.length > 0) {
@@ -242617,12 +245442,27 @@ router13.post("/templates/:id/adapt", requireAdmin, async (req, res) => {
     }
   }
   const created = [];
+  const dryRun = req.body?.dryRun === true;
+  const dryBuilt = [];
   let rejectedCount = 0;
   const profileId = Number.isInteger(Number(req.body?.profileId)) && Number(req.body?.profileId) > 0 ? Number(req.body.profileId) : null;
   const guardEnabled = req.body?.aiGuard === true;
   const requestedGuardProvider = req.body?.aiGuardProvider === "claude" || req.body?.aiGuardProvider === "openai" ? req.body.aiGuardProvider : "auto";
   const resolvedStyle = await resolveStyleSchema({ masterId: master.id, masterName: master.name, sourceTemplateId: master.sourceTemplateId ?? null, profileId });
   if (resolvedStyle.source === "profile") res.setHeader("X-Layout-Profile", String(resolvedStyle.profileId));
+  const authoritativeSources = [];
+  const sourceIds = [.../* @__PURE__ */ new Set([master.id, ...(resolvedStyle.profile?.sources ?? []).map((s2) => s2.templateId)])];
+  if (sourceIds.length) {
+    const rows = await db.select().from(templatesTable).where(inArray(templatesTable.id, sourceIds));
+    for (const row of rows) {
+      try {
+        const cfg = normalizeFreeformConfig(JSON.parse(row.config || "{}"));
+        if (cfg.sourceMode === "indesign-bridge" && cfg.authoritativeGeometry) authoritativeSources.push({ id: row.id, name: row.name, width: row.width, height: row.height, config: await withShapes(cfg, makeImageLoader(req)) });
+      } catch {
+      }
+    }
+  }
+  let softenedCount = 0;
   for (const raw2 of rawTargets) {
     if (typeof raw2 !== "object" || raw2 === null) continue;
     const t = raw2;
@@ -242632,21 +245472,32 @@ router13.post("/templates/:id/adapt", requireAdmin, async (req, res) => {
       continue;
     }
     const requestedName = typeof t.name === "string" && t.name.trim() ? t.name.trim().slice(0, 120) : `${master.name} ${width}\xD7${height}`;
-    if (width === master.width && height === master.height) {
+    const strict = authoritativeSources.length ? selectAuthoritativeSource(authoritativeSources, width, height) : null;
+    const softened = authoritativeSources.length > 0 && !strict;
+    const chosen = strict ?? (authoritativeSources.length ? nearestAuthoritativeSource(authoritativeSources, width, height) : null);
+    const sourceMaster = chosen ? { id: chosen.id, width: chosen.width, height: chosen.height, name: chosen.name } : master;
+    const sourceConfig = softened && chosen ? { ...chosen.config, authoritativeGeometry: false, adaptNotes: [...chosen.config.adaptNotes ?? [], `No slim InDesign master for ${width}\xD7${height}: rebuilt from the nearest master ("${chosen.name}") by the layout engines \u2014 review before sign-off, or export a slim master with AC-InDesign-Bridge.idjs.`] } : chosen?.config ?? masterConfig;
+    if (softened) softenedCount++;
+    if (width === sourceMaster.width && height === sourceMaster.height) {
+      if (dryRun) {
+        dryBuilt.push({ width, height, method: "exact-clone", rejected: [], config: sourceConfig });
+        continue;
+      }
+      const cloneConfig = chosen ? JSON.parse(JSON.stringify(sourceConfig)) : exactCloneConfig;
       const [template2] = await db.insert(templatesTable).values({
         name: requestedName,
-        description: `Exact-size duplicate of "${master.name}" (${master.width}\xD7${master.height})`,
+        description: `Exact-size duplicate of "${sourceMaster.name}" (${sourceMaster.width}\xD7${sourceMaster.height})`,
         category: "wip",
         width,
         height,
-        config: JSON.stringify(exactCloneConfig),
-        sourceTemplateId: master.id,
+        config: JSON.stringify(cloneConfig),
+        sourceTemplateId: sourceMaster.id,
         createdBy: req.clerkUserId ?? null
       }).returning();
       created.push(template2);
       continue;
     }
-    const baked = masterConfig.elements.find((e) => e.type === "image" && e.bakedCopy);
+    const baked = sourceConfig.elements.find((e) => e.type === "image" && e.bakedCopy);
     if (baked) {
       res.status(422).json({
         error: "This master's photo was reproduced from the document PDF (its Links file was missing or too large) and carries the original copy baked in. Re-import the package with a flattened JPEG/PNG for that photo before building sizes."
@@ -242655,35 +245506,37 @@ router13.post("/templates/:id/adapt", requireAdmin, async (req, res) => {
     }
     const hints = {
       name: typeof t.formatName === "string" ? t.formatName : typeof t.name === "string" ? t.name : null,
-      channel: typeof t.channel === "string" ? t.channel : null
+      channel: typeof t.channel === "string" ? t.channel : null,
+      onlineButton: t.onlineButton === true || req.body?.onlineButton === true
     };
-    const { config: adaptedConfig, method, spec, rejected } = await adaptOne(master, masterConfig, width, height, brandInfo, req.log, exemplars, void 0, hints, resolvedStyle.source === "none" ? null : { schema: resolvedStyle.schema, label: resolvedStyle.label, profile: resolvedStyle.profile }, { loadImage: makeImageLoader(req), brandFontFamily: brand?.fontFamily ?? "National 2" });
+    const { config: adaptedConfig, method, spec: spec3, rejected } = await adaptOne(sourceMaster, sourceConfig, width, height, brandInfo, req.log, exemplars, void 0, hints, resolvedStyle.source === "none" ? null : { schema: resolvedStyle.schema, label: resolvedStyle.label, profile: resolvedStyle.profile }, { loadImage: makeImageLoader(req), brandFontFamily: brand?.fontFamily ?? "National 2" }, softened ? null : authoritativeSources);
     let merged = subjectNotes.length ? normalizeFreeformConfig({ ...adaptedConfig, adaptNotes: [...adaptedConfig.adaptNotes ?? [], ...subjectNotes] }) : adaptedConfig;
     let elementGuidelines = [];
     try {
       elementGuidelines = await guidelinesForConfig(brand?.id ?? null, adaptedConfig, width, height, 3);
-      const gl = elementGuidelines;
-      const lines = guidelineNotes(gl);
-      if (lines.length) merged = normalizeFreeformConfig({ ...adaptedConfig, adaptNotes: [...adaptedConfig.adaptNotes ?? [], ...lines] });
     } catch {
     }
-    const name = typeof t.name === "string" && t.name.trim() ? requestedName : `${master.name} ${spec.entry ? `${spec.label} ` : ""}${width}\xD7${height}`;
+    if (dryRun) {
+      dryBuilt.push({ width, height, method, rejected: [...rejected], config: adaptedConfig });
+      continue;
+    }
+    const name = typeof t.name === "string" && t.name.trim() ? requestedName : `${master.name} ${spec3.entry ? `${spec3.label} ` : ""}${width}\xD7${height}`;
     let guardReview = null;
     let guardFixes = null;
     let finalRejected = [...rejected];
-    if (guardEnabled) {
+    if (guardEnabled && !(sourceConfig.sourceMode === "indesign-bridge" && sourceConfig.authoritativeGeometry)) {
       if (!isArtworkGuardConfigured(requestedGuardProvider)) {
         finalRejected.push("AI Artwork Guard could not run because the selected provider is not configured.");
         merged = normalizeFreeformConfig({ ...merged, adaptNotes: [...merged.adaptNotes ?? [], "Check: AI Artwork Guard is not configured. Verify OPENAI_API_KEY or ANTHROPIC_API_KEY in Vercel."] });
       } else {
         try {
           const masterReference = {
-            id: master.id,
-            name: master.name,
-            width: master.width,
-            height: master.height,
-            formatClass: classifyAspect(master.width, master.height),
-            config: masterConfig,
+            id: sourceMaster.id,
+            name: sourceMaster.name,
+            width: sourceMaster.width,
+            height: sourceMaster.height,
+            formatClass: classifyAspect(sourceMaster.width, sourceMaster.height),
+            config: sourceConfig,
             measured: measureRecipe(masterConfig, master.width, master.height),
             approvedAt: null
           };
@@ -242711,7 +245564,7 @@ ${describeStyleSchema(resolvedStyle.schema)}` : null,
           guardReview = guarded.review;
           if (guarded.applied.length) guardFixes = { at: (/* @__PURE__ */ new Date()).toISOString(), rounds: guarded.rounds, applied: guarded.applied, before: merged.elements };
           merged = normalizeFreeformConfig({ ...merged, elements: guarded.config.elements });
-          finalRejected = checkMandatory(masterConfig, merged, width, height, resolvedStyle.schema?.partRules ?? {});
+          finalRejected = checkMandatory(sourceConfig, merged, width, height, resolvedStyle.schema?.partRules ?? {}, { w: sourceMaster.width, h: sourceMaster.height });
           finalRejected.push(...checkLayout(merged, width, height).filter((i) => i.severity === "error").map((i) => i.message));
           finalRejected.push(...guarded.review.issues.filter((i) => i.severity === "send_back").map((i) => `AI Artwork Guard: ${i.message}`));
         } catch (err) {
@@ -242726,30 +245579,36 @@ ${describeStyleSchema(resolvedStyle.schema)}` : null,
     const cleanNotes = (merged.adaptNotes ?? []).filter((n) => !n.startsWith("Rejected:") && !n.startsWith("Check: Claude") && !n.startsWith("Check: AI Artwork Guard"));
     const storedConfig = {
       ...merged,
-      adaptNotes: [...finalRejected.map((r4) => `Rejected: ${r4}`), ...cleanNotes],
+      ...softened ? { needsReview: true } : {},
+      adaptNotes: [...finalRejected.map((r6) => `Rejected: ${r6}`), ...cleanNotes],
       rejected: finalRejected.length ? finalRejected : void 0,
       ...guardReview ? { claudeReview: guardReview, aiArtworkGuard: { enabled: true, provider: guardReview.answeredBy ?? guardReview.model, reviewedDuringBuild: true } } : {},
       ...guardFixes ? { claudeFixes: guardFixes } : {}
     };
     const [template] = await db.insert(templatesTable).values({
       name,
-      description: `${finalRejected.length > 0 ? "REJECTED \xB7 " : ""}Adapted from "${master.name}" (${master.width}\xD7${master.height}) \xB7 ${method.replace(":", " ")} \xB7 ${spec.formatClass}${guardReview ? " \xB7 AI guarded" : ""}`,
+      description: `${finalRejected.length > 0 ? "REJECTED \xB7 " : storedConfig.needsReview ? "REVIEW \xB7 " : ""}Adapted from "${sourceMaster.name}" (${sourceMaster.width}\xD7${sourceMaster.height}) \xB7 ${method.replace(":", " ")} \xB7 ${spec3.formatClass}${guardReview ? " \xB7 AI guarded" : ""}`,
       // Created pieces always land in Work-in-progress, whatever the master
       // is; only "Make template" moves a piece into Templates.
       category: "wip",
       width,
       height,
       config: JSON.stringify(storedConfig),
-      sourceTemplateId: master.id,
+      sourceTemplateId: sourceMaster.id,
       createdBy: req.clerkUserId ?? null
     }).returning();
     created.push(template);
+  }
+  if (dryRun) {
+    res.status(200).json({ dryRun: true, master: { id: master.id, name: master.name, width: master.width, height: master.height }, built: dryBuilt });
+    return;
   }
   if (created.length === 0) {
     res.status(400).json({ error: "No valid adaptation targets supplied" });
     return;
   }
   if (rejectedCount > 0) res.setHeader("X-Adapt-Rejected", String(rejectedCount));
+  if (softenedCount > 0) res.setHeader("X-Adapt-Softened", String(softenedCount));
   res.status(201).json(created.map(formatTemplate));
 });
 router13.post("/templates/:id/claude-review", requireAuth, async (req, res) => {
@@ -242779,10 +245638,10 @@ router13.post("/templates/:id/claude-review", requireAuth, async (req, res) => {
   const [brand] = await db.select().from(brandsTable).orderBy(brandsTable.id).limit(1);
   const masterId = t.sourceTemplateId ?? t.id;
   const cls = classifyAspect(t.width, t.height);
-  const family = (await approvedExemplars(masterId)).filter((e) => e.id !== t.id);
+  const family2 = (await approvedExemplars(masterId)).filter((e) => e.id !== t.id);
   const familyRefs = [
-    ...family.filter((e) => e.formatClass === cls),
-    ...family.filter((e) => e.formatClass !== cls)
+    ...family2.filter((e) => e.formatClass === cls),
+    ...family2.filter((e) => e.formatClass !== cls)
   ].slice(0, 3);
   const [masterRow] = await db.select({ id: templatesTable.id, name: templatesTable.name, sourceTemplateId: templatesTable.sourceTemplateId }).from(templatesTable).where(eq(templatesTable.id, masterId));
   const resolvedStyle = await resolveStyleSchema({ masterId, masterName: masterRow?.name ?? t.name, sourceTemplateId: masterRow?.sourceTemplateId ?? null });
@@ -242793,7 +245652,7 @@ router13.post("/templates/:id/claude-review", requireAuth, async (req, res) => {
   const lastVerdict = noteRows.rows[0];
   const designerNote = lastVerdict?.verdict === "incorrect" && lastVerdict.note ? String(lastVerdict.note) : null;
   const measured = checkLayout(config2, t.width, t.height);
-  const canFix = req.body?.fix !== false && t.sourceTemplateId != null;
+  const canFix = req.body?.fix !== false && t.sourceTemplateId != null && !(config2.sourceMode === "indesign-bridge" && config2.authoritativeGeometry);
   let review;
   let fixed = null;
   try {
@@ -242970,7 +245829,7 @@ router13.post("/templates/import-example", requireAdmin, async (req, res) => {
     for (const layout of result.layouts) {
       const [template] = await db.insert(templatesTable).values({
         name: layout.name,
-        description: `Example artwork imported from ${fileName}`,
+        description: layout.config.sourceMode === "indesign-bridge" ? `Authoritative InDesign master imported from ${fileName}` : `Example artwork imported from ${fileName}`,
         // Imports land in Work-in-progress: they only become selectable
         // templates when the user promotes them from the Templates page.
         category: "wip",
@@ -243159,7 +246018,7 @@ router13.post("/templates/:id/trim-layers", requireAdmin, async (req, res) => {
     res.status(400).json({ error: "Config unreadable" });
     return;
   }
-  const sharp17 = (await import("sharp")).default;
+  const sharp18 = (await import("sharp")).default;
   const { ObjectStorageService: ObjectStorageService2 } = await Promise.resolve().then(() => (init_objectStorage(), objectStorage_exports));
   const objectStorageService17 = new ObjectStorageService2();
   let trimmed = 0;
@@ -243173,12 +246032,12 @@ router13.post("/templates/:id/trim-layers", requireAdmin, async (req, res) => {
       const objectPath = el.src.replace(/^\/api\/storage/, "");
       const file2 = await objectStorageService17.getObjectEntityFile(objectPath);
       const bytes2 = Buffer.from(await (await objectStorageService17.downloadObject(file2)).arrayBuffer());
-      const meta = await sharp17(bytes2).metadata();
+      const meta = await sharp18(bytes2).metadata();
       if (!meta.hasAlpha || !meta.width || !meta.height) {
         elements.push(el);
         continue;
       }
-      const raw2 = await sharp17(bytes2).ensureAlpha().raw().toBuffer();
+      const raw2 = await sharp18(bytes2).ensureAlpha().raw().toBuffer();
       const W2 = meta.width, H2 = meta.height;
       let minX = W2, minY = H2, maxX = -1, maxY = -1;
       for (let py = 0; py < H2; py++) for (let px = 0; px < W2; px++) {
@@ -243194,7 +246053,7 @@ router13.post("/templates/:id/trim-layers", requireAdmin, async (req, res) => {
         elements.push(el);
         continue;
       }
-      const out = Buffer.from(await sharp17(bytes2).extract({ left: minX, top: minY, width: bw, height: bh }).png().toBuffer());
+      const out = Buffer.from(await sharp18(bytes2).extract({ left: minX, top: minY, width: bw, height: bh }).png().toBuffer());
       const stored = await objectStorageService17.uploadBytes(out, "image/png");
       const dispX = (el.w ?? W2) / W2, dispY = (el.h ?? H2) / H2;
       elements.push({
@@ -243259,12 +246118,23 @@ router13.post("/templates/:id/redo", requireAdmin, async (req, res) => {
   brandInfo.panelFill = await layeredPanelFill(masterConfig, req) ?? brandInfo.panelFill;
   try {
     await ensureBrandFontsRegistered();
+    masterConfig = await withBandMotif(await withShapes(masterConfig, makeImageLoader(req)), makeImageLoader(req));
     const exemplars = await approvedExemplars(master.id);
+    const pieceCfg = (() => {
+      try {
+        const r6 = JSON.parse(piece.config || "{}");
+        return isFreeformConfig(r6) ? normalizeFreeformConfig(r6) : null;
+      } catch {
+        return null;
+      }
+    })();
+    const selfKey = pieceCfg ? JSON.stringify(pieceCfg.elements) : null;
+    const exemplarsForRedo = exemplars.filter((e) => e.id !== piece.id && (!selfKey || JSON.stringify(e.config.elements) !== selfKey));
     const redoStyle = await resolveStyleSchema({ masterId: master.id, masterName: master.name, sourceTemplateId: master.sourceTemplateId ?? null });
-    const { config: config2, method, spec, reference } = await adaptOne(master, masterConfig, piece.width, piece.height, brandInfo, req.log, exemplars, piece.id, { name: piece.name }, redoStyle.source === "none" ? null : { schema: redoStyle.schema, label: redoStyle.label, profile: redoStyle.profile }, { loadImage: makeImageLoader(req), brandFontFamily: brand?.fontFamily ?? "National 2" });
+    const { config: config2, method, spec: spec3, reference } = await adaptOne(master, masterConfig, piece.width, piece.height, brandInfo, req.log, exemplarsForRedo, piece.id, { name: piece.name }, redoStyle.source === "none" ? null : { schema: redoStyle.schema, label: redoStyle.label, profile: redoStyle.profile }, { loadImage: makeImageLoader(req), brandFontFamily: brand?.fontFamily ?? "National 2" });
     const [updated] = await db.update(templatesTable).set({
       config: JSON.stringify(config2),
-      description: `Adapted from "${master.name}" (${master.width}\xD7${master.height}) \xB7 ${method.replace(":", " ")} \xB7 ${spec.formatClass} \xB7 redone ${(/* @__PURE__ */ new Date()).toISOString().slice(0, 10)}`,
+      description: `Adapted from "${master.name}" (${master.width}\xD7${master.height}) \xB7 ${method.replace(":", " ")} \xB7 ${spec3.formatClass} \xB7 redone ${(/* @__PURE__ */ new Date()).toISOString().slice(0, 10)}`,
       updatedAt: /* @__PURE__ */ new Date()
     }).where(eq(templatesTable.id, id)).returning();
     req.log?.info({ templateId: id, masterId: master.id, method, exemplars: exemplars.length, reference: reference?.exemplar.id ?? null }, "redo: rebuilt");
@@ -243914,7 +246784,7 @@ router15.post("/brands/:brandId/assets", requireAuth, async (req, res) => {
     contentType: body.contentType ?? null
   }).returning();
   if (isGuidelineDocument(asset.name, asset.contentType)) {
-    indexGuidelines(brandId).then((r4) => req.log?.info?.({ total: r4.total }, "guideline index rebuilt after upload")).catch((err) => req.log?.warn?.({ err }, "guideline re-index failed"));
+    indexGuidelines(brandId).then((r6) => req.log?.info?.({ total: r6.total }, "guideline index rebuilt after upload")).catch((err) => req.log?.warn?.({ err }, "guideline re-index failed"));
   }
   res.status(201).json(formatBrandAsset(asset));
 });
@@ -244092,8 +246962,8 @@ function toFontFamily(rawName) {
   while (parts.length > 1 && WEIGHT_STYLE.has(parts[parts.length - 1].toLowerCase())) {
     parts.pop();
   }
-  const family = parts.join(" ").trim();
-  return family.length > 0 ? family : cleaned;
+  const family2 = parts.join(" ").trim();
+  return family2.length > 0 ? family2 : cleaned;
 }
 function sparseSignature(data) {
   let sum = 0;
@@ -244151,11 +247021,11 @@ async function extractPdfAssets(objectPath) {
           } catch {
           }
           if (!name) name = styles[lid]?.fontFamily ?? lid;
-          const family = toFontFamily(name);
-          if (!family) continue;
-          const key = family.toLowerCase();
+          const family2 = toFontFamily(name);
+          if (!family2) continue;
+          const key = family2.toLowerCase();
           if (GENERIC_FONTS.has(key)) continue;
-          if (!fonts.has(key)) fonts.set(key, family);
+          if (!fonts.has(key)) fonts.set(key, family2);
         }
       } catch {
       }
@@ -244702,7 +247572,7 @@ import { randomBytes } from "node:crypto";
 
 // src/lib/htmlExport.ts
 var import_jszip4 = __toESM(require_lib13(), 1);
-import sharp16 from "sharp";
+import sharp17 from "sharp";
 var ARTWORK_MOTIONS = ["none", "kenburns", "drift", "zoomout", "breathe", "wipe"];
 var COPY_MOTIONS = ["none", "fade", "rise", "pan", "pop", "wipe", "baseline", "tumble", "typewriter", "block"];
 var FONT_FILES2 = [
@@ -244724,18 +247594,50 @@ function safeFileName(src, index, contentType, prefix = "") {
 async function optimizeForExport(bytes2, contentType, boxW, boxH) {
   try {
     if (contentType.includes("svg")) return { bytes: bytes2, contentType };
-    const img = sharp16(bytes2, { failOn: "none" });
+    const img = sharp17(bytes2, { failOn: "none" });
     const meta = await img.metadata();
     const maxW = Math.max(16, Math.round(boxW * 2));
     const maxH = Math.max(16, Math.round(boxH * 2));
     const needsResize = (meta.width ?? 0) > maxW || (meta.height ?? 0) > maxH;
     const pipeline = needsResize ? img.resize({ width: maxW, height: maxH, fit: "inside", withoutEnlargement: true }) : img;
-    if (meta.hasAlpha) {
+    let transparent = !!meta.hasAlpha;
+    if (transparent) {
+      try {
+        transparent = !(await sharp17(bytes2, { failOn: "none" }).stats()).isOpaque;
+      } catch {
+      }
+    }
+    if (transparent) {
       return { bytes: await pipeline.png({ compressionLevel: 9, palette: true }).toBuffer(), contentType: "image/png" };
+    }
+    if (meta.hasAlpha) {
+      return { bytes: await pipeline.flatten({ background: "#ffffff" }).jpeg({ quality: 82, mozjpeg: true }).toBuffer(), contentType: "image/jpeg" };
     }
     return { bytes: await pipeline.jpeg({ quality: 82, mozjpeg: true }).toBuffer(), contentType: "image/jpeg" };
   } catch {
     return { bytes: bytes2, contentType };
+  }
+}
+async function cropToCanvas(bytes2, el, canvasW, canvasH, margin) {
+  try {
+    if (el.fit !== "cover" || (el.radius ?? 0) > 0) return null;
+    const meta = await sharp17(bytes2, { failOn: "none" }).metadata();
+    const nw = meta.width ?? 0, nh = meta.height ?? 0;
+    if (nw < 2 || nh < 2 || el.w < 2 || el.h < 2) return null;
+    const vx0 = Math.max(0, -el.x - margin), vy0 = Math.max(0, -el.y - margin);
+    const vx1 = Math.min(el.w, canvasW - el.x + margin), vy1 = Math.min(el.h, canvasH - el.y + margin);
+    if (vx1 - vx0 < 2 || vy1 - vy0 < 2) return null;
+    if ((vx1 - vx0) * (vy1 - vy0) > el.w * el.h * 0.8) return null;
+    const k = Math.max(el.w / nw, el.h / nh);
+    const dw = nw * k, dh = nh * k;
+    const ox = (el.w - dw) * (el.focusX ?? 0.5), oy = (el.h - dh) * (el.focusY ?? 0.5);
+    const left = Math.max(0, Math.floor((vx0 - ox) / k)), top = Math.max(0, Math.floor((vy0 - oy) / k));
+    const width = Math.min(nw - left, Math.ceil((vx1 - vx0) / k)), height = Math.min(nh - top, Math.ceil((vy1 - vy0) / k));
+    if (width < 2 || height < 2) return null;
+    const out = await sharp17(bytes2, { failOn: "none" }).extract({ left, top, width, height }).toBuffer();
+    return { bytes: out, box: { x: el.x + vx0, y: el.y + vy0, w: vx1 - vx0, h: vy1 - vy0 } };
+  } catch {
+    return null;
   }
 }
 function rectStyle(el) {
@@ -244810,7 +247712,18 @@ async function buildHtmlPackage(opts) {
   const sizePrefix = opts._sizeIndex != null ? `s${opts._sizeIndex}-` : "";
   const kvPrefix = opts._sizeIndex != null ? `s${opts._sizeIndex}_` : "";
   const fontFaces = [];
+  const brandWeights = /* @__PURE__ */ new Set();
+  for (const e of config2.elements) {
+    if (e.type !== "text") continue;
+    const fam = (e.fontFamily ?? "").toLowerCase();
+    if (fam && fam !== "national 2" && fam !== brandFont.toLowerCase()) {
+      brandWeights.add(e.fontWeight === 700 ? 700 : 400);
+      continue;
+    }
+    brandWeights.add(e.fontWeight === 700 ? 700 : 400);
+  }
   for (const f of opts._skipFonts ? [] : FONT_FILES2) {
+    if (brandWeights.size > 0 && !brandWeights.has(f.weight)) continue;
     const asset = await opts.loadAsset(f.src);
     if (asset) {
       let ref = f.file;
@@ -244873,14 +247786,15 @@ async function buildHtmlPackage(opts) {
   let imgIndex = 0;
   let seq = 0;
   const delayFor = (el) => {
-    if (el.type === "image" && el.role === "logo") return 0.9;
+    if (el.type === "image" && (el.role === "logo" || el.slot === "lockup")) return 0.9;
+    if (el.type === "image" && !isArt(el)) return 0.75;
     if (el.type === "image") return 0;
     if (el.type === "rect") return 0.15;
     return 0.45 + Math.min(0.3, seq++ * 0.12);
   };
   const frameOf = (el) => {
     if (el.type === "rect") return 0;
-    if (el.type === "image") return el.role === "logo" ? 3 : 0;
+    if (el.type === "image") return el.role === "logo" || el.slot === "lockup" ? 3 : 0;
     if (el.role === "headline") return 1;
     if (el.role === "cta") return 3;
     return 2;
@@ -244890,8 +247804,26 @@ async function buildHtmlPackage(opts) {
   const copyMotion = opts.copyMotion ?? legacy.copy;
   const storyFrames = opts.storyFrames ?? legacy.frames;
   const copyLead = artMotion === "wipe" ? 0.8 : 0.3;
-  const isArt = (el) => el.type === "image" && el.role !== "logo";
-  const isCopy2 = (el) => el.type === "text" || el.type === "image" && el.role === "logo";
+  const isArt = (el) => el.type === "image" && (el.slot === "photo" || el.slot === "cutout" || !el.slot && el.role === "product");
+  const isStill = (el) => el.type === "rect" || el.type === "image" && el.slot === "band";
+  const isCopy2 = (el) => el.type === "text" || el.type === "image" && !isArt(el) && !isStill(el);
+  const ctaUnit = (() => {
+    if (useKv) return null;
+    const bySlot2 = (slot) => config2.elements.find((e) => e.slot === slot);
+    let cta = bySlot2("cta"), label3 = bySlot2("ctaLabel"), icon = bySlot2("ctaIcon");
+    if (!cta) {
+      const sem = inferSlots(config2, width, height);
+      const byId = (id) => id ? config2.elements.find((e) => e.id === id) : void 0;
+      cta = byId(sem.cta?.id);
+      label3 = byId(sem.ctaLabel?.id);
+      icon = byId(sem.ctaIcon?.id);
+    }
+    if (!cta || !label3 || label3.type !== "text" || cta.type !== "rect" && cta.type !== "image") return null;
+    const cx = label3.x + label3.w / 2, cy = label3.y + label3.h / 2;
+    if (cx < cta.x || cx > cta.x + cta.w || cy < cta.y || cy > cta.y + cta.h) return null;
+    return { cta, members: [cta, label3, ...icon ? [icon] : []] };
+  })();
+  const inUnit = (el) => !!ctaUnit && ctaUnit.members.includes(el);
   const animFor = (el) => {
     if (useKv) {
       if (el.type === "image" && el.motion && el.motion.frames.length >= 2) return kvAnimFor(el, kvLayers.indexOf(el));
@@ -244911,7 +247843,7 @@ async function buildHtmlPackage(opts) {
           return "";
       }
     }
-    if (el.type === "rect") return artMotion === "none" && copyMotion === "none" ? "" : `animation:fadein .6s ease-out .15s both`;
+    if (isStill(el)) return "";
     if (storyFrames) {
       const f = frameOf(el);
       return f === 0 ? "" : `animation:frame${f} ${D2}s ease-in-out ${L2} both`;
@@ -244944,16 +247876,29 @@ async function buildHtmlPackage(opts) {
     }
   };
   const accent = opts.accentColor ?? "#11263d";
-  for (const el of config2.elements) {
-    const base = `position:absolute;left:${el.x}px;top:${el.y}px;width:${el.w}px;height:${el.h}px;opacity:${el.opacity ?? 1}`;
-    const anim = animFor(el);
+  const artMargin = artMotion === "none" || artMotion === "wipe" ? 0 : Math.round(Math.max(width, height) * 0.05);
+  const renderEl = async (el, anim, dx = 0, dy = 0) => {
+    const body2 = [];
+    let base = `position:absolute;left:${el.x - dx}px;top:${el.y - dy}px;width:${el.w}px;height:${el.h}px;opacity:${el.opacity ?? 1}`;
     if (el.type === "rect") {
-      body.push(`<div class="el rect" style="${base};${rectStyle(el)};${anim}"></div>`);
+      body2.push(`<div class="el rect" style="${base};${rectStyle(el)};${anim}"></div>`);
     } else if (el.type === "image") {
       let src = "";
       if (el.src) {
-        const raw2 = await opts.loadAsset(el.src);
-        const asset = raw2 ? await optimizeForExport(raw2.bytes, raw2.contentType, el.w, el.h) : null;
+        let raw2 = await opts.loadAsset(el.src);
+        let boxW = el.w, boxH = el.h;
+        if (raw2 && !useKv && isArt(el) && el.slot !== "cutout") {
+          const cropped = await cropToCanvas(raw2.bytes, el, width, height, artMargin);
+          if (cropped) {
+            raw2 = { ...raw2, bytes: cropped.bytes };
+            boxW = cropped.box.w;
+            boxH = cropped.box.h;
+            const fxPx = (el.focusX ?? 0.5) * el.w - (cropped.box.x - el.x), fyPx = (el.focusY ?? 0.5) * el.h - (cropped.box.y - el.y);
+            base = `position:absolute;left:${cropped.box.x - dx}px;top:${cropped.box.y - dy}px;width:${boxW}px;height:${boxH}px;opacity:${el.opacity ?? 1}`;
+            anim = anim.replace(/transform-origin:[^;]+/, `transform-origin:${Math.round(fxPx)}px ${Math.round(fyPx)}px`);
+          }
+        }
+        const asset = raw2 ? await optimizeForExport(raw2.bytes, raw2.contentType, boxW, boxH) : null;
         if (asset) {
           if (opts.inline) {
             src = `data:${asset.contentType};base64,${asset.bytes.toString("base64")}`;
@@ -244994,27 +247939,76 @@ async function buildHtmlPackage(opts) {
           }
           parts.push(`<img class="el img part" src="${esc2(psrc)}" alt="" style="position:absolute;left:${Math.round(part.fx * el.w)}px;top:${Math.round(part.fy * el.h)}px;width:${pw}px;height:${ph}px;object-fit:fill;${panim}">`);
         }
-        body.push(`<div class="el group ${el.role}" style="${base};${anim}">
+        body2.push(`<div class="el group ${el.role}" style="${base};${anim}">
 ${parts.join("\n")}
 </div>`);
-        continue;
+        return body2.join("\n");
       }
-      body.push(
+      body2.push(
         `<img class="el img ${el.role}" src="${esc2(src)}" alt=""${dyn} style="${base};${imageStyle(el)};${anim}">`
       );
     } else if (el.type === "text") {
       const key = dynamicKey(el);
       const dyn = key ? ` data-dynamic="${key}"` : "";
-      const extraCls = !storyFrames && copyMotion === "typewriter" ? " tw" : "";
+      const extraCls = !storyFrames && copyMotion === "typewriter" && typing ? " tw" : "";
       const blockDelay = (copyLead + delayFor(el)).toFixed(2);
-      const blockMarkup = !storyFrames && copyMotion === "block" ? `<div class="block-reveal" style="position:absolute;left:${el.x}px;top:${el.y}px;width:${el.w}px;height:${el.h}px;background:${accent};animation:blockwipe .9s cubic-bezier(.7,0,.3,1) ${blockDelay}s both;transform-origin:left center;pointer-events:none"></div>
+      const blockMarkup = !storyFrames && copyMotion === "block" && typing ? `<div class="block-reveal" style="position:absolute;left:${el.x - dx}px;top:${el.y - dy}px;width:${el.w}px;height:${el.h}px;background:${accent};animation:blockwipe .9s cubic-bezier(.7,0,.3,1) ${blockDelay}s both;transform-origin:left center;pointer-events:none"></div>
 ` : "";
-      body.push(
+      const capFit = el.baselineFit === "cap" && !!el.text && !el.text.includes("\n") && el.h > 0;
+      if (capFit) {
+        const delay = (copyLead + delayFor(el)).toFixed(2);
+        body2.push(
+          `${blockMarkup}<div class="el text ${el.role}" style="${base};${textStyle(el, brandFont)};line-height:0;white-space:nowrap;${anim}"><span style="display:inline-block;width:0;height:${el.h}px"></span><span class="capline${extraCls}"${dyn} data-delay="${delay}">${esc2(el.text)}</span></div>`
+        );
+        return body2.join("\n");
+      }
+      body2.push(
         `${blockMarkup}<div class="el text ${el.role}${extraCls}"${dyn} data-delay="${(copyLead + delayFor(el)).toFixed(2)}" style="${base};${textStyle(el, brandFont)};${anim}">${esc2(el.text)}</div>`
       );
     }
+    return body2.join("\n");
+  };
+  const unitAnim = () => {
+    if (storyFrames) return `animation:frame3 ${D2}s ease-in-out ${L2} both`;
+    if (preset === "getready") return `animation:pop .5s cubic-bezier(.34,1.56,.64,1) ${(D2 * 0.8).toFixed(2)}s both`;
+    const d = (copyLead + 0.8).toFixed(2);
+    switch (copyMotion) {
+      case "none":
+        return "";
+      case "fade":
+      case "typewriter":
+      case "block":
+        return `animation:fadein .6s ease-out ${d}s both`;
+      case "pan":
+        return `animation:pan .7s cubic-bezier(.2,.8,.2,1) ${d}s both`;
+      case "pop":
+        return `animation:pop .55s cubic-bezier(.34,1.56,.64,1) ${d}s both`;
+      case "wipe":
+        return `animation:wipein .7s cubic-bezier(.4,0,.2,1) ${d}s both`;
+      default:
+        return `animation:enter .6s ease-out ${d}s both`;
+    }
+  };
+  let typing = true;
+  for (const el of config2.elements) {
+    if (ctaUnit && el === ctaUnit.cta) {
+      const c = ctaUnit.cta;
+      typing = false;
+      const inner = [];
+      for (const m of ctaUnit.members) inner.push(await renderEl(m, "", c.x, c.y));
+      typing = true;
+      body.push(`<div class="el group cta-unit" style="position:absolute;left:${c.x}px;top:${c.y}px;width:${c.w}px;height:${c.h}px;transform-origin:50% 50%;${unitAnim()}">
+${inner.join("\n")}
+</div>`);
+      continue;
+    }
+    if (inUnit(el)) continue;
+    body.push(await renderEl(el, animFor(el)));
   }
+  const ground = config2.elements.find((e) => e.type === "rect" && !e.gradient && (e.opacity ?? 1) >= 1 && e.w >= width * 0.95 && e.h >= height * 0.95 && /^#[0-9a-f]{3,8}$/i.test(e.fill ?? ""));
+  const stageBg = ground?.fill ?? "#ffffff";
   const stage = {
+    bg: stageBg,
     width,
     height,
     format: `${width}x${height}`,
@@ -245048,9 +248042,9 @@ ${parts.join("\n")}
 <style>
 ${fontFaces.join("\n")}
 html,body{margin:0;padding:0;background:transparent}
-#stage{position:relative;width:${width}px;height:${height}px;overflow:hidden;background:#ffffff;transform-origin:top left}
+#stage{position:relative;width:${width}px;height:${height}px;overflow:hidden;background:${stageBg};transform-origin:top left}
 #fluid{position:relative;width:100%;}
-.el{box-sizing:border-box}
+.el{box-sizing:border-box;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale}
 .img{display:block}
 ${SHARED_KEYFRAMES}
 ${useKv ? kvKeyframes.join("\n") : artMotion === "wipe" ? `#stage{animation:wipe .9s cubic-bezier(.4,0,.2,1) both}` : ""}
@@ -245219,7 +248213,7 @@ async function buildResponsiveHtmlPackage(opts) {
   });
   const landing = opts.clickUrl ? `${opts.clickUrl}${opts.clickUrl.includes("?") ? "&" : "?"}${utm.toString()}` : "";
   const sizeCss = stages.map(
-    (st, i) => `#s${i}{width:${st.width}px;height:${st.height}px}
+    (st, i) => `#s${i}{width:${st.width}px;height:${st.height}px${st.bg ? `;background:${st.bg}` : ""}}
 @media (width:${st.width}px) and (height:${st.height}px){.stage{display:none}#s${i}{display:block}}${st.wipeStage ? `
 #s${i}{animation:wipe .9s cubic-bezier(.4,0,.2,1) both}` : ""}${st.keyframes ? `
 ${st.keyframes}` : ""}`
@@ -245245,7 +248239,7 @@ html,body{margin:0;padding:0;background:transparent;width:100%;height:100%}
 #fluid{position:relative;width:100%;height:100%;overflow:hidden}
 .stage{position:absolute;left:0;top:0;overflow:hidden;background:#ffffff;transform-origin:top left;display:none}
 .stage.on{display:block}
-.el{box-sizing:border-box}
+.el{box-sizing:border-box;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale}
 .img{display:block}
 ${SHARED_KEYFRAMES}
 ${sizeCss}
@@ -245394,13 +248388,13 @@ async function familySizes(template, first) {
   const rows = await db.select().from(templatesTable).where(or(eq(templatesTable.id, masterId), eq(templatesTable.sourceTemplateId, masterId)));
   const byFormat = /* @__PURE__ */ new Map();
   byFormat.set(`${first.width}x${first.height}`, { ...first, templateId: template.id });
-  for (const r4 of rows.sort((a, b) => b.id - a.id)) {
-    if (r4.id === template.id) continue;
-    const key = `${r4.width}x${r4.height}`;
+  for (const r6 of rows.sort((a, b) => b.id - a.id)) {
+    if (r6.id === template.id) continue;
+    const key = `${r6.width}x${r6.height}`;
     if (byFormat.has(key)) continue;
     let parsed;
     try {
-      parsed = JSON.parse(r4.config || "{}");
+      parsed = JSON.parse(r6.config || "{}");
     } catch {
       continue;
     }
@@ -245408,7 +248402,7 @@ async function familySizes(template, first) {
     const cfg = normalizeFreeformConfig(parsed);
     if (cfg.rejected && cfg.rejected.length) continue;
     if (cfg.elements.length === 0) continue;
-    byFormat.set(key, { width: r4.width, height: r4.height, config: cfg, templateId: r4.id });
+    byFormat.set(key, { width: r6.width, height: r6.height, config: cfg, templateId: r6.id });
   }
   const [head2, ...rest] = [...byFormat.values()];
   rest.sort((a, b) => b.width * b.height - a.width * a.height);
@@ -245451,14 +248445,14 @@ async function customFontRefs() {
     const rows = await db.select().from(brandAssetsTable).where(eq(brandAssetsTable.kind, "font"));
     const seen2 = /* @__PURE__ */ new Set();
     const out = [];
-    for (const r4 of rows) {
-      const family = r4.name.split(" (")[0].trim();
-      if (!family || seen2.has(family)) continue;
-      seen2.add(family);
+    for (const r6 of rows) {
+      const family2 = r6.name.split(" (")[0].trim();
+      if (!family2 || seen2.has(family2)) continue;
+      seen2.add(family2);
       out.push({
-        family,
-        src: `/api/storage${r4.objectPath}`,
-        format: r4.contentType === "font/otf" ? "opentype" : "truetype"
+        family: family2,
+        src: `/api/storage${r6.objectPath}`,
+        format: r6.contentType === "font/otf" ? "opentype" : "truetype"
       });
     }
     return out;
@@ -245669,7 +248663,7 @@ async function readSheets(bytes2) {
         shared.push(String(t ?? ""));
       } else if (si?.r) {
         const runs = Array.isArray(si.r) ? si.r : [si.r];
-        shared.push(runs.map((r4) => typeof r4?.t === "object" ? r4.t?.["#text"] ?? "" : r4?.t ?? "").join(""));
+        shared.push(runs.map((r6) => typeof r6?.t === "object" ? r6.t?.["#text"] ?? "" : r6?.t ?? "").join(""));
       } else {
         shared.push("");
       }
@@ -245685,10 +248679,10 @@ async function readSheets(bytes2) {
     const rowsXml = xml?.worksheet?.sheetData?.row;
     const rowsArr = Array.isArray(rowsXml) ? rowsXml : rowsXml ? [rowsXml] : [];
     const rows = [];
-    for (const r4 of rowsArr) {
-      const rowIdx = Number(r4?.["@_r"] ?? rows.length + 1) - 1;
+    for (const r6 of rowsArr) {
+      const rowIdx = Number(r6?.["@_r"] ?? rows.length + 1) - 1;
       while (rows.length <= rowIdx) rows.push([]);
-      const cells = Array.isArray(r4?.c) ? r4.c : r4?.c ? [r4.c] : [];
+      const cells = Array.isArray(r6?.c) ? r6.c : r6?.c ? [r6.c] : [];
       for (const c of cells) {
         const ref = String(c?.["@_r"] ?? "A1");
         const ci = colIndex(ref);
@@ -245733,14 +248727,14 @@ async function parseCollateralBrief(bytes2) {
   let campaignSheetName = "";
   for (const [name, rows] of sheets) {
     if (/glossary|instruction/i.test(name)) continue;
-    if (rows.some((r4) => r4?.some((c) => /project number/i.test(text2(c))))) {
+    if (rows.some((r6) => r6?.some((c) => /project number/i.test(text2(c))))) {
       campaign = rows;
       campaignSheetName = name;
       break;
     }
   }
   if (!campaign) throw new Error("No sheet with a 'Project Number' header found \u2014 is this the Design Studio collateral template?");
-  const headerIdx = campaign.findIndex((r4) => r4?.some((c) => /project number/i.test(text2(c))));
+  const headerIdx = campaign.findIndex((r6) => r6?.some((c) => /project number/i.test(text2(c))));
   const header = campaign[headerIdx] ?? [];
   const sub = campaign[headerIdx + 1] ?? [];
   const findCol = (re, from = 0) => {
@@ -245887,22 +248881,22 @@ router23.post("/campaigns/build-plan", requireAuth, async (req, res) => {
     return;
   }
   const campaignName = typeof req.body?.campaignName === "string" ? req.body.campaignName.trim().slice(0, 80) : "";
-  const masters = rows.map((r4) => {
+  const masters = rows.map((r6) => {
     let flat = false;
     try {
-      const raw2 = JSON.parse(r4.config);
+      const raw2 = JSON.parse(r6.config);
       if (raw2?.kind === "freeform") flat = isFlatArtwork(normalizeFreeformConfig(raw2));
     } catch {
       flat = false;
     }
     let copy = [];
     try {
-      const raw2 = JSON.parse(r4.config);
+      const raw2 = JSON.parse(r6.config);
       copy = (raw2.elements ?? []).filter((e) => e.type === "text" && typeof e.text === "string").map((e) => e.text);
     } catch {
       copy = [];
     }
-    return { id: r4.id, name: r4.name, width: r4.width, height: r4.height, flat, messageType: messageTypeOf(r4.name, copy) };
+    return { id: r6.id, name: r6.name, width: r6.width, height: r6.height, flat, messageType: messageTypeOf(r6.name, copy) };
   });
   const plan = planCampaignBuild(masters, sizes, { campaignName });
   let profile = null;
@@ -245927,6 +248921,84 @@ var collateral_default = router23;
 
 // src/routes/layout-profiles.ts
 var import_express25 = __toESM(require_express2(), 1);
+
+// src/lib/layoutCompare.ts
+var LABELS = [
+  ["photoShare", "Photo's share of the canvas", "Zones"],
+  ["bandH", "Pattern band height (of canvas height)", "Zones"],
+  ["hlFont", "Heading type size (of the short side)", "Heading"],
+  ["hlW", "Heading width (of the photo area)", "Heading"],
+  ["hlCy", "Heading height in the photo area", "Heading"],
+  ["subRatio", "Sub-line size (of the heading)", "Heading"],
+  ["subCy", "Sub-line height in the photo area", "Heading"],
+  ["msgRatio", "Message size (of the heading)", "Panel copy"],
+  ["msgCy", "Message height in the panel", "Panel copy"],
+  ["pillOfHeading", "Pill height (of the heading)", "Pill"],
+  ["labelRatio", "Pill label size (of the pill)", "Pill"],
+  ["pillW", "Pill width (of the panel)", "Pill"],
+  ["pillCy", "Pill height in the panel", "Pill"],
+  ["lockH", "Logo lockup height (of the short side)", "Logo"],
+  ["lockW", "Logo lockup width (of the panel)", "Logo"],
+  ["lockCy", "Logo lockup height in the panel", "Logo"]
+];
+function measureShares(raw2, W2, H2) {
+  const cfg = normalizeFreeformConfig(raw2);
+  const sem = inferSlots(cfg, W2, H2);
+  const short = Math.min(W2, H2);
+  const stacked = sem.axis === "stacked" ? true : sem.axis === "side" ? false : H2 > W2;
+  const zone = cfg.elements.find((e) => e.type === "rect" && e.slot === "panel" && !(e.w >= W2 * 0.98 && e.h >= H2 * 0.98));
+  const seam = stacked ? sem.band ? sem.band.y : zone ? zone.y : sem.panelBox ? sem.panelBox.y : H2 : zone ? zone.x : sem.panelBox ? sem.panelBox.x : sem.band ? sem.band.x : W2;
+  const photoZone = stacked ? { x: 0, y: 0, w: W2, h: Math.max(1, seam) } : { x: 0, y: 0, w: Math.max(1, seam), h: H2 };
+  const panel = stacked ? { x: 0, y: seam, w: W2, h: Math.max(1, H2 - seam) } : { x: seam, y: 0, w: Math.max(1, W2 - seam), h: H2 };
+  const cy = (e, z) => e ? (e.y + e.h / 2 - z.y) / z.h : null;
+  const hl = sem.headline, sub = sem.subheadline, msg = sem.message, cta = sem.cta, label3 = sem.ctaLabel, lock = sem.lockup, band = sem.band;
+  return {
+    photoShare: stacked ? seam / H2 : seam / W2,
+    bandH: band ? band.h / H2 : null,
+    hlFont: hl ? hl.fontSize / short : null,
+    hlW: hl ? hl.w / photoZone.w : null,
+    hlCy: cy(hl, photoZone),
+    subRatio: hl && sub ? sub.fontSize / hl.fontSize : null,
+    subCy: cy(sub, photoZone),
+    msgRatio: hl && msg ? msg.fontSize / hl.fontSize : null,
+    msgCy: cy(msg, panel),
+    pillOfHeading: hl && cta ? cta.h / hl.fontSize : null,
+    labelRatio: cta && label3 ? label3.fontSize / cta.h : null,
+    pillW: cta ? cta.w / panel.w : null,
+    pillCy: cy(cta, panel),
+    lockH: lock ? lock.h / short : null,
+    lockW: lock ? lock.w / panel.w : null,
+    lockCy: cy(lock, panel)
+  };
+}
+function compareLayouts(real2, built, W2, H2) {
+  const a = measureShares(real2, W2, H2), b = measureShares(built, W2, H2);
+  const round3 = (v) => v == null || !Number.isFinite(v) ? null : Math.round(v * 1e3) / 10;
+  const metrics = LABELS.map(([key, label3, group]) => {
+    const r6 = round3(a[key]), u = round3(b[key]);
+    return { key, label: label3, group, real: r6, built: u, gap: r6 == null || u == null ? null : Math.round((u - r6) * 10) / 10 };
+  }).filter((m) => m.real != null || m.built != null);
+  const both = metrics.filter((m) => m.gap != null);
+  const averageGap = both.length ? Math.round(both.reduce((s2, m) => s2 + Math.abs(m.gap), 0) / both.length * 10) / 10 : null;
+  const worst = both.length ? [...both].sort((x, y) => Math.abs(y.gap) - Math.abs(x.gap))[0] : null;
+  const semA = inferSlots(normalizeFreeformConfig(real2), W2, H2), semB = inferSlots(normalizeFreeformConfig(built), W2, H2);
+  const parts = [
+    ["photo", semA.photo, semB.photo],
+    ["pattern band", semA.band, semB.band],
+    ["heading", semA.headline, semB.headline],
+    ["sub-line", semA.subheadline, semB.subheadline],
+    ["message", semA.message, semB.message],
+    ["pill", semA.cta, semB.cta],
+    ["pill icon", semA.ctaIcon, semB.ctaIcon],
+    ["logo lockup", semA.lockup, semB.lockup]
+  ];
+  const missingInBuilt = parts.filter(([, x, y]) => x && !y).map(([n]) => n);
+  const extraInBuilt = parts.filter(([, x, y]) => !x && y).map(([n]) => n);
+  const verdict = averageGap == null ? "Nothing comparable was recognised on one of the two pieces." : missingInBuilt.length ? `The build leaves out ${missingInBuilt.join(", ")}, which your file carries.` : averageGap <= 2 ? `Very close: the build is within ${averageGap} points of your file on average.` : averageGap <= 5 ? `Close, with a few visible differences: ${averageGap} points off on average; the largest is ${worst?.label.toLowerCase()} (${worst?.gap > 0 ? "+" : ""}${worst?.gap}).` : `Noticeably different: ${averageGap} points off on average; the largest is ${worst?.label.toLowerCase()} (${worst?.gap > 0 ? "+" : ""}${worst?.gap}).`;
+  return { metrics, averageGap, worst, missingInBuilt, extraInBuilt, verdict };
+}
+
+// src/routes/layout-profiles.ts
 var router24 = (0, import_express25.Router)();
 function formatProfile(p) {
   const zones = p.profile.zones;
@@ -245970,6 +249042,165 @@ router24.post("/layout-profiles/learn", requireAuth, async (req, res) => {
     req.log?.warn?.({ err }, "profile learn failed");
     res.status(500).json({ error: err instanceof Error ? err.message.slice(0, 200) : "Could not learn a profile" });
   }
+});
+router24.get("/layout-profiles/campaigns", requireAuth, async (_req, res) => {
+  const all = await listProfiles();
+  const masterIds = [...new Set(all.flatMap((p) => p.profile.sources.map((x) => x.templateId)))];
+  const alive = /* @__PURE__ */ new Set();
+  if (masterIds.length) for (const r6 of await db.select({ id: templatesTable.id }).from(templatesTable).where(inArray(templatesTable.id, masterIds))) alive.add(r6.id);
+  await ensureFeedbackTable();
+  const fb = (await db.execute(sql`SELECT verdict, subject_name, fault, note, element_slot, expected, subject_width, subject_height FROM feedback WHERE subject_type = 'template' ORDER BY id DESC LIMIT 1000`)).rows;
+  const groups = /* @__PURE__ */ new Map();
+  for (const p of all) {
+    const key = campaignKeyOf(p.profile.sources[0]?.name ?? p.name);
+    groups.set(key, [...groups.get(key) ?? [], p]);
+  }
+  const out = [...groups.entries()].map(([key, list]) => {
+    list.sort((a, b) => b.updatedAt.getTime() - a.updatedAt.getTime());
+    const live = list.filter((p) => !p.profile.archived);
+    const mine = fb.filter((r6) => campaignKeyOf(r6.subject_name) === key);
+    const wrongs = mine.filter((r6) => r6.verdict === "incorrect" && (r6.fault || r6.note)).slice(0, 8).map((r6) => ({
+      part: r6.element_slot ?? null,
+      fault: r6.fault ? String(r6.fault).replace(/_/g, " ") : null,
+      expected: r6.expected ?? null,
+      note: r6.note ?? null,
+      size: r6.subject_width && r6.subject_height ? `${r6.subject_width}\xD7${r6.subject_height}` : null
+    }));
+    const view = (p) => ({
+      id: p.id,
+      name: p.name,
+      archived: p.profile.archived === true,
+      updatedAt: p.updatedAt.toISOString(),
+      measuredAxes: p.profile.measuredAxes,
+      masters: p.profile.sources.map((x) => ({ id: x.templateId, name: x.name, width: x.width, height: x.height, axis: x.axis, exists: alive.has(x.templateId) })),
+      plain: describeProfilePlainly(p.profile),
+      rules: mergeRules(p.profile, null)
+    });
+    return {
+      key,
+      name: key.startsWith("schema:") ? list[0].name.replace(/\s*\(.*\)\s*$/, "").trim() || list[0].name : list[0].name,
+      layouts: list.map(view),
+      // One live layout per master can be in use; more than one live layout
+      // in a campaign means its imports were learned separately.
+      separate: live.length > 1,
+      feedback: { right: mine.filter((r6) => r6.verdict === "correct").length, wrong: mine.filter((r6) => r6.verdict === "incorrect").length, wrongs }
+    };
+  });
+  out.sort((a, b) => (b.layouts[0]?.updatedAt ?? "").localeCompare(a.layouts[0]?.updatedAt ?? ""));
+  res.json(out);
+});
+router24.post("/layout-profiles/:id/archive", requireAdmin, async (req, res) => {
+  const saved = await setProfileArchived(Number(req.params.id), req.body?.archived !== false);
+  if (!saved) {
+    res.status(404).json({ error: "Profile not found" });
+    return;
+  }
+  res.json(formatProfile(saved));
+});
+router24.post("/layout-profiles/combine", requireAdmin, async (req, res) => {
+  const ids = (Array.isArray(req.body?.profileIds) ? req.body.profileIds : []).map(Number).filter((n) => Number.isInteger(n) && n > 0).slice(0, 20);
+  if (ids.length < 2) {
+    res.status(400).json({ error: "Tick at least two layouts to combine." });
+    return;
+  }
+  const chosen = (await listProfiles()).filter((p) => ids.includes(p.id));
+  const wanted = [...new Set(chosen.flatMap((p) => p.profile.sources.map((x) => x.templateId)))];
+  const rows = wanted.length ? await db.select().from(templatesTable).where(inArray(templatesTable.id, wanted)) : [];
+  const newestPerSlot = /* @__PURE__ */ new Map();
+  const left = [];
+  for (const row of rows.sort((a, b) => a.id - b.id)) {
+    let bridge = false;
+    try {
+      const cfg = JSON.parse(row.config || "{}");
+      bridge = cfg?.sourceMode === "indesign-bridge";
+    } catch {
+    }
+    if (bridge) {
+      left.push(`${row.name}: an InDesign-bridge master keeps its own layout`);
+      continue;
+    }
+    newestPerSlot.set(`${row.width}x${row.height}|${(row.name.split(" \u2014 ").pop() ?? "").toLowerCase()}`, row.id);
+  }
+  const masterIds = [...newestPerSlot.values()];
+  const axes = new Set(chosen.flatMap((p) => p.profile.sources.filter((x) => masterIds.includes(x.templateId)).map((x) => x.axis)));
+  if (masterIds.length < 2 || axes.size < 2) {
+    res.status(422).json({ error: "Those layouts all measure the same shape, so combining them would change nothing. Combine a tall layout with a wide one." });
+    return;
+  }
+  const name = typeof req.body?.name === "string" && req.body.name.trim() ? req.body.name.trim().slice(0, 120) : `${chosen[0]?.name ?? "Campaign"} (tall + wide)`;
+  const learned = await learnProfile(masterIds, name, req.clerkUserId ?? null);
+  if (!learned) {
+    res.status(422).json({ error: "None of those masters could be measured any more \u2014 they may have been deleted from WIP." });
+    return;
+  }
+  const setAside = [];
+  for (const p of chosen) {
+    if (p.id === learned.stored.id) continue;
+    if (p.profile.sources.every((x) => masterIds.includes(x.templateId))) {
+      await setProfileArchived(p.id, true);
+      setAside.push(p.id);
+    }
+  }
+  res.status(201).json({ ...formatProfile(learned.stored), skipped: [...learned.skipped, ...left], archived: setAside });
+});
+router24.post("/layout-compare", requireAuth, async (req, res) => {
+  const realId = Number(req.body?.realId);
+  if (!Number.isInteger(realId) || realId <= 0) {
+    res.status(400).json({ error: "realId is required" });
+    return;
+  }
+  const [real2] = await db.select().from(templatesTable).where(eq(templatesTable.id, realId));
+  if (!real2) {
+    res.status(404).json({ error: "That real file is no longer in the studio." });
+    return;
+  }
+  let realParsed;
+  try {
+    realParsed = JSON.parse(real2.config || "{}");
+  } catch {
+    realParsed = {};
+  }
+  if (!isFreeformConfig(realParsed) || !isFreeformConfig(req.body?.builtConfig)) {
+    res.status(400).json({ error: "Both pieces need live layers to be measured (an InDesign package with its IDML)." });
+    return;
+  }
+  const comparison = compareLayouts(normalizeFreeformConfig(realParsed), normalizeFreeformConfig(req.body.builtConfig), real2.width, real2.height);
+  res.json({ real: { id: real2.id, name: real2.name, width: real2.width, height: real2.height }, ...comparison });
+});
+router24.post("/layout-profiles/learn-from-real", requireAdmin, async (req, res) => {
+  const masterId = Number(req.body?.masterId), realId = Number(req.body?.realId);
+  if (![masterId, realId].every((n) => Number.isInteger(n) && n > 0) || masterId === realId) {
+    res.status(400).json({ error: "masterId and realId are required and must differ" });
+    return;
+  }
+  const current = await profileForMaster(masterId);
+  const wanted = [.../* @__PURE__ */ new Set([masterId, realId, ...(current?.profile.sources ?? []).map((x) => x.templateId)])];
+  const rows = await db.select().from(templatesTable).where(inArray(templatesTable.id, wanted));
+  if (!rows.some((r6) => r6.id === realId)) {
+    res.status(404).json({ error: "That real file is no longer in the studio." });
+    return;
+  }
+  const newest = /* @__PURE__ */ new Map();
+  for (const row of rows.sort((a, b) => a.id - b.id)) {
+    let bridge = false;
+    try {
+      bridge = JSON.parse(row.config || "{}")?.sourceMode === "indesign-bridge";
+    } catch {
+    }
+    if (bridge) continue;
+    newest.set(`${row.width}x${row.height}|${(row.name.split(" \u2014 ").pop() ?? "").toLowerCase()}`, row.id);
+  }
+  const ids = [...newest.values()];
+  if (!ids.includes(realId)) {
+    res.status(422).json({ error: "An InDesign-bridge export keeps its own layout and cannot be learned into another." });
+    return;
+  }
+  const learned = await learnProfile(ids, current?.name ?? null, req.clerkUserId ?? null);
+  if (!learned) {
+    res.status(422).json({ error: "The real file could not be measured: it needs a recognised heading." });
+    return;
+  }
+  res.status(201).json({ ...formatProfile(learned.stored), skipped: learned.skipped });
 });
 router24.get("/layout-profiles", requireAuth, async (_req, res) => {
   res.json((await listProfiles()).map(formatProfile));

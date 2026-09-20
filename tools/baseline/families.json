@@ -54,6 +54,18 @@
     {
       "key": "acbrand-billboard",
       "masterId": 792
+    },
+    {
+      "key": "heritage-keyvisual",
+      "masterId": 1511
+    },
+    {
+      "key": "heritage-bridge-import",
+      "masterId": 1542
+    },
+    {
+      "key": "getready-display-layered",
+      "masterId": 986
     }
   ]
 }

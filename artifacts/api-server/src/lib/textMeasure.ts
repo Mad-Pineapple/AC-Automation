@@ -36,7 +36,13 @@ export interface FontSpec {
   family?: string;
   weight?: 400 | 700;
   italic?: boolean;
+  /** Tracking in px AT THE SIZE BEING MEASURED. */
   letterSpacing?: number;
+  /** Tracking as a share of the type size (InDesign tracking ÷ 1000). Use this
+   *  when the same spec is measured at many sizes: a master's −1.81px at 72px
+   *  is −0.4px at 16px, and measuring 16px type with the full −1.81 made a
+   *  line look 18% narrower than it draws — it then wrapped or ran to the edge. */
+  letterSpacingEm?: number;
 }
 
 export function resolveFamily(family?: string): string {
@@ -76,7 +82,7 @@ function setFont(spec: FontSpec, sizePx: number): void {
  * estimate when no font is registered (tests, hosts without fonts). */
 export function measureLine(text: string, spec: FontSpec, sizePx: number): number {
   if (text.length === 0) return 0;
-  const ls = (spec.letterSpacing ?? 0) * Array.from(text).length;
+  const ls = (spec.letterSpacingEm != null ? spec.letterSpacingEm * sizePx : (spec.letterSpacing ?? 0)) * Array.from(text).length;
   if (!fontsReady && !hasFontFamily(resolveFamily(spec.family))) {
     if (!warnedEstimate) {
       warnedEstimate = true;

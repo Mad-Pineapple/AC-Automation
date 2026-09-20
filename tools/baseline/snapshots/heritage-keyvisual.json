@@ -1,0 +1,1707 @@
+{
+ "master": {
+  "id": 1511,
+  "name": "Auckland Heritage Festival 2026 — key visual (InDesign parts)",
+  "width": 2160,
+  "height": 3840
+ },
+ "sizes": {
+  "970x250": {
+   "method": "key-visual:anther",
+   "rejected": [],
+   "dropped": [
+    "message",
+    "other"
+   ],
+   "needsReview": true,
+   "elements": {
+    "kva_photo": {
+     "slot": "photo",
+     "x": -1220,
+     "y": -566,
+     "w": 2191,
+     "h": 1489,
+     "type": "image"
+    },
+    "kva_shade_0": {
+     "slot": "scrim",
+     "x": 179,
+     "y": -2,
+     "w": 793,
+     "h": 254,
+     "type": "rect",
+     "fill": "#140d06"
+    },
+    "kva_pattern": {
+     "slot": "band",
+     "x": 547,
+     "y": 165,
+     "w": 425,
+     "h": 85,
+     "type": "image"
+    },
+    "kva_anther": {
+     "slot": "cutout",
+     "x": -66,
+     "y": 7,
+     "w": 311,
+     "h": 311,
+     "type": "image"
+    },
+    "kva_badge": {
+     "slot": null,
+     "x": 7,
+     "y": 7,
+     "w": 73,
+     "h": 72,
+     "type": "image"
+    },
+    "kva_title": {
+     "slot": null,
+     "x": 251,
+     "y": 13,
+     "w": 278,
+     "h": 115,
+     "type": "image"
+    },
+    "kva_headline": {
+     "slot": "headline",
+     "x": 258,
+     "y": 136,
+     "w": 419,
+     "h": 61,
+     "fontSize": 29,
+     "type": "text",
+     "text": "Tastes of Tāmaki\nA Heritage Feast",
+     "align": "left"
+    },
+    "kva_dates": {
+     "slot": "subheadline",
+     "x": 258,
+     "y": 202,
+     "w": 419,
+     "h": 19,
+     "fontSize": 17,
+     "type": "text",
+     "text": "26 September – 11 October",
+     "align": "left"
+    },
+    "kva_cta": {
+     "slot": "cta",
+     "x": 712,
+     "y": 50,
+     "w": 244,
+     "h": 32,
+     "type": "image"
+    },
+    "kva_logo": {
+     "slot": "lockup",
+     "x": 759,
+     "y": 155,
+     "w": 200,
+     "h": 75,
+     "type": "image"
+    }
+   }
+  },
+  "728x90": {
+   "method": "key-visual:anther",
+   "rejected": [],
+   "dropped": [
+    "band",
+    "message",
+    "other",
+    "other"
+   ],
+   "needsReview": true,
+   "elements": {
+    "kva_photo": {
+     "slot": "photo",
+     "x": -1023,
+     "y": -507,
+     "w": 1752,
+     "h": 1191,
+     "type": "image"
+    },
+    "kva_shade_0": {
+     "slot": "scrim",
+     "x": 81,
+     "y": -2,
+     "w": 649,
+     "h": 94,
+     "type": "rect",
+     "fill": "#140d06"
+    },
+    "kva_anther": {
+     "slot": "cutout",
+     "x": -18,
+     "y": 3,
+     "w": 111,
+     "h": 111,
+     "type": "image"
+    },
+    "kva_logo": {
+     "slot": "lockup",
+     "x": 579,
+     "y": 18,
+     "w": 146,
+     "h": 55,
+     "type": "image"
+    },
+    "kva_cta": {
+     "slot": "cta",
+     "x": 356,
+     "y": 31,
+     "w": 218,
+     "h": 29,
+     "type": "image"
+    },
+    "kva_title": {
+     "slot": null,
+     "x": 100,
+     "y": 19,
+     "w": 124,
+     "h": 51,
+     "type": "image"
+    },
+    "kva_headline": {
+     "slot": "headline",
+     "x": 229,
+     "y": 24,
+     "w": 122,
+     "h": 29,
+     "fontSize": 14,
+     "type": "text",
+     "text": "Tastes of Tāmaki\nA Heritage Feast",
+     "align": "left"
+    },
+    "kva_dates": {
+     "slot": "subheadline",
+     "x": 229,
+     "y": 56,
+     "w": 122,
+     "h": 10,
+     "fontSize": 9,
+     "type": "text",
+     "text": "26 September – 11 October",
+     "align": "left"
+    }
+   }
+  },
+  "320x50": {
+   "method": "key-visual:anther",
+   "rejected": [],
+   "dropped": [
+    "band",
+    "cutout",
+    "headline",
+    "message",
+    "other",
+    "other"
+   ],
+   "needsReview": true,
+   "elements": {
+    "kva_photo": {
+     "slot": "photo",
+     "x": -438,
+     "y": -214,
+     "w": 758,
+     "h": 515,
+     "type": "image"
+    },
+    "kva_shade_0": {
+     "slot": "scrim",
+     "x": -2,
+     "y": -2,
+     "w": 324,
+     "h": 54,
+     "type": "rect",
+     "fill": "#140d06"
+    },
+    "kva_logo": {
+     "slot": "lockup",
+     "x": 243,
+     "y": 11,
+     "w": 74,
+     "h": 28,
+     "type": "image"
+    },
+    "kva_cta": {
+     "slot": "cta",
+     "x": 101,
+     "y": 16,
+     "w": 134,
+     "h": 18,
+     "type": "image"
+    },
+    "kva_title": {
+     "slot": null,
+     "x": 2,
+     "y": 6,
+     "w": 91,
+     "h": 38,
+     "type": "image"
+    }
+   }
+  },
+  "300x250": {
+   "method": "key-visual:anther",
+   "rejected": [],
+   "dropped": [
+    "message",
+    "other"
+   ],
+   "needsReview": true,
+   "elements": {
+    "kva_photo": {
+     "slot": "photo",
+     "x": -276,
+     "y": -57,
+     "w": 576,
+     "h": 392,
+     "type": "image"
+    },
+    "kva_shade_0": {
+     "slot": "scrim",
+     "x": 112,
+     "y": -2,
+     "w": 190,
+     "h": 254,
+     "type": "rect",
+     "fill": "#140d06"
+    },
+    "kva_shade_1": {
+     "slot": "scrim",
+     "x": -2,
+     "y": 180,
+     "w": 304,
+     "h": 72,
+     "type": "rect",
+     "fill": "#140d06"
+    },
+    "kva_pattern": {
+     "slot": "band",
+     "x": 27,
+     "y": 195,
+     "w": 275,
+     "h": 55,
+     "type": "image"
+    },
+    "kva_anther": {
+     "slot": "cutout",
+     "x": -38,
+     "y": 54,
+     "w": 187,
+     "h": 187,
+     "type": "image"
+    },
+    "kva_badge": {
+     "slot": null,
+     "x": 7,
+     "y": 40,
+     "w": 44,
+     "h": 43,
+     "type": "image"
+    },
+    "kva_logo": {
+     "slot": "lockup",
+     "x": 230,
+     "y": 217,
+     "w": 64,
+     "h": 24,
+     "type": "image"
+    },
+    "kva_title": {
+     "slot": null,
+     "x": 152,
+     "y": 10,
+     "w": 134,
+     "h": 56,
+     "type": "image"
+    },
+    "kva_headline": {
+     "slot": "headline",
+     "x": 159,
+     "y": 109,
+     "w": 127,
+     "h": 27,
+     "fontSize": 13,
+     "type": "text",
+     "text": "Tastes of Tāmaki\nA Heritage Feast",
+     "align": "left"
+    },
+    "kva_dates": {
+     "slot": "subheadline",
+     "x": 159,
+     "y": 138,
+     "w": 127,
+     "h": 10,
+     "fontSize": 9,
+     "type": "text",
+     "text": "26 September – 11 October",
+     "align": "left"
+    },
+    "kva_cta": {
+     "slot": "cta",
+     "x": 159,
+     "y": 157,
+     "w": 127,
+     "h": 17,
+     "type": "image"
+    }
+   }
+  },
+  "336x280": {
+   "method": "key-visual:anther",
+   "rejected": [],
+   "dropped": [
+    "message",
+    "other"
+   ],
+   "needsReview": true,
+   "elements": {
+    "kva_photo": {
+     "slot": "photo",
+     "x": -309,
+     "y": -64,
+     "w": 646,
+     "h": 439,
+     "type": "image"
+    },
+    "kva_shade_0": {
+     "slot": "scrim",
+     "x": 126,
+     "y": -2,
+     "w": 212,
+     "h": 284,
+     "type": "rect",
+     "fill": "#140d06"
+    },
+    "kva_shade_1": {
+     "slot": "scrim",
+     "x": -2,
+     "y": 202,
+     "w": 340,
+     "h": 80,
+     "type": "rect",
+     "fill": "#140d06"
+    },
+    "kva_pattern": {
+     "slot": "band",
+     "x": 28,
+     "y": 218,
+     "w": 310,
+     "h": 62,
+     "type": "image"
+    },
+    "kva_anther": {
+     "slot": "cutout",
+     "x": -43,
+     "y": 60,
+     "w": 210,
+     "h": 210,
+     "type": "image"
+    },
+    "kva_badge": {
+     "slot": null,
+     "x": 8,
+     "y": 45,
+     "w": 49,
+     "h": 48,
+     "type": "image"
+    },
+    "kva_logo": {
+     "slot": "lockup",
+     "x": 257,
+     "y": 243,
+     "w": 72,
+     "h": 27,
+     "type": "image"
+    },
+    "kva_title": {
+     "slot": null,
+     "x": 170,
+     "y": 11,
+     "w": 151,
+     "h": 63,
+     "type": "image"
+    },
+    "kva_headline": {
+     "slot": "headline",
+     "x": 178,
+     "y": 122,
+     "w": 143,
+     "h": 32,
+     "fontSize": 15,
+     "type": "text",
+     "text": "Tastes of Tāmaki\nA Heritage Feast",
+     "align": "left"
+    },
+    "kva_dates": {
+     "slot": "subheadline",
+     "x": 178,
+     "y": 157,
+     "w": 143,
+     "h": 10,
+     "fontSize": 9,
+     "type": "text",
+     "text": "26 September – 11 October",
+     "align": "left"
+    },
+    "kva_cta": {
+     "slot": "cta",
+     "x": 178,
+     "y": 177,
+     "w": 138,
+     "h": 18,
+     "type": "image"
+    }
+   }
+  },
+  "300x600": {
+   "method": "key-visual:anther",
+   "rejected": [],
+   "dropped": [],
+   "needsReview": false,
+   "elements": {
+    "kva_photo": {
+     "slot": "photo",
+     "x": -399,
+     "y": -7,
+     "w": 894,
+     "h": 608,
+     "type": "image"
+    },
+    "kva_shade_0": {
+     "slot": "scrim",
+     "x": -2,
+     "y": -2,
+     "w": 304,
+     "h": 177,
+     "type": "rect",
+     "fill": "#140d06"
+    },
+    "kva_shade_1": {
+     "slot": "scrim",
+     "x": -2,
+     "y": 357,
+     "w": 304,
+     "h": 245,
+     "type": "rect",
+     "fill": "#140d06"
+    },
+    "kva_pattern": {
+     "slot": "band",
+     "x": -263,
+     "y": 487,
+     "w": 565,
+     "h": 113,
+     "type": "image"
+    },
+    "kva_anther": {
+     "slot": "cutout",
+     "x": -61,
+     "y": 146,
+     "w": 340,
+     "h": 340,
+     "type": "image"
+    },
+    "kva_badge": {
+     "slot": null,
+     "x": 9,
+     "y": 125,
+     "w": 80,
+     "h": 78,
+     "type": "image"
+    },
+    "kva_title": {
+     "slot": null,
+     "x": 9,
+     "y": 18,
+     "w": 282,
+     "h": 117,
+     "type": "image"
+    },
+    "kva_logo": {
+     "slot": "lockup",
+     "x": 183,
+     "y": 547,
+     "w": 108,
+     "h": 41,
+     "type": "image"
+    },
+    "kva_strapline": {
+     "slot": null,
+     "x": 17,
+     "y": 561,
+     "w": 149,
+     "h": 25,
+     "fontSize": 11,
+     "type": "text",
+     "text": "Tāmaki Turuki.\nAltogether Auckland.",
+     "align": "left"
+    },
+    "kva_cta": {
+     "slot": "cta",
+     "x": 66,
+     "y": 509,
+     "w": 168,
+     "h": 22,
+     "type": "image"
+    },
+    "kva_headline": {
+     "slot": "headline",
+     "x": 17,
+     "y": 417,
+     "w": 266,
+     "h": 55,
+     "fontSize": 26,
+     "type": "text",
+     "text": "Tastes of Tāmaki\nA Heritage Feast",
+     "align": "center"
+    },
+    "kva_dates": {
+     "slot": "subheadline",
+     "x": 17,
+     "y": 477,
+     "w": 266,
+     "h": 17,
+     "fontSize": 15,
+     "type": "text",
+     "text": "26 September – 11 October",
+     "align": "center"
+    },
+    "kva_credit": {
+     "slot": null,
+     "x": 291,
+     "y": 156,
+     "w": 6,
+     "h": 156,
+     "type": "image"
+    }
+   }
+  },
+  "160x600": {
+   "method": "key-visual:anther",
+   "rejected": [],
+   "dropped": [
+    "message",
+    "other"
+   ],
+   "needsReview": true,
+   "elements": {
+    "kva_photo": {
+     "slot": "photo",
+     "x": -573,
+     "y": -122,
+     "w": 1063,
+     "h": 722,
+     "type": "image"
+    },
+    "kva_shade_0": {
+     "slot": "scrim",
+     "x": -2,
+     "y": -2,
+     "w": 164,
+     "h": 122,
+     "type": "rect",
+     "fill": "#140d06"
+    },
+    "kva_shade_1": {
+     "slot": "scrim",
+     "x": -2,
+     "y": 287,
+     "w": 164,
+     "h": 315,
+     "type": "rect",
+     "fill": "#140d06"
+    },
+    "kva_pattern": {
+     "slot": "band",
+     "x": -403,
+     "y": 487,
+     "w": 565,
+     "h": 113,
+     "type": "image"
+    },
+    "kva_anther": {
+     "slot": "cutout",
+     "x": -43,
+     "y": 138,
+     "w": 198,
+     "h": 198,
+     "type": "image"
+    },
+    "kva_badge": {
+     "slot": null,
+     "x": 5,
+     "y": 123,
+     "w": 47,
+     "h": 46,
+     "type": "image"
+    },
+    "kva_title": {
+     "slot": null,
+     "x": 5,
+     "y": 18,
+     "w": 150,
+     "h": 62,
+     "type": "image"
+    },
+    "kva_logo": {
+     "slot": "lockup",
+     "x": 22,
+     "y": 545,
+     "w": 115,
+     "h": 43,
+     "type": "image"
+    },
+    "kva_cta": {
+     "slot": "cta",
+     "x": 9,
+     "y": 436,
+     "w": 142,
+     "h": 19,
+     "type": "image"
+    },
+    "kva_headline": {
+     "slot": "headline",
+     "x": 9,
+     "y": 347,
+     "w": 142,
+     "h": 32,
+     "fontSize": 15,
+     "type": "text",
+     "text": "Tastes of Tāmaki\nA Heritage Feast",
+     "align": "center"
+    },
+    "kva_dates": {
+     "slot": "subheadline",
+     "x": 9,
+     "y": 382,
+     "w": 142,
+     "h": 10,
+     "fontSize": 9,
+     "type": "text",
+     "text": "26 September – 11 October",
+     "align": "center"
+    }
+   }
+  },
+  "120x600": {
+   "method": "key-visual:anther",
+   "rejected": [],
+   "dropped": [
+    "message",
+    "other",
+    "other",
+    "subheadline"
+   ],
+   "needsReview": true,
+   "elements": {
+    "kva_photo": {
+     "slot": "photo",
+     "x": -617,
+     "y": -148,
+     "w": 1102,
+     "h": 749,
+     "type": "image"
+    },
+    "kva_shade_0": {
+     "slot": "scrim",
+     "x": -2,
+     "y": -2,
+     "w": 124,
+     "h": 106,
+     "type": "rect",
+     "fill": "#140d06"
+    },
+    "kva_shade_1": {
+     "slot": "scrim",
+     "x": -2,
+     "y": 279,
+     "w": 124,
+     "h": 323,
+     "type": "rect",
+     "fill": "#140d06"
+    },
+    "kva_pattern": {
+     "slot": "band",
+     "x": -443,
+     "y": 487,
+     "w": 565,
+     "h": 113,
+     "type": "image"
+    },
+    "kva_anther": {
+     "slot": "cutout",
+     "x": -32,
+     "y": 144,
+     "w": 148,
+     "h": 148,
+     "type": "image"
+    },
+    "kva_title": {
+     "slot": null,
+     "x": 4,
+     "y": 18,
+     "w": 112,
+     "h": 46,
+     "type": "image"
+    },
+    "kva_logo": {
+     "slot": "lockup",
+     "x": 17,
+     "y": 556,
+     "w": 86,
+     "h": 32,
+     "type": "image"
+    },
+    "kva_cta": {
+     "slot": "cta",
+     "x": 7,
+     "y": 420,
+     "w": 106,
+     "h": 14,
+     "type": "image"
+    },
+    "kva_headline": {
+     "slot": "headline",
+     "x": 7,
+     "y": 339,
+     "w": 106,
+     "h": 25,
+     "fontSize": 12,
+     "type": "text",
+     "text": "Tastes of Tāmaki\nA Heritage Feast",
+     "align": "center"
+    }
+   }
+  },
+  "1080x1080": {
+   "method": "key-visual:anther",
+   "rejected": [],
+   "dropped": [
+    "other"
+   ],
+   "needsReview": true,
+   "elements": {
+    "kva_photo": {
+     "slot": "photo",
+     "x": -879,
+     "y": -3,
+     "w": 1960,
+     "h": 1332,
+     "type": "image"
+    },
+    "kva_shade_0": {
+     "slot": "scrim",
+     "x": -2,
+     "y": -2,
+     "w": 1084,
+     "h": 416,
+     "type": "rect",
+     "fill": "#140d06"
+    },
+    "kva_shade_1": {
+     "slot": "scrim",
+     "x": 518,
+     "y": -2,
+     "w": 564,
+     "h": 1084,
+     "type": "rect",
+     "fill": "#140d06"
+    },
+    "kva_shade_2": {
+     "slot": "scrim",
+     "x": -2,
+     "y": 821,
+     "w": 1084,
+     "h": 261,
+     "type": "rect",
+     "fill": "#140d06"
+    },
+    "kva_pattern": {
+     "slot": "band",
+     "x": 3,
+     "y": 864,
+     "w": 1079,
+     "h": 216,
+     "type": "image"
+    },
+    "kva_anther": {
+     "slot": "cutout",
+     "x": -130,
+     "y": 337,
+     "w": 733,
+     "h": 732,
+     "type": "image"
+    },
+    "kva_badge": {
+     "slot": null,
+     "x": 30,
+     "y": 282,
+     "w": 172,
+     "h": 168,
+     "type": "image"
+    },
+    "kva_logo": {
+     "slot": "lockup",
+     "x": 762,
+     "y": 934,
+     "w": 288,
+     "h": 108,
+     "type": "image"
+    },
+    "kva_title": {
+     "slot": null,
+     "x": 346,
+     "y": 38,
+     "w": 704,
+     "h": 292,
+     "type": "image"
+    },
+    "kva_headline": {
+     "slot": "headline",
+     "x": 654,
+     "y": 512,
+     "w": 367,
+     "h": 90,
+     "fontSize": 43,
+     "type": "text",
+     "text": "Tastes of Tāmaki\nA Heritage Feast",
+     "align": "left"
+    },
+    "kva_dates": {
+     "slot": "subheadline",
+     "x": 654,
+     "y": 610,
+     "w": 367,
+     "h": 28,
+     "fontSize": 25,
+     "type": "text",
+     "text": "26 September – 11 October",
+     "align": "left"
+    },
+    "kva_cta": {
+     "slot": "cta",
+     "x": 654,
+     "y": 673,
+     "w": 352,
+     "h": 46,
+     "type": "image"
+    },
+    "kva_strapline": {
+     "slot": null,
+     "x": 59,
+     "y": 979,
+     "w": 322,
+     "h": 58,
+     "fontSize": 26,
+     "type": "text",
+     "text": "Tāmaki Turuki.\nAltogether Auckland.",
+     "align": "left"
+    }
+   }
+  },
+  "1080x1920": {
+   "method": "scaled",
+   "rejected": [],
+   "dropped": [],
+   "needsReview": false,
+   "elements": {
+    "hf_photo": {
+     "slot": "photo",
+     "x": 0,
+     "y": 0,
+     "w": 1080,
+     "h": 1920,
+     "type": "image"
+    },
+    "hf_shadeTop": {
+     "slot": "scrim",
+     "x": 0,
+     "y": 0,
+     "w": 1080,
+     "h": 562,
+     "type": "rect",
+     "fill": "#140d06"
+    },
+    "hf_shadeBottom": {
+     "slot": "scrim",
+     "x": 0,
+     "y": 1302,
+     "w": 1080,
+     "h": 618,
+     "type": "rect",
+     "fill": "#140d06"
+    },
+    "hf_band": {
+     "slot": "band",
+     "x": 0,
+     "y": 1558,
+     "w": 1080,
+     "h": 362,
+     "type": "image"
+    },
+    "hf_anther": {
+     "slot": "cutout",
+     "x": -210,
+     "y": 428,
+     "w": 1189,
+     "h": 1187,
+     "type": "image"
+    },
+    "hf_title": {
+     "slot": null,
+     "x": 0,
+     "y": 0,
+     "w": 1080,
+     "h": 460,
+     "type": "image"
+    },
+    "hf_badge": {
+     "slot": null,
+     "x": 58,
+     "y": 435,
+     "w": 281,
+     "h": 275,
+     "type": "image"
+    },
+    "hf_headline": {
+     "slot": "headline",
+     "x": 110,
+     "y": 1368,
+     "w": 894,
+     "h": 155,
+     "fontSize": 74,
+     "type": "text",
+     "text": "Tastes of Tāmaki\nA Heritage Feast",
+     "align": "center"
+    },
+    "hf_dates": {
+     "slot": "subheadline",
+     "x": 110,
+     "y": 1521,
+     "w": 894,
+     "h": 48,
+     "fontSize": 42,
+     "type": "text",
+     "text": "26 September – 11 October",
+     "align": "center"
+    },
+    "hf_cta": {
+     "slot": "cta",
+     "x": 521,
+     "y": 1616,
+     "w": 475,
+     "h": 62,
+     "type": "image"
+    },
+    "hf_strapline": {
+     "slot": null,
+     "x": 391,
+     "y": 1798,
+     "w": 381,
+     "h": 73,
+     "fontSize": 32,
+     "type": "text",
+     "text": "Tāmaki Turuki.\nAltogether Auckland.",
+     "align": "left"
+    },
+    "hf_lockup": {
+     "slot": "lockup",
+     "x": 785,
+     "y": 1775,
+     "w": 295,
+     "h": 111,
+     "type": "image"
+    },
+    "hf_credit": {
+     "slot": null,
+     "x": 1033,
+     "y": 489,
+     "w": 36,
+     "h": 937,
+     "type": "image"
+    }
+   }
+  },
+  "1920x1080": {
+   "method": "key-visual:anther",
+   "rejected": [],
+   "dropped": [
+    "other"
+   ],
+   "needsReview": true,
+   "elements": {
+    "kva_photo": {
+     "slot": "photo",
+     "x": -1764,
+     "y": -624,
+     "w": 3687,
+     "h": 2506,
+     "type": "image"
+    },
+    "kva_shade_0": {
+     "slot": "scrim",
+     "x": 719,
+     "y": -2,
+     "w": 1203,
+     "h": 1084,
+     "type": "rect",
+     "fill": "#140d06"
+    },
+    "kva_shade_1": {
+     "slot": "scrim",
+     "x": -2,
+     "y": 778,
+     "w": 1924,
+     "h": 304,
+     "type": "rect",
+     "fill": "#140d06"
+    },
+    "kva_pattern": {
+     "slot": "band",
+     "x": 733,
+     "y": 842,
+     "w": 1189,
+     "h": 238,
+     "type": "image"
+    },
+    "kva_anther": {
+     "slot": "cutout",
+     "x": -268,
+     "y": 70,
+     "w": 1237,
+     "h": 1236,
+     "type": "image"
+    },
+    "kva_badge": {
+     "slot": null,
+     "x": 30,
+     "y": 30,
+     "w": 291,
+     "h": 285,
+     "type": "image"
+    },
+    "kva_logo": {
+     "slot": "lockup",
+     "x": 1559,
+     "y": 918,
+     "w": 331,
+     "h": 124,
+     "type": "image"
+    },
+    "kva_strapline": {
+     "slot": null,
+     "x": 1010,
+     "y": 965,
+     "w": 490,
+     "h": 72,
+     "fontSize": 32,
+     "type": "text",
+     "text": "Tāmaki Turuki.\nAltogether Auckland.",
+     "align": "left"
+    },
+    "kva_title": {
+     "slot": null,
+     "x": 980,
+     "y": 43,
+     "w": 834,
+     "h": 346,
+     "type": "image"
+    },
+    "kva_headline": {
+     "slot": "headline",
+     "x": 1010,
+     "y": 468,
+     "w": 851,
+     "h": 181,
+     "fontSize": 86,
+     "type": "text",
+     "text": "Tastes of Tāmaki\nA Heritage Feast",
+     "align": "left"
+    },
+    "kva_dates": {
+     "slot": "subheadline",
+     "x": 1010,
+     "y": 664,
+     "w": 851,
+     "h": 54,
+     "fontSize": 49,
+     "type": "text",
+     "text": "26 September – 11 October",
+     "align": "left"
+    },
+    "kva_cta": {
+     "slot": "cta",
+     "x": 1010,
+     "y": 756,
+     "w": 630,
+     "h": 82,
+     "type": "image"
+    }
+   }
+  },
+  "960x256": {
+   "method": "key-visual:anther",
+   "rejected": [],
+   "dropped": [
+    "message",
+    "other"
+   ],
+   "needsReview": true,
+   "elements": {
+    "kva_photo": {
+     "slot": "photo",
+     "x": -1189,
+     "y": -550,
+     "w": 2150,
+     "h": 1462,
+     "type": "image"
+    },
+    "kva_shade_0": {
+     "slot": "scrim",
+     "x": 183,
+     "y": -2,
+     "w": 779,
+     "h": 260,
+     "type": "rect",
+     "fill": "#140d06"
+    },
+    "kva_pattern": {
+     "slot": "band",
+     "x": 527,
+     "y": 169,
+     "w": 435,
+     "h": 87,
+     "type": "image"
+    },
+    "kva_anther": {
+     "slot": "cutout",
+     "x": -67,
+     "y": 7,
+     "w": 319,
+     "h": 319,
+     "type": "image"
+    },
+    "kva_badge": {
+     "slot": null,
+     "x": 7,
+     "y": 7,
+     "w": 75,
+     "h": 73,
+     "type": "image"
+    },
+    "kva_title": {
+     "slot": null,
+     "x": 257,
+     "y": 13,
+     "w": 284,
+     "h": 118,
+     "type": "image"
+    },
+    "kva_headline": {
+     "slot": "headline",
+     "x": 264,
+     "y": 139,
+     "w": 409,
+     "h": 61,
+     "fontSize": 29,
+     "type": "text",
+     "text": "Tastes of Tāmaki\nA Heritage Feast",
+     "align": "left"
+    },
+    "kva_dates": {
+     "slot": "subheadline",
+     "x": 264,
+     "y": 205,
+     "w": 409,
+     "h": 19,
+     "fontSize": 17,
+     "type": "text",
+     "text": "26 September – 11 October",
+     "align": "left"
+    },
+    "kva_cta": {
+     "slot": "cta",
+     "x": 708,
+     "y": 51,
+     "w": 238,
+     "h": 31,
+     "type": "image"
+    },
+    "kva_logo": {
+     "slot": "lockup",
+     "x": 744,
+     "y": 159,
+     "w": 205,
+     "h": 77,
+     "type": "image"
+    }
+   }
+  },
+  "384x592": {
+   "method": "key-visual:anther",
+   "rejected": [],
+   "dropped": [],
+   "needsReview": false,
+   "elements": {
+    "kva_photo": {
+     "slot": "photo",
+     "x": -392,
+     "y": -37,
+     "w": 926,
+     "h": 629,
+     "type": "image"
+    },
+    "kva_shade_0": {
+     "slot": "scrim",
+     "x": -2,
+     "y": -2,
+     "w": 388,
+     "h": 178,
+     "type": "rect",
+     "fill": "#140d06"
+    },
+    "kva_shade_1": {
+     "slot": "scrim",
+     "x": -2,
+     "y": 318,
+     "w": 388,
+     "h": 276,
+     "type": "rect",
+     "fill": "#140d06"
+    },
+    "kva_pattern": {
+     "slot": "band",
+     "x": -169,
+     "y": 481,
+     "w": 555,
+     "h": 111,
+     "type": "image"
+    },
+    "kva_anther": {
+     "slot": "cutout",
+     "x": -1,
+     "y": 147,
+     "w": 286,
+     "h": 286,
+     "type": "image"
+    },
+    "kva_badge": {
+     "slot": null,
+     "x": 57,
+     "y": 128,
+     "w": 67,
+     "h": 66,
+     "type": "image"
+    },
+    "kva_title": {
+     "slot": null,
+     "x": 49,
+     "y": 18,
+     "w": 286,
+     "h": 118,
+     "type": "image"
+    },
+    "kva_logo": {
+     "slot": "lockup",
+     "x": 255,
+     "y": 536,
+     "w": 118,
+     "h": 44,
+     "type": "image"
+    },
+    "kva_strapline": {
+     "slot": null,
+     "x": 21,
+     "y": 556,
+     "w": 213,
+     "h": 22,
+     "fontSize": 10,
+     "type": "text",
+     "text": "Tāmaki Turuki.\nAltogether Auckland.",
+     "align": "left"
+    },
+    "kva_cta": {
+     "slot": "cta",
+     "x": 84,
+     "y": 491,
+     "w": 215,
+     "h": 28,
+     "type": "image"
+    },
+    "kva_headline": {
+     "slot": "headline",
+     "x": 21,
+     "y": 378,
+     "w": 342,
+     "h": 71,
+     "fontSize": 34,
+     "type": "text",
+     "text": "Tastes of Tāmaki\nA Heritage Feast",
+     "align": "center"
+    },
+    "kva_dates": {
+     "slot": "subheadline",
+     "x": 21,
+     "y": 455,
+     "w": 342,
+     "h": 21,
+     "fontSize": 19,
+     "type": "text",
+     "text": "26 September – 11 October",
+     "align": "center"
+    },
+    "kva_credit": {
+     "slot": null,
+     "x": 373,
+     "y": 154,
+     "w": 8,
+     "h": 200,
+     "type": "image"
+    }
+   }
+  },
+  "768x1184": {
+   "method": "key-visual:anther",
+   "rejected": [],
+   "dropped": [],
+   "needsReview": false,
+   "elements": {
+    "kva_photo": {
+     "slot": "photo",
+     "x": -691,
+     "y": -5,
+     "w": 1752,
+     "h": 1191,
+     "type": "image"
+    },
+    "kva_shade_0": {
+     "slot": "scrim",
+     "x": -2,
+     "y": -2,
+     "w": 772,
+     "h": 356,
+     "type": "rect",
+     "fill": "#140d06"
+    },
+    "kva_shade_1": {
+     "slot": "scrim",
+     "x": -2,
+     "y": 708,
+     "w": 772,
+     "h": 478,
+     "type": "rect",
+     "fill": "#140d06"
+    },
+    "kva_pattern": {
+     "slot": "band",
+     "x": -344,
+     "y": 961,
+     "w": 1114,
+     "h": 223,
+     "type": "image"
+    },
+    "kva_anther": {
+     "slot": "cutout",
+     "x": -31,
+     "y": 293,
+     "w": 670,
+     "h": 669,
+     "type": "image"
+    },
+    "kva_badge": {
+     "slot": null,
+     "x": 105,
+     "y": 254,
+     "w": 157,
+     "h": 154,
+     "type": "image"
+    },
+    "kva_title": {
+     "slot": null,
+     "x": 98,
+     "y": 36,
+     "w": 571,
+     "h": 237,
+     "type": "image"
+    },
+    "kva_logo": {
+     "slot": "lockup",
+     "x": 551,
+     "y": 1087,
+     "w": 196,
+     "h": 73,
+     "type": "image"
+    },
+    "kva_strapline": {
+     "slot": null,
+     "x": 42,
+     "y": 1109,
+     "w": 467,
+     "h": 47,
+     "fontSize": 21,
+     "type": "text",
+     "text": "Tāmaki Turuki.\nAltogether Auckland.",
+     "align": "left"
+    },
+    "kva_cta": {
+     "slot": "cta",
+     "x": 207,
+     "y": 1007,
+     "w": 353,
+     "h": 46,
+     "type": "image"
+    },
+    "kva_headline": {
+     "slot": "headline",
+     "x": 42,
+     "y": 826,
+     "w": 684,
+     "h": 109,
+     "fontSize": 52,
+     "type": "text",
+     "text": "Tastes of Tāmaki\nA Heritage Feast",
+     "align": "center"
+    },
+    "kva_dates": {
+     "slot": "subheadline",
+     "x": 42,
+     "y": 944,
+     "w": 684,
+     "h": 33,
+     "fontSize": 30,
+     "type": "text",
+     "text": "26 September – 11 October",
+     "align": "center"
+    },
+    "kva_credit": {
+     "slot": null,
+     "x": 750,
+     "y": 308,
+     "w": 15,
+     "h": 400,
+     "type": "image"
+    }
+   }
+  },
+  "2688x672": {
+   "method": "key-visual:anther",
+   "rejected": [],
+   "dropped": [
+    "message",
+    "other"
+   ],
+   "needsReview": true,
+   "elements": {
+    "kva_photo": {
+     "slot": "photo",
+     "x": -3395,
+     "y": -1586,
+     "w": 6087,
+     "h": 4138,
+     "type": "image"
+    },
+    "kva_shade_0": {
+     "slot": "scrim",
+     "x": 479,
+     "y": -2,
+     "w": 2211,
+     "h": 676,
+     "type": "rect",
+     "fill": "#140d06"
+    },
+    "kva_pattern": {
+     "slot": "band",
+     "x": 1551,
+     "y": 444,
+     "w": 1139,
+     "h": 228,
+     "type": "image"
+    },
+    "kva_anther": {
+     "slot": "cutout",
+     "x": -176,
+     "y": 18,
+     "w": 836,
+     "h": 836,
+     "type": "image"
+    },
+    "kva_badge": {
+     "slot": null,
+     "x": 19,
+     "y": 19,
+     "w": 197,
+     "h": 192,
+     "type": "image"
+    },
+    "kva_title": {
+     "slot": null,
+     "x": 673,
+     "y": 34,
+     "w": 746,
+     "h": 309,
+     "type": "image"
+    },
+    "kva_headline": {
+     "slot": "headline",
+     "x": 692,
+     "y": 363,
+     "w": 1175,
+     "h": 162,
+     "fontSize": 77,
+     "type": "text",
+     "text": "Tastes of Tāmaki\nA Heritage Feast",
+     "align": "left"
+    },
+    "kva_dates": {
+     "slot": "subheadline",
+     "x": 692,
+     "y": 539,
+     "w": 1175,
+     "h": 48,
+     "fontSize": 44,
+     "type": "text",
+     "text": "26 September – 11 October",
+     "align": "left"
+    },
+    "kva_cta": {
+     "slot": "cta",
+     "x": 1964,
+     "y": 134,
+     "w": 687,
+     "h": 90,
+     "type": "image"
+    },
+    "kva_logo": {
+     "slot": "lockup",
+     "x": 2122,
+     "y": 416,
+     "w": 537,
+     "h": 202,
+     "type": "image"
+    }
+   }
+  },
+  "1200x627": {
+   "method": "key-visual:anther",
+   "rejected": [],
+   "dropped": [
+    "other"
+   ],
+   "needsReview": true,
+   "elements": {
+    "kva_photo": {
+     "slot": "photo",
+     "x": -1104,
+     "y": -414,
+     "w": 2306,
+     "h": 1568,
+     "type": "image"
+    },
+    "kva_shade_0": {
+     "slot": "scrim",
+     "x": 449,
+     "y": -2,
+     "w": 753,
+     "h": 631,
+     "type": "rect",
+     "fill": "#140d06"
+    },
+    "kva_shade_1": {
+     "slot": "scrim",
+     "x": -2,
+     "y": 451,
+     "w": 1204,
+     "h": 178,
+     "type": "rect",
+     "fill": "#140d06"
+    },
+    "kva_pattern": {
+     "slot": "band",
+     "x": 513,
+     "y": 489,
+     "w": 689,
+     "h": 138,
+     "type": "image"
+    },
+    "kva_anther": {
+     "slot": "cutout",
+     "x": -171,
+     "y": 18,
+     "w": 778,
+     "h": 778,
+     "type": "image"
+    },
+    "kva_badge": {
+     "slot": null,
+     "x": 17,
+     "y": 17,
+     "w": 183,
+     "h": 179,
+     "type": "image"
+    },
+    "kva_logo": {
+     "slot": "lockup",
+     "x": 991,
+     "y": 533,
+     "w": 192,
+     "h": 72,
+     "type": "image"
+    },
+    "kva_strapline": {
+     "slot": null,
+     "x": 631,
+     "y": 559,
+     "w": 326,
+     "h": 43,
+     "fontSize": 19,
+     "type": "text",
+     "text": "Tāmaki Turuki.\nAltogether Auckland.",
+     "align": "left"
+    },
+    "kva_title": {
+     "slot": null,
+     "x": 614,
+     "y": 25,
+     "w": 484,
+     "h": 201,
+     "type": "image"
+    },
+    "kva_headline": {
+     "slot": "headline",
+     "x": 631,
+     "y": 269,
+     "w": 535,
+     "h": 105,
+     "fontSize": 50,
+     "type": "text",
+     "text": "Tastes of Tāmaki\nA Heritage Feast",
+     "align": "left"
+    },
+    "kva_dates": {
+     "slot": "subheadline",
+     "x": 631,
+     "y": 383,
+     "w": 535,
+     "h": 32,
+     "fontSize": 29,
+     "type": "text",
+     "text": "26 September – 11 October",
+     "align": "left"
+    },
+    "kva_cta": {
+     "slot": "cta",
+     "x": 631,
+     "y": 437,
+     "w": 396,
+     "h": 52,
+     "type": "image"
+    }
+   }
+  }
+ }
+}
