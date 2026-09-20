@@ -313,3 +313,36 @@ DV360 files (only 300×600 + 970×250; yellow LEARN MORE 181×43).
   box, before it may wrap (it clipped to "Make a plan" on the 300px panel).
   Baseline lesson: `Math.max(w, cap)` on the lockup removed the class width
   cap for every build — caught on 1920×1080 before shipping.
+
+## Reading the master's structure (2026-09-20)
+
+Audit finding: the recipes assumed every campaign is built like Get Ready
+(heading over the photograph). On the council's standard brand layout the
+heading sits on the colour ground with the photo cut to the anther shape;
+forcing it onto the photo put dark type on a dark picture — 7 of 8 sizes
+rejected for contrast. The recomposer now reads the structure:
+
+- `copyOnGround`: the master's heading does not sit on the photo (for a
+  SHAPED photo, "on it" means inside the middle of its box). The heading and
+  sub-line then join the panel stack; tall layouts whose master sets the
+  heading above the picture keep a header zone on top (guidelines p.16). No
+  scrim is drawn; the photo gives up some room to the panel.
+- `photoShaped`: real transparency (≥10% clear, ≥2 clear corners — a few
+  soft edge pixels do not count: the Flood illustration is a rectangle). A
+  shaped photo is fitted whole (`contain`), never cover-cropped.
+- Copy sized from a squeezed heading never falls under 60% of its master
+  share of the short side — ONLY in `copyOnGround` builds (a share of the
+  short side is not comparable between a 960×256 and a 300×600; applying it
+  everywhere moved Get Ready wide-master builds — caught by the baseline).
+- Towers with the brand tile: tile bottom-centre at half the width
+  (guidelines p.15), nothing reserved sideways. Stack items that end above
+  the corner tile are centred on the whole panel.
+
+Audit 2026-09-20 (8-size rollout per master, clean / review / rejected):
+Get Ready 1.0pt mean gap vs real files, baseline identical · Flood 6/2/0 ·
+AC Brand portrait 5/2/1 (was 1/0/7) · landscape 5/2/1 (was 1/0/7) ·
+billboard 5/1/2 (was 2/0/6) · layered image-only 6/1/1 · Heritage Festival
+key visual 0/1/7 (unsupported style; correctly rejected, not shipped).
+Known gaps: strips on ground-heading layouts (contrast), 1080×1080 from the
+portrait brand master still crops the anther, key-visual styles.
+`tools/baseline` now also locks Flood and the three AC Brand masters.

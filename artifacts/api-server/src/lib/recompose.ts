@@ -51,6 +51,8 @@ export interface RecomposeOptions {
   formatClass?: FormatClass;
   /** The campaign's part rules (lib/partRulesLayer.ts): floors, drops, pins. */
   rules?: RuleLayer;
+  /** Test hook: whether an image is cut to a shape (real transparency). */
+  imageIsShaped?: (src: string) => Promise<boolean>;
   /**
    * The campaign's ONLINE call-to-action, when this size runs as a display
    * banner and the master carries the out-of-home one. Online a banner is
@@ -122,6 +124,37 @@ async function defaultImageSize(src: string): Promise<{ w: number; h: number } |
   }
   sizeCache.set(src, out);
   return out;
+}
+
+const shapedCache = new Map<string, boolean>();
+/** True when an image has REAL transparency — a photo already cut to a shape
+ *  (the council's anther: a circle on a stem), not a rectangle of pixels. */
+async function defaultImageIsShaped(src: string): Promise<boolean> {
+  if (shapedCache.has(src)) return shapedCache.get(src) ?? false;
+  let shaped = false;
+  try {
+    const objectPath = src.replace(/^\/api\/storage/, "");
+    const file = await storage.getObjectEntityFile(objectPath);
+    const response = await storage.downloadObject(file);
+    const img = sharp(Buffer.from(await response.arrayBuffer()), { failOn: "none" });
+    const meta = await img.metadata();
+    if (meta.hasAlpha) {
+      // A few soft edge pixels do not make a shape (the Flood illustration is
+      // a plain rectangle with an alpha channel). A shape leaves a real share
+      // of its box empty, corners first.
+      const N = 48;
+      const { data } = await img.resize(N, N, { fit: "fill" }).ensureAlpha().raw().toBuffer({ resolveWithObject: true });
+      let clear = 0;
+      for (let i = 3; i < data.length; i += 4) if (data[i] < 40) clear++;
+      const a = (x: number, y: number) => data[(y * N + x) * 4 + 3];
+      const corners = [a(1, 1), a(N - 2, 1), a(1, N - 2), a(N - 2, N - 2)].filter((v) => v < 40).length;
+      shaped = clear / (N * N) >= 0.1 && corners >= 2;
+    }
+  } catch {
+    shaped = false;
+  }
+  shapedCache.set(src, shaped);
+  return shaped;
 }
 
 // ---------------------------------------------------------------------------
@@ -361,19 +394,46 @@ export async function recomposeToFormat(
   const hasPhoto = !!(sem.photo && sem.photo.src && keep.has("photo"));
   const hasBand = !!(sem.band && sem.band.src && keep.has("band") && recipe.bandAt !== "none" && rules?.pin("band") !== "none");
 
+  // ---- Structure read off the master -----------------------------------------
+  // Not every campaign sets its heading over the photograph. The council's
+  // standard brand layout sets it on the colour ground, with the photo cut to
+  // the anther shape beside or below it. Forcing that copy onto the photo
+  // put dark type on a dark picture (rejected for contrast on every size).
+  // So: copy that sits on the ground in the master stays on the ground.
+  const photoShaped = hasPhoto && sem.photo?.src ? await (opts.imageIsShaped ?? defaultImageIsShaped)(sem.photo.src as string) : false;
+  const sitsOnPhoto = (t: { x: number; y: number; w: number; h: number } | null | undefined): boolean => {
+    const pb = sem.photoBox;
+    if (!t || !pb) return false;
+    const cx = t.x + t.w / 2, cy = t.y + t.h / 2;
+    if (cx < pb.x || cx > pb.x + pb.w || cy < pb.y || cy > pb.y + pb.h) return false;
+    if (!photoShaped) return true;
+    // A shaped photo only covers the middle of its box.
+    const nx = (cx - (pb.x + pb.w / 2)) / (pb.w / 2), ny = (cy - (pb.y + pb.h / 2)) / (pb.h / 2);
+    return nx * nx + ny * ny <= 0.49;
+  };
+  const copyOnGround = recipe.axis !== "row" && hasPhoto && !!sem.headline && !sitsOnPhoto(sem.headline);
+  // Tall layouts whose master sets the heading ABOVE the photo keep it there
+  // (brand guidelines p.16: heading, picture, message, button).
+  const headerOnTop = copyOnGround && recipe.axis === "stacked" && !!sem.photoBox && !!sem.headline
+    && sem.headline.y + sem.headline.h <= sem.photoBox.y + sem.photoBox.h * 0.15
+    && Math.min(sem.headline.x + sem.headline.w, sem.photoBox.x + sem.photoBox.w) - Math.max(sem.headline.x, sem.photoBox.x) > sem.headline.w * 0.5;
+  const headerH = headerOnTop ? r(dstH * clamp((sem.photoBox as Box).y / Math.max(1, srcH) + 0.02, 0.12, 0.24)) : 0;
+  if (copyOnGround) notes.push(headerOnTop ? "Heading kept on the colour ground above the picture, as the master sets it." : "Heading kept on the colour ground with the copy, as the master sets it — not over the picture.");
+
   // ---- Zones ---------------------------------------------------------------
   let photoZone: Box;
   let bandZone: Box | null = null;
   let panelZone: Box;
   let tileZone: Box | null = null; // strip: full-height logo tile on the right
   if (recipe.axis === "stacked") {
-    const ph = r(dstH * recipe.photoFrac);
+    // Copy on the ground needs the panel's room: the picture gives some up.
+    const ph = r(dstH * (copyOnGround && !headerOnTop ? Math.min(recipe.photoFrac, 0.42) : recipe.photoFrac));
     const bh = hasBand ? Math.max(4, r(dstH * recipe.bandFrac)) : 0;
-    photoZone = { x: 0, y: 0, w: dstW, h: ph };
+    photoZone = { x: 0, y: headerH, w: dstW, h: ph - headerH };
     if (hasBand) bandZone = { x: 0, y: ph, w: dstW, h: bh };
     panelZone = { x: 0, y: ph + bh, w: dstW, h: dstH - ph - bh };
   } else if (recipe.axis === "side") {
-    const pw = r(dstW * recipe.photoFrac);
+    const pw = r(dstW * (copyOnGround ? Math.min(recipe.photoFrac, 0.48) : recipe.photoFrac));
     const bh = hasBand ? clamp(r(dstH * recipe.bandFrac), 4, r(dstH * 0.2)) : 0;
     photoZone = { x: 0, y: 0, w: pw, h: dstH };
     if (hasBand) bandZone = { x: pw, y: 0, w: dstW - pw, h: bh };
@@ -414,7 +474,15 @@ export async function recomposeToFormat(
     const target = inferred ? { x: 0.5, y: 0.82 } : recipe.axis === "stacked" ? { x: 0.5, y: 0.55 } : { x: 0.5, y: 0.5 };
     if (inferred) notes.push("Photo crop keeps the part of the picture the master leaves clear under the copy.");
     const subjectBox = photo.focusSource === "vision" || photo.focusSource === "designer" ? photo.focusBox ?? null : null;
-    const placed = coverPlace(photoZone, natural.w, natural.h, focus, recipe.photoOversize, target, subjectBox);
+    // A photo cut to a shape is shown whole (a cover crop slices the anther
+    // in half); a rectangle of pixels covers its zone as before.
+    const placed = photoShaped
+      ? (() => {
+          const k = Math.min(photoZone.w / natural.w, photoZone.h / natural.h) * 0.96;
+          const w = r(natural.w * k), h = r(natural.h * k);
+          return { x: photoZone.x + r((photoZone.w - w) / 2), y: photoZone.y + r((photoZone.h - h) / 2), w, h };
+        })()
+      : coverPlace(photoZone, natural.w, natural.h, focus, recipe.photoOversize, target, subjectBox);
     if (subjectBox && photo.subject) {
       const fits = subjectBox.w * placed.w <= photoZone.w + 0.5 && subjectBox.h * placed.h <= photoZone.h + 0.5;
       notes.push(fits ? `Photo window keeps ${photo.subject} whole.` : `Check: ${photo.subject} is larger than this photo window; the crop is centred on it.`);
@@ -424,7 +492,7 @@ export async function recomposeToFormat(
       id: "rc_photo",
       slot: "photo",
       role: "product",
-      fit: "cover",
+      fit: photoShaped ? "contain" : "cover",
       ...placed,
       locked: false,
     } as FreeformImage);
@@ -436,7 +504,9 @@ export async function recomposeToFormat(
   // Strips keep the scrim: their heading sits on a sliver of the photograph
   // and, with no shipped strip to go by, legibility wins (Quakes 728×90 read
   // at 2.7:1 without it).
-  if (hasPhoto && sem.headline && keep.has("headline") && look?.scrim === false && recipe.axis !== "row") {
+  if (copyOnGround) {
+    // No copy on the picture: nothing for a scrim to do.
+  } else if (hasPhoto && sem.headline && keep.has("headline") && look?.scrim === false && recipe.axis !== "row") {
     notes.push("Online size: no scrim over the photograph, as on the campaign's shipped display banners.");
   } else if (hasPhoto && sem.headline && keep.has("headline")) {
     const ms = sem.scrim;
@@ -568,7 +638,9 @@ export async function recomposeToFormat(
       recipeFloorPx: recipe.ctaFloorPx,
       comfortLabelPx: COMFORT_LABEL_PX,
     });
-    const targetH = pill.h;
+    // Same guard for the pill: never under 60% of its master share of the short side.
+    const pillGroundFloor = copyOnGround ? Math.min((cta.h / Math.max(1, Math.min(srcW, srcH))) * short * 0.6, (headlinePx ?? short * 0.12) * 0.6) : 0;
+    const targetH = Math.min(maxH, Math.max(pill.h, pillGroundFloor));
     if (!sem.ctaLabel) {
       // A pill with no live label keeps the master's proportions.
       const aspect = cta.w / Math.max(1, cta.h) || 4;
@@ -603,7 +675,42 @@ export async function recomposeToFormat(
 
   // ---- 7. Headline (+ sub-headline) ----------------------------------------------------------
   const copyZone: Box = recipe.axis === "row" ? panelZone : photoZone;
-  if (sem.headline && keep.has("headline")) {
+  type GroundItem = { kind: "copy"; w: number; h: number; build: (x: number, y: number) => FreeformElement[] };
+  const groundCopy: GroundItem[] = [];
+  let groundHeadlinePx: number | null = null;
+  if (copyOnGround && sem.headline && keep.has("headline")) {
+    const hl = sem.headline;
+    const text = hl.text.replace(/\s+/g, " ").trim();
+    const zone: Box = headerOnTop ? { x: 0, y: 0, w: dstW, h: headerH } : panelZone;
+    const w = r(zone.w - margin * 2);
+    const maxH = headerOnTop ? zone.h - margin * 1.2 : zone.h * 0.34;
+    const fit = fitText(text, { w: w * 0.96, h: maxH }, { ...fontSpec(hl), minSize: headlineMin, maxSize: Math.max(headlineMin, maxH), lineHeight: 1.02, maxLines: headerOnTop ? 2 : 3 });
+    if (!fit.fits) { notes.push("Heading shrank to the floor size and still overflows — shorten the copy."); needsReview = true; }
+    groundHeadlinePx = fit.fontSize;
+    const cap = fit.lines.length === 1;
+    const h = cap ? Math.max(1, r(capHeightPx(fontSpec(hl), fit.fontSize))) : r(fit.height);
+    const sub = sem.subheadline && keep.has("subheadline") ? sem.subheadline : null;
+    let subFit: ReturnType<typeof fitText> | null = null;
+    if (sub) {
+      const ratio = ovAll.subheadRatio ?? clamp(sub.fontSize / Math.max(1, hl.fontSize), 0.15, 0.6);
+      const subMax = Math.max(sublineMin, r(fit.fontSize * ratio));
+      subFit = fitText(sub.text.replace(/\s+/g, " ").trim(), { w: w * 0.96, h: subMax * 2.4 }, { ...fontSpec(sub), minSize: sublineMin, maxSize: subMax, lineHeight: 1.1, maxLines: 2 });
+      if (!subFit.fits) { subFit = null; drop("subheadline", "Sub-headline dropped: no legible room under the heading.", rules?.drop("subheadline") === true); }
+    }
+    const subH = subFit ? r(subFit.height) : 0;
+    const gap = subFit ? r(fit.fontSize * 0.14) : 0;
+    const buildCopy = (x: number, y: number): FreeformElement[] => {
+      const out: FreeformElement[] = [textEl("rc_headline", "headline", "headline", hl, { x, y, w, h }, fit.fontSize, fit.lines.join("\n"), "center", 1.02, cap ? { baselineFit: "cap" } : {})];
+      if (subFit && sub) out.push(textEl("rc_subheadline", "subheadline", "subhead", sub, { x, y: y + h + gap, w, h: subH }, subFit.fontSize, subFit.lines.join("\n"), "center", 1.1));
+      return out;
+    };
+    // The picture may overflow its zone upwards (cover crops are oversized);
+    // the header wears the ground colour over it.
+    if (headerOnTop) elements.push({ id: "rc_header_ground", type: "rect", slot: "panel", fill: panelFill, x: 0, y: 0, w: dstW, h: headerH, locked: true } as FreeformRect);
+    if (headerOnTop) elements.push(...buildCopy(r((dstW - w) / 2), r((headerH - (h + gap + subH)) / 2) + r(margin * 0.3)));
+    else groundCopy.push({ kind: "copy", w, h: h + gap + subH, build: buildCopy });
+    if (sem.kicker) drop("kicker", "Kicker line left out: the heading sits on the colour ground here.", true);
+  } else if (sem.headline && keep.has("headline")) {
     const hl = sem.headline;
     const rawText = hl.text.replace(/\s+/g, " ").trim();
     const words = rawText.split(" ").filter(Boolean);
@@ -730,9 +837,9 @@ export async function recomposeToFormat(
   }
 
   // ---- 8. Panel contents: message, CTA, lockup ---------------------------------------------
-  type Item = { kind: "message" | "cta" | "lockup"; w: number; h: number; build: (x: number, y: number) => FreeformElement[] };
-  const items: Item[] = [];
-  const headlineSize = (elements.find((e) => e.id === "rc_headline") as FreeformText | undefined)?.fontSize ?? r(short * 0.12);
+  type Item = { kind: "message" | "cta" | "lockup" | "copy"; w: number; h: number; build: (x: number, y: number) => FreeformElement[] };
+  const items: Item[] = [...groundCopy];
+  const headlineSize = groundHeadlinePx ?? (elements.find((e) => e.id === "rc_headline") as FreeformText | undefined)?.fontSize ?? r(short * 0.12);
 
   if (recipe.axis !== "row" && sem.message && keep.has("message")) {
     const msg = sem.message;
@@ -741,7 +848,15 @@ export async function recomposeToFormat(
     // A tower's heading is small (one word across 160px), so a message set
     // from it is tiny. The guidelines' own 160×600 sets the message large,
     // over several lines: a tenth of the width, wrapped.
-    const maxSize = Math.max(messageMin, r(headlineSize * msgRatio), formatClass === "tower" ? r(dstW * 0.1) : 0);
+    // When the heading has had to shrink (set on the ground in a narrow
+    // column), copy sized from it shrinks out of sight. It never falls under
+    // 60% of the share of the short side it holds in the master.
+    const masterMsgShare = msg.fontSize / Math.max(1, Math.min(srcW, srcH));
+    // Only where the heading really was squeezed (copy on the ground), and
+    // never past half the heading: a share of the short side is not the same
+    // thing on a 960×256 as on a 300×600, so it is no rule for other builds.
+    const groundFloor = copyOnGround ? Math.min(r(short * masterMsgShare * 0.6), r(headlineSize * 0.5)) : 0;
+    const maxSize = Math.max(messageMin, r(headlineSize * msgRatio), groundFloor, formatClass === "tower" ? r(dstW * 0.1) : 0);
     const w = r(panelZone.w * 0.85);
     const msgLines = formatClass === "tower" ? 3 : 2;
     // One line first (every master sets the message on one line): it gives
@@ -751,7 +866,8 @@ export async function recomposeToFormat(
     // Fitted to 94% of its box: the renderer wraps a line that meets its box
     // to the pixel ("Make a plan" with "today." pushed out of a cap-height
     // frame), so a one-line fit always leaves slack.
-    const oneLine = formatClass === "tower" ? null : fitText(text, { w: w * 0.94, h: maxSize * 1.4 }, { ...fontSpec(msg), minSize: messageMin, maxSize, lineHeight: 1.15, maxLines: 1 });
+    const shortMessage = text.length <= 24;
+    const oneLine = formatClass === "tower" || !shortMessage ? null : fitText(text, { w: w * 0.94, h: maxSize * 1.4 }, { ...fontSpec(msg), minSize: messageMin, maxSize, lineHeight: 1.15, maxLines: 1 });
     const fit = oneLine?.fits ? oneLine : fitText(text, { w, h: maxSize * (msgLines + 0.5) }, { ...fontSpec(msg), minSize: messageMin, maxSize, lineHeight: 1.15, maxLines: msgLines });
     if (fit.fits) {
       const cap = fit.lines.length === 1;
@@ -763,7 +879,7 @@ export async function recomposeToFormat(
   }
 
   const builtHeadline = elements.find((e) => e.id === "rc_headline") as FreeformText | undefined;
-  const ctaPlan = ctaPlanned(builtHeadline?.fontSize);
+  const ctaPlan = ctaPlanned(groundHeadlinePx ?? builtHeadline?.fontSize);
   if (sem.cta && ctaPlan) {
     const cta = sem.cta;
     const ctaW = ctaPlan.w;
@@ -872,7 +988,13 @@ export async function recomposeToFormat(
     // decided after the drops below (it used to be computed before the
     // lockup could be dropped, leaving neither lockup nor tile).
     const wantsTileNow = () => !items.some((i) => i.kind === "lockup") && !!opts.brand.logoUrl && !social && keep.has("lockup");
-    const tileReserve = wantsTileNow() ? (guidelineLogoPlacement(dstW, dstH)?.tile.w ?? 0) : 0;
+    // Towers: the tile sits bottom-CENTRE at one grid square (half the
+    // width — guidelines p.15), under the stack, so nothing is reserved
+    // sideways. Reserving a corner left a 160px column ~70px for the pill,
+    // which then hung off the canvas.
+    const towerTile = formatClass === "tower" && wantsTileNow() ? r(dstW / 2) : 0;
+    const tileReserve = towerTile ? 0 : wantsTileNow() ? (guidelineLogoPlacement(dstW, dstH)?.tile.w ?? 0) : 0;
+    if (towerTile) panelZone = { ...panelZone, h: Math.max(40, panelZone.h - towerTile) };
     const inner = panelZone.h - r(margin * 1.5);
     // Message → pill gap measured on the masters: 21px under a 29px message
     // (wide), 14px under 26px (portrait) — about 0.6 of the message size now
@@ -894,6 +1016,15 @@ export async function recomposeToFormat(
     }
     const wantsTile = wantsTileNow();
     const stackW = Math.max(1, panelZone.w - (tileReserve ? tileReserve + margin : 0));
+    // The corner tile only takes room from what sits beside it. An item that
+    // ends above the tile is centred on the whole panel — centring a wide
+    // message in the narrowed column pushed it off the canvas edge.
+    const tileTop = tileReserve ? dstH - (guidelineLogoPlacement(dstW, dstH)?.tile.h ?? 0) : Infinity;
+    const xFor = (item: { w: number; h: number }, y: number) => {
+      const clearOfTile = y + item.h <= tileTop - 2;
+      const room = clearOfTile ? panelZone.w : stackW;
+      return panelZone.x + Math.max(2, r((room - item.w) / 2));
+    };
     // Shipped OOH puts the message + pill in the upper part of the panel and
     // the lockup at the bottom. A centred stack reproduces that on a short
     // panel, but on a tall one (2160×3840) it left the lockup floating mid-
@@ -912,20 +1043,22 @@ export async function recomposeToFormat(
       const groupFrac = recipe.axis === "side" ? 0.6 : 0.54;
       let y = r(clamp(panelZone.y + (lockupY - panelZone.y) * groupFrac - restH / 2, panelZone.y + Math.max(4, r(margin * 0.5)), lockupY - restH - gap));
       for (const item of rest) {
-        elements.push(...item.build(panelZone.x + r((stackW - item.w) / 2), y));
+        elements.push(...item.build(xFor(item, y), y));
         y += item.h + gap;
       }
-      elements.push(...lockupItem.build(panelZone.x + r((stackW - lockupItem.w) / 2), lockupY));
+      elements.push(...lockupItem.build(xFor(lockupItem, lockupY), lockupY));
     } else {
       let y = panelZone.y + r((panelZone.h - total()) / 2);
       for (const item of items) {
-        const x = panelZone.x + r((stackW - item.w) / 2);
+        const x = xFor(item, y);
         elements.push(...item.build(x, y));
         y += item.h + gap;
       }
     }
     // No lockup in the panel: the brand tile goes bottom-right per the guidelines.
-    if (wantsTile) {
+    if (wantsTile && towerTile) {
+      elements.push({ id: "rc_logo", type: "image", slot: "logo", role: "logo", src: opts.brand.logoUrl, fit: "contain", x: r((dstW - towerTile) / 2), y: dstH - towerTile, w: towerTile, h: towerTile, locked: true } as FreeformImage);
+    } else if (wantsTile) {
       const placement = guidelineLogoPlacement(dstW, dstH);
       if (placement) {
         elements.push({ id: "rc_logo", type: "image", slot: "logo", role: "logo", src: opts.brand.logoUrl, fit: "contain", ...placement.tile, locked: true } as FreeformImage);
