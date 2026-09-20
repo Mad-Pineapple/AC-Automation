@@ -30,3 +30,27 @@ It must really be a circle on a stem (≥95% of the circle solid, the circle
 ≥72% of the shape). `placeAnther` sizes and places it; `checkAnther` in the
 gate rejects a cropped or covered anther from any engine. Where the anther is
 whole but small in a wide zone the piece is flagged for review.
+
+## The anther layout (how sizes are composed)
+
+Used when the master houses its picture in an anther and sets the heading on
+the colour ground (the council's standard brand layout). Built to guidelines
+pp. 15–16 and 28–31, not to a campaign recipe:
+
+- **Tall and tower sizes:** heading across the top ("clear space to run
+  headline copy above the shape"), anther centred, circle margin to margin
+  (margin = half the tile) up to 46% of the height, then the body copy and the
+  pill, then the bottom row.
+- **Square sizes:** heading across the top; anther lower-left in 60% of the
+  width; body copy and pill beside it, lined up with the circle's centre.
+- **Landscape and wide sizes:** anther on the left in a zone about as wide as
+  the canvas is tall; heading, body copy and pill in the column beside it.
+- **Strips:** anther whole at the left, heading and pill in the panel, tile
+  full height at the right.
+- **Bottom row:** kotahitanga pattern to the left of the pōhutukawa tile at
+  the tile's height (never under it); on towers the tile sits bottom-centre
+  at half the width with the pattern above it. Social squares carry no tile.
+- **Copy:** the designer's own line breaks in the body copy are kept when
+  they fit; heading, body and pill keep the master's proportions to each
+  other (pill = master pill ÷ heading × the heading as built; label cap
+  height centred).

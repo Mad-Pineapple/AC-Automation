@@ -66,7 +66,7 @@
      "h": 46,
      "fontSize": 20,
      "type": "text",
-     "text": "Don't rely on past storms — check your actual\nflood risk.",
+     "text": "Don't rely on past storms — check your\nactual flood risk.",
      "align": "center"
     },
     "rc_cta": {
@@ -622,10 +622,10 @@
     "rc_message": {
      "slot": "message",
      "x": 12,
-     "y": 355,
+     "y": 358,
      "w": 136,
-     "h": 48,
-     "fontSize": 14,
+     "h": 45,
+     "fontSize": 13,
      "type": "text",
      "text": "Don't rely on past\nstorms — check your\nactual flood risk.",
      "align": "center"
@@ -633,7 +633,7 @@
     "rc_cta": {
      "slot": "cta",
      "x": 6,
-     "y": 439,
+     "y": 437,
      "w": 148,
      "h": 26,
      "type": "rect",
@@ -643,7 +643,7 @@
     "rc_cta_label": {
      "slot": "ctaLabel",
      "x": 18,
-     "y": 447.5,
+     "y": 445.5,
      "w": 124,
      "h": 9,
      "fontSize": 13,
@@ -749,10 +749,12 @@
    }
   },
   "1080x1080": {
-   "method": "scaled",
+   "method": "recomposed:square",
    "rejected": [],
-   "dropped": [],
-   "needsReview": false,
+   "dropped": [
+    "logo"
+   ],
+   "needsReview": true,
    "elements": {
     "rc_panel": {
      "slot": "panel",
@@ -765,10 +767,10 @@
     },
     "rc_photo": {
      "slot": "photo",
-     "x": 0,
-     "y": 0,
-     "w": 1080,
-     "h": 680,
+     "x": -127,
+     "y": -32,
+     "w": 1334,
+     "h": 750,
      "type": "image"
     },
     "rc_scrim": {
@@ -776,70 +778,62 @@
      "x": 0,
      "y": 0,
      "w": 1080,
-     "h": 374,
+     "h": 369,
      "type": "rect",
      "fill": "#11263d"
     },
     "rc_panel_zone": {
      "slot": "panel",
      "x": 0,
-     "y": 596,
+     "y": 670,
      "w": 1080,
-     "h": 484,
+     "h": 410,
      "type": "rect",
      "fill": "#11263d"
     },
     "rc_headline": {
      "slot": "headline",
-     "x": 133,
-     "y": 194,
-     "w": 842,
-     "h": 148,
-     "fontSize": 72,
+     "x": 86,
+     "y": 184,
+     "w": 907,
+     "h": 186,
+     "fontSize": 91,
      "type": "text",
      "text": "FROM ASSUMPTIONS\nTO ACTION",
      "align": "center"
     },
     "rc_message": {
      "slot": "message",
-     "x": -22,
-     "y": 739,
-     "w": 946,
-     "h": 43,
-     "fontSize": 36,
+     "x": 81,
+     "y": 757,
+     "w": 918,
+     "h": 106,
+     "fontSize": 46,
      "type": "text",
-     "text": "Don't rely on past storms — check your actual flood risk.",
+     "text": "Don't rely on past storms — check your\nactual flood risk.",
      "align": "center"
     },
     "rc_cta": {
      "slot": "cta",
-     "x": 155,
-     "y": 831,
-     "w": 569,
-     "h": 101,
+     "x": 310,
+     "y": 911,
+     "w": 461,
+     "h": 82,
      "type": "rect",
      "fill": "#0073bd",
-     "radius": 14
+     "radius": 41
     },
     "rc_cta_label": {
      "slot": "ctaLabel",
-     "x": 202,
-     "y": 864.5,
-     "w": 489,
-     "h": 34,
-     "fontSize": 50,
+     "x": 348,
+     "y": 938,
+     "w": 385,
+     "h": 28,
+     "fontSize": 41,
      "type": "text",
      "text": "Search flood viewer",
      "baselineFit": "cap",
      "align": "center"
-    },
-    "rc_logo": {
-     "slot": "logo",
-     "x": 929,
-     "y": 929,
-     "w": 151,
-     "h": 151,
-     "type": "image"
     }
    }
   },
@@ -1093,7 +1087,7 @@
      "h": 44,
      "fontSize": 19,
      "type": "text",
-     "text": "Don't rely on past storms — check your actual\nflood risk.",
+     "text": "Don't rely on past storms — check your\nactual flood risk.",
      "align": "center"
     },
     "rc_cta": {
@@ -1378,7 +1372,7 @@
      "h": 124,
      "fontSize": 54,
      "type": "text",
-     "text": "Don't rely on past storms — check your actual\nflood risk.",
+     "text": "Don't rely on past storms — check your\nactual flood risk.",
      "align": "center"
     },
     "rc_cta": {

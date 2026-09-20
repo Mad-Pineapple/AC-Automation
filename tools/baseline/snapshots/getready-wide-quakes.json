@@ -8,14 +8,7 @@
  "sizes": {
   "970x250": {
    "method": "scaled",
-   "rejected": [
-    "The sub-line is missing.",
-    "The message line is missing.",
-    "The call-to-action is missing.",
-    "The pattern band is missing.",
-    "The photograph is missing.",
-    "The logo tile / lockup is missing."
-   ],
+   "rejected": [],
    "dropped": [],
    "needsReview": false,
    "elements": {
@@ -1695,14 +1688,7 @@
   },
   "2688x672": {
    "method": "scaled",
-   "rejected": [
-    "The sub-line is missing.",
-    "The message line is missing.",
-    "The call-to-action is missing.",
-    "The pattern band is missing.",
-    "The photograph is missing.",
-    "The logo tile / lockup is missing."
-   ],
+   "rejected": [],
    "dropped": [],
    "needsReview": false,
    "elements": {

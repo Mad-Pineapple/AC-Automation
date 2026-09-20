@@ -166,15 +166,28 @@ export function checkMandatory(master: FreeformConfig, adapted: FreeformConfig, 
     ["cutout", sem.cutouts.length > 0],
     ["photo", !!sem.photo],
   ];
+  // Copy is judged by its WORDS: a line the master's slots call a sub-line may
+  // be carried as the message (body copy under an anther) — it is there.
+  const norm = (t: string | undefined) => (t ?? "").replace(/\s+/g, " ").trim().toLowerCase();
+  const adaptedCopy = adapted.elements.filter((e) => e.type === "text").map((e) => norm((e as { text?: string }).text));
+  const carried = (el: { text?: string } | null | undefined) => !!el && !!norm(el.text) && adaptedCopy.includes(norm(el.text));
+  // A scaled build carries no slot tags (it is the master's own layers,
+  // resized). Read it the way the master is read, or every part looks
+  // "missing" and a faithful same-shape size is marked REJECTED.
+  const semOut = inferSlots(adapted, width, height);
+  const inOutput = (slot: string): boolean =>
+    present(adapted, slot) ||
+    (slot === "cutout" ? semOut.cutouts.length > 0 : !!(semOut as unknown as Record<string, unknown>)[slot]);
   for (const [slot, had] of required) {
-    if (!had || present(adapted, slot)) continue;
+    if (!had || inOutput(slot)) continue;
+    if ((slot === "subheadline" && carried(sem.subheadline)) || (slot === "message" && carried(sem.message)) || (slot === "kicker" && carried(sem.kicker))) continue;
     if (isStrip && ["message", "subheadline", "kicker", "band", "cutout"].includes(slot)) continue;
     if (dropAllowed(slot)) continue;
     const entry = droppedParts.find((d) => d.slot === slot);
     reasons.push(entry ? `The ${NAMES[slot] ?? slot} was dropped (${entry.reason.replace(/\.$/, "")}) and no rule allows that.` : `The ${NAMES[slot] ?? slot} is missing.`);
   }
   const hadLogo = !!(sem.lockup || sem.logo) || present(master, "logo") || present(master, "lockup");
-  const hasLogo = present(adapted, "logo") || present(adapted, "lockup");
+  const hasLogo = present(adapted, "logo") || present(adapted, "lockup") || !!semOut.logo || !!semOut.lockup;
   if (hadLogo && !hasLogo && !dropAllowed("lockup") && !dropAllowed("logo")) reasons.push("The logo tile / lockup is missing.");
 
   const logoMin = Math.max(24, Math.round(short / 8));

@@ -23,16 +23,24 @@
     },
     "rc_panel_zone": {
      "slot": "panel",
-     "x": 466,
+     "x": 291,
      "y": 0,
-     "w": 504,
-     "h": 250,
+     "w": 679,
+     "h": 208,
      "type": "rect",
      "fill": "#81dbe5"
     },
+    "rc_pattern": {
+     "slot": "band",
+     "x": 733,
+     "y": 208,
+     "w": 195,
+     "h": 42,
+     "type": "image"
+    },
     "rc_photo": {
      "slot": "photo",
-     "x": 115,
+     "x": 28,
      "y": 10,
      "w": 238,
      "h": 260,
@@ -40,31 +48,31 @@
     },
     "rc_headline": {
      "slot": "headline",
-     "x": 479,
-     "y": 34,
-     "w": 478,
-     "h": 55,
-     "fontSize": 83,
+     "x": 304,
+     "y": 31,
+     "w": 653,
+     "h": 46,
+     "fontSize": 69,
      "type": "text",
      "text": "HEADLINE",
      "baselineFit": "cap",
      "align": "center"
     },
-    "rc_subheadline": {
-     "slot": "subheadline",
-     "x": 479,
-     "y": 101,
-     "w": 478,
-     "h": 22,
-     "fontSize": 20,
+    "rc_message": {
+     "slot": "message",
+     "x": 342,
+     "y": 106,
+     "w": 577,
+     "h": 39,
+     "fontSize": 17,
      "type": "text",
-     "text": "Body copy here. Body copy, body copy.",
+     "text": "Body copy here.\nBody copy, body copy.",
      "align": "center"
     },
     "rc_cta": {
      "slot": "cta",
-     "x": 633,
-     "y": 141,
+     "x": 546,
+     "y": 174,
      "w": 170,
      "h": 27,
      "type": "rect",
@@ -73,8 +81,8 @@
     },
     "rc_cta_label": {
      "slot": "ctaLabel",
-     "x": 643,
-     "y": 148,
+     "x": 556,
+     "y": 181,
      "w": 135,
      "h": 13,
      "fontSize": 18,
@@ -85,18 +93,18 @@
     },
     "rc_cta_icon": {
      "slot": "ctaIcon",
-     "x": 780,
-     "y": 144.5,
+     "x": 693,
+     "y": 177.5,
      "w": 20,
      "h": 20,
      "type": "image"
     },
-    "rc_lockup": {
-     "slot": "lockup",
-     "x": 612,
-     "y": 186,
-     "w": 212,
-     "h": 46,
+    "rc_logo": {
+     "slot": "logo",
+     "x": 928,
+     "y": 208,
+     "w": 42,
+     "h": 42,
      "type": "image"
     }
    }
@@ -105,7 +113,7 @@
    "method": "recomposed:strip",
    "rejected": [],
    "dropped": [
-    "subheadline"
+    "message"
    ],
    "needsReview": true,
    "elements": {
@@ -190,7 +198,7 @@
    "method": "recomposed:strip",
    "rejected": [],
    "dropped": [
-    "subheadline"
+    "message"
    ],
    "needsReview": true,
    "elements": {
@@ -274,10 +282,8 @@
   "300x250": {
    "method": "recomposed:square",
    "rejected": [],
-   "dropped": [
-    "lockup"
-   ],
-   "needsReview": true,
+   "dropped": [],
+   "needsReview": false,
    "elements": {
     "rc_panel": {
      "slot": "panel",
@@ -290,73 +296,73 @@
     },
     "rc_panel_zone": {
      "slot": "panel",
-     "x": 0,
-     "y": 171,
-     "w": 300,
-     "h": 79,
+     "x": 180,
+     "y": 50,
+     "w": 120,
+     "h": 158,
      "type": "rect",
      "fill": "#81dbe5"
     },
+    "rc_pattern": {
+     "slot": "band",
+     "x": 180,
+     "y": 233,
+     "w": 78,
+     "h": 17,
+     "type": "image"
+    },
     "rc_photo": {
      "slot": "photo",
-     "x": 4,
-     "y": 51,
-     "w": 119,
-     "h": 130,
+     "x": 5,
+     "y": 67,
+     "w": 171,
+     "h": 187,
      "type": "image"
     },
     "rc_headline": {
      "slot": "headline",
      "x": 15,
-     "y": 12,
+     "y": 20,
      "w": 270,
-     "h": 18,
-     "fontSize": 27,
+     "h": 21,
+     "fontSize": 31,
      "type": "text",
      "text": "HEADLINE",
      "baselineFit": "cap",
      "align": "center"
     },
-    "rc_subheadline": {
-     "slot": "subheadline",
-     "x": 15,
-     "y": 34,
-     "w": 270,
-     "h": 11,
-     "fontSize": 10,
+    "rc_message": {
+     "slot": "message",
+     "x": 189,
+     "y": 112,
+     "w": 102,
+     "h": 30,
+     "fontSize": 13,
      "type": "text",
-     "text": "Body copy here. Body copy, body copy.",
+     "text": "Body copy here.\nBody copy, body copy.",
      "align": "center"
     },
     "rc_cta": {
      "slot": "cta",
-     "x": 65,
-     "y": 197,
-     "w": 170,
-     "h": 27,
+     "x": 195,
+     "y": 165,
+     "w": 90,
+     "h": 24,
      "type": "rect",
      "fill": "#ffffff",
-     "radius": 13.5
+     "radius": 12
     },
     "rc_cta_label": {
      "slot": "ctaLabel",
-     "x": 75,
-     "y": 204,
-     "w": 135,
-     "h": 13,
-     "fontSize": 18,
+     "x": 202,
+     "y": 173.5,
+     "w": 76,
+     "h": 7,
+     "fontSize": 10,
      "type": "text",
      "text": "Search layouts",
      "baselineFit": "cap",
-     "align": "left"
-    },
-    "rc_cta_icon": {
-     "slot": "ctaIcon",
-     "x": 212,
-     "y": 200.5,
-     "w": 20,
-     "h": 20,
-     "type": "image"
+     "align": "center"
     },
     "rc_logo": {
      "slot": "logo",
@@ -372,7 +378,7 @@
    "method": "recomposed:square",
    "rejected": [],
    "dropped": [],
-   "needsReview": true,
+   "needsReview": false,
    "elements": {
     "rc_panel": {
      "slot": "panel",
@@ -385,61 +391,69 @@
     },
     "rc_panel_zone": {
      "slot": "panel",
-     "x": 0,
-     "y": 191,
-     "w": 336,
-     "h": 89,
+     "x": 202,
+     "y": 56,
+     "w": 134,
+     "h": 177,
      "type": "rect",
      "fill": "#81dbe5"
     },
+    "rc_pattern": {
+     "slot": "band",
+     "x": 202,
+     "y": 261,
+     "w": 87,
+     "h": 19,
+     "type": "image"
+    },
     "rc_photo": {
      "slot": "photo",
-     "x": 4,
-     "y": 56,
-     "w": 133,
-     "h": 146,
+     "x": 6,
+     "y": 75,
+     "w": 192,
+     "h": 210,
      "type": "image"
     },
     "rc_headline": {
      "slot": "headline",
      "x": 17,
-     "y": 13,
+     "y": 22,
      "w": 302,
-     "h": 20,
-     "fontSize": 30,
+     "h": 23,
+     "fontSize": 34,
      "type": "text",
      "text": "HEADLINE",
      "baselineFit": "cap",
      "align": "center"
     },
-    "rc_subheadline": {
-     "slot": "subheadline",
-     "x": 17,
-     "y": 37,
-     "w": 302,
-     "h": 11,
-     "fontSize": 10,
+    "rc_message": {
+     "slot": "message",
+     "x": 212,
+     "y": 130,
+     "w": 114,
+     "h": 30,
+     "fontSize": 13,
      "type": "text",
-     "text": "Body copy here. Body copy, body copy.",
+     "text": "Body copy here.\nBody copy, body copy.",
      "align": "center"
     },
     "rc_cta": {
      "slot": "cta",
-     "x": 83,
-     "y": 201,
-     "w": 170,
-     "h": 27,
+     "x": 220,
+     "y": 183,
+     "w": 99,
+     "h": 24,
      "type": "rect",
      "fill": "#ffffff",
-     "radius": 13.5
+     "radius": 12
     },
     "rc_cta_label": {
      "slot": "ctaLabel",
-     "x": 93,
-     "y": 208,
-     "w": 135,
-     "h": 13,
-     "fontSize": 18,
+     "x": 227,
+     "y": 192,
+     "w": 69,
+     "h": 6,
+     "fontSize": 9,
      "type": "text",
      "text": "Search layouts",
      "baselineFit": "cap",
@@ -447,18 +461,18 @@
     },
     "rc_cta_icon": {
      "slot": "ctaIcon",
-     "x": 230,
-     "y": 204.5,
-     "w": 20,
-     "h": 20,
+     "x": 298,
+     "y": 186,
+     "w": 18,
+     "h": 18,
      "type": "image"
     },
-    "rc_lockup": {
-     "slot": "lockup",
-     "x": 96,
-     "y": 235,
-     "w": 144,
-     "h": 31,
+    "rc_logo": {
+     "slot": "logo",
+     "x": 289,
+     "y": 233,
+     "w": 47,
+     "h": 47,
      "type": "image"
     }
    }
@@ -481,24 +495,32 @@
     "rc_panel_zone": {
      "slot": "panel",
      "x": 0,
-     "y": 409,
+     "y": 385,
      "w": 300,
-     "h": 191,
+     "h": 165,
      "type": "rect",
      "fill": "#81dbe5"
     },
+    "rc_pattern": {
+     "slot": "band",
+     "x": 18,
+     "y": 550,
+     "w": 232,
+     "h": 50,
+     "type": "image"
+    },
     "rc_photo": {
      "slot": "photo",
-     "x": 9,
-     "y": 121,
-     "w": 285,
-     "h": 312,
+     "x": 8,
+     "y": 120,
+     "w": 262,
+     "h": 287,
      "type": "image"
     },
     "rc_headline": {
      "slot": "headline",
      "x": 18,
-     "y": 10,
+     "y": 35,
      "w": 264,
      "h": 49,
      "fontSize": 73,
@@ -507,21 +529,21 @@
      "baselineFit": "cap",
      "align": "center"
     },
-    "rc_subheadline": {
-     "slot": "subheadline",
-     "x": 18,
-     "y": 69,
-     "w": 264,
-     "h": 40,
+    "rc_message": {
+     "slot": "message",
+     "x": 23,
+     "y": 418,
+     "w": 255,
+     "h": 41,
      "fontSize": 18,
      "type": "text",
-     "text": "Body copy here. Body copy, body\ncopy.",
+     "text": "Body copy here.\nBody copy, body copy.",
      "align": "center"
     },
     "rc_cta": {
      "slot": "cta",
      "x": 65,
-     "y": 472,
+     "y": 490,
      "w": 170,
      "h": 27,
      "type": "rect",
@@ -531,7 +553,7 @@
     "rc_cta_label": {
      "slot": "ctaLabel",
      "x": 75,
-     "y": 479,
+     "y": 497,
      "w": 135,
      "h": 13,
      "fontSize": 18,
@@ -543,17 +565,17 @@
     "rc_cta_icon": {
      "slot": "ctaIcon",
      "x": 212,
-     "y": 475.5,
+     "y": 493.5,
      "w": 20,
      "h": 20,
      "type": "image"
     },
-    "rc_lockup": {
-     "slot": "lockup",
-     "x": 67,
+    "rc_logo": {
+     "slot": "logo",
+     "x": 250,
      "y": 550,
-     "w": 167,
-     "h": 36,
+     "w": 50,
+     "h": 50,
      "type": "image"
     }
    }
@@ -578,9 +600,17 @@
      "x": 0,
      "y": 269,
      "w": 160,
-     "h": 331,
+     "h": 251,
      "type": "rect",
      "fill": "#81dbe5"
+    },
+    "rc_pattern": {
+     "slot": "band",
+     "x": 2,
+     "y": 486,
+     "w": 158,
+     "h": 34,
+     "type": "image"
     },
     "rc_photo": {
      "slot": "photo",
@@ -593,7 +623,7 @@
     "rc_headline": {
      "slot": "headline",
      "x": 11,
-     "y": 38,
+     "y": 46,
      "w": 138,
      "h": 24,
      "fontSize": 36,
@@ -602,21 +632,21 @@
      "baselineFit": "cap",
      "align": "center"
     },
-    "rc_subheadline": {
-     "slot": "subheadline",
-     "x": 11,
-     "y": 67,
-     "w": 138,
-     "h": 11,
-     "fontSize": 10,
+    "rc_message": {
+     "slot": "message",
+     "x": 12,
+     "y": 333,
+     "w": 136,
+     "h": 37,
+     "fontSize": 16,
      "type": "text",
-     "text": "Body copy here. Body copy, body copy.",
+     "text": "Body copy here.\nBody copy, body copy.",
      "align": "center"
     },
     "rc_cta": {
      "slot": "cta",
      "x": 7,
-     "y": 414,
+     "y": 398,
      "w": 147,
      "h": 24,
      "type": "rect",
@@ -626,7 +656,7 @@
     "rc_cta_label": {
      "slot": "ctaLabel",
      "x": 14,
-     "y": 420.5,
+     "y": 404.5,
      "w": 117,
      "h": 11,
      "fontSize": 16,
@@ -638,17 +668,17 @@
     "rc_cta_icon": {
      "slot": "ctaIcon",
      "x": 133,
-     "y": 417,
+     "y": 401,
      "w": 18,
      "h": 18,
      "type": "image"
     },
-    "rc_lockup": {
-     "slot": "lockup",
-     "x": 12,
-     "y": 559,
-     "w": 136,
-     "h": 29,
+    "rc_logo": {
+     "slot": "logo",
+     "x": 40,
+     "y": 520,
+     "w": 80,
+     "h": 80,
      "type": "image"
     }
    }
@@ -673,9 +703,17 @@
      "x": 0,
      "y": 229,
      "w": 120,
-     "h": 371,
+     "h": 311,
      "type": "rect",
      "fill": "#81dbe5"
+    },
+    "rc_pattern": {
+     "slot": "band",
+     "x": 0,
+     "y": 514,
+     "w": 120,
+     "h": 26,
+     "type": "image"
     },
     "rc_photo": {
      "slot": "photo",
@@ -688,7 +726,7 @@
     "rc_headline": {
      "slot": "headline",
      "x": 8,
-     "y": 35,
+     "y": 48,
      "w": 104,
      "h": 18,
      "fontSize": 26,
@@ -697,21 +735,21 @@
      "baselineFit": "cap",
      "align": "center"
     },
-    "rc_subheadline": {
-     "slot": "subheadline",
-     "x": 8,
-     "y": 57,
-     "w": 104,
-     "h": 22,
-     "fontSize": 10,
+    "rc_message": {
+     "slot": "message",
+     "x": 9,
+     "y": 333,
+     "w": 102,
+     "h": 30,
+     "fontSize": 13,
      "type": "text",
-     "text": "Body copy here. Body copy, body\ncopy.",
+     "text": "Body copy here.\nBody copy, body copy.",
      "align": "center"
     },
     "rc_cta": {
      "slot": "cta",
      "x": 6,
-     "y": 401,
+     "y": 386,
      "w": 108,
      "h": 24,
      "type": "rect",
@@ -721,7 +759,7 @@
     "rc_cta_label": {
      "slot": "ctaLabel",
      "x": 13,
-     "y": 409.5,
+     "y": 394.5,
      "w": 78,
      "h": 7,
      "fontSize": 10,
@@ -733,17 +771,17 @@
     "rc_cta_icon": {
      "slot": "ctaIcon",
      "x": 93,
-     "y": 404,
+     "y": 389,
      "w": 18,
      "h": 18,
      "type": "image"
     },
-    "rc_lockup": {
-     "slot": "lockup",
-     "x": 9,
-     "y": 569,
-     "w": 102,
-     "h": 22,
+    "rc_logo": {
+     "slot": "logo",
+     "x": 30,
+     "y": 540,
+     "w": 60,
+     "h": 60,
      "type": "image"
     }
    }
@@ -752,7 +790,7 @@
    "method": "recomposed:square",
    "rejected": [],
    "dropped": [
-    "lockup"
+    "logo"
    ],
    "needsReview": true,
    "elements": {
@@ -767,61 +805,69 @@
     },
     "rc_panel_zone": {
      "slot": "panel",
-     "x": 0,
-     "y": 737,
-     "w": 1080,
-     "h": 343,
+     "x": 648,
+     "y": 216,
+     "w": 432,
+     "h": 684,
      "type": "rect",
      "fill": "#81dbe5"
     },
+    "rc_pattern": {
+     "slot": "band",
+     "x": 648,
+     "y": 1026,
+     "w": 252,
+     "h": 54,
+     "type": "image"
+    },
     "rc_photo": {
      "slot": "photo",
-     "x": 16,
-     "y": 218,
-     "w": 513,
-     "h": 562,
+     "x": 19,
+     "y": 422,
+     "w": 616,
+     "h": 674,
      "type": "image"
     },
     "rc_headline": {
      "slot": "headline",
      "x": 65,
-     "y": 56,
+     "y": 83,
      "w": 950,
-     "h": 77,
-     "fontSize": 116,
+     "h": 90,
+     "fontSize": 135,
      "type": "text",
      "text": "HEADLINE",
      "baselineFit": "cap",
      "align": "center"
     },
-    "rc_subheadline": {
-     "slot": "subheadline",
-     "x": 65,
-     "y": 149,
-     "w": 950,
-     "h": 32,
-     "fontSize": 29,
+    "rc_message": {
+     "slot": "message",
+     "x": 681,
+     "y": 629,
+     "w": 367,
+     "h": 85,
+     "fontSize": 37,
      "type": "text",
-     "text": "Body copy here. Body copy, body copy.",
+     "text": "Body copy here.\nBody copy, body copy.",
      "align": "center"
     },
     "rc_cta": {
      "slot": "cta",
-     "x": 368,
-     "y": 882,
-     "w": 344,
-     "h": 54,
+     "x": 702,
+     "y": 762,
+     "w": 324,
+     "h": 51,
      "type": "rect",
      "fill": "#ffffff",
-     "radius": 27
+     "radius": 25.5
     },
     "rc_cta_label": {
      "slot": "ctaLabel",
-     "x": 389,
-     "y": 896.5,
-     "w": 274,
-     "h": 25,
-     "fontSize": 37,
+     "x": 722,
+     "y": 776,
+     "w": 257,
+     "h": 23,
+     "fontSize": 34,
      "type": "text",
      "text": "Search layouts",
      "baselineFit": "cap",
@@ -829,10 +875,10 @@
     },
     "rc_cta_icon": {
      "slot": "ctaIcon",
-     "x": 665,
-     "y": 889,
-     "w": 40,
-     "h": 40,
+     "x": 981,
+     "y": 768.5,
+     "w": 38,
+     "h": 38,
      "type": "image"
     }
    }
@@ -948,61 +994,69 @@
     },
     "rc_panel_zone": {
      "slot": "panel",
-     "x": 922,
+     "x": 960,
      "y": 0,
-     "w": 998,
-     "h": 1080,
+     "w": 960,
+     "h": 900,
      "type": "rect",
      "fill": "#81dbe5"
     },
+    "rc_pattern": {
+     "slot": "band",
+     "x": 960,
+     "y": 912,
+     "w": 780,
+     "h": 168,
+     "type": "image"
+    },
     "rc_photo": {
      "slot": "photo",
-     "x": 27,
-     "y": 143,
-     "w": 876,
-     "h": 960,
+     "x": 28,
+     "y": 105,
+     "w": 912,
+     "h": 999,
      "type": "image"
     },
     "rc_headline": {
      "slot": "headline",
-     "x": 976,
-     "y": 322,
-     "w": 890,
-     "h": 170,
-     "fontSize": 255,
+     "x": 1014,
+     "y": 311,
+     "w": 852,
+     "h": 163,
+     "fontSize": 244,
      "type": "text",
      "text": "HEADLINE",
      "baselineFit": "cap",
      "align": "center"
     },
-    "rc_subheadline": {
-     "slot": "subheadline",
-     "x": 976,
-     "y": 528,
-     "w": 890,
-     "h": 139,
-     "fontSize": 63,
+    "rc_message": {
+     "slot": "message",
+     "x": 1032,
+     "y": 522,
+     "w": 816,
+     "h": 138,
+     "fontSize": 60,
      "type": "text",
-     "text": "Body copy here. Body copy,\nbody copy.",
+     "text": "Body copy here.\nBody copy, body copy.",
      "align": "center"
     },
     "rc_cta": {
      "slot": "cta",
-     "x": 1173,
-     "y": 715,
-     "w": 497,
-     "h": 79,
+     "x": 1203,
+     "y": 708,
+     "w": 475,
+     "h": 75,
      "type": "rect",
      "fill": "#ffffff",
-     "radius": 39.5
+     "radius": 37.5
     },
     "rc_cta_label": {
      "slot": "ctaLabel",
-     "x": 1204,
-     "y": 736.5,
-     "w": 396,
-     "h": 36,
-     "fontSize": 53,
+     "x": 1232,
+     "y": 728,
+     "w": 378,
+     "h": 35,
+     "fontSize": 51,
      "type": "text",
      "text": "Search layouts",
      "baselineFit": "cap",
@@ -1010,18 +1064,18 @@
     },
     "rc_cta_icon": {
      "slot": "ctaIcon",
-     "x": 1602,
-     "y": 725.5,
-     "w": 58,
-     "h": 58,
+     "x": 1612,
+     "y": 717.5,
+     "w": 56,
+     "h": 56,
      "type": "image"
     },
-    "rc_lockup": {
-     "slot": "lockup",
-     "x": 1172,
-     "y": 930,
-     "w": 499,
-     "h": 107,
+    "rc_logo": {
+     "slot": "logo",
+     "x": 1740,
+     "y": 900,
+     "w": 180,
+     "h": 180,
      "type": "image"
     }
    }
@@ -1043,16 +1097,24 @@
     },
     "rc_panel_zone": {
      "slot": "panel",
-     "x": 461,
+     "x": 288,
      "y": 0,
-     "w": 499,
-     "h": 256,
+     "w": 672,
+     "h": 213,
      "type": "rect",
      "fill": "#81dbe5"
     },
+    "rc_pattern": {
+     "slot": "band",
+     "x": 717,
+     "y": 213,
+     "w": 200,
+     "h": 43,
+     "type": "image"
+    },
     "rc_photo": {
      "slot": "photo",
-     "x": 110,
+     "x": 24,
      "y": 10,
      "w": 243,
      "h": 266,
@@ -1060,31 +1122,31 @@
     },
     "rc_headline": {
      "slot": "headline",
-     "x": 474,
-     "y": 38,
-     "w": 473,
-     "h": 57,
-     "fontSize": 85,
+     "x": 301,
+     "y": 35,
+     "w": 646,
+     "h": 47,
+     "fontSize": 71,
      "type": "text",
      "text": "HEADLINE",
      "baselineFit": "cap",
      "align": "center"
     },
-    "rc_subheadline": {
-     "slot": "subheadline",
-     "x": 474,
-     "y": 107,
-     "w": 473,
-     "h": 23,
-     "fontSize": 21,
+    "rc_message": {
+     "slot": "message",
+     "x": 339,
+     "y": 111,
+     "w": 571,
+     "h": 39,
+     "fontSize": 17,
      "type": "text",
-     "text": "Body copy here. Body copy, body copy.",
+     "text": "Body copy here.\nBody copy, body copy.",
      "align": "center"
     },
     "rc_cta": {
      "slot": "cta",
-     "x": 626,
-     "y": 148,
+     "x": 539,
+     "y": 179,
      "w": 170,
      "h": 27,
      "type": "rect",
@@ -1093,8 +1155,8 @@
     },
     "rc_cta_label": {
      "slot": "ctaLabel",
-     "x": 636,
-     "y": 155,
+     "x": 549,
+     "y": 186,
      "w": 135,
      "h": 13,
      "fontSize": 18,
@@ -1105,18 +1167,18 @@
     },
     "rc_cta_icon": {
      "slot": "ctaIcon",
-     "x": 773,
-     "y": 151.5,
+     "x": 686,
+     "y": 182.5,
      "w": 20,
      "h": 20,
      "type": "image"
     },
-    "rc_lockup": {
-     "slot": "lockup",
-     "x": 606,
-     "y": 193,
-     "w": 210,
-     "h": 45,
+    "rc_logo": {
+     "slot": "logo",
+     "x": 917,
+     "y": 213,
+     "w": 43,
+     "h": 43,
      "type": "image"
     }
    }
@@ -1139,24 +1201,32 @@
     "rc_panel_zone": {
      "slot": "panel",
      "x": 0,
-     "y": 404,
+     "y": 380,
      "w": 384,
-     "h": 188,
+     "h": 148,
      "type": "rect",
      "fill": "#81dbe5"
     },
+    "rc_pattern": {
+     "slot": "band",
+     "x": 22,
+     "y": 528,
+     "w": 298,
+     "h": 64,
+     "type": "image"
+    },
     "rc_photo": {
      "slot": "photo",
-     "x": 9,
-     "y": 120,
-     "w": 281,
-     "h": 308,
+     "x": 8,
+     "y": 119,
+     "w": 258,
+     "h": 283,
      "type": "image"
     },
     "rc_headline": {
      "slot": "headline",
      "x": 23,
-     "y": 19,
+     "y": 35,
      "w": 338,
      "h": 52,
      "fontSize": 78,
@@ -1165,21 +1235,21 @@
      "baselineFit": "cap",
      "align": "center"
     },
-    "rc_subheadline": {
-     "slot": "subheadline",
-     "x": 23,
-     "y": 82,
-     "w": 338,
-     "h": 21,
+    "rc_message": {
+     "slot": "message",
+     "x": 29,
+     "y": 402,
+     "w": 326,
+     "h": 44,
      "fontSize": 19,
      "type": "text",
-     "text": "Body copy here. Body copy, body copy.",
+     "text": "Body copy here.\nBody copy, body copy.",
      "align": "center"
     },
     "rc_cta": {
      "slot": "cta",
      "x": 107,
-     "y": 457,
+     "y": 479,
      "w": 170,
      "h": 27,
      "type": "rect",
@@ -1189,7 +1259,7 @@
     "rc_cta_label": {
      "slot": "ctaLabel",
      "x": 117,
-     "y": 464,
+     "y": 486,
      "w": 135,
      "h": 13,
      "fontSize": 18,
@@ -1201,17 +1271,17 @@
     "rc_cta_icon": {
      "slot": "ctaIcon",
      "x": 254,
-     "y": 460.5,
+     "y": 482.5,
      "w": 20,
      "h": 20,
      "type": "image"
     },
-    "rc_lockup": {
-     "slot": "lockup",
-     "x": 85,
+    "rc_logo": {
+     "slot": "logo",
+     "x": 320,
      "y": 528,
-     "w": 214,
-     "h": 46,
+     "w": 64,
+     "h": 64,
      "type": "image"
     }
    }
@@ -1234,24 +1304,32 @@
     "rc_panel_zone": {
      "slot": "panel",
      "x": 0,
-     "y": 808,
+     "y": 761,
      "w": 768,
-     "h": 376,
+     "h": 295,
      "type": "rect",
      "fill": "#81dbe5"
     },
+    "rc_pattern": {
+     "slot": "band",
+     "x": 45,
+     "y": 1056,
+     "w": 595,
+     "h": 128,
+     "type": "image"
+    },
     "rc_photo": {
      "slot": "photo",
-     "x": 18,
-     "y": 239,
-     "w": 563,
-     "h": 616,
+     "x": 16,
+     "y": 237,
+     "w": 518,
+     "h": 567,
      "type": "image"
     },
     "rc_headline": {
      "slot": "headline",
      "x": 46,
-     "y": 37,
+     "y": 70,
      "w": 676,
      "h": 105,
      "fontSize": 157,
@@ -1260,21 +1338,21 @@
      "baselineFit": "cap",
      "align": "center"
     },
-    "rc_subheadline": {
-     "slot": "subheadline",
-     "x": 46,
-     "y": 164,
-     "w": 676,
-     "h": 43,
+    "rc_message": {
+     "slot": "message",
+     "x": 58,
+     "y": 815,
+     "w": 653,
+     "h": 90,
      "fontSize": 39,
      "type": "text",
-     "text": "Body copy here. Body copy, body copy.",
+     "text": "Body copy here.\nBody copy, body copy.",
      "align": "center"
     },
     "rc_cta": {
      "slot": "cta",
      "x": 231,
-     "y": 917,
+     "y": 953,
      "w": 307,
      "h": 49,
      "type": "rect",
@@ -1284,7 +1362,7 @@
     "rc_cta_label": {
      "slot": "ctaLabel",
      "x": 250,
-     "y": 930,
+     "y": 966,
      "w": 244,
      "h": 23,
      "fontSize": 33,
@@ -1296,17 +1374,17 @@
     "rc_cta_icon": {
      "slot": "ctaIcon",
      "x": 496,
-     "y": 923.5,
+     "y": 959.5,
      "w": 36,
      "h": 36,
      "type": "image"
     },
-    "rc_lockup": {
-     "slot": "lockup",
-     "x": 170,
-     "y": 1055,
-     "w": 428,
-     "h": 92,
+    "rc_logo": {
+     "slot": "logo",
+     "x": 640,
+     "y": 1056,
+     "w": 128,
+     "h": 128,
      "type": "image"
     }
    }
@@ -1328,16 +1406,24 @@
     },
     "rc_panel_zone": {
      "slot": "panel",
-     "x": 1290,
+     "x": 806,
      "y": 0,
-     "w": 1398,
-     "h": 672,
+     "w": 1882,
+     "h": 560,
      "type": "rect",
      "fill": "#81dbe5"
     },
+    "rc_pattern": {
+     "slot": "band",
+     "x": 2055,
+     "y": 560,
+     "w": 521,
+     "h": 112,
+     "type": "image"
+    },
     "rc_photo": {
      "slot": "photo",
-     "x": 329,
+     "x": 87,
      "y": 26,
      "w": 639,
      "h": 699,
@@ -1345,44 +1431,44 @@
     },
     "rc_headline": {
      "slot": "headline",
-     "x": 1324,
-     "y": 93,
-     "w": 1330,
-     "h": 150,
-     "fontSize": 224,
+     "x": 840,
+     "y": 144,
+     "w": 1814,
+     "h": 124,
+     "fontSize": 186,
      "type": "text",
      "text": "HEADLINE",
      "baselineFit": "cap",
      "align": "center"
     },
-    "rc_subheadline": {
-     "slot": "subheadline",
-     "x": 1324,
-     "y": 274,
-     "w": 1330,
-     "h": 61,
-     "fontSize": 55,
+    "rc_message": {
+     "slot": "message",
+     "x": 947,
+     "y": 316,
+     "w": 1600,
+     "h": 106,
+     "fontSize": 46,
      "type": "text",
-     "text": "Body copy here. Body copy, body copy.",
+     "text": "Body copy here.\nBody copy, body copy.",
      "align": "center"
     },
     "rc_cta": {
      "slot": "cta",
-     "x": 1771,
-     "y": 382,
-     "w": 437,
-     "h": 69,
+     "x": 1566,
+     "y": 470,
+     "w": 363,
+     "h": 58,
      "type": "rect",
      "fill": "#ffffff",
-     "radius": 34.5
+     "radius": 29
     },
     "rc_cta_label": {
      "slot": "ctaLabel",
-     "x": 1798,
-     "y": 400.5,
-     "w": 348,
-     "h": 32,
-     "fontSize": 47,
+     "x": 1588,
+     "y": 485.5,
+     "w": 289,
+     "h": 27,
+     "fontSize": 39,
      "type": "text",
      "text": "Search layouts",
      "baselineFit": "cap",
@@ -1390,18 +1476,18 @@
     },
     "rc_cta_icon": {
      "slot": "ctaIcon",
-     "x": 2148,
-     "y": 391,
-     "w": 51,
-     "h": 51,
+     "x": 1879,
+     "y": 477.5,
+     "w": 43,
+     "h": 43,
      "type": "image"
     },
-    "rc_lockup": {
-     "slot": "lockup",
-     "x": 1701,
-     "y": 498,
-     "w": 576,
-     "h": 124,
+    "rc_logo": {
+     "slot": "logo",
+     "x": 2576,
+     "y": 560,
+     "w": 112,
+     "h": 112,
      "type": "image"
     }
    }
@@ -1423,61 +1509,69 @@
     },
     "rc_panel_zone": {
      "slot": "panel",
-     "x": 576,
+     "x": 600,
      "y": 0,
-     "w": 624,
-     "h": 627,
+     "w": 600,
+     "h": 522,
      "type": "rect",
      "fill": "#81dbe5"
     },
+    "rc_pattern": {
+     "slot": "band",
+     "x": 607,
+     "y": 522,
+     "w": 488,
+     "h": 105,
+     "type": "image"
+    },
     "rc_photo": {
      "slot": "photo",
-     "x": 17,
-     "y": 48,
-     "w": 547,
-     "h": 599,
+     "x": 18,
+     "y": 37,
+     "w": 570,
+     "h": 624,
      "type": "image"
     },
     "rc_headline": {
      "slot": "headline",
-     "x": 607,
-     "y": 166,
-     "w": 562,
-     "h": 107,
-     "fontSize": 160,
+     "x": 631,
+     "y": 148,
+     "w": 538,
+     "h": 102,
+     "fontSize": 153,
      "type": "text",
      "text": "HEADLINE",
      "baselineFit": "cap",
      "align": "center"
     },
-    "rc_subheadline": {
-     "slot": "subheadline",
-     "x": 607,
-     "y": 295,
-     "w": 562,
-     "h": 86,
-     "fontSize": 39,
+    "rc_message": {
+     "slot": "message",
+     "x": 645,
+     "y": 298,
+     "w": 510,
+     "h": 87,
+     "fontSize": 38,
      "type": "text",
-     "text": "Body copy here. Body copy, body\ncopy.",
+     "text": "Body copy here.\nBody copy, body copy.",
      "align": "center"
     },
     "rc_cta": {
      "slot": "cta",
-     "x": 732,
-     "y": 425,
-     "w": 312,
-     "h": 49,
+     "x": 751,
+     "y": 433,
+     "w": 299,
+     "h": 47,
      "type": "rect",
      "fill": "#ffffff",
-     "radius": 24.5
+     "radius": 23.5
     },
     "rc_cta_label": {
      "slot": "ctaLabel",
-     "x": 751,
-     "y": 438,
-     "w": 248,
-     "h": 23,
-     "fontSize": 33,
+     "x": 769,
+     "y": 445.5,
+     "w": 238,
+     "h": 22,
+     "fontSize": 32,
      "type": "text",
      "text": "Search layouts",
      "baselineFit": "cap",
@@ -1485,18 +1579,18 @@
     },
     "rc_cta_icon": {
      "slot": "ctaIcon",
-     "x": 1001,
-     "y": 431,
-     "w": 37,
-     "h": 37,
+     "x": 1009,
+     "y": 439,
+     "w": 35,
+     "h": 35,
      "type": "image"
     },
-    "rc_lockup": {
-     "slot": "lockup",
-     "x": 732,
-     "y": 533,
-     "w": 312,
-     "h": 67,
+    "rc_logo": {
+     "slot": "logo",
+     "x": 1095,
+     "y": 522,
+     "w": 105,
+     "h": 105,
      "type": "image"
     }
    }

@@ -352,6 +352,30 @@ export async function recomposeToFormat(
   const formatClass = opts.formatClass ?? classifyAspect(dstW, dstH);
   const budget = classifyBudget(dstW, dstH);
   const base = recipeFor(formatClass, budget);
+  // ---- Anther layout (brand guidelines pp. 28–31) --------------------------------
+  // A master whose picture is housed in an anther, with the heading on the
+  // colour ground, is the council's standard brand layout. It is laid out to
+  // the guidelines rather than to the Get Ready recipes: circle as large as
+  // the half-tile margins allow, heading clear of it, copy and pill together,
+  // pattern and pōhutukawa tile along the bottom.
+  const earlyShape: AntherShape | null = ((sem.photo as FreeformImage | null)?.shape ?? null);
+  const offCircle = (t: { x: number; y: number; w: number; h: number } | null | undefined): boolean => {
+    if (!t || !earlyShape || !sem.photoBox) return false;
+    const c = circleOf(sem.photoBox, earlyShape);
+    return Math.hypot(t.x + t.w / 2 - c.cx, t.y + t.h / 2 - c.cy) > c.r;
+  };
+  const antherLayout = !!earlyShape && earlyShape.kind === "anther" && !!sem.headline && offCircle(sem.headline);
+  if (antherLayout && sem.subheadline && !sem.message && sem.headline && offCircle(sem.subheadline) && sem.subheadline.y > sem.headline.y + sem.headline.h * 2) {
+    // Body copy below the anther is the message, not a sub-line of the heading
+    // (its box overlaps the picture's transparent corner, which misled the slots).
+    (sem as { message: unknown }).message = { ...sem.subheadline, slot: "message" };
+    (sem as { subheadline: unknown }).subheadline = null;
+  }
+  // The pattern strip: with a pōhutukawa tile on the master, a wide decoration
+  // read as the "lockup" (or band) is the kotahitanga pattern, not a logo.
+  const patternEl: FreeformImage | null = antherLayout
+    ? ((sem.band && sem.band.type === "image" ? (sem.band as FreeformImage) : null) ?? (sem.logo && sem.lockup && sem.lockup.w / Math.max(1, sem.lockup.h) >= 3 ? (sem.lockup as FreeformImage) : null))
+    : null;
   const ovAll = opts.recipeOverrides ?? {};
   // An approved piece's axis-bound numbers (axis, photo and band shares,
   // headline position and size) only apply when it lays out along the same
@@ -371,7 +395,7 @@ export async function recomposeToFormat(
   // An approved piece's measurements lead over the campaign's online look;
   // the campaign's general (out-of-home) zone numbers do not — they are what
   // the online look refines (970×250 ships with the photo at 69%, not 50%).
-  const recipe: Recipe = { ...base, ...(opts.overridesFromApproved ? lookOv : {}), ...ov, ...(opts.overridesFromApproved ? {} : lookOv), axis: base.axis === "row" ? "row" : (ov.axis ?? base.axis), keep: base.keep };
+  const recipe: Recipe = { ...base, ...(opts.overridesFromApproved ? lookOv : {}), ...ov, ...(opts.overridesFromApproved ? {} : lookOv), axis: base.axis === "row" ? "row" : antherLayout && formatClass === "square" ? "side" : (ov.axis ?? base.axis), keep: base.keep };
   const keep = new Set(recipe.keep);
   const short = Math.min(dstW, dstH);
   const margin = Math.max(4, r(short * recipe.marginFrac));
@@ -393,7 +417,7 @@ export async function recomposeToFormat(
   const messageMin = rules?.floor("message") ?? 13;
   const lockupMin = rules?.floor("lockup") ?? 16;
   const hasPhoto = !!(sem.photo && sem.photo.src && keep.has("photo"));
-  const hasBand = !!(sem.band && sem.band.src && keep.has("band") && recipe.bandAt !== "none" && rules?.pin("band") !== "none");
+  const hasBand = !antherLayout && !!(sem.band && sem.band.src && keep.has("band") && recipe.bandAt !== "none" && rules?.pin("band") !== "none");
 
   // ---- Structure read off the master -----------------------------------------
   // Not every campaign sets its heading over the photograph. The council's
@@ -422,10 +446,18 @@ export async function recomposeToFormat(
   const copyOnGround = recipe.axis !== "row" && headlineOffPhoto;
   // Tall layouts whose master sets the heading ABOVE the photo keep it there
   // (brand guidelines p.16: heading, picture, message, button).
-  const headerOnTop = copyOnGround && recipe.axis === "stacked" && !!sem.photoBox && !!sem.headline
+  const headerFromMaster = copyOnGround && recipe.axis === "stacked" && !!sem.photoBox && !!sem.headline
     && sem.headline.y + sem.headline.h <= sem.photoBox.y + sem.photoBox.h * 0.15
     && Math.min(sem.headline.x + sem.headline.w, sem.photoBox.x + sem.photoBox.w) - Math.max(sem.headline.x, sem.photoBox.x) > sem.headline.w * 0.5;
-  const headerH = headerOnTop ? r(dstH * clamp((sem.photoBox as Box).y / Math.max(1, srcH) + 0.02, 0.12, 0.24)) : 0;
+  // Guidelines p.28: "enough clear space to run headline copy above the shape".
+  // Squares too: heading across the top, anther lower-left, copy beside it.
+  const squareHeader = antherLayout && formatClass === "square";
+  const headerOnTop = headerFromMaster || (antherLayout && recipe.axis === "stacked") || squareHeader;
+  const headerH = headerFromMaster ? r(dstH * clamp((sem.photoBox as Box).y / Math.max(1, srcH) + 0.02, 0.12, 0.24)) : squareHeader ? r(dstH * 0.2) : headerOnTop ? r(dstH * 0.17) : 0;
+  // Bottom row of the anther layout: pattern to the left of the tile.
+  const guideTile = guidelineLogoPlacement(dstW, dstH)?.tile ?? null;
+  const tileSide = antherLayout && recipe.axis !== "row" ? (formatClass === "tower" ? r(dstW / 2) : (guideTile?.w ?? r(short / 6))) : 0;
+  const halfTile = Math.max(margin, r((guideTile?.w ?? short / 6) / 2));
   if (copyOnGround) notes.push(headerOnTop ? "Heading kept on the colour ground above the picture, as the master sets it." : "Heading kept on the colour ground with the copy, as the master sets it — not over the picture.");
 
   // ---- Zones ---------------------------------------------------------------
@@ -433,7 +465,22 @@ export async function recomposeToFormat(
   let bandZone: Box | null = null;
   let panelZone: Box;
   let tileZone: Box | null = null; // strip: full-height logo tile on the right
-  if (recipe.axis === "stacked") {
+  if (antherLayout && recipe.axis === "stacked") {
+    // Heading · anther (circle margin to margin, up to 46% of the height) ·
+    // message and pill · bottom row (pattern + tile).
+    const zoneH = Math.min(dstW, r(dstH * 0.46));
+    photoZone = { x: 0, y: headerH, w: dstW, h: zoneH };
+    const top = headerH + zoneH;
+    panelZone = { x: 0, y: top, w: dstW, h: Math.max(30, dstH - top - tileSide) };
+  } else if (antherLayout && recipe.axis === "side") {
+    // Anther on the left in a zone about as wide as the canvas is tall;
+    // heading, message and pill in the column beside it; bottom row under them.
+    // A square gives the anther the larger share (its circle is the picture);
+    // wider canvases give it a zone about as wide as they are tall.
+    const zoneW = formatClass === "square" ? r(dstW * 0.6) : clamp(r(dstH * 1.0), r(dstW * 0.3), r(dstW * 0.5));
+    photoZone = { x: 0, y: headerH, w: zoneW, h: dstH - headerH };
+    panelZone = { x: zoneW, y: headerH, w: dstW - zoneW, h: Math.max(30, dstH - headerH - tileSide) };
+  } else if (recipe.axis === "stacked") {
     // Copy on the ground needs the panel's room: the picture gives some up.
     const ph = antherShape
       // The circle runs to the side margins, up to half the height.
@@ -460,6 +507,7 @@ export async function recomposeToFormat(
   const elements: FreeformElement[] = [];
   const options: LayoutOption[] = [];
   let antherEl: FreeformImage | null = null;
+  let antherCircle: { cx: number; cy: number; r: number } | null = null;
 
   // ---- 1. Panel ground -------------------------------------------------------
   elements.push({ id: "rc_panel", type: "rect", slot: "panel", fill: panelFill, x: 0, y: 0, w: dstW, h: dstH, locked: true } as FreeformRect);
@@ -489,7 +537,7 @@ export async function recomposeToFormat(
     // A photo cut to a shape is shown whole (a cover crop slices the anther
     // in half); a rectangle of pixels covers its zone as before.
     const antherPlaced = antherShape
-      ? placeAnther(photoZone, { w: dstW, h: dstH }, antherShape.aspect ? { w: antherShape.aspect * 1000, h: 1000 } : natural, antherShape, Math.max(margin, r((guidelineLogoPlacement(dstW, dstH)?.tile.w ?? 0) / 2)))
+      ? placeAnther(photoZone, { w: dstW, h: dstH }, antherShape.aspect ? { w: antherShape.aspect * 1000, h: 1000 } : natural, antherShape, halfTile)
       : null;
     if (antherPlaced) {
       notes.push(`${ANTHER_RULE.title}: shown whole, as large as the margins allow${antherShape?.kind === "anther" ? ", its stem running off the artwork's edge" : ""}.`);
@@ -524,7 +572,7 @@ export async function recomposeToFormat(
     } as FreeformImage;
     // The anther goes on ABOVE the panel and band grounds (rule 1: nothing is
     // laid over it — a panel rect drawn later hid its stem), under the copy.
-    if (antherPlaced) antherEl = photoEl;
+    if (antherPlaced) { antherEl = photoEl; antherCircle = antherPlaced.circle; }
     else elements.push(photoEl);
   } else if (sem.photo && !keep.has("photo")) {
     drop("photo", "Photo dropped: this format has no room for it.", false);
@@ -704,6 +752,20 @@ export async function recomposeToFormat(
   }
 
   // ---- 7. Headline (+ sub-headline) ----------------------------------------------------------
+  if (patternEl && tileSide && patternEl.src) {
+    // Kotahitanga pattern along the bottom, left of the tile, at the tile's
+    // height (as the masters set it); never under the tile.
+    const aspect = patternEl.w / Math.max(1, patternEl.h);
+    const tower = formatClass === "tower";
+    const x0 = recipe.axis === "side" ? panelZone.x : 0;
+    const x1 = tower ? dstW : dstW - tileSide;
+    const bottom = tower ? dstH - tileSide : dstH;
+    let ph = tower ? r(Math.min(tileSide * 0.5, (x1 - x0) / aspect)) : tileSide;
+    let pw = r(ph * aspect);
+    if (pw > x1 - x0) { pw = x1 - x0; ph = r(pw / aspect); }
+    if (tower) panelZone = { ...panelZone, h: Math.max(30, panelZone.h - ph) };
+    elements.push({ ...patternEl, id: "rc_pattern", slot: "band", role: "decoration", fit: "contain", x: x1 - pw, y: bottom - ph, w: pw, h: ph, locked: true } as FreeformImage);
+  }
   if (antherEl) elements.push(antherEl);
   const copyZone: Box = recipe.axis === "row" ? panelZone : photoZone;
   type GroundItem = { kind: "copy"; w: number; h: number; build: (x: number, y: number) => FreeformElement[] };
@@ -901,7 +963,17 @@ export async function recomposeToFormat(
     // frame), so a one-line fit always leaves slack.
     const shortMessage = text.length <= 24;
     const oneLine = formatClass === "tower" || !shortMessage ? null : fitText(text, { w: w * 0.94, h: maxSize * 1.4 }, { ...fontSpec(msg), minSize: messageMin, maxSize, lineHeight: 1.15, maxLines: 1 });
-    const fit = oneLine?.fits ? oneLine : fitText(text, { w, h: maxSize * (msgLines + 0.5) }, { ...fontSpec(msg), minSize: messageMin, maxSize, lineHeight: 1.15, maxLines: msgLines });
+    // The designer's own line breaks are kept when they fit ("Body copy
+    // here." / "Body copy, body copy."), and every multi-line fit leaves the
+    // same 6% slack as a single line: set to the pixel, the renderer re-wrapped
+    // a line and left a word on its own.
+    const ownLines = msg.text.split(/\n+/).map((l) => l.replace(/\s+/g, " ").trim()).filter(Boolean);
+    const own = antherLayout && ownLines.length > 1
+      ? fitText(ownLines.join("\n"), { w: w * 0.94, h: maxSize * (ownLines.length + 0.6) }, { ...fontSpec(msg), minSize: messageMin, maxSize, lineHeight: 1.15, maxLines: ownLines.length })
+      : null;
+    const fit = own?.fits && own.lines.length === ownLines.length
+      ? own
+      : oneLine?.fits ? oneLine : fitText(text, { w: w * 0.94, h: maxSize * (msgLines + 0.5) }, { ...fontSpec(msg), minSize: messageMin, maxSize, lineHeight: 1.15, maxLines: msgLines });
     if (fit.fits) {
       const cap = fit.lines.length === 1;
       const h = cap ? Math.max(1, r(capHeightPx(fontSpec(msg), fit.fontSize))) : r(fit.height);
@@ -959,7 +1031,9 @@ export async function recomposeToFormat(
     items.push({ kind: "cta", w: ctaW, h: ctaH, build });
   }
 
-  if (recipe.axis !== "row" && sem.lockup && sem.lockup.src && keep.has("lockup") && !social) {
+  if (patternEl && sem.lockup === patternEl) {
+    // handled as the bottom pattern row
+  } else if (recipe.axis !== "row" && sem.lockup && sem.lockup.src && keep.has("lockup") && !social) {
     const lk = sem.lockup;
     const natural = (await loadSize(lk.src as string)) ?? { w: lk.w, h: lk.h };
     const aspect = natural.w / Math.max(1, natural.h);
@@ -977,6 +1051,9 @@ export async function recomposeToFormat(
     items.push({ kind: "lockup", w, h, build: (x, y) => [{ ...lk, id: "rc_lockup", slot: "lockup", role: "decoration", fit: "contain", x, y, w, h, locked: true } as FreeformImage] });
   } else if (sem.lockup && social) {
     drop("lockup", "Logo lockup omitted: social squares carry no logo (guidelines).", true);
+  }
+  if (social && sem.logo && !dropped.some((d) => d.slot === "lockup" || d.slot === "logo")) {
+    drop("logo", "Logo tile omitted: social squares carry no logo (guidelines).", true);
   }
 
   if (recipe.axis === "row") {
@@ -1027,8 +1104,8 @@ export async function recomposeToFormat(
     // sideways. Reserving a corner left a 160px column ~70px for the pill,
     // which then hung off the canvas.
     const towerTile = formatClass === "tower" && wantsTileNow() ? r(dstW / 2) : 0;
-    const tileReserve = towerTile ? 0 : wantsTileNow() ? (guidelineLogoPlacement(dstW, dstH)?.tile.w ?? 0) : 0;
-    if (towerTile) panelZone = { ...panelZone, h: Math.max(40, panelZone.h - towerTile) };
+    const tileReserve = towerTile || antherLayout ? 0 : wantsTileNow() ? (guidelineLogoPlacement(dstW, dstH)?.tile.w ?? 0) : 0;
+    if (towerTile && !antherLayout) panelZone = { ...panelZone, h: Math.max(40, panelZone.h - towerTile) };
     const inner = panelZone.h - r(margin * 1.5);
     // Message → pill gap measured on the masters: 21px under a 29px message
     // (wide), 14px under 26px (portrait) — about 0.6 of the message size now
@@ -1083,6 +1160,11 @@ export async function recomposeToFormat(
       elements.push(...lockupItem.build(xFor(lockupItem, lockupY), lockupY));
     } else {
       let y = panelZone.y + r((panelZone.h - total()) / 2);
+      // Beside an anther the copy lines up with the circle's centre, so the
+      // two read as one composition rather than a diagonal.
+      if (antherLayout && recipe.axis === "side" && antherCircle) {
+        y = r(clamp(antherCircle.cy - total() / 2, panelZone.y + margin, panelZone.y + panelZone.h - total() - Math.max(2, r(margin * 0.5))));
+      }
       for (const item of items) {
         const x = xFor(item, y);
         elements.push(...item.build(x, y));

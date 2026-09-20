@@ -1564,12 +1564,6 @@
   "768x1184": {
    "method": "scaled",
    "rejected": [
-    "The sub-line is missing.",
-    "The message line is missing.",
-    "The call-to-action is missing.",
-    "The pattern band is missing.",
-    "The photograph is missing.",
-    "The logo tile / lockup is missing.",
     "\"tsu:na:mi\" sits partly outside the canvas."
    ],
    "dropped": [],
