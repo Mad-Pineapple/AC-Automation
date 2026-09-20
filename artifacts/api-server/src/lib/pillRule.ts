@@ -85,7 +85,10 @@ export function applyPillRule(
   // resizing a pill here would push its neighbours about.
   if (master && parts.headline) {
     const m = findPill(master.config, master.width, master.height);
-    if (m?.headline && m.headline.fontSize > 0 && parts.headline.fontSize > 0) {
+    // A different label is a different device (the online button in place
+    // of the search pill): its size follows its own rule, not the master's.
+    const same = (m?.label.text ?? "").replace(/\s+/g, " ").trim().toLowerCase() === (label.text ?? "").replace(/\s+/g, " ").trim().toLowerCase();
+    if (same && m?.headline && m.headline.fontSize > 0 && parts.headline.fontSize > 0) {
       const kMaster = m.cta.h / m.headline.fontSize;
       const kHere = cta.h / parts.headline.fontSize;
       const labelShare = m.label.fontSize > 0 && m.cta.h > 0 ? Math.min(0.72, Math.max(0.3, m.label.fontSize / m.cta.h)) : 0.5;

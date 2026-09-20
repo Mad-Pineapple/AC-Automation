@@ -278,3 +278,25 @@ more than 30% from the original. It never resizes (neighbours would move).
   built 51%; Quakes +2). The stacked recipe's "bare" centre (0.56) is lower
   than the studio's. Not changed — it would move every approved tall size;
   needs Rachel's go-ahead and a baseline `--accept`.
+
+## Online banners (2026-09-20, designer go-ahead)
+
+Evidence: brand guidelines p.15–16 (digital ads 300×600, 160×600, 300×250,
+728×90; action buttons ≈16% of the short side) and the shipped Get Ready
+DV360 files (only 300×600 + 970×250; yellow LEARN MORE 181×43).
+
+- **Online button.** An HTML banner size (`HTML_BANNER_SIZES` in
+  routes/templates.ts — the size picker's HTML group) built from a master
+  that carries a search pill gets the campaign's online button instead:
+  label, fill and label colour from the NAMED campaign spec
+  (`variants[].cta.display`, `colours.ctaDisplay/ctaLabelDisplay`), height
+  from `parts.cta.display` (14.3% stacked, 17.2% side of the short side),
+  label share and padding from the shipped 181×43 button. No icon, one
+  line. 300×600 builds 186×43 against the shipped 181×43. OOH, social and
+  print sizes keep the master's search pill (baseline: unchanged). A
+  campaign with no named spec keeps its master's call-to-action.
+- **Towers** carry the sub-line (dropped only when it cannot be set
+  legibly), the message (a tenth of the width, up to three lines, as the
+  guidelines' 160×600 sets it) and a lockup at 20% of the width.
+- `applyPillRule` skips the pill-vs-heading drift check when the label
+  differs from the master's (a different device).

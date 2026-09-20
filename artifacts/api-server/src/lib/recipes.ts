@@ -98,12 +98,15 @@ export const RECIPES: Record<FormatClass, Recipe> = {
     ctaFloorPx: 28,
     ctaHeightFrac: 0.09,
     ctaMaxWidthFrac: 0.9,
-    lockupHeightFrac: 0.14,
+    // The guidelines' 160×600 (p.16) carries a large message in the panel and
+    // a logo one grid square wide; ours left the panel bare with a 22px
+    // lockup. The message is kept, and the lockup runs to the column width.
+    lockupHeightFrac: 0.2,
     lockupMaxWidthFrac: 0.85,
     cutoutWidthFrac: 0.7,
     photoOversize: 1.2,
     marginFrac: 0.07,
-    keep: ["photo", "headline", "cta", "lockup", "band", "subheadline"],
+    keep: ["photo", "headline", "cta", "lockup", "band", "subheadline", "message"],
   },
   // 1080×1080 and near-squares: stack, generous photo, social squares carry
   // no logo lockup (guidelines).
@@ -221,7 +224,9 @@ export function recipeFor(formatClass: FormatClass, budget: PixelBudget): Recipe
       ctaMaxWidthFrac: Math.min(base.ctaMaxWidthFrac, 0.62),
       // Small squares (MREC) need a taller panel than a social tile does.
       ...(formatClass === "square" ? { photoFrac: 0.55 } : {}),
-      keep: base.keep.filter((s) => s !== "cutout" && (formatClass !== "tower" || s !== "subheadline")),
+      // The sub-line stays in the running on towers: it is dropped further
+      // on only when it cannot be set legibly under the heading.
+      keep: base.keep.filter((s) => s !== "cutout"),
     };
   }
   if (budget === "large") {

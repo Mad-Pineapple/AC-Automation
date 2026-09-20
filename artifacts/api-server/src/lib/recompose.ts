@@ -47,6 +47,26 @@ export interface RecomposeOptions {
   formatClass?: FormatClass;
   /** The campaign's part rules (lib/partRulesLayer.ts): floors, drops, pins. */
   rules?: RuleLayer;
+  /**
+   * The campaign's ONLINE call-to-action, when this size runs as a display
+   * banner and the master carries the out-of-home one. Online a banner is
+   * clicked, so the council sets an action button ("Learn more", 14–16% of
+   * the short side in the brand guidelines and in the shipped Get Ready
+   * DV360 files); the search pill tells people what to look up when they
+   * cannot click (screens, print). Building online sizes from an OOH master
+   * carried the search pill, the wrong device at two thirds of the size.
+   */
+  displayCta?: DisplayCta | null;
+}
+
+export interface DisplayCta {
+  label: string;
+  fill: string;
+  labelColor: string;
+  /** Button height as a share of the short side, per axis. */
+  heightOfShort: { stacked: number; side: number };
+  /** The shipped button, so its label share and padding carry. */
+  reference: { w: number; h: number; labelPx: number };
 }
 
 export interface RecomposeResult {
@@ -455,6 +475,11 @@ export async function recomposeToFormat(
   // ---- CTA plan: the pill is sized from its measured label (lib/ctaPlan.ts) ------------------
   // Planned before the headline so a strip's headline is fitted beside the
   // real pill instead of an estimate it later overlaps.
+  // Swap to the online button only when the master really carries a
+  // different device (a search pill): a display master already has it.
+  const norm = (t: string | undefined) => (t ?? "").replace(/\s+/g, " ").trim().toLowerCase();
+  const displayCta = opts.displayCta && sem.cta && sem.ctaLabel && norm(sem.ctaLabel.text) !== norm(opts.displayCta.label) ? opts.displayCta : null;
+  if (displayCta) notes.push(`Online size: the search pill becomes the "${displayCta.label}" button, sized as on the campaign's shipped display banners.`);
   const CTA_MIN_PX = rules?.rules.cta?.minPx ?? (budget === "micro" ? 18 : 24);
   const COMFORT_LABEL_PX = 18;
   const ctaPlanned = (headlinePx?: number): CtaPlan | null => {
@@ -466,6 +491,30 @@ export async function recomposeToFormat(
     // 18px type). A search pill sets its label at 68% of the pill, so the
     // same 18px label needs only a 27px pill — the shipped 384×592 pill is
     // 28.9px, and forcing 43px there cost it the icon and the message.
+    if (displayCta && sem.ctaLabel) {
+      // The online button: sized from the shipped one, no icon, one line.
+      const ref = displayCta.reference;
+      const share = recipe.axis === "side" ? displayCta.heightOfShort.side : displayCta.heightOfShort.stacked;
+      const dLabelShare = masterLabelRatio({ ctaH: ref.h, ctaW: ref.w, labelFontSize: ref.labelPx });
+      const dPill = pillHeightFromHeadline({
+        masterPillH: ref.h, masterHeadlinePx: null, headlinePx: null,
+        fallbackH: recipe.axis === "row" ? short * recipe.ctaHeightFrac : short * share,
+        labelRatio: dLabelShare, minH: CTA_MIN_PX, maxH, recipeFloorPx: recipe.ctaFloorPx, comfortLabelPx: COMFORT_LABEL_PX,
+      });
+      const dSpec = { ...fontSpec(sem.ctaLabel), weight: 700 as const };
+      return planCta({
+        label: displayCta.label,
+        spec: dSpec,
+        master: { ctaH: ref.h, ctaW: ref.w, labelFontSize: ref.labelPx, labelText: displayCta.label, labelSpec: dSpec, hasIcon: false },
+        targetH: dPill.h,
+        minH: CTA_MIN_PX,
+        maxH,
+        maxW: panelZone.w * (recipe.axis === "row" ? (hasPhoto ? 0.88 : 0.5) : 0.9),
+        minLabelPx: budget === "micro" ? Math.min(8, LABEL_FLOOR_PX) : LABEL_FLOOR_PX,
+        icon: false,
+        allowTwoLines: false,
+      });
+    }
     const labelShare = sem.ctaLabel ? masterLabelRatio({ ctaH: cta.h, ctaW: cta.w, labelFontSize: sem.ctaLabel.fontSize }) : 0.42;
     // The pill formula (lib/ctaPlan.ts): the pill keeps the master's
     // proportion to the HEADING as built here. Strips are the exception —
@@ -648,9 +697,13 @@ export async function recomposeToFormat(
     const msg = sem.message;
     const text = msg.text.replace(/\s+/g, " ").trim();
     const msgRatio = ovAll.messageMaxRatio ?? (sem.headline ? clamp(msg.fontSize / Math.max(1, sem.headline.fontSize), 0.12, 0.5) : recipe.messageMaxRatio);
-    const maxSize = Math.max(messageMin, r(headlineSize * msgRatio));
+    // A tower's heading is small (one word across 160px), so a message set
+    // from it is tiny. The guidelines' own 160×600 sets the message large,
+    // over several lines: a tenth of the width, wrapped.
+    const maxSize = Math.max(messageMin, r(headlineSize * msgRatio), formatClass === "tower" ? r(dstW * 0.1) : 0);
     const w = r(panelZone.w * 0.85);
-    const fit = fitText(text, { w, h: maxSize * 2.5 }, { ...fontSpec(msg), minSize: messageMin, maxSize, lineHeight: 1.15, maxLines: 2 });
+    const msgLines = formatClass === "tower" ? 3 : 2;
+    const fit = fitText(text, { w, h: maxSize * (msgLines + 0.5) }, { ...fontSpec(msg), minSize: messageMin, maxSize, lineHeight: 1.15, maxLines: msgLines });
     if (fit.fits) {
       const cap = fit.lines.length === 1;
       const h = cap ? Math.max(1, r(capHeightPx(fontSpec(msg), fit.fontSize))) : r(fit.height);
@@ -672,30 +725,35 @@ export async function recomposeToFormat(
     if (!ctaPlan.fits) needsReview = true;
     const build = (x: number, y: number): FreeformElement[] => {
       const out: FreeformElement[] = [];
-      if (cta.type === "rect") {
+      if (displayCta) {
+        out.push({ id: "rc_cta", type: "rect", slot: "cta", fill: displayCta.fill, x, y, w: ctaW, h: ctaH, radius: ctaH / 2, locked: true } as FreeformRect);
+      } else if (cta.type === "rect") {
         out.push({ id: "rc_cta", type: "rect", slot: "cta", fill: cta.fill, x, y, w: ctaW, h: ctaH, radius: sem.ctaKind === "pill" ? ctaH / 2 : r((cta.radius ?? 0) * (ctaH / Math.max(1, cta.h))), locked: true } as FreeformRect);
       } else {
         out.push({ ...cta, id: "rc_cta", slot: "cta", role: "decoration", fit: "contain", x, y, w: ctaW, h: ctaH, locked: true } as FreeformImage);
       }
-      if (sem.ctaLabel && ctaPlan.lines.length > 0) {
+      const labelFrom: FreeformText | null = sem.ctaLabel
+        ? (displayCta ? ({ ...sem.ctaLabel, color: displayCta.labelColor, fontWeight: 700, letterSpacing: undefined } as FreeformText) : sem.ctaLabel)
+        : null;
+      if (sem.ctaLabel && labelFrom && ctaPlan.lines.length > 0) {
         const lw = iconSize ? ctaW - padX - iconSize - ctaPlan.iconInset - 2 : ctaW - padX * 2;
         if (ctaPlan.lines.length === 1) {
           // Centre the label's CAP HEIGHT on the pill's centre line — the same
           // cap-fit frame InDesign uses — so the copy sits dead centre in both
           // the export and the editor regardless of font metrics.
-          const capH = capHeightPx(fontSpec(sem.ctaLabel), ctaPlan.fontSize);
+          const capH = capHeightPx(fontSpec(labelFrom), ctaPlan.fontSize);
           const lh = Math.max(1, r(capH));
           out.push(
-            textEl("rc_cta_label", "ctaLabel", "cta", sem.ctaLabel, { x: x + padX, y: y + r((ctaH - lh) / 2), w: lw, h: lh }, ctaPlan.fontSize, ctaPlan.lines[0] ?? "", iconSize ? "left" : "center", 1.1, {
+            textEl("rc_cta_label", "ctaLabel", "cta", labelFrom, { x: x + padX, y: y + r((ctaH - lh) / 2), w: lw, h: lh }, ctaPlan.fontSize, ctaPlan.lines[0] ?? "", iconSize ? "left" : "center", 1.1, {
               baselineFit: "cap",
             }),
           );
         } else {
           const lh = r(ctaPlan.fontSize * 1.15 * ctaPlan.lines.length);
-          out.push(textEl("rc_cta_label", "ctaLabel", "cta", sem.ctaLabel, { x: x + padX, y: y + r((ctaH - lh) / 2), w: lw, h: lh }, ctaPlan.fontSize, ctaPlan.lines.join("\n"), "center", 1.15));
+          out.push(textEl("rc_cta_label", "ctaLabel", "cta", labelFrom, { x: x + padX, y: y + r((ctaH - lh) / 2), w: lw, h: lh }, ctaPlan.fontSize, ctaPlan.lines.join("\n"), "center", 1.15));
         }
       }
-      if (sem.ctaIcon && iconSize) {
+      if (sem.ctaIcon && iconSize && !displayCta) {
         out.push({ ...sem.ctaIcon, id: "rc_cta_icon", slot: "ctaIcon", role: "decoration", fit: "contain", x: x + ctaW - ctaPlan.iconInset - iconSize, y: y + r((ctaH - iconSize) / 2), w: iconSize, h: iconSize, locked: true } as FreeformImage);
       }
       return out;

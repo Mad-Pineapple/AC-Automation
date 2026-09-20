@@ -7,7 +7,7 @@ import { normalizeFreeformConfig, adaptFreeformConfig, isFreeformConfig, type Fr
 import { recomposePanelLayout } from "../lib/panelRecompose";
 import { collectBrandPaletteHexes } from "../lib/colorAdapter";
 import { composeKeyVisualAdaptation, findKvBackground } from "../lib/kvAdapt";
-import { recomposeToFormat, shouldRecompose } from "../lib/recompose";
+import { recomposeToFormat, shouldRecompose, type DisplayCta } from "../lib/recompose";
 import { checkLayout, checkMandatory } from "../lib/layoutCheck";
 import { applyPillRule } from "../lib/pillRule";
 import { prepareMeasurement } from "../lib/textMeasure";
@@ -234,6 +234,7 @@ async function adaptOne(
 ): Promise<{ config: FreeformConfig; method: string; spec: ReturnType<typeof describeFormat>; reference: Reference | null; rejected: string[] }> {
   let adapted: FreeformConfig | null = null;
   let method = "scaled";
+  let displayCta: DisplayCta | null = null;
   const notes: string[] = [];
   // The brief's format name and channel decide the class (a leaderboard is a
   // strip whatever its ratio; a 3:1 billboard is wide, never a strip).
@@ -356,10 +357,12 @@ async function adaptOne(
   if (!adapted && shouldRecompose(masterConfig, master.width, master.height, width, height)) {
     try {
       const specZone = styleSpec?.zones[spec.formatClass];
+      displayCta = displayCtaFor(master.name, width, height);
       const rc = await recomposeToFormat(masterConfig, master.width, master.height, width, height, {
         brand: brandInfo,
         formatClass: spec.formatClass,
         rules,
+        displayCta,
         // An approved piece's measurements lead; else the campaign schema's zones; else the class recipe.
         ...(reference
           ? { recipeOverrides: reference.exemplar.measured }
@@ -426,7 +429,7 @@ async function adaptOne(
   if (rejected.length > 0 && method !== "scaled" && method !== "indesign-authoritative" && method !== "indesign-interpolated") {
     const attempts: Array<{ label: string; run: () => Promise<FreeformConfig | null> }> = [];
     if (!method.startsWith("recomposed") && shouldRecompose(masterConfig, master.width, master.height, width, height)) {
-      attempts.push({ label: `recomposed:${spec.formatClass}`, run: async () => (await recomposeToFormat(masterConfig, master.width, master.height, width, height, { brand: brandInfo, formatClass: spec.formatClass, rules }))?.config ?? null });
+      attempts.push({ label: `recomposed:${spec.formatClass}`, run: async () => (await recomposeToFormat(masterConfig, master.width, master.height, width, height, { brand: brandInfo, formatClass: spec.formatClass, rules, displayCta: displayCtaFor(master.name, width, height) }))?.config ?? null });
     }
     attempts.push({ label: "scaled", run: async () => adaptFreeformConfig(masterConfig, master.width, master.height, width, height) });
     for (const attempt of attempts) {
@@ -537,6 +540,27 @@ router.post("/templates/:id/detect-subject", requireAdmin, async (req, res): Pro
   }
   res.json({ templateId: id, detected: results });
 });
+
+/**
+ * The campaign's online button, when a size runs as a display banner. Read
+ * from the NAMED campaign spec (a learned layout carries geometry, not the
+ * campaign's copy or colours). Null for any other channel or campaign: the
+ * master's own call-to-action is then reproduced by the pill formula.
+ */
+const HTML_BANNER_SIZES = new Set(["300x250", "336x280", "300x600", "300x1050", "160x600", "120x600", "970x250", "970x90", "728x90", "760x120", "468x60", "320x50", "300x50", "320x100", "320x480"]);
+function displayCtaFor(masterName: string, width: number, height: number): DisplayCta | null {
+  // Only the sizes produced as HTML5 banners (the HTML group of the size
+  // picker). Companions, native and social tiles are stills and keep the
+  // master's own call-to-action.
+  if (!HTML_BANNER_SIZES.has(`${width}x${height}`)) return null;
+  const named = styleSchemaFor(masterName);
+  const label = named?.variants.length ? named.variants[named.variants.length - 1].cta.display : null;
+  const fill = named?.colours.ctaDisplay, labelColor = named?.colours.ctaLabelDisplay;
+  const part = named?.parts.cta as { fixedPx?: { w: number; h: number }; display?: { stacked: number; side: number } } | undefined;
+  if (!named || !label || !fill || !labelColor || !part?.fixedPx || !part.display) return null;
+  // Shipped DV360 buttons set their label at 42% of the button's height.
+  return { label, fill, labelColor, heightOfShort: part.display, reference: { w: part.fixedPx.w, h: part.fixedPx.h, labelPx: Math.round(part.fixedPx.h * 0.42) } };
+}
 
 router.post("/templates/:id/adapt", requireAdmin, async (req, res): Promise<void> => {
   const id = Number(req.params.id);
