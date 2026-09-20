@@ -23,6 +23,7 @@ import { inferSlots, type Box, type SemanticMaster } from "./slots";
 import { recipeFor, RECIPES, type Recipe } from "./recipes";
 import { fitText, prepareMeasurement, type FontSpec, capHeightPx, fontResolution } from "./textMeasure";
 import { planCta, masterLabelRatio, pillHeightFromHeadline, type CtaPlan } from "./ctaPlan";
+import { placeAnther, circleOf, ANTHER_RULE, type AntherShape } from "./anther";
 import { LABEL_FLOOR_PX, type RuleLayer } from "./partRulesLayer";
 import { guidelineLogoPlacement, isSocialSquare } from "./logoRules";
 import { ObjectStorageService } from "./objectStorage";
@@ -400,18 +401,25 @@ export async function recomposeToFormat(
   // the anther shape beside or below it. Forcing that copy onto the photo
   // put dark type on a dark picture (rejected for contrast on every size).
   // So: copy that sits on the ground in the master stays on the ground.
-  const photoShaped = hasPhoto && sem.photo?.src ? await (opts.imageIsShaped ?? defaultImageIsShaped)(sem.photo.src as string) : false;
+  const antherShape: AntherShape | null = hasPhoto ? ((sem.photo as FreeformImage | null)?.shape ?? null) : null;
+  const photoShaped = !!antherShape || (hasPhoto && sem.photo?.src ? await (opts.imageIsShaped ?? defaultImageIsShaped)(sem.photo.src as string) : false);
   const sitsOnPhoto = (t: { x: number; y: number; w: number; h: number } | null | undefined): boolean => {
     const pb = sem.photoBox;
     if (!t || !pb) return false;
     const cx = t.x + t.w / 2, cy = t.y + t.h / 2;
     if (cx < pb.x || cx > pb.x + pb.w || cy < pb.y || cy > pb.y + pb.h) return false;
     if (!photoShaped) return true;
+    if (antherShape) {
+      // Inside the anther's circle is on the picture; the rest of its box is ground.
+      const c = circleOf(pb, antherShape);
+      return Math.hypot(cx - c.cx, cy - c.cy) <= c.r;
+    }
     // A shaped photo only covers the middle of its box.
     const nx = (cx - (pb.x + pb.w / 2)) / (pb.w / 2), ny = (cy - (pb.y + pb.h / 2)) / (pb.h / 2);
     return nx * nx + ny * ny <= 0.49;
   };
-  const copyOnGround = recipe.axis !== "row" && hasPhoto && !!sem.headline && !sitsOnPhoto(sem.headline);
+  const headlineOffPhoto = hasPhoto && !!sem.headline && !sitsOnPhoto(sem.headline);
+  const copyOnGround = recipe.axis !== "row" && headlineOffPhoto;
   // Tall layouts whose master sets the heading ABOVE the photo keep it there
   // (brand guidelines p.16: heading, picture, message, button).
   const headerOnTop = copyOnGround && recipe.axis === "stacked" && !!sem.photoBox && !!sem.headline
@@ -427,7 +435,10 @@ export async function recomposeToFormat(
   let tileZone: Box | null = null; // strip: full-height logo tile on the right
   if (recipe.axis === "stacked") {
     // Copy on the ground needs the panel's room: the picture gives some up.
-    const ph = r(dstH * (copyOnGround && !headerOnTop ? Math.min(recipe.photoFrac, 0.42) : recipe.photoFrac));
+    const ph = antherShape
+      // The circle runs to the side margins, up to half the height.
+      ? headerH + Math.min(dstW, r(dstH * 0.5))
+      : r(dstH * (copyOnGround && !headerOnTop ? Math.min(recipe.photoFrac, 0.42) : recipe.photoFrac));
     const bh = hasBand ? Math.max(4, r(dstH * recipe.bandFrac)) : 0;
     photoZone = { x: 0, y: headerH, w: dstW, h: ph - headerH };
     if (hasBand) bandZone = { x: 0, y: ph, w: dstW, h: bh };
@@ -440,7 +451,7 @@ export async function recomposeToFormat(
     panelZone = { x: pw, y: bh, w: dstW - pw, h: dstH - bh };
   } else {
     const tile = opts.brand.logoUrl && !social ? dstH : 0;
-    const pw = hasPhoto ? clamp(Math.max(r(dstH * 2.4), r(dstW * recipe.photoFrac)), 0, r(dstW * 0.5)) : 0;
+    const pw = !hasPhoto ? 0 : antherShape ? Math.min(r(dstH * 1.25), r(dstW * 0.3)) : clamp(Math.max(r(dstH * 2.4), r(dstW * recipe.photoFrac)), 0, r(dstW * 0.5));
     photoZone = { x: 0, y: 0, w: pw, h: dstH };
     panelZone = { x: pw, y: 0, w: dstW - pw - tile, h: dstH };
     if (tile) tileZone = { x: dstW - tile, y: 0, w: tile, h: tile };
@@ -448,6 +459,7 @@ export async function recomposeToFormat(
 
   const elements: FreeformElement[] = [];
   const options: LayoutOption[] = [];
+  let antherEl: FreeformImage | null = null;
 
   // ---- 1. Panel ground -------------------------------------------------------
   elements.push({ id: "rc_panel", type: "rect", slot: "panel", fill: panelFill, x: 0, y: 0, w: dstW, h: dstH, locked: true } as FreeformRect);
@@ -476,7 +488,21 @@ export async function recomposeToFormat(
     const subjectBox = photo.focusSource === "vision" || photo.focusSource === "designer" ? photo.focusBox ?? null : null;
     // A photo cut to a shape is shown whole (a cover crop slices the anther
     // in half); a rectangle of pixels covers its zone as before.
-    const placed = photoShaped
+    const antherPlaced = antherShape
+      ? placeAnther(photoZone, { w: dstW, h: dstH }, antherShape.aspect ? { w: antherShape.aspect * 1000, h: 1000 } : natural, antherShape, Math.max(margin, r((guidelineLogoPlacement(dstW, dstH)?.tile.w ?? 0) / 2)))
+      : null;
+    if (antherPlaced) {
+      notes.push(`${ANTHER_RULE.title}: shown whole, as large as the margins allow${antherShape?.kind === "anther" ? ", its stem running off the artwork's edge" : ""}.`);
+      notes.push(...antherPlaced.notes);
+      // Whole, but small in a wide zone: within the rule, worth a designer's eye.
+      if (recipe.axis === "stacked" && antherPlaced.circle.r * 2 < photoZone.w * 0.55) {
+        notes.push("Check: the anther is whole but leaves open ground beside it at this size — a designer may want to rebalance the layout.");
+        needsReview = true;
+      }
+    }
+    const placed = antherPlaced
+      ? antherPlaced.box
+      : photoShaped
       ? (() => {
           const k = Math.min(photoZone.w / natural.w, photoZone.h / natural.h) * 0.96;
           const w = r(natural.w * k), h = r(natural.h * k);
@@ -487,7 +513,7 @@ export async function recomposeToFormat(
       const fits = subjectBox.w * placed.w <= photoZone.w + 0.5 && subjectBox.h * placed.h <= photoZone.h + 0.5;
       notes.push(fits ? `Photo window keeps ${photo.subject} whole.` : `Check: ${photo.subject} is larger than this photo window; the crop is centred on it.`);
     }
-    elements.push({
+    const photoEl = {
       ...photo,
       id: "rc_photo",
       slot: "photo",
@@ -495,7 +521,11 @@ export async function recomposeToFormat(
       fit: photoShaped ? "contain" : "cover",
       ...placed,
       locked: false,
-    } as FreeformImage);
+    } as FreeformImage;
+    // The anther goes on ABOVE the panel and band grounds (rule 1: nothing is
+    // laid over it — a panel rect drawn later hid its stem), under the copy.
+    if (antherPlaced) antherEl = photoEl;
+    else elements.push(photoEl);
   } else if (sem.photo && !keep.has("photo")) {
     drop("photo", "Photo dropped: this format has no room for it.", false);
   }
@@ -504,7 +534,7 @@ export async function recomposeToFormat(
   // Strips keep the scrim: their heading sits on a sliver of the photograph
   // and, with no shipped strip to go by, legibility wins (Quakes 728×90 read
   // at 2.7:1 without it).
-  if (copyOnGround) {
+  if (copyOnGround || headlineOffPhoto) {
     // No copy on the picture: nothing for a scrim to do.
   } else if (hasPhoto && sem.headline && keep.has("headline") && look?.scrim === false && recipe.axis !== "row") {
     notes.push("Online size: no scrim over the photograph, as on the campaign's shipped display banners.");
@@ -615,7 +645,7 @@ export async function recomposeToFormat(
         targetH: dPill.h,
         minH: CTA_MIN_PX,
         maxH,
-        maxW: panelZone.w * (recipe.axis === "row" ? (hasPhoto ? 0.88 : 0.5) : 0.9),
+        maxW: panelZone.w * (recipe.axis === "row" ? (hasPhoto && !headlineOffPhoto ? 0.88 : 0.5) : 0.9),
         minLabelPx: budget === "micro" ? Math.min(8, LABEL_FLOOR_PX) : LABEL_FLOOR_PX,
         icon: false,
         allowTwoLines: false,
@@ -674,6 +704,7 @@ export async function recomposeToFormat(
   }
 
   // ---- 7. Headline (+ sub-headline) ----------------------------------------------------------
+  if (antherEl) elements.push(antherEl);
   const copyZone: Box = recipe.axis === "row" ? panelZone : photoZone;
   type GroundItem = { kind: "copy"; w: number; h: number; build: (x: number, y: number) => FreeformElement[] };
   const groundCopy: GroundItem[] = [];
@@ -706,7 +737,7 @@ export async function recomposeToFormat(
     };
     // The picture may overflow its zone upwards (cover crops are oversized);
     // the header wears the ground colour over it.
-    if (headerOnTop) elements.push({ id: "rc_header_ground", type: "rect", slot: "panel", fill: panelFill, x: 0, y: 0, w: dstW, h: headerH, locked: true } as FreeformRect);
+    if (headerOnTop && !photoShaped) elements.push({ id: "rc_header_ground", type: "rect", slot: "panel", fill: panelFill, x: 0, y: 0, w: dstW, h: headerH, locked: true } as FreeformRect);
     if (headerOnTop) elements.push(...buildCopy(r((dstW - w) / 2), r((headerH - (h + gap + subH)) / 2) + r(margin * 0.3)));
     else groundCopy.push({ kind: "copy", w, h: h + gap + subH, build: buildCopy });
     if (sem.kicker) drop("kicker", "Kicker line left out: the heading sits on the colour ground here.", true);
@@ -720,7 +751,9 @@ export async function recomposeToFormat(
       // One row. With a photo, the headline sits ON the photo (centred), as
       // on every other Get Ready size; the panel is left to the message and
       // the pill. Without a photo it shares the panel with the pill.
-      const onPhoto = hasPhoto && photoZone.w > 40;
+      // …unless the master keeps its heading off the picture (an anther
+      // layout): then it shares the panel with the pill.
+      const onPhoto = hasPhoto && photoZone.w > 40 && !headlineOffPhoto;
       const ctaW = onPhoto ? 0 : (ctaPlanned()?.w ?? 0);
       const box: Box = onPhoto
         ? { x: photoZone.x + margin, y: 0, w: Math.max(20, photoZone.w - margin * 2), h: dstH }
@@ -951,7 +984,8 @@ export async function recomposeToFormat(
     // strip is too short for both, the pill stays and the message goes.
     const cta = items.find((i) => i.kind === "cta");
     let msgItem: { w: number; h: number; build: (x: number, y: number) => FreeformElement[] } | null = null;
-    if (sem.message && hasPhoto) {
+    const stripCopyOnPhoto = hasPhoto && !headlineOffPhoto;
+    if (sem.message && stripCopyOnPhoto) {
       const msg = sem.message;
       const mText = msg.text.replace(/\s+/g, " ").trim();
       const mw = r(panelZone.w * 0.9);
@@ -975,7 +1009,7 @@ export async function recomposeToFormat(
       y += msgItem.h + gapY;
       if (cta) elements.push(...cta.build(panelZone.x + r((panelZone.w - cta.w) / 2), y));
     } else if (cta) {
-      elements.push(...cta.build(hasPhoto ? panelZone.x + r((panelZone.w - cta.w) / 2) : panelZone.x + panelZone.w - cta.w - margin, r((dstH - cta.h) / 2)));
+      elements.push(...cta.build(stripCopyOnPhoto ? panelZone.x + r((panelZone.w - cta.w) / 2) : panelZone.x + panelZone.w - cta.w - margin, r((dstH - cta.h) / 2)));
     }
     if (tileZone && opts.brand.logoUrl) {
       elements.push({ id: "rc_logo", type: "image", slot: "logo", role: "logo", src: opts.brand.logoUrl, fit: "contain", ...tileZone, locked: true } as FreeformImage);

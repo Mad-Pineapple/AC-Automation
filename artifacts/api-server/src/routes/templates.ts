@@ -10,6 +10,7 @@ import { composeKeyVisualAdaptation, findKvBackground } from "../lib/kvAdapt";
 import { recomposeToFormat, shouldRecompose, type DisplayCta } from "../lib/recompose";
 import { checkLayout, checkMandatory } from "../lib/layoutCheck";
 import { applyPillRule } from "../lib/pillRule";
+import { analyseShape, keyOutGround, type AntherShape } from "../lib/anther";
 import { prepareMeasurement } from "../lib/textMeasure";
 import { scoreGeometry, scoreContrast, contrastBaseline, type PrincipleScores } from "../lib/principles";
 import { ensureSubjects, detectSubject } from "../lib/subjectDetect";
@@ -578,6 +579,45 @@ function displayCtaFor(masterName: string, width: number, height: number): Displ
   return { label, fill, labelColor, heightOfShort: part.display, reference: { w: part.fixedPx.w, h: part.fixedPx.h, labelPx: Math.round(part.fixedPx.h * 0.42) }, look };
 }
 
+/** Mark images that are cut to a shape (lib/anther.ts). In memory only: the
+ *  stored master is not rewritten. */
+const shapeCache = new Map<string, { shape: AntherShape; src: string } | null>();
+async function withShapes(config: FreeformConfig, loadImage: ImageLoader): Promise<FreeformConfig> {
+  let changed = false;
+  // The artwork's flat ground: the largest plain rect (no gradient) under everything.
+  const groundRect = config.elements.filter((e) => e.type === "rect" && !(e as { gradient?: unknown }).gradient && (e.opacity ?? 1) >= 1).sort((a, b) => b.w * b.h - a.w * a.h)[0] as { fill?: string } | undefined;
+  const groundHex = groundRect?.fill ?? null;
+  const elements = await Promise.all(config.elements.map(async (el) => {
+    // Only the main picture: a photo-role image holding a real share of the canvas.
+    if (el.type !== "image" || el.shape || !el.src || el.role !== "product" || el.w * el.h < 2500) return el;
+    try {
+      if (!shapeCache.has(el.src)) {
+        let found: { shape: AntherShape; src: string } | null = null;
+        const bytes = await loadImage(el.src);
+        if (bytes) {
+          const direct = await analyseShape(bytes);
+          if (direct) found = { shape: direct, src: el.src };
+          else {
+            // The ground colour was baked into the pixels: cut it away from a
+            // COPY for the builds. The imported file is never changed.
+            const keyed = await keyOutGround(bytes, groundHex);
+            const shape = keyed ? await analyseShape(keyed) : null;
+            if (keyed && shape && shape.kind === "anther") {
+              const stored = await new LayerStorage().uploadBytes(keyed, "image/png");
+              found = { shape, src: `/api/storage${stored}` };
+            }
+          }
+        }
+        shapeCache.set(el.src, found);
+      }
+      const hit = shapeCache.get(el.src);
+      if (hit) { changed = true; return { ...el, src: hit.src, shape: hit.shape }; }
+    } catch { /* an unreadable image is just not shaped */ }
+    return el;
+  }));
+  return changed ? { ...config, elements } : config;
+}
+
 router.post("/templates/:id/adapt", requireAdmin, async (req, res): Promise<void> => {
   const id = Number(req.params.id);
   const [master] = await db.select().from(templatesTable).where(eq(templatesTable.id, id));
@@ -719,6 +759,9 @@ router.post("/templates/:id/adapt", requireAdmin, async (req, res): Promise<void
   await ensureBrandFontsRegistered();
   // Pieces the designers have already marked Right in this family lead.
   const exemplars = await approvedExemplars(master.id);
+  // Photos cut to a shape (the anther) are read once, from their own
+  // transparency, so every engine and the gate can keep them whole.
+  masterConfig = await withShapes(masterConfig, makeImageLoader(req));
   // Flat artwork (copy baked in) can only be scaled to a near-identical
   // shape. Refuse the whole call up front rather than produce re-crops the
   // studio has rejected — nothing is created, the message says what to do.
@@ -1504,6 +1547,7 @@ router.post("/templates/:id/redo", requireAdmin, async (req, res): Promise<void>
     await ensureBrandFontsRegistered();
     // The corrected, approved pieces of this family are the reference — never
     // the piece being redone itself.
+    masterConfig = await withShapes(masterConfig, makeImageLoader(req));
     const exemplars = await approvedExemplars(master.id);
     // Never follow the piece itself, nor a duplicate of it under another id.
     const pieceCfg = (() => { try { const r = JSON.parse(piece.config || "{}"); return isFreeformConfig(r) ? normalizeFreeformConfig(r) : null; } catch { return null; } })();

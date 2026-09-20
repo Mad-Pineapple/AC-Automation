@@ -128,6 +128,10 @@ export interface FreeformImage extends FreeformBase {
   /** The panel graphic has had its cut parts painted out in the ground
    * colour, so drawing it together with its parts never doubles them. */
   panelMasked?: boolean;
+  /** A photo cut to a shape, read off its transparency (lib/anther.ts): the
+   *  council's anther. Carried on the element so every engine and the quality
+   *  gate can honour "the anther is never cropped". */
+  shape?: { kind: "anther" | "shape"; cx: number; cy: number; r: number; stemX?: number; stemY?: number; aspect?: number };
   /** Motion from the imported HTML example (see MotionTrack). */
   motion?: MotionTrack;
   /** The motion shared by this layer's group (its animated ancestors only);
@@ -618,6 +622,15 @@ export function normalizeFreeformConfig(raw: unknown): FreeformConfig {
         ...(el.bakedCopy === true ? { bakedCopy: true } : {}),
         ...(el.panelPart === true ? { panelPart: true } : {}),
         ...(el.panelMasked === true ? { panelMasked: true } : {}),
+        ...(() => {
+          const sh = el.shape as Record<string, unknown> | undefined;
+          if (!sh || (sh.kind !== "anther" && sh.kind !== "shape")) return {};
+          const n = (v: unknown) => (typeof v === "number" && Number.isFinite(v) ? v : null);
+          const cx = n(sh.cx), cy = n(sh.cy), rr = n(sh.r);
+          if (cx === null || cy === null || rr === null || rr <= 0) return {};
+          const sx = n(sh.stemX), sy = n(sh.stemY), asp = n(sh.aspect);
+          return { shape: { kind: sh.kind as "anther" | "shape", cx, cy, r: rr, ...(sx !== null && sy !== null ? { stemX: sx, stemY: sy } : {}), ...(asp !== null && asp > 0 ? { aspect: asp } : {}) } };
+        })(),
         ...(kvText && kvText.length > 0 ? { kvText } : {}),
         ...(motion ? { motion } : {}),
         ...(groupMotion ? { groupMotion } : {}),

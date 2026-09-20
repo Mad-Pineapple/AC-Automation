@@ -7,6 +7,7 @@
  * the canvas, a CTA below its legibility floor, a headline that shrank to
  * nothing — and return plain-language issues the review UI can show.
  */
+import { checkAnther } from "./anther";
 import type { FreeformConfig, FreeformText } from "./freeform";
 import { inferSlots } from "./slots";
 import { wrapText, measureLine } from "./textMeasure";
@@ -131,6 +132,8 @@ function checkMarkRules(config: FreeformConfig, width: number, height: number): 
  */
 export function checkMandatory(master: FreeformConfig, adapted: FreeformConfig, width: number, height: number, partRules: Record<string, { minPx?: number; neverOverlap?: string[]; dropWhenTight?: boolean }> = {}, masterSize?: { w: number; h: number }): string[] {
   const reasons: string[] = [];
+  // Brand schema: the anther is never cropped and nothing is laid over it.
+  reasons.push(...checkAnther(adapted.elements as Parameters<typeof checkAnther>[0], width, height));
   const short = Math.min(width, height);
   const isStrip = height <= 120 && width / height >= 2.5;
   const present = (cfg: FreeformConfig, slot: string) =>

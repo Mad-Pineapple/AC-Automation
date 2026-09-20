@@ -138,3 +138,7 @@ Print/posters (A sizes), digital screens 1920×1080 & 1080×1920, digital ads 30
   chest (min 28mm) → right chest → under contractor logo → top of left sleeve. Front of safety
   wear only, on solid colour. Full colour on white/light, white on dark, black on low-contrast/
   hi-vis. Direct embroidery.
+
+## Anther — schema rule: never cropped (designer ruling, 20 Sep 2026)
+
+The anther (circle on a straight stem; pp. 16, 28–31) is never cropped in automated artwork. The anther's circle sits wholly inside the artwork and nothing is laid over it (no panel, pattern band, tile, button or copy). It is as big as the margins allow; the margin is half the pōhutukawa tile. The stem runs off the artwork's edge — from the left, the lower left at 45°, or the bottom centre — with its straight lines showing; that is how the device is drawn, not a crop. The stem is never covered by the pōhutukawa tile and never heads for the lower-right corner. On narrow formats the margin may give way so the anther can hold its picture, but the curve where the stem meets the circle stays visible. The guidelines allow a cropped anther only subject to design review; a size that cannot hold the whole anther is flagged for a designer, never built with it cropped.
