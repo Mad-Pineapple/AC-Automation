@@ -42,6 +42,10 @@ export interface RecomposeOptions {
   /** Recipe fields measured off an approved piece of the same family
    * (lib/exemplars.ts); they win over the class recipe. */
   recipeOverrides?: Partial<Recipe>;
+  /** True when recipeOverrides were measured off an APPROVED piece (they
+   *  then lead over everything); false/absent when they are the campaign's
+   *  general zone numbers, which the online look refines. */
+  overridesFromApproved?: boolean;
   /** Format class decided from the brief's name/channel; overrides the
    * dimensions-only classification. */
   formatClass?: FormatClass;
@@ -67,6 +71,24 @@ export interface DisplayCta {
   heightOfShort: { stacked: number; side: number };
   /** The shipped button, so its label share and padding carry. */
   reference: { w: number; h: number; labelPx: number };
+  /**
+   * The rest of the campaign's online look, measured on its shipped display
+   * banners. Each number is set only for a shape that was really measured
+   * (300×600 and 970×250 for Get Ready); anything absent keeps the build's
+   * own rule.
+   */
+  look?: {
+    /** Photo's share of the long axis (970×250 ships at 69%, not the OOH 50%). */
+    photoFrac?: number;
+    /** Pattern band thickness as a share of the short side. */
+    bandOfShort?: number;
+    /** Heading cap height as a share of the short side. */
+    headlineCapOfShort?: number;
+    /** Logo lockup width as a share of the panel. */
+    lockupWidthOfPanel?: number;
+    /** false: online banners ship with no dark scrim over the photograph. */
+    scrim?: boolean;
+  };
 }
 
 export interface RecomposeResult {
@@ -304,7 +326,18 @@ export async function recomposeToFormat(
   const sameAxis = !ovAll.axis || ovAll.axis === base.axis;
   const AXIS_BOUND = new Set(["axis", "photoFrac", "bandFrac", "headlineCentreFrac", "headlineCentreFracBare", "headlineWidthFrac", "headlineMaxHeightFrac"]);
   const ov: Partial<Recipe> = sameAxis ? ovAll : (Object.fromEntries(Object.entries(ovAll).filter(([k]) => !AXIS_BOUND.has(k))) as Partial<Recipe>);
-  const recipe: Recipe = { ...base, ...ov, axis: base.axis === "row" ? "row" : (ov.axis ?? base.axis), keep: base.keep };
+  // The online look applies only when the master carries the out-of-home
+  // device (a display master already IS the online look and is reproduced).
+  const normLabel = (t: string | undefined) => (t ?? "").replace(/\s+/g, " ").trim().toLowerCase();
+  const displayCta = opts.displayCta && sem.cta && sem.ctaLabel && normLabel(sem.ctaLabel.text) !== normLabel(opts.displayCta.label) ? opts.displayCta : null;
+  const look = displayCta?.look ?? null;
+  const lookOv: Partial<Recipe> = look && base.axis !== "row"
+    ? { ...(look.photoFrac ? { photoFrac: look.photoFrac } : {}), ...(look.bandOfShort ? { bandFrac: (look.bandOfShort * Math.min(dstW, dstH)) / dstH } : {}) }
+    : {};
+  // An approved piece's measurements lead over the campaign's online look;
+  // the campaign's general (out-of-home) zone numbers do not — they are what
+  // the online look refines (970×250 ships with the photo at 69%, not 50%).
+  const recipe: Recipe = { ...base, ...(opts.overridesFromApproved ? lookOv : {}), ...ov, ...(opts.overridesFromApproved ? {} : lookOv), axis: base.axis === "row" ? "row" : (ov.axis ?? base.axis), keep: base.keep };
   const keep = new Set(recipe.keep);
   const short = Math.min(dstW, dstH);
   const margin = Math.max(4, r(short * recipe.marginFrac));
@@ -400,7 +433,12 @@ export async function recomposeToFormat(
   }
 
   // ---- 3. Scrim over the photo zone ------------------------------------------------
-  if (hasPhoto && sem.headline && keep.has("headline")) {
+  // Strips keep the scrim: their heading sits on a sliver of the photograph
+  // and, with no shipped strip to go by, legibility wins (Quakes 728×90 read
+  // at 2.7:1 without it).
+  if (hasPhoto && sem.headline && keep.has("headline") && look?.scrim === false && recipe.axis !== "row") {
+    notes.push("Online size: no scrim over the photograph, as on the campaign's shipped display banners.");
+  } else if (hasPhoto && sem.headline && keep.has("headline")) {
     const ms = sem.scrim;
     // Same axis: the master's own scrim share carries. Across axes it does
     // not — the studio runs the scrim 70% down a stacked photo and 84% down
@@ -477,8 +515,6 @@ export async function recomposeToFormat(
   // real pill instead of an estimate it later overlaps.
   // Swap to the online button only when the master really carries a
   // different device (a search pill): a display master already has it.
-  const norm = (t: string | undefined) => (t ?? "").replace(/\s+/g, " ").trim().toLowerCase();
-  const displayCta = opts.displayCta && sem.cta && sem.ctaLabel && norm(sem.ctaLabel.text) !== norm(opts.displayCta.label) ? opts.displayCta : null;
   if (displayCta) notes.push(`Online size: the search pill becomes the "${displayCta.label}" button, sized as on the campaign's shipped display banners.`);
   const CTA_MIN_PX = rules?.rules.cta?.minPx ?? (budget === "micro" ? 18 : 24);
   const COMFORT_LABEL_PX = 18;
@@ -602,7 +638,12 @@ export async function recomposeToFormat(
       const zoneAspect = copyZone.w / Math.max(1, copyZone.h);
       const shapeFrac = 0.32 + clamp((zoneAspect - 1.14) / (1.9 - 1.14), 0, 1) * (0.45 - 0.32);
       const maxHFrac = recipe.axis === "stacked" || recipe.axis === "side" ? Math.max(recipe.headlineMaxHeightFrac, shapeFrac) : recipe.headlineMaxHeightFrac;
-      const box = { w: Math.min(zoneW, copyZone.w * recipe.headlineWidthFrac), h: copyZone.h * maxHFrac };
+      // Online look: the heading may run as tall as the shipped banners set
+      // it (cap height 38% of the short side on 970×250, where the OOH wide
+      // stops at 27%). Width still limits it.
+      const capShare = look?.headlineCapOfShort ? capHeightPx(fontSpec(hl), 100) / 100 : 0;
+      const lookH = capShare > 0 ? ((look!.headlineCapOfShort as number) * short / capShare) * 1.04 : 0;
+      const box = { w: Math.min(zoneW, copyZone.w * recipe.headlineWidthFrac), h: Math.max(copyZone.h * maxHFrac, Math.min(lookH, copyZone.h * 0.7)) };
       const fit = fitText(text, box, { ...fontSpec(hl), minSize: headlineMin, maxSize: copyZone.h, lineHeight: 1.02, maxLines });
       if (!fit.fits) { notes.push("Headline shrank to the floor size and still overflows — shorten the copy."); needsReview = true; }
       // One line: the box is the CAP HEIGHT, as InDesign frames it, so the
@@ -703,7 +744,15 @@ export async function recomposeToFormat(
     const maxSize = Math.max(messageMin, r(headlineSize * msgRatio), formatClass === "tower" ? r(dstW * 0.1) : 0);
     const w = r(panelZone.w * 0.85);
     const msgLines = formatClass === "tower" ? 3 : 2;
-    const fit = fitText(text, { w, h: maxSize * (msgLines + 0.5) }, { ...fontSpec(msg), minSize: messageMin, maxSize, lineHeight: 1.15, maxLines: msgLines });
+    // One line first (every master sets the message on one line): it gives
+    // up size before it breaks in two. On the online 970×250 the panel is
+    // only 300px wide; a message sized from the big heading wrapped to two
+    // lines there and was then dropped for height. Towers wrap by design.
+    // Fitted to 94% of its box: the renderer wraps a line that meets its box
+    // to the pixel ("Make a plan" with "today." pushed out of a cap-height
+    // frame), so a one-line fit always leaves slack.
+    const oneLine = formatClass === "tower" ? null : fitText(text, { w: w * 0.94, h: maxSize * 1.4 }, { ...fontSpec(msg), minSize: messageMin, maxSize, lineHeight: 1.15, maxLines: 1 });
+    const fit = oneLine?.fits ? oneLine : fitText(text, { w, h: maxSize * (msgLines + 0.5) }, { ...fontSpec(msg), minSize: messageMin, maxSize, lineHeight: 1.15, maxLines: msgLines });
     if (fit.fits) {
       const cap = fit.lines.length === 1;
       const h = cap ? Math.max(1, r(capHeightPx(fontSpec(msg), fit.fontSize))) : r(fit.height);
@@ -767,7 +816,12 @@ export async function recomposeToFormat(
     const aspect = natural.w / Math.max(1, natural.h);
     let h = r(short * recipe.lockupHeightFrac);
     let w = r(h * aspect);
-    const maxW = r(panelZone.w * recipe.lockupMaxWidthFrac);
+    // Online look: the lockup is set by its width in the panel (70% on the
+    // shipped banners), never taller than 22% of the short side.
+    if (look?.lockupWidthOfPanel) { w = r(panelZone.w * look.lockupWidthOfPanel); h = r(w / aspect); if (h > short * 0.22) { h = r(short * 0.22); w = r(h * aspect); } }
+    // The class's width cap still holds for every other build; only a lockup
+    // sized by the online look may run wider than it.
+    const maxW = look?.lockupWidthOfPanel ? Math.max(w, r(panelZone.w * recipe.lockupMaxWidthFrac)) : r(panelZone.w * recipe.lockupMaxWidthFrac);
     if (w > maxW) { w = maxW; h = r(w / aspect); }
     // Never below the lockup floor (illegible marks on towers).
     if (h < lockupMin) { h = lockupMin; w = r(h * aspect); if (w > panelZone.w - margin * 2) { w = panelZone.w - margin * 2; h = r(w / aspect); } }

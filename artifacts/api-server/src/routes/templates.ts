@@ -363,6 +363,7 @@ async function adaptOne(
         formatClass: spec.formatClass,
         rules,
         displayCta,
+        overridesFromApproved: !!reference,
         // An approved piece's measurements lead; else the campaign schema's zones; else the class recipe.
         ...(reference
           ? { recipeOverrides: reference.exemplar.measured }
@@ -558,8 +559,23 @@ function displayCtaFor(masterName: string, width: number, height: number): Displ
   const fill = named?.colours.ctaDisplay, labelColor = named?.colours.ctaLabelDisplay;
   const part = named?.parts.cta as { fixedPx?: { w: number; h: number }; display?: { stacked: number; side: number } } | undefined;
   if (!named || !label || !fill || !labelColor || !part?.fixedPx || !part.display) return null;
+  // The rest of the online look, only for the shapes the campaign really
+  // shipped online (their zone carries displayPhotoFrac): photo share, band,
+  // heading height and lockup width. Every online size drops the scrim.
+  const cls = classifyAspect(width, height);
+  const zone = named.zones[cls] as { axis: string; displayPhotoFrac?: number } | undefined;
+  const measured = !!zone?.displayPhotoFrac && (cls === "portrait" || cls === "wide");
+  const axisRule = zone?.axis === "side" ? named.display?.side : named.display?.stacked;
+  const hlDisplay = (named.parts.headline as { display?: { stacked: number; side: number } } | undefined)?.display;
+  const look: NonNullable<DisplayCta["look"]> = { scrim: false };
+  if (measured && axisRule) {
+    look.photoFrac = zone!.displayPhotoFrac;
+    look.bandOfShort = axisRule.bandH;
+    look.lockupWidthOfPanel = axisRule.lockup?.w;
+    if (hlDisplay) look.headlineCapOfShort = zone!.axis === "side" ? hlDisplay.side : hlDisplay.stacked;
+  }
   // Shipped DV360 buttons set their label at 42% of the button's height.
-  return { label, fill, labelColor, heightOfShort: part.display, reference: { w: part.fixedPx.w, h: part.fixedPx.h, labelPx: Math.round(part.fixedPx.h * 0.42) } };
+  return { label, fill, labelColor, heightOfShort: part.display, reference: { w: part.fixedPx.w, h: part.fixedPx.h, labelPx: Math.round(part.fixedPx.h * 0.42) }, look };
 }
 
 router.post("/templates/:id/adapt", requireAdmin, async (req, res): Promise<void> => {

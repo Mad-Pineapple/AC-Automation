@@ -300,3 +300,16 @@ DV360 files (only 300×600 + 970×250; yellow LEARN MORE 181×43).
   guidelines' 160×600 sets it) and a lockup at 20% of the width.
 - `applyPillRule` skips the pill-vs-heading drift check when the label
   differs from the master's (a different device).
+- **Full online look (2026-09-20, approved).** Beyond the button, HTML banner
+  sizes built from an OOH master take the campaign's shipped display look
+  (`DisplayCta.look`, from the named spec): no scrim (strips keep theirs —
+  Quakes 728×90 read 2.7:1 without it); and for the two shapes really
+  shipped online (portrait 300×600, wide 970×250) the photo share
+  (`displayPhotoFrac`, 69% on 970×250), band thickness as a share of the
+  short side, heading cap height (38% of the short side on the wide) and
+  lockup at 70% of the panel. The look refines the campaign's general zone
+  numbers but an APPROVED piece's measurements still lead
+  (`overridesFromApproved`). The message fits one line first, to 94% of its
+  box, before it may wrap (it clipped to "Make a plan" on the 300px panel).
+  Baseline lesson: `Math.max(w, cap)` on the lockup removed the class width
+  cap for every build — caught on 1920×1080 before shipping.
