@@ -72,6 +72,7 @@ import { describeFormat, aspectDistance, type FormatHints } from "../lib/formatC
 import { isFlatArtwork } from "../lib/slots";
 import { FLAT_SCALE_TOLERANCE } from "../lib/campaignPlan";
 import { feedbackForFormat, describeFormatFeedback } from "../lib/feedbackLearning";
+import { applyRememberedCorrections, applyDeltas, deriveDeltas, geometrySnapshot, rememberCorrection, type CorrectionScope } from "../lib/correctionMemory";
 import { approvedExemplars, studioExemplars, chooseReference, measureRecipe, type Exemplar, type Reference } from "../lib/exemplars";
 import { dissectPdfToTemplate } from "../lib/pdfDissect";
 import { dissectImageToTemplate } from "../lib/imageDissect";
@@ -936,8 +937,13 @@ router.post("/templates/:id/adapt", requireAdmin, async (req, res): Promise<void
       onlineButton: t.onlineButton === true || req.body?.onlineButton === true,
     };
     const { config: adaptedConfig, method, spec, rejected } = await adaptOne(sourceMaster, sourceConfig, width, height, brandInfo, (req as any).log, exemplars, undefined, hints, resolvedStyle.source === "none" ? null : { schema: resolvedStyle.schema, label: resolvedStyle.label, profile: resolvedStyle.profile }, { loadImage: makeImageLoader(req), brandFontFamily: brand?.fontFamily ?? "National 2" }, softened ? null : authoritativeSources);
+    // Correction memory is deterministic and runs before validation/optional AI.
+    // The baseline is the engine output before remembered or human corrections.
+    const adaptationBaseline = geometrySnapshot(adaptedConfig);
+    const remembered = await applyRememberedCorrections(adaptedConfig, sourceMaster.id, width, height, adaptedConfig.masterFamily ?? sourceConfig.masterFamily ?? null);
+    const correctedConfig = normalizeFreeformConfig({ ...remembered.config, adaptationBaseline, appliedCorrectionRuleIds: remembered.ruleIds });
     // Guideline reminders for what is on the piece (logo tile, band, photo…).
-    let merged = subjectNotes.length ? normalizeFreeformConfig({ ...adaptedConfig, adaptNotes: [...(adaptedConfig.adaptNotes ?? []), ...subjectNotes] }) : adaptedConfig;
+    let merged = subjectNotes.length ? normalizeFreeformConfig({ ...correctedConfig, adaptNotes: [...(correctedConfig.adaptNotes ?? []), ...subjectNotes] }) : correctedConfig;
     let elementGuidelines: Awaited<ReturnType<typeof guidelinesForConfig>> = [];
     try {
       elementGuidelines = await guidelinesForConfig(brand?.id ?? null, adaptedConfig, width, height, 3);
@@ -948,7 +954,7 @@ router.post("/templates/:id/adapt", requireAdmin, async (req, res): Promise<void
       // editor shows them on request ("Guidelines for this piece").
     } catch { /* guidelines are a bonus */ }
     if (dryRun) {
-      dryBuilt.push({ width, height, method, rejected: [...rejected], config: adaptedConfig });
+      dryBuilt.push({ width, height, method, rejected: [...rejected], config: correctedConfig });
       continue;
     }
     const name =
@@ -1351,6 +1357,55 @@ router.get("/templates/:id", optionalAuth, async (req, res): Promise<void> => {
   res.json(formatTemplate(template));
 });
 
+
+/**
+ * POST /templates/apply-correction
+ * { sourceId, targetIds, remember?, scope? }
+ *
+ * Applies the human geometry edits made to one generated piece to selected
+ * WIP pieces using proportional deltas. With remember=true the same rule is
+ * used automatically by future builds from this campaign master.
+ */
+router.post("/templates/apply-correction", requireAdmin, async (req, res): Promise<void> => {
+  const sourceId = Number(req.body?.sourceId);
+  const targetIds = Array.isArray(req.body?.targetIds) ? [...new Set(req.body.targetIds.map(Number).filter(Number.isInteger))].slice(0, 60) : [];
+  const scope: CorrectionScope = req.body?.scope === "campaign" || req.body?.scope === "family" || req.body?.scope === "format" ? req.body.scope : "format";
+  const remember = req.body?.remember === true;
+  if (!Number.isInteger(sourceId) || targetIds.length === 0) { res.status(400).json({ error: "sourceId and targetIds are required" }); return; }
+  const [source] = await db.select().from(templatesTable).where(eq(templatesTable.id, sourceId));
+  if (!source) { res.status(404).json({ error: "Source artwork not found" }); return; }
+  let raw: any;
+  try { raw = JSON.parse(source.config || "{}"); } catch { raw = {}; }
+  if (!isFreeformConfig(raw)) { res.status(400).json({ error: "Source artwork is not editable freeform artwork" }); return; }
+  const sourceCfg = normalizeFreeformConfig(raw);
+  if (!sourceCfg.adaptationBaseline?.length || !source.sourceTemplateId) {
+    res.status(409).json({ error: "This piece predates correction baselines. Rebuild this size once, edit it, then Apply to selected." }); return;
+  }
+  const deltas = deriveDeltas(sourceCfg, sourceCfg.adaptationBaseline, source.width, source.height);
+  if (deltas.length === 0) { res.status(400).json({ error: "No geometry changes were found on the source piece." }); return; }
+  const formatClass = classifyAspect(source.width, source.height);
+  const rule = { masterId: source.sourceTemplateId, scope, family: sourceCfg.masterFamily ?? null, formatClass, deltas };
+  let ruleId: number | null = null;
+  if (remember) ruleId = await rememberCorrection(rule, source.id, (req as any).clerkUserId ?? null);
+
+  const targets = await db.select().from(templatesTable).where(inArray(templatesTable.id, targetIds));
+  let updated = 0;
+  for (const t of targets) {
+    if (t.category !== "wip" || t.id === source.id || t.sourceTemplateId !== source.sourceTemplateId) continue;
+    let traw: any; try { traw = JSON.parse(t.config || "{}"); } catch { continue; }
+    if (!isFreeformConfig(traw)) continue;
+    const cfg = normalizeFreeformConfig(traw);
+    // Scope filters also govern the immediate multi-apply operation.
+    if (scope === "format" && classifyAspect(t.width, t.height) !== formatClass) continue;
+    if (scope === "family" && sourceCfg.masterFamily && cfg.masterFamily !== sourceCfg.masterFamily) continue;
+    const patched = applyDeltas(cfg, deltas, t.width, t.height);
+    const finalCfg = normalizeFreeformConfig({ ...patched, adaptationBaseline: cfg.adaptationBaseline, appliedCorrectionRuleIds: [...(cfg.appliedCorrectionRuleIds ?? []), ...(ruleId ? [ruleId] : [])] });
+    await db.update(templatesTable).set({ config: JSON.stringify(finalCfg), updatedAt: new Date() }).where(eq(templatesTable.id, t.id));
+    updated++;
+  }
+  res.json({ ok: true, updated, changedElements: deltas.length, remembered: remember, ruleId, scope });
+});
+
 router.patch("/templates/:id", requireAdmin, async (req, res): Promise<void> => {
   const id = Number(req.params.id);
   const body = req.body;
@@ -1374,7 +1429,7 @@ router.patch("/templates/:id", requireAdmin, async (req, res): Promise<void> => 
       try { prev = JSON.parse(existing?.config || "{}"); } catch { prev = {}; }
       const merged: Record<string, unknown> = { ...body.config };
       if (prev.kind === "freeform") {
-        for (const k of ["previewHtml", "sourceFolder", "sourceAssets", "adaptMethod", "adaptNotes"] as const) {
+        for (const k of ["previewHtml", "sourceFolder", "sourceAssets", "adaptMethod", "adaptNotes", "adaptationBaseline", "appliedCorrectionRuleIds"] as const) {
           if (merged[k] === undefined && prev[k] !== undefined) merged[k] = prev[k];
         }
       }

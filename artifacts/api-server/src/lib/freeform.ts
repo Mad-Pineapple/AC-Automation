@@ -232,6 +232,10 @@ export interface FreeformConfig {
   sourceMode?: "indesign-bridge";
   masterFamily?: "portrait" | "landscape" | "slim-portrait" | "slim-landscape";
   authoritativeGeometry?: boolean;
+  /** Engine geometry before any human correction, used to learn proportional edits. */
+  adaptationBaseline?: Array<{ id: string; slot?: SlotRole; x: number; y: number; w: number; h: number }>;
+  /** Remembered deterministic correction rule ids applied during this build. */
+  appliedCorrectionRuleIds?: number[];
 }
 
 const MAX_ELEMENTS = 200;
@@ -733,6 +737,14 @@ export function normalizeFreeformConfig(raw: unknown): FreeformConfig {
   const familyRaw = (raw as { masterFamily?: unknown }).masterFamily;
   const masterFamily = familyRaw === "portrait" || familyRaw === "landscape" || familyRaw === "slim-portrait" || familyRaw === "slim-landscape" ? familyRaw : undefined;
   const authoritativeGeometry = sourceMode === "indesign-bridge" && (raw as { authoritativeGeometry?: unknown }).authoritativeGeometry === true;
+  const rawBaseline = (raw as { adaptationBaseline?: unknown }).adaptationBaseline;
+  const adaptationBaseline = Array.isArray(rawBaseline) ? rawBaseline.filter((b): b is { id: string; slot?: SlotRole; x: number; y: number; w: number; h: number } => {
+    if (!b || typeof b !== "object") return false;
+    const v = b as Record<string, unknown>;
+    return typeof v.id === "string" && [v.x, v.y, v.w, v.h].every((n) => typeof n === "number" && Number.isFinite(n));
+  }).slice(0, MAX_ELEMENTS).map((b) => ({ id: b.id.slice(0,64), ...(b.slot && SLOT_ROLES.includes(b.slot) ? { slot: b.slot } : {}), x:b.x, y:b.y, w:b.w, h:b.h })) : [];
+  const appliedCorrectionRuleIds = Array.isArray((raw as { appliedCorrectionRuleIds?: unknown }).appliedCorrectionRuleIds)
+    ? ((raw as { appliedCorrectionRuleIds: unknown[] }).appliedCorrectionRuleIds).filter((n): n is number => Number.isInteger(n) && Number(n) > 0).slice(0, 20) : [];
 
   return {
     kind: "freeform",
@@ -750,5 +762,7 @@ export function normalizeFreeformConfig(raw: unknown): FreeformConfig {
     ...(sourceMode ? { sourceMode } : {}),
     ...(masterFamily ? { masterFamily } : {}),
     ...(authoritativeGeometry ? { authoritativeGeometry: true } : {}),
+    ...(adaptationBaseline.length ? { adaptationBaseline } : {}),
+    ...(appliedCorrectionRuleIds.length ? { appliedCorrectionRuleIds } : {}),
   };
 }

@@ -13,7 +13,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Pencil, Trash2, FileUp, Hammer, ArrowUpRight, LayoutTemplate, Play } from "lucide-react";
+import { Pencil, Trash2, FileUp, Hammer, ArrowUpRight, LayoutTemplate, Play, WandSparkles } from "lucide-react";
 import { TemplateThumbnail, LayoutOptions } from "@/components/TemplateRenderer";
 import { useToast } from "@/hooks/use-toast";
 import { useMe } from "@/hooks/use-me";
@@ -213,6 +213,28 @@ export default function WipList() {
       return next;
     });
   const toggleAll = () => setSelected(allSelected ? new Set() : new Set(wipTemplates.map((t) => t.id)));
+
+  const applyCorrectionToSelected = async () => {
+    const pieces = wipTemplates.filter((t) => selected.has(t.id));
+    if (pieces.length < 2) { toast({ title: "Select at least two pieces", description: "Select the corrected artwork plus the pieces that should receive the same change." }); return; }
+    const list = pieces.map((t, i) => `${i + 1}. ${t.name} (${t.dims})`).join("\n");
+    const pick = prompt(`Which selected piece contains the correction to copy?\n\n${list}\n\nEnter a number:`);
+    const idx = Number(pick) - 1;
+    if (!pick || !Number.isInteger(idx) || idx < 0 || idx >= pieces.length) return;
+    const source = pieces[idx];
+    const scopePick = prompt('Apply this correction to which scope?\n\n1. Same format family only (recommended)\n2. Same layout family\n3. Entire campaign\n\nEnter 1, 2 or 3:', '1');
+    const scope = scopePick === '3' ? 'campaign' : scopePick === '2' ? 'family' : 'format';
+    const remember = confirm('Remember this correction for future artwork generated from this campaign?\n\nOK = remember it\nCancel = apply only to the selected artwork');
+    const res = await fetch('/api/templates/apply-correction', {
+      method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ sourceId: source.id, targetIds: pieces.filter((p) => p.id !== source.id).map((p) => p.id), scope, remember }),
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) { toast({ title: "Could not apply the correction", description: data.error ?? "Unknown error", variant: "destructive", duration: 12000 }); return; }
+    toast({ title: `Applied to ${data.updated} selected piece${data.updated === 1 ? "" : "s"}`, description: remember ? `Remembered as a ${scope} rule for future builds.` : "Future builds were not changed." });
+    queryClient.invalidateQueries({ queryKey: getListTemplatesQueryKey() });
+  };
+
   const deleteSelected = async () => {
     const ids = wipTemplates.filter((t) => selected.has(t.id)).map((t) => t.id);
     if (ids.length === 0) return;
@@ -288,6 +310,11 @@ export default function WipList() {
             {wipTemplates.length > 0 && (
               <Button variant="outline" onClick={toggleAll} disabled={clearing} data-testid="button-select-all-wip">
                 {allSelected ? "Deselect all" : `Select all (${wipTemplates.length})`}
+              </Button>
+            )}
+            {selected.size > 1 && (
+              <Button variant="outline" onClick={applyCorrectionToSelected} disabled={clearing} data-testid="button-apply-correction-selected">
+                <WandSparkles className="w-4 h-4 mr-2" />Apply change to selected ({selected.size})
               </Button>
             )}
             {selected.size > 0 && (
