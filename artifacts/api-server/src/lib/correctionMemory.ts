@@ -117,7 +117,7 @@ export async function correctionsFor(masterId: number, width: number, height: nu
     deltas: (typeof r.deltas === "string" ? JSON.parse(r.deltas) : r.deltas) as GeometryDelta[],
   })).filter((r) => r.scope === "campaign" || (r.scope === "family" && !!family && r.family === family) || (r.scope === "format" && r.formatClass === fc));
   // broad first, specific last
-  return rules.sort((a, b) => ({ campaign: 0, family: 1, format: 2 }[a.scope] - ({ campaign: 0, family: 1, format: 2 }[b.scope]));
+  return rules.sort((a, b) => ({ campaign: 0, family: 1, format: 2 }[a.scope] - { campaign: 0, family: 1, format: 2 }[b.scope]));
 }
 
 export async function applyRememberedCorrections(config: FreeformConfig, masterId: number, width: number, height: number, family?: string | null): Promise<{ config: FreeformConfig; ruleIds: number[] }> {

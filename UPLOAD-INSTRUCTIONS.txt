@@ -1,28 +1,12 @@
-AC Automation, Layout Engine v2 correction-memory patch
+Deploy Fix 1
 
-Upload these files to the same paths in Mad-Pineapple/AC-Automation.
+Replace this file in GitHub:
+artifacts/api-server/src/lib/correctionMemory.ts
 
-What this patch adds:
-- Deterministic correction memory, no AI is used to decide geometry.
-- Generated artwork stores an engine geometry baseline.
-- Human edits are converted to proportional canvas-relative deltas.
-- WIP multi-select gets "Apply change to selected".
-- Correction scopes: format, family, campaign.
-- Optional "Remember this correction" persists a rule in PostgreSQL.
-- Remembered corrections are applied automatically to future builds before validation.
-- Existing packaged INDD/IDML import flow is untouched.
-- Existing AI Artwork Guard remains opt-in only, it is not enabled by this patch.
+This fixes the syntax error reported by Vercel at line 120:
+Expected ')' but found ';'
 
-Database:
-- layout_corrections is created automatically on first use, following the repo's existing lazy-table pattern.
+No other files are changed in this fix.
+Commit the replacement and redeploy Vercel.
 
-Important:
-- Existing WIP pieces created before this patch do not have adaptationBaseline data.
-  Rebuild a size once after deploying this patch, make the correction, then use Apply change to selected.
-- The source corrected piece and target pieces must come from the same source master.
-- The correction engine uses semantic slot matching first, then element id matching.
-
-Validation note:
-- The files were inspected and patched against the uploaded current repository.
-- A full TypeScript compile could not be run in the artifact environment because pnpm was not installed locally and external package downloads are disabled.
-- Vercel/build CI should perform the normal repository type/build validation after upload.
+The earlier Vite sourcemap and chunk-size messages are warnings, not the deployment failure.
