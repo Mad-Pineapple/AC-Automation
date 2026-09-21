@@ -525,10 +525,19 @@ export async function recomposeToFormat(
     if (hasBand) bandZone = { x: pw, y: 0, w: dstW - pw, h: bh };
     panelZone = { x: pw, y: bh, w: dstW - pw, h: dstH - bh };
   } else {
+    // Extreme strips are a genuine re-composition, never a miniature of the
+    // landscape artwork.  The brand tile owns one full-height square at the
+    // right, the anther owns a full-height subject zone at the left, and the
+    // live copy/CTA gets everything between them.  This keeps the three
+    // structural groups readable instead of shrinking every master element.
     const tile = opts.brand.logoUrl && !social ? dstH : 0;
-    const pw = !hasPhoto ? 0 : antherShape ? Math.min(r(dstH * 1.25), r(dstW * 0.3)) : clamp(Math.max(r(dstH * 2.4), r(dstW * recipe.photoFrac)), 0, r(dstW * 0.5));
+    const pw = !hasPhoto
+      ? 0
+      : antherShape
+        ? clamp(r(dstH * 1.32), r(dstH * 1.05), r(dstW * 0.34))
+        : clamp(Math.max(r(dstH * 2.4), r(dstW * recipe.photoFrac)), 0, r(dstW * 0.5));
     photoZone = { x: 0, y: 0, w: pw, h: dstH };
-    panelZone = { x: pw, y: 0, w: dstW - pw - tile, h: dstH };
+    panelZone = { x: pw, y: 0, w: Math.max(1, dstW - pw - tile), h: dstH };
     if (tile) tileZone = { x: dstW - tile, y: 0, w: tile, h: tile };
   }
 
@@ -781,18 +790,35 @@ export async function recomposeToFormat(
 
   // ---- 7. Headline (+ sub-headline) ----------------------------------------------------------
   if (patternEl && tileSide && patternEl.src) {
-    // Kotahitanga pattern along the bottom, left of the tile, at the tile's
-    // height (as the masters set it); never under the tile.
+    // The kotahitanga pattern + pōhutukawa tile are one footer assembly.
+    // Preserve the pattern's height, but TILE it across all available footer
+    // width.  Previously a single contained image hugged the right edge,
+    // which made the footer collapse or leave a large empty gap on resizes.
     const aspect = patternEl.w / Math.max(1, patternEl.h);
     const tower = formatClass === "tower";
     const x0 = recipe.axis === "side" ? panelZone.x : 0;
     const x1 = tower || social ? dstW : dstW - tileSide;
     const bottom = tower ? dstH - tileSide : dstH;
-    let ph = tower ? r(Math.min(tileSide * 0.5, (x1 - x0) / aspect)) : tileSide;
-    let pw = r(ph * aspect);
-    if (pw > x1 - x0) { pw = x1 - x0; ph = r(pw / aspect); }
+    const ph = tower ? r(Math.min(tileSide * 0.5, Math.max(1, x1 - x0) / aspect)) : tileSide;
+    const naturalTileW = Math.max(8, r(ph * aspect));
+    const available = Math.max(0, x1 - x0);
+    const count = Math.max(1, Math.min(16, Math.ceil(available / naturalTileW)));
+    const tileW = available / count;
     if (tower) panelZone = { ...panelZone, h: Math.max(30, panelZone.h - ph) };
-    elements.push({ ...patternEl, id: "rc_pattern", slot: "band", role: "decoration", fit: "contain", x: x1 - pw, y: bottom - ph, w: pw, h: ph, locked: true } as FreeformImage);
+    for (let i = 0; i < count; i++) {
+      elements.push({
+        ...patternEl,
+        id: `rc_pattern_${i}`,
+        slot: "band",
+        role: "decoration",
+        fit: "cover",
+        x: r(x0 + i * tileW),
+        y: bottom - ph,
+        w: r(i === count - 1 ? x1 - (x0 + i * tileW) : tileW),
+        h: ph,
+        locked: true,
+      } as FreeformImage);
+    }
   }
   if (antherEl) elements.push(antherEl);
   const copyZone: Box = recipe.axis === "row" ? panelZone : photoZone;
