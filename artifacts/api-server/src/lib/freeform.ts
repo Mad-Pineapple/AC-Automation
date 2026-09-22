@@ -236,6 +236,8 @@ export interface FreeformConfig {
   adaptationBaseline?: Array<{ id: string; slot?: SlotRole; x: number; y: number; w: number; h: number }>;
   /** Remembered deterministic correction rule ids applied during this build. */
   appliedCorrectionRuleIds?: number[];
+  /** Deterministic nested component/relationship model inferred from the approved KV. */
+  designModelV3?: unknown;
 }
 
 const MAX_ELEMENTS = 200;

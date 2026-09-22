@@ -77,6 +77,7 @@ import { approvedExemplars, studioExemplars, chooseReference, measureRecipe, typ
 import { dissectPdfToTemplate } from "../lib/pdfDissect";
 import { dissectImageToTemplate } from "../lib/imageDissect";
 import { importExample, exampleKindFor } from "../lib/exampleImport";
+import { enforceDesignModelV3, validateDesignModelV3 } from "../lib/designModelV3";
 
 const router = Router();
 
@@ -439,6 +440,17 @@ async function adaptOne(
     }
   };
   adapted = await pillRule(adapted, method);
+  // Layout Engine v3: the existing compositor proposes a layout, then the
+  // approved KV's component tree becomes authoritative. Connected pieces
+  // (pill + copy + icon, shaped hero assemblies, lockups) cannot drift apart
+  // or deform, and master-observed alignments/safe areas are restored before
+  // the mandatory gate sees the artwork.
+  adapted = enforceDesignModelV3(masterConfig, adapted, master.width, master.height, width, height);
+  const v3Errors = validateDesignModelV3(masterConfig, adapted, master.width, master.height, width, height);
+  if (v3Errors.length) {
+    adapted = { ...adapted, rejected: [...new Set([...(adapted.rejected ?? []), ...v3Errors])], needsReview: true };
+    notes.push(...v3Errors.map((e) => `Layout v3: ${e}.`));
+  }
   // The hard gate: an automated layout that lost a mandatory element,
   // undersized the logo or let copy collide is rejected, not merely noted.
   const partRulesForGate = (styleSpec?.partRules ?? {}) as Record<string, { minPx?: number; neverOverlap?: string[]; dropWhenTight?: boolean }>;
